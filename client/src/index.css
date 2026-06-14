@@ -184,3 +184,78 @@
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 .strike-in { animation: strike-in 0.25s cubic-bezier(0.23, 1, 0.32, 1) both; }
+
+/* ─── Additional Neon Polish ─────────────────────────────────────── */
+@keyframes granted-flash {
+  0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.6); }
+  50% { box-shadow: 0 0 40px 10px rgba(0, 255, 0, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+}
+.granted-flash { animation: granted-flash 0.6s ease-out; }
+
+@keyframes lane-sweep {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.lane-sweep {
+  background: linear-gradient(90deg, transparent 0%, #ffd70022 40%, #ffd70044 50%, #ffd70022 60%, transparent 100%);
+  background-size: 200% 100%;
+  animation: lane-sweep 2s linear infinite;
+}
+
+@keyframes neon-flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.8; }
+  97% { opacity: 1; }
+  98% { opacity: 0.7; }
+  99% { opacity: 1; }
+}
+.neon-flicker { animation: neon-flicker 8s ease-in-out infinite; }
+
+/* Role card hover glow */
+.role-card {
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.role-card:hover {
+  transform: translateY(-3px) scale(1.01);
+}
+.role-card:active {
+  transform: scale(0.98);
+}
+
+/* Bowling lane divider */
+.lane-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffd700, #00ffff, #ffd700, transparent);
+  opacity: 0.4;
+  border: none;
+}
+
+/* Stat number glow */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* QR code container */
+.qr-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  display: inline-block;
+  box-shadow: 0 0 20px #ffd70044;
+}
+
+/* Mobile touch target minimum */
+@media (max-width: 640px) {
+  button, [role="button"] {
+    min-height: 44px;
+  }
+}
+
+/* Print styles for scantron sheets */
+@media print {
+  body { background: white !important; color: black !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}

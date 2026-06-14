@@ -16,7 +16,7 @@
 - [x] Build 10-digit ID pre-generation during import (CC+L+EE+TT+BB)
 - [x] Build import UI panel inside admin dashboard (CSV upload, paste, Google Sheets URL)
 - [x] Build import summary report
-- [ ] Build export-to-CSV feature (full roster, per-center, check-in status, audit log)
+- [x] Build export-to-CSV feature (full roster, per-center, check-in status, audit log)
 
 ## Phase 2 — Authentication System
 - [x] Build combined Sign-In / Sign-Up landing page (neon theme, fully responsive)
@@ -41,8 +41,8 @@
 - [x] Hierarchical layout: Event → Center → Team → Bowler (collapsible)
 - [x] Search bar: name, 10-digit ID, center, team, phone
 - [x] Stats bar: Total / Pre-Registered / Signed Up / Verified / Checked In / Unmatched
-- [ ] Team color-coding: gray (incomplete) → yellow (all registered) → green (captain verified)
-- [ ] Full bowler record editor (all fields, no restrictions, all edits logged)
+- [x] Team color-coding: gray (incomplete) → yellow (all registered) → green (captain verified)
+- [x] Full bowler record editor (all fields, no restrictions, all edits logged)
 - [x] Doorman account management panel (create DM1–DM99, set password, view active)
 - [x] QR Test System: generate test QR (0000000000), 3-mode test, pass/fail report
 - [x] Import Data panel (CSV / Sheets / Paste) with progress indicator
@@ -54,7 +54,7 @@
 - [x] Doorman check-in screen: camera scan (html5-qrcode) + Bluetooth HID input
 - [x] Atomic token invalidation: DB transaction → mark used → write check_in → write audit_log
 - [x] SSE broadcast to all connected doorman tablets on every invalidation
-- [ ] Bowler card display after successful scan (name, photo, seat/table)
+- [x] Bowler card display after successful scan (name, photo, seat/table)
 - [x] DENIED screen (red flash) for invalid/used tokens
 - [x] Wristband issuance flow: one-time only, mandatory doorman prompt
 - [x] Reentry scan flow: validate wristband QR, check condition
@@ -66,15 +66,15 @@
 - [x] Captain approval flow: Verify button per bowler, Yellow→Green status update
 - [x] Shareable registration link generator (team pre-filled)
 - [x] Bowler profile page: itinerary, self-display QR, hotel/lane/schedule, gift status
-- [ ] Ad banner slots on bowler and captain pages (static sponsor image slots)
-- [ ] Program Director: league-scoped roster, team completion status, read-only
+- [x] Ad banner slots on bowler and captain pages (static sponsor image slots)
+- [x] Program Director: league-scoped roster, team completion status, read-only
 
 ## Phase 7 — PWA + Offline + Theme Polish + Tests
-- [ ] Update service worker to cache all routes and assets
-- [ ] IndexedDB for offline data caching (bowler records, team data)
-- [ ] Offline mode detection: 2-second ping to local hub, graceful fallback
-- [ ] Offline banner: "OFFLINE — QR DISABLED. Use PIN fallback."
-- [ ] PWA manifest icons (192px and 512px)
-- [ ] Final neon theme polish: all pages consistent (dark bg, gold/cyan, glow)
+- [x] Update service worker to cache all routes and assets
+- [x] IndexedDB for offline data caching (bowler records, team data)
+- [x] Offline mode detection: 2-second ping to local hub, graceful fallback
+- [x] Offline banner: "OFFLINE — QR DISABLED. Use PIN fallback."
+- [x] PWA manifest icons (192px and 512px)
+- [x] Final neon theme polish: all pages consistent (dark bg, gold/cyan, glow)
 - [x] Full vitest test suite (ID generation, import pipeline, token invalidation, auth, RBAC)
-- [ ] Final checkpoint and deliver
+- [x] Final checkpoint and deliver

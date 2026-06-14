@@ -30,6 +30,7 @@ export default function ProgramDirector() {
   const [password, setPassword] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCenter, setSelectedCenter] = useState<string>("all");
+  const [selectedLeague, setSelectedLeague] = useState<string>("all");
 
   const loginMutation = trpc.appAuth.login.useMutation({
     onSuccess: (data) => {
@@ -50,10 +51,20 @@ export default function ProgramDirector() {
     { enabled: loggedIn }
   );
 
+  // Derive unique leagues from bowler data
+  const leagues = useMemo(() => {
+    const seen = new Map<string, string>();
+    (bowlers as Bowler[]).forEach((b) => {
+      if (b.leagueName && b.leagueCode) seen.set(String(b.leagueCode), String(b.leagueName));
+    });
+    return Array.from(seen.entries()).map(([code, name]) => ({ code, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [bowlers]);
+
   const filteredBowlers = useMemo(() => {
     return (bowlers as Bowler[]).filter((b) => {
       const matchesCenter = selectedCenter === "all" || String(b.centerName ?? "") === selectedCenter;
-      if (!matchesCenter) return false;
+      const matchesLeague = selectedLeague === "all" || String(b.leagueCode ?? "") === selectedLeague;
+      if (!matchesCenter || !matchesLeague) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
@@ -63,7 +74,7 @@ export default function ProgramDirector() {
         String(b.teamName ?? "").toLowerCase().includes(q)
       );
     });
-  }, [bowlers, search, selectedCenter]);
+  }, [bowlers, search, selectedCenter, selectedLeague]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Map<string, Bowler[]>>();
@@ -191,13 +202,23 @@ export default function ProgramDirector() {
             className="flex-1 min-w-[200px] px-4 py-3 bg-[#1a1a1a] border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
           />
           <select
+            value={selectedLeague}
+            onChange={(e) => setSelectedLeague(e.target.value)}
+            className="px-4 py-3 bg-[#1a1a1a] border border-white/20 rounded-xl text-white focus:outline-none focus:border-yellow-500 transition-colors"
+          >
+            <option value="all">All Leagues</option>
+            {leagues.map((l) => (
+              <option key={l.code} value={l.code}>{l.name}</option>
+            ))}
+          </select>
+          <select
             value={selectedCenter}
             onChange={(e) => setSelectedCenter(e.target.value)}
             className="px-4 py-3 bg-[#1a1a1a] border border-white/20 rounded-xl text-white focus:outline-none focus:border-yellow-500 transition-colors"
           >
             <option value="all">All Centers</option>
             {(centers as Record<string, unknown>[]).map((c) => (
-              <option key={String(c.id)} value={String(c.name)}>{String(c.name)}</option>
+              <option key={String(c.id)} value={String(c.centerName)}>{String(c.centerName)}</option>
             ))}
           </select>
         </div>

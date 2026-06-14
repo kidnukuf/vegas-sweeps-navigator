@@ -94,7 +94,19 @@ export const appRouter = router({
         actorId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        await updateBowler(input.id, input.fields);
+        const HOTEL_FIELDS = ["checkinDate","checkoutDate","roomType","roomNumber","roommateRequested","roommateFirstName","roommateLastName","roomAmount"];
+        const PAYMENT_FIELDS = ["banquetAmount","poolParty","totalAmountDue","paid"];
+        const bowlerFields: Record<string, unknown> = {};
+        const hotelFields: Record<string, unknown> = {};
+        const paymentFields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(input.fields)) {
+          if (HOTEL_FIELDS.includes(k)) hotelFields[k] = v;
+          else if (PAYMENT_FIELDS.includes(k)) paymentFields[k] = v;
+          else bowlerFields[k] = v;
+        }
+        if (Object.keys(bowlerFields).length > 0) await updateBowler(input.id, bowlerFields);
+        if (Object.keys(hotelFields).length > 0) await upsertHotelRecord(input.id, hotelFields);
+        if (Object.keys(paymentFields).length > 0) await upsertPaymentRecord(input.id, paymentFields);
         await writeAuditLog({
           actorRole: input.actorRole ?? "EventDirector",
           actorId: input.actorId,

@@ -22,7 +22,7 @@ export default function DoormanCheckIn() {
   const [selectedBowler, setSelectedBowler] = useState<BowlerResult | null>(null);
   const [reentryBowler, setReentryBowler] = useState<BowlerResult | null>(null);
   const [reminderDismissed, setReminderDismissed] = useState(false);
-  const [lastCheckedIn, setLastCheckedIn] = useState<{ name: string; scantronId: string; center: string } | null>(null);
+  const [lastCheckedIn, setLastCheckedIn] = useState<{ name: string; scantronId: string; center: string; team?: string; laneNumber?: string; squadTime?: string; timeSlot?: string; bowlingDate?: string; isCapitain?: boolean } | null>(null);
   const [sseConnected, setSseConnected] = useState(false);
   const tokenInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,11 +69,18 @@ export default function DoormanCheckIn() {
   const validateToken = trpc.tokens.validate.useMutation({
     onSuccess: (data: Record<string, unknown>) => {
       if (data.success) {
+        const b = (data.bowler ?? {}) as Record<string, unknown>;
         const name = String(data.bowlerName ?? "");
-        const sid = String(data.scantronId ?? "");
-        const center = String(data.centerName ?? "");
+        const sid = String(b.scantronId ?? data.scantronId ?? "");
+        const center = String(b.centerName ?? data.centerName ?? "");
+        const team = b.teamName ? String(b.teamName) : undefined;
+        const laneNumber = b.laneNumber ? String(b.laneNumber) : undefined;
+        const squadTime = b.squadTime ? String(b.squadTime) : undefined;
+        const timeSlot = b.timeSlot ? String(b.timeSlot) : undefined;
+        const bowlingDate = b.bowlingDate ? String(b.bowlingDate) : undefined;
+        const isCapitain = Boolean(b.isCapitain);
         setCheckInResult({ success: true, message: `ENTRY GRANTED`, bowlerName: name });
-        setLastCheckedIn({ name, scantronId: sid, center });
+        setLastCheckedIn({ name, scantronId: sid, center, team, laneNumber, squadTime, timeSlot, bowlingDate, isCapitain });
         setShowDenied(false);
         toast.success("Check-in successful!");
         setTimeout(() => setCheckInResult(null), 5000);
@@ -217,15 +224,44 @@ export default function DoormanCheckIn() {
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         {/* Last Checked-In Bowler Card */}
         {lastCheckedIn && (
-          <div className="bg-[#0a1a0a] rounded-2xl border-2 border-green-500/60 p-4 shadow-[0_0_30px_rgba(0,255,0,0.15)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs text-green-400 font-semibold mb-1">LAST CHECK-IN — GRANTED</div>
-                <div className="text-xl font-black text-white">{lastCheckedIn.name}</div>
-                <div className="text-sm text-gray-400">{lastCheckedIn.center}</div>
-                <div className="text-xs font-mono mt-1" style={{ color: "#ffd700" }}>{lastCheckedIn.scantronId}</div>
+          <div className="bg-[#0a1a0a] rounded-2xl border-2 border-green-500/60 p-5 shadow-[0_0_40px_rgba(0,255,0,0.2)]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="text-xs text-green-400 font-semibold mb-2 tracking-widest">✅ ENTRY GRANTED</div>
+                <div className="text-2xl font-black text-white mb-0.5">
+                  {lastCheckedIn.isCapitain && <span className="text-yellow-400 mr-1">⭐</span>}
+                  {lastCheckedIn.name}
+                </div>
+                <div className="text-sm text-gray-400 mb-2">{lastCheckedIn.center}</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {lastCheckedIn.team && (
+                    <div className="bg-[#111] rounded-lg px-3 py-2">
+                      <div className="text-gray-500 mb-0.5">Team</div>
+                      <div className="text-cyan-300 font-semibold">{lastCheckedIn.team}</div>
+                    </div>
+                  )}
+                  {lastCheckedIn.laneNumber && (
+                    <div className="bg-[#111] rounded-lg px-3 py-2">
+                      <div className="text-gray-500 mb-0.5">Lane</div>
+                      <div className="text-yellow-400 font-black text-base">{lastCheckedIn.laneNumber}</div>
+                    </div>
+                  )}
+                  {(lastCheckedIn.squadTime || lastCheckedIn.timeSlot) && (
+                    <div className="bg-[#111] rounded-lg px-3 py-2">
+                      <div className="text-gray-500 mb-0.5">Squad Time</div>
+                      <div className="text-white font-semibold">{lastCheckedIn.squadTime ?? lastCheckedIn.timeSlot}</div>
+                    </div>
+                  )}
+                  {lastCheckedIn.bowlingDate && (
+                    <div className="bg-[#111] rounded-lg px-3 py-2">
+                      <div className="text-gray-500 mb-0.5">Date</div>
+                      <div className="text-white font-semibold">{lastCheckedIn.bowlingDate}</div>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs font-mono mt-3 text-yellow-400/80">{lastCheckedIn.scantronId}</div>
               </div>
-              <div className="text-5xl">✅</div>
+              <div className="text-5xl shrink-0">🎳</div>
             </div>
           </div>
         )}
