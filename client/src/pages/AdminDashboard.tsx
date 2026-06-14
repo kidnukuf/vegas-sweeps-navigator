@@ -181,7 +181,19 @@ export default function AdminDashboard() {
               </div>
             </div>
             {isLoading ? (
-              <div className="text-center py-12 text-gray-500">Loading roster...</div>
+              <div className="text-center py-12">
+                <div className="text-4xl mb-3 animate-pulse">🎳</div>
+                <div className="text-gray-500">Loading roster...</div>
+              </div>
+            ) : (bowlers as Bowler[]).length === 0 ? (
+              <div className="text-center py-16 bg-[#1a1a1a] rounded-2xl border border-white/10">
+                <div className="text-6xl mb-4">📋</div>
+                <h3 className="text-xl font-bold text-yellow-400 mb-2">No Bowlers Imported Yet</h3>
+                <p className="text-gray-400 mb-6 max-w-md mx-auto">Upload your roster CSV or Google Sheet to pre-generate all 10-digit scantron IDs and populate the dashboard.</p>
+                <button onClick={() => setLocation("/import")} className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-black rounded-xl text-lg transition-colors">
+                  📥 Import Bowler Data
+                </button>
+              </div>
             ) : viewMode === "flat" ? (
               <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
                 <div className="overflow-x-auto">
