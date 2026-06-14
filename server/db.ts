@@ -1,5 +1,6 @@
 import { and, eq, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql2 from "mysql2/promise";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -43,11 +44,22 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // ─── RAW SQL HELPERS (for tables not yet in Drizzle schema object) ────────────
+// We bypass Drizzle's ORM layer and use the underlying mysql2 pool directly
+// so that ? placeholders are properly bound as prepared-statement parameters.
+let _pool: mysql2.Pool | null = null;
+
+function getPool(): mysql2.Pool {
+  if (!_pool && process.env.DATABASE_URL) {
+    _pool = mysql2.createPool(process.env.DATABASE_URL);
+  }
+  if (!_pool) throw new Error("No DATABASE_URL configured");
+  return _pool;
+}
+
 export async function rawQuery<T = Record<string, unknown>>(query: string, params: unknown[] = []): Promise<T[]> {
-  const db = await getDb();
-  if (!db) return [];
-  const result = await db.execute(sql.raw(query));
-  return (result as unknown as [T[]])[0] ?? [];
+  const pool = getPool();
+  const [rows] = await pool.execute(query, params);
+  return rows as T[];
 }
 
 // ─── BOWLING CENTERS ─────────────────────────────────────────────────────────
