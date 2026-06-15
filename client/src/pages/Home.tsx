@@ -92,7 +92,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Bowler Portal card */}
             <button
-              onClick={() => setLocation(bowlerToken ? "/bowler-dashboard" : "/bowler-login")}
+              onClick={() => setLocation(bowlerToken ? "/bowler" : "/bowler-login")}
               className="group relative overflow-hidden rounded-2xl text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{
                 background: "linear-gradient(135deg, #0f0c29 0%, #302b63 60%, #24243e 100%)",
@@ -129,7 +129,7 @@ export default function Home() {
 
             {/* Captain Portal card */}
             <button
-              onClick={() => setLocation(bowlerToken && isCapitain ? "/captain-dashboard" : "/bowler-login")}
+              onClick={() => setLocation(bowlerToken && isCapitain ? "/captain" : "/captain-login")}
               className="group relative overflow-hidden rounded-2xl text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{
                 background: "linear-gradient(135deg, #0a0f1e 0%, #0f172a 60%, #1e1b4b 100%)",

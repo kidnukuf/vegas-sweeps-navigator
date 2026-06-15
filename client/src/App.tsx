@@ -16,6 +16,7 @@ import ProgramDirector from "./pages/ProgramDirector";
 import BowlerLogin from "./pages/BowlerLogin";
 import BowlerDashboard from "./pages/BowlerDashboard";
 import CaptainDashboard from "./pages/CaptainDashboard";
+import CaptainLogin from "./pages/CaptainLogin";
 
 function Router() {
   return (
@@ -23,14 +24,17 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/register" component={BowlerRegistration} />
-      <Route path="/captain" component={TeamCaptain} />
+      <Route path="/team-captain" component={TeamCaptain} />
       <Route path="/doorman" component={DoormanCheckIn} />
       <Route path="/bowler/:id" component={BowlerProfile} />
       <Route path="/import" component={ImportData} />
       <Route path="/program-director" component={ProgramDirector} />
       <Route path="/bowler-login" component={BowlerLogin} />
+      <Route path="/bowler" component={BowlerDashboard} />
       <Route path="/bowler-dashboard" component={BowlerDashboard} />
+      <Route path="/captain-login" component={CaptainLogin} />
       <Route path="/captain-dashboard" component={CaptainDashboard} />
+      <Route path="/captain" component={CaptainDashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

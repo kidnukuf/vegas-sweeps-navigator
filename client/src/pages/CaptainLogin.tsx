@@ -1,0 +1,271 @@
+/**
+ * CaptainLogin — Team Captain Portal sign-up / sign-in
+ * Bold, authoritative design distinct from the bowler warm portal.
+ * Captains must be flagged as isCapitain=1 in the bowlers table.
+ */
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+
+export default function CaptainLogin() {
+  const [, navigate] = useLocation();
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
+
+  // Sign-in state
+  const [siFirst, setSiFirst] = useState("");
+  const [siLast, setSiLast] = useState("");
+  const [siPass, setSiPass] = useState("");
+
+  // Sign-up state
+  const [suFirst, setSuFirst] = useState("");
+  const [suLast, setSuLast] = useState("");
+  const [suEmail, setSuEmail] = useState("");
+  const [suPhone, setSuPhone] = useState("");
+  const [suPass, setSuPass] = useState("");
+  const [suConfirm, setSuConfirm] = useState("");
+
+  const eventQuery = trpc.event.active.useQuery();
+  const eventId = eventQuery.data?.id ?? 0;
+
+  const signIn = trpc.bowlerAuth.signIn.useMutation({
+    onSuccess: (data) => {
+      if (!data.isCapitain) {
+        toast.error("This account is not a Team Captain. Use the Bowler Portal instead.");
+        return;
+      }
+      localStorage.setItem("captainToken", data.token);
+      localStorage.setItem("captainBowlerId", String(data.bowlerId));
+      toast.success("Welcome back, Captain!");
+      navigate("/captain");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const signUp = trpc.bowlerAuth.signUp.useMutation({
+    onSuccess: (data) => {
+      if (!data.isCapitain) {
+        toast.error("Your name was found, but you are not listed as a Team Captain. Use the Bowler Portal instead.");
+        return;
+      }
+      localStorage.setItem("captainToken", data.token);
+      localStorage.setItem("captainBowlerId", String(data.bowlerId));
+      toast.success("Account created! Welcome, Captain.");
+      navigate("/captain");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  function handleSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    if (!eventId) { toast.error("Event not loaded yet."); return; }
+    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass });
+  }
+
+  function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!eventId) { toast.error("Event not loaded yet."); return; }
+    if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
+    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), password: suPass, email: suEmail || undefined, phone: suPhone || undefined });
+  }
+
+  return (
+    <div className="captain-login-bg min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="captain-login-header px-6 py-4 flex items-center justify-between">
+        <button onClick={() => navigate("/")} className="text-sm text-gold-400 hover:text-gold-300 transition-colors">
+          ← Back to Home
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">⭐</span>
+          <span className="font-black text-white text-lg tracking-widest uppercase">Captain Portal</span>
+        </div>
+        <div className="w-24" />
+      </header>
+
+      {/* Hero */}
+      <div className="captain-login-hero flex-1 flex flex-col items-center justify-center px-4 py-12">
+        {/* Badge */}
+        <div className="captain-badge mb-8">
+          <div className="captain-badge-inner">
+            <span className="text-5xl">⭐</span>
+          </div>
+        </div>
+
+        <h1 className="captain-login-title">TEAM CAPTAIN</h1>
+        <p className="captain-login-subtitle">Command your roster. Lead your team to Vegas.</p>
+
+        {/* Event info */}
+        {eventQuery.data && (
+          <div className="captain-event-pill">
+            🎳 {String(eventQuery.data.eventName ?? "")} · {eventQuery.data.bowlingDate ? new Date(String(eventQuery.data.bowlingDate)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""}
+          </div>
+        )}
+
+        {/* Auth card */}
+        <div className="captain-auth-card">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
+            <TabsList className="captain-tabs-list">
+              <TabsTrigger value="signin" className="captain-tab">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="captain-tab">Create Account</TabsTrigger>
+            </TabsList>
+
+            {/* SIGN IN */}
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4 pt-4">
+                <p className="text-sm text-gray-400 text-center mb-4">
+                  Sign in with the name on your event registration.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="captain-label">First Name</Label>
+                    <Input
+                      value={siFirst}
+                      onChange={(e) => setSiFirst(e.target.value)}
+                      placeholder="First"
+                      required
+                      className="captain-input"
+                    />
+                  </div>
+                  <div>
+                    <Label className="captain-label">Last Name</Label>
+                    <Input
+                      value={siLast}
+                      onChange={(e) => setSiLast(e.target.value)}
+                      placeholder="Last"
+                      required
+                      className="captain-input"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="captain-label">Password</Label>
+                  <Input
+                    type="password"
+                    value={siPass}
+                    onChange={(e) => setSiPass(e.target.value)}
+                    placeholder="Your password"
+                    required
+                    className="captain-input"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={signIn.isPending || !eventId}
+                  className="captain-submit-btn w-full"
+                >
+                  {signIn.isPending ? "Signing in…" : "⭐ Enter Command Center"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* SIGN UP */}
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                <div className="captain-notice">
+                  <span className="text-yellow-400 font-bold">Captains only.</span> Your name must be on the event roster as a Team Captain.
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="captain-label">First Name</Label>
+                    <Input
+                      value={suFirst}
+                      onChange={(e) => setSuFirst(e.target.value)}
+                      placeholder="First"
+                      required
+                      className="captain-input"
+                    />
+                  </div>
+                  <div>
+                    <Label className="captain-label">Last Name</Label>
+                    <Input
+                      value={suLast}
+                      onChange={(e) => setSuLast(e.target.value)}
+                      placeholder="Last"
+                      required
+                      className="captain-input"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="captain-label">Email (optional)</Label>
+                    <Input
+                      type="email"
+                      value={suEmail}
+                      onChange={(e) => setSuEmail(e.target.value)}
+                      placeholder="captain@email.com"
+                      className="captain-input"
+                    />
+                  </div>
+                  <div>
+                    <Label className="captain-label">Phone (optional)</Label>
+                    <Input
+                      value={suPhone}
+                      onChange={(e) => setSuPhone(e.target.value)}
+                      placeholder="555-555-5555"
+                      className="captain-input"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="captain-label">Create Password</Label>
+                  <Input
+                    type="password"
+                    value={suPass}
+                    onChange={(e) => setSuPass(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    required
+                    minLength={6}
+                    className="captain-input"
+                  />
+                </div>
+                <div>
+                  <Label className="captain-label">Confirm Password</Label>
+                  <Input
+                    type="password"
+                    value={suConfirm}
+                    onChange={(e) => setSuConfirm(e.target.value)}
+                    placeholder="Repeat password"
+                    required
+                    className="captain-input"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={signUp.isPending || !eventId}
+                  className="captain-submit-btn w-full"
+                >
+                  {signUp.isPending ? "Verifying…" : "⭐ Activate Captain Account"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Responsibility reminder */}
+        <div className="captain-responsibilities">
+          <h3 className="text-gold-400 font-bold text-sm uppercase tracking-widest mb-3">Captain Responsibilities</h3>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="captain-resp-card">
+              <div className="text-2xl mb-1">✅</div>
+              <div className="text-xs text-gray-300">Verify all team members</div>
+            </div>
+            <div className="captain-resp-card">
+              <div className="text-2xl mb-1">📋</div>
+              <div className="text-xs text-gray-300">Confirm roster completeness</div>
+            </div>
+            <div className="captain-resp-card">
+              <div className="text-2xl mb-1">🎳</div>
+              <div className="text-xs text-gray-300">Lead team to the lanes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

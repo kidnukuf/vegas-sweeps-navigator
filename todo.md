@@ -81,18 +81,18 @@
 
 ## Phase 8: Bowler & Captain Sign-Up / Sign-In System
 
-- [ ] Add bowler_accounts table to schema (bowlerId FK, passwordHash, email, createdAt)
-- [ ] Add captain_accounts table (bowlerId FK, teamId FK, passwordHash, email, createdAt)
-- [ ] tRPC: bowlerAuth.signUp — verify name against bowlers table, hash password, create account
-- [ ] tRPC: bowlerAuth.signIn — verify credentials, return JWT
-- [ ] tRPC: bowlerAuth.me — return bowler + hotel + payment + team + lane data
-- [ ] tRPC: captainAuth.signUp — verify name + captain status, hash password, create account
-- [ ] tRPC: captainAuth.signIn — verify credentials, return JWT
-- [ ] tRPC: captainAuth.me — return captain + full team roster + completion stats
-- [ ] Bowler Portal page (/bowler-login): consumer-style warm design, sign-up/sign-in tabs
-- [ ] Bowler Dashboard (/bowler): personal profile card, QR ticket, team info, event details, hotel/payment status
-- [ ] Team Captain Portal page (/captain-login): bold team-management design, sign-up/sign-in tabs
-- [ ] Captain Dashboard (/captain): team roster with verify buttons, completion ring, stats, shareable link
-- [ ] Event Director login gate: protect /admin with its own PIN/password login page
-- [ ] Update Home.tsx with distinct entry cards for Bowler, Captain, and Event Director
-- [ ] Run tests and save checkpoint
+- [x] Add bowler_accounts table to schema (bowlerId FK, passwordHash, email, createdAt)
+- [x] Add captain_accounts table (bowlerId FK, teamId FK, passwordHash, email, createdAt)
+- [x] tRPC: bowlerAuth.signUp — verify name against bowlers table, hash password, create account
+- [x] tRPC: bowlerAuth.signIn — verify credentials, return JWT
+- [x] tRPC: bowlerAuth.me — return bowler + hotel + payment + team + lane data
+- [x] tRPC: captainAuth.signUp — verify name + captain status, hash password, create account
+- [x] tRPC: captainAuth.signIn — verify credentials, return JWT
+- [x] tRPC: captainAuth.me — return captain + full team roster + completion stats
+- [x] Bowler Portal page (/bowler-login): consumer-style warm design, sign-up/sign-in tabs
+- [x] Bowler Dashboard (/bowler): personal profile card, QR ticket, team info, event details, hotel/payment status
+- [x] Team Captain Portal page (/captain-login): bold team-management design, sign-up/sign-in tabs
+- [x] Captain Dashboard (/captain): team roster with verify buttons, completion ring, stats, shareable link
+- [x] Event Director login gate: protect /admin with its own PIN/password login page
+- [x] Update Home.tsx with distinct entry cards for Bowler, Captain, and Event Director
+- [x] Run tests and save checkpoint
