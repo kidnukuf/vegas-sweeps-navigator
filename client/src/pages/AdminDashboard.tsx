@@ -138,6 +138,7 @@ export default function AdminDashboard() {
   const [collapsedCenters, setCollapsedCenters] = useState<Set<string>>(new Set());
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
+  const [accountFilter, setAccountFilter] = useState<"all" | "signed_up" | "not_signed_up">("all");
 
   const toggleCenter = (name: string) => setCollapsedCenters((prev) => { const s = new Set(prev); s.has(name) ? s.delete(name) : s.add(name); return s; });
   const toggleTeam = (key: string) => setCollapsedTeams((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
@@ -240,6 +241,8 @@ export default function AdminDashboard() {
 
   const grouped = useMemo(() => {
     const filtered = (bowlers as Bowler[]).filter((b) => {
+      if (accountFilter === "signed_up" && !b.passwordHash) return false;
+      if (accountFilter === "not_signed_up" && !!b.passwordHash) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
@@ -265,13 +268,16 @@ export default function AdminDashboard() {
     return centerMap;
   }, [bowlers, search]);
 
+  const notSignedUpCount = useMemo(() => (bowlers as Bowler[]).filter((b) => !b.passwordHash).length, [bowlers]);
+  const signedUpCount = useMemo(() => (bowlers as Bowler[]).filter((b) => !!b.passwordHash).length, [bowlers]);
+
   const statCards = [
-    { label: "Total", value: (stats as Record<string, unknown>)?.total ?? 0, color: "text-white" },
-    { label: "Pre-Reg", value: (stats as Record<string, unknown>)?.preRegistered ?? 0, color: "text-gray-400" },
-    { label: "Signed Up", value: (stats as Record<string, unknown>)?.signedUp ?? 0, color: "text-blue-400" },
-    { label: "Verified", value: (stats as Record<string, unknown>)?.verified ?? 0, color: "text-green-400" },
-    { label: "Checked In", value: (stats as Record<string, unknown>)?.checkedIn ?? 0, color: "text-yellow-400" },
-    { label: "Unmatched", value: (stats as Record<string, unknown>)?.unmatched ?? 0, color: "text-red-400" },
+    { label: "Total", value: (stats as Record<string, unknown>)?.total ?? 0, color: "text-white", filter: "all" as const },
+    { label: "Pre-Reg", value: (stats as Record<string, unknown>)?.preRegistered ?? 0, color: "text-gray-400", filter: null },
+    { label: "Signed Up", value: signedUpCount, color: "text-green-400", filter: "signed_up" as const },
+    { label: "Not Signed Up", value: notSignedUpCount, color: "text-orange-400", filter: "not_signed_up" as const },
+    { label: "Checked In", value: (stats as Record<string, unknown>)?.checkedIn ?? 0, color: "text-yellow-400", filter: null },
+    { label: "Unmatched", value: (stats as Record<string, unknown>)?.unmatched ?? 0, color: "text-red-400", filter: null },
   ];
 
   return (
@@ -306,10 +312,20 @@ export default function AdminDashboard() {
       <div className="bg-[#111] border-b border-white/10 px-4 py-3">
         <div className="max-w-7xl mx-auto grid grid-cols-3 sm:grid-cols-6 gap-3">
           {statCards.map((s) => (
-            <div key={s.label} className="text-center">
+            <button
+              key={s.label}
+              onClick={() => { if (s.filter) { setAccountFilter(s.filter); setActiveTab("roster"); } }}
+              className={`text-center rounded-xl px-2 py-1.5 transition-colors ${
+                s.filter
+                  ? accountFilter === s.filter
+                    ? "bg-yellow-500/20 ring-1 ring-yellow-500/50 cursor-pointer"
+                    : "hover:bg-white/5 cursor-pointer"
+                  : "cursor-default"
+              }`}
+            >
               <div className={`text-2xl font-black ${s.color}`}>{String(s.value)}</div>
-              <div className="text-xs text-gray-500">{s.label}</div>
-            </div>
+              <div className={`text-xs ${s.filter ? "text-gray-400" : "text-gray-500"}`}>{s.label}</div>
+            </button>
           ))}
         </div>
       </div>
@@ -332,6 +348,14 @@ export default function AdminDashboard() {
               <input type="text" placeholder="🔍 Search by name, ID, phone, center, team..." value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 min-w-[200px] px-4 py-3 bg-[#1a1a1a] border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500" />
+              {accountFilter !== "all" && (
+                <button
+                  onClick={() => setAccountFilter("all")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/40 text-orange-300 rounded-xl text-xs font-semibold hover:bg-orange-500/30 transition-colors"
+                >
+                  {accountFilter === "not_signed_up" ? "⚠ Not Signed Up" : "✓ Signed Up"} ✕
+                </button>
+              )}
               <div className="flex gap-1 bg-[#1a1a1a] border border-white/20 rounded-xl p-1">
                 <button onClick={() => setViewMode("hierarchy")} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${viewMode === "hierarchy" ? "bg-yellow-500 text-black" : "text-gray-400 hover:text-white"}`}>Hierarchy</button>
                 <button onClick={() => setViewMode("flat")} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${viewMode === "flat" ? "bg-yellow-500 text-black" : "text-gray-400 hover:text-white"}`}>Flat List</button>
@@ -363,6 +387,8 @@ export default function AdminDashboard() {
                     </tr></thead>
                     <tbody>
                       {(bowlers as Bowler[]).filter((b) => {
+                        if (accountFilter === "signed_up" && !b.passwordHash) return false;
+                        if (accountFilter === "not_signed_up" && !!b.passwordHash) return false;
                         if (!search) return true;
                         const q = search.toLowerCase();
                         return String(b.legalFirstName ?? "").toLowerCase().includes(q) || String(b.legalLastName ?? "").toLowerCase().includes(q) || String(b.scantronId ?? "").includes(q) || String(b.phone ?? "").includes(q) || String(b.centerName ?? "").toLowerCase().includes(q) || String(b.teamName ?? "").toLowerCase().includes(q);
