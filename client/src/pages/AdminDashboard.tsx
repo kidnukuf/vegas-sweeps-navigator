@@ -150,6 +150,16 @@ export default function AdminDashboard() {
   const { data: doormen = [], refetch: refetchDoormen } = trpc.appAuth.listDoormen.useQuery({ eventId: EVENT_ID });
   const unmatchedBowlers = useMemo(() => (bowlers as Bowler[]).filter((b) => b.registrationStatus === "unmatched"), [bowlers]);
 
+  const resetBowlerPassword = trpc.bowlers.resetPassword.useMutation({
+    onSuccess: () => {
+      toast.success("Password cleared — bowler can now re-register");
+      setEditingBowler(null);
+      setConfirmReset(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const [confirmReset, setConfirmReset] = useState(false);
+
   const updateBowler = trpc.bowlers.update.useMutation({
     onSuccess: () => { toast.success("Bowler updated"); refetch(); setEditingBowler(null); },
     onError: (e) => toast.error(e.message),
@@ -639,7 +649,35 @@ export default function AdminDashboard() {
                 className="flex-1 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition-colors">
                 {updateBowler.isPending ? "Saving..." : "Save Changes"}
               </button>
-              <button onClick={() => setEditingBowler(null)} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
+              <button onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
+            </div>
+
+            {/* Reset Password section */}
+            <div className="mt-4 pt-4 border-t border-white/10">
+              {!confirmReset ? (
+                <button
+                  onClick={() => setConfirmReset(true)}
+                  disabled={!editingBowler.passwordHash}
+                  className="w-full py-2 bg-red-900/40 hover:bg-red-800/60 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {editingBowler.passwordHash ? "🔑 Reset Password (allow bowler to re-register)" : "No account — password not set"}
+                </button>
+              ) : (
+                <div className="bg-red-900/20 border border-red-500/40 rounded-lg p-3 space-y-2">
+                  <p className="text-red-300 text-sm font-semibold">Clear this bowler's password?</p>
+                  <p className="text-gray-400 text-xs">Their account will be removed and they will need to sign up again on the Bowler Portal.</p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => resetBowlerPassword.mutate({ id: editingBowler.id as number, actorRole: "EventDirector" })}
+                      disabled={resetBowlerPassword.isPending}
+                      className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-sm transition-colors"
+                    >
+                      {resetBowlerPassword.isPending ? "Resetting..." : "Yes, Reset Password"}
+                    </button>
+                    <button onClick={() => setConfirmReset(false)} className="flex-1 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -120,6 +120,23 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    resetPassword: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        actorRole: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await updateBowler(input.id, { passwordHash: null, registrationStatus: "pre_registered" });
+        await writeAuditLog({
+          actorRole: input.actorRole ?? "EventDirector",
+          action: "reset_password",
+          targetId: input.id,
+          targetType: "bowler",
+          details: "Password cleared by Event Director",
+        });
+        return { success: true };
+      }),
+
     matchForSignup: publicProcedure
       .input(z.object({
         phone: z.string().optional().default(""),
