@@ -3,6 +3,7 @@
  * Sign-up / sign-in for Bowlers and Team Captains.
  * Uses the existing bowlers.passwordHash column — no new table needed.
  * JWT is stored in localStorage (separate from the Manus OAuth session cookie).
+ * Cloudflare Turnstile token is verified server-side on every sign-in/sign-up.
  */
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -13,6 +14,7 @@ import { rawQuery } from "../db";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
 
 function signToken(payload: object) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_TTL });
@@ -23,6 +25,41 @@ function verifyToken(token: string) {
     return jwt.verify(token, JWT_SECRET) as Record<string, unknown>;
   } catch {
     return null;
+  }
+}
+
+// ─── Cloudflare Turnstile server-side verification ────────────────────────────
+async function verifyTurnstile(token: string, ip?: string): Promise<void> {
+  // In test/CI environments where no secret is configured, skip verification
+  if (!TURNSTILE_SECRET || TURNSTILE_SECRET === "") return;
+
+  const body = new URLSearchParams({
+    secret: TURNSTILE_SECRET,
+    response: token,
+    ...(ip ? { remoteip: ip } : {}),
+  });
+
+  let result: { success: boolean; "error-codes"?: string[] };
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
+    result = (await res.json()) as typeof result;
+  } catch {
+    // Network error — fail open in dev, fail closed in production
+    if (process.env.NODE_ENV === "production") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Security check could not be verified. Please try again." });
+    }
+    return;
+  }
+
+  if (!result.success) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Security check failed. Please refresh the page and try again.",
+    });
   }
 }
 
@@ -160,9 +197,15 @@ export const bowlerAuthRouter = router({
         password: z.string().min(6, "Password must be at least 6 characters"),
         email: z.string().email().optional(),
         phone: z.string().optional(),
+        turnstileToken: z.string().min(1, "Security check is required"),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Verify Turnstile token first
+      const ip = (ctx as any)?.req?.headers?.["cf-connecting-ip"] as string | undefined
+        ?? (ctx as any)?.req?.ip as string | undefined;
+      await verifyTurnstile(input.turnstileToken, ip);
+
       const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId);
 
       if (!bowler) {
@@ -215,9 +258,15 @@ export const bowlerAuthRouter = router({
         lastName: z.string().min(1),
         eventId: z.number(),
         password: z.string().min(1),
+        turnstileToken: z.string().min(1, "Security check is required"),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Verify Turnstile token first
+      const ip = (ctx as any)?.req?.headers?.["cf-connecting-ip"] as string | undefined
+        ?? (ctx as any)?.req?.ip as string | undefined;
+      await verifyTurnstile(input.turnstileToken, ip);
+
       const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId);
 
       if (!bowler) {

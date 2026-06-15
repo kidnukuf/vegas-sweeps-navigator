@@ -96,3 +96,11 @@
 - [x] Event Director login gate: protect /admin with its own PIN/password login page
 - [x] Update Home.tsx with distinct entry cards for Bowler, Captain, and Event Director
 - [x] Run tests and save checkpoint
+
+## Phase 9: Cloudflare Turnstile + Admin Sign-Up Visibility
+
+- [x] Add Cloudflare Turnstile widget to Bowler Login sign-in and sign-up forms
+- [x] Add Cloudflare Turnstile widget to Captain Login sign-in and sign-up forms
+- [x] Add server-side Turnstile token verification in bowlerAuth signIn and signUp procedures
+- [x] Add green highlight/badge to Admin Dashboard roster rows for bowlers who have signed up (passwordHash set)
+- [x] Add "Signed Up" filter/column to Admin Dashboard so ED can see all registered bowlers and captains at a glance

@@ -1,10 +1,12 @@
 /**
- * BowlerLogin — sign-up / sign-in for Bowlers and Team Captains
+ * BowlerLogin — sign-up / sign-in for Bowlers
  * Design: warm, consumer-app feel — deep navy/purple gradient, gold accents,
  * bowling imagery. Completely different from the admin panel.
+ * Includes Cloudflare Turnstile bot protection on all forms.
  */
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +28,8 @@ export function clearBowlerSession() {
   localStorage.removeItem(BOWLER_IS_CAPTAIN_KEY);
 }
 
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function BowlerLogin() {
   const [, navigate] = useLocation();
@@ -35,6 +39,8 @@ export default function BowlerLogin() {
   const [siFirst, setSiFirst] = useState("");
   const [siLast, setSiLast] = useState("");
   const [siPass, setSiPass] = useState("");
+  const [siToken, setSiToken] = useState("");
+  const siTurnstileRef = useRef<any>(null);
 
   // Sign-up state
   const [suFirst, setSuFirst] = useState("");
@@ -42,6 +48,8 @@ export default function BowlerLogin() {
   const [suPass, setSuPass] = useState("");
   const [suPass2, setSuPass2] = useState("");
   const [suEmail, setSuEmail] = useState("");
+  const [suToken, setSuToken] = useState("");
+  const suTurnstileRef = useRef<any>(null);
 
   const eventQuery = trpc.event.active.useQuery();
   const eventId: number = (eventQuery.data?.id as number | undefined) ?? 1;
@@ -53,12 +61,16 @@ export default function BowlerLogin() {
       localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, data.isCapitain ? "1" : "0");
       toast.success("Welcome back!");
       if (data.isCapitain) {
-        navigate("/captain-dashboard");
+        navigate("/captain");
       } else {
-        navigate("/bowler-dashboard");
+        navigate("/bowler");
       }
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      siTurnstileRef.current?.reset();
+      setSiToken("");
+    },
   });
 
   const signUp = trpc.bowlerAuth.signUp.useMutation({
@@ -68,30 +80,37 @@ export default function BowlerLogin() {
       localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, data.isCapitain ? "1" : "0");
       toast.success("Account created! Welcome to Vegas Sweeps.");
       if (data.isCapitain) {
-        navigate("/captain-dashboard");
+        navigate("/captain");
       } else {
-        navigate("/bowler-dashboard");
+        navigate("/bowler");
       }
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      suTurnstileRef.current?.reset();
+      setSuToken("");
+    },
   });
 
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!siFirst || !siLast || !siPass) return toast.error("Please fill in all fields.");
-    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId });
+    if (!siToken) return toast.error("Please complete the security check.");
+    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId, turnstileToken: siToken });
   }
 
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!suFirst || !suLast || !suPass) return toast.error("Please fill in all fields.");
     if (suPass !== suPass2) return toast.error("Passwords do not match.");
+    if (!suToken) return toast.error("Please complete the security check.");
     signUp.mutate({
       firstName: suFirst.trim(),
       lastName: suLast.trim(),
       password: suPass,
       email: suEmail || undefined,
       eventId,
+      turnstileToken: suToken,
     });
   }
 
@@ -133,7 +152,7 @@ export default function BowlerLogin() {
 
         {/* ── Auth Card ── */}
         <div className="bowler-auth-card w-full max-w-md">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
+          <Tabs value={tab} onValueChange={(v) => { setTab(v as "signin" | "signup"); setSiToken(""); setSuToken(""); }}>
             <TabsList className="bowler-tabs-list w-full mb-6">
               <TabsTrigger value="signin" className="bowler-tab flex-1">Sign In</TabsTrigger>
               <TabsTrigger value="signup" className="bowler-tab flex-1">Create Account</TabsTrigger>
@@ -175,9 +194,22 @@ export default function BowlerLogin() {
                     autoComplete="current-password"
                   />
                 </div>
+
+                {/* Turnstile widget */}
+                <div className="flex justify-center pt-1">
+                  <Turnstile
+                    ref={siTurnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setSiToken(token)}
+                    onExpire={() => setSiToken("")}
+                    onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
+                    options={{ theme: "dark", size: "normal" }}
+                  />
+                </div>
+
                 <Button
                   type="submit"
-                  disabled={signIn.isPending}
+                  disabled={signIn.isPending || !siToken}
                   className="bowler-btn-primary w-full"
                 >
                   {signIn.isPending ? "Signing in…" : "Sign In →"}
@@ -255,9 +287,22 @@ export default function BowlerLogin() {
                     autoComplete="new-password"
                   />
                 </div>
+
+                {/* Turnstile widget */}
+                <div className="flex justify-center pt-1">
+                  <Turnstile
+                    ref={suTurnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setSuToken(token)}
+                    onExpire={() => setSuToken("")}
+                    onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
+                    options={{ theme: "dark", size: "normal" }}
+                  />
+                </div>
+
                 <Button
                   type="submit"
-                  disabled={signUp.isPending}
+                  disabled={signUp.isPending || !suToken}
                   className="bowler-btn-primary w-full"
                 >
                   {signUp.isPending ? "Verifying name…" : "Create My Account →"}
@@ -272,8 +317,6 @@ export default function BowlerLogin() {
             </TabsContent>
           </Tabs>
         </div>
-
-
       </div>
     </div>
   );

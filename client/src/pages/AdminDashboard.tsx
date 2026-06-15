@@ -356,17 +356,25 @@ export default function AdminDashboard() {
                         if (!search) return true;
                         const q = search.toLowerCase();
                         return String(b.legalFirstName ?? "").toLowerCase().includes(q) || String(b.legalLastName ?? "").toLowerCase().includes(q) || String(b.scantronId ?? "").includes(q) || String(b.phone ?? "").includes(q) || String(b.centerName ?? "").toLowerCase().includes(q) || String(b.teamName ?? "").toLowerCase().includes(q);
-                      }).map((b) => (
-                        <tr key={String(b.id)} className="border-b border-white/5 hover:bg-white/5">
+                      }).map((b) => {
+                        const hasAccount = !!b.passwordHash;
+                        return (
+                        <tr key={String(b.id)} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${hasAccount ? "bg-green-950/40" : ""}`}>
                           <td className="px-4 py-2 font-mono text-yellow-400 text-xs">{String(b.scantronId ?? "—")}</td>
-                          <td className="px-4 py-2 font-semibold">{b.isCapitain ? "⭐ " : ""}{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</td>
+                          <td className="px-4 py-2 font-semibold">
+                            <div className="flex items-center gap-2">
+                              <span>{b.isCapitain ? "⭐ " : ""}{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</span>
+                              {hasAccount && <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30">✓ Signed Up</span>}
+                            </div>
+                          </td>
                           <td className="px-4 py-2 text-gray-400 text-xs">{String(b.centerName ?? "—")}</td>
                           <td className="px-4 py-2 text-gray-400 text-xs">{String(b.teamName ?? "—")}</td>
                           <td className="px-4 py-2 text-gray-400">{String(b.phone ?? "—")}</td>
                           <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[String(b.registrationStatus ?? "pre_registered")]}`}>{STATUS_LABELS[String(b.registrationStatus ?? "pre_registered")] ?? String(b.registrationStatus)}</span></td>
                           <td className="px-4 py-2"><button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? "") }); }} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs transition-colors">Edit</button></td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -415,10 +423,17 @@ export default function AdminDashboard() {
                               </tr>
                             </thead>
                             <tbody>
-                              {members.map((b) => (
-                                <tr key={String(b.id)} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                              {members.map((b) => {
+                                const hasAccount = !!b.passwordHash;
+                                return (
+                                <tr key={String(b.id)} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${hasAccount ? "bg-green-950/40" : ""}`}>
                                   <td className="px-4 py-2 font-mono text-yellow-400 text-xs">{String(b.scantronId ?? "—")}</td>
-                                  <td className="px-4 py-2 font-semibold">{b.isCapitain ? "⭐ " : ""}{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</td>
+                                  <td className="px-4 py-2 font-semibold">
+                                    <div className="flex items-center gap-2">
+                                      <span>{b.isCapitain ? "⭐ " : ""}{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</span>
+                                      {hasAccount && <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30">✓ Signed Up</span>}
+                                    </div>
+                                  </td>
                                   <td className="px-4 py-2 text-gray-400">{String(b.phone ?? "—")}</td>
                                   <td className="px-4 py-2 text-gray-400 text-xs">{String(b.checkinDate ?? "—")}</td>
                                   <td className="px-4 py-2 text-gray-400 text-xs">{String(b.roomType ?? "—")}</td>
@@ -433,7 +448,8 @@ export default function AdminDashboard() {
                                       className="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs transition-colors">Edit</button>
                                   </td>
                                 </tr>
-                              ))}
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

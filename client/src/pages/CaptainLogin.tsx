@@ -2,15 +2,19 @@
  * CaptainLogin — Team Captain Portal sign-up / sign-in
  * Bold, authoritative design distinct from the bowler warm portal.
  * Captains must be flagged as isCapitain=1 in the bowlers table.
+ * Includes Cloudflare Turnstile bot protection on all forms.
  */
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 
 export default function CaptainLogin() {
   const [, navigate] = useLocation();
@@ -20,6 +24,8 @@ export default function CaptainLogin() {
   const [siFirst, setSiFirst] = useState("");
   const [siLast, setSiLast] = useState("");
   const [siPass, setSiPass] = useState("");
+  const [siToken, setSiToken] = useState("");
+  const siTurnstileRef = useRef<any>(null);
 
   // Sign-up state
   const [suFirst, setSuFirst] = useState("");
@@ -28,6 +34,8 @@ export default function CaptainLogin() {
   const [suPhone, setSuPhone] = useState("");
   const [suPass, setSuPass] = useState("");
   const [suConfirm, setSuConfirm] = useState("");
+  const [suToken, setSuToken] = useState("");
+  const suTurnstileRef = useRef<any>(null);
 
   const eventQuery = trpc.event.active.useQuery();
   const eventId = eventQuery.data?.id ?? 0;
@@ -36,6 +44,8 @@ export default function CaptainLogin() {
     onSuccess: (data) => {
       if (!data.isCapitain) {
         toast.error("This account is not a Team Captain. Use the Bowler Portal instead.");
+        siTurnstileRef.current?.reset();
+        setSiToken("");
         return;
       }
       localStorage.setItem("captainToken", data.token);
@@ -43,13 +53,19 @@ export default function CaptainLogin() {
       toast.success("Welcome back, Captain!");
       navigate("/captain");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      siTurnstileRef.current?.reset();
+      setSiToken("");
+    },
   });
 
   const signUp = trpc.bowlerAuth.signUp.useMutation({
     onSuccess: (data) => {
       if (!data.isCapitain) {
         toast.error("Your name was found, but you are not listed as a Team Captain. Use the Bowler Portal instead.");
+        suTurnstileRef.current?.reset();
+        setSuToken("");
         return;
       }
       localStorage.setItem("captainToken", data.token);
@@ -57,20 +73,26 @@ export default function CaptainLogin() {
       toast.success("Account created! Welcome, Captain.");
       navigate("/captain");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      suTurnstileRef.current?.reset();
+      setSuToken("");
+    },
   });
 
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) { toast.error("Event not loaded yet."); return; }
-    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass });
+    if (!siToken) { toast.error("Please complete the security check."); return; }
+    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass, turnstileToken: siToken });
   }
 
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) { toast.error("Event not loaded yet."); return; }
     if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
-    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), password: suPass, email: suEmail || undefined, phone: suPhone || undefined });
+    if (!suToken) { toast.error("Please complete the security check."); return; }
+    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken });
   }
 
   return (
@@ -108,7 +130,7 @@ export default function CaptainLogin() {
 
         {/* Auth card */}
         <div className="captain-auth-card">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
+          <Tabs value={tab} onValueChange={(v) => { setTab(v as "signin" | "signup"); setSiToken(""); setSuToken(""); }}>
             <TabsList className="captain-tabs-list">
               <TabsTrigger value="signin" className="captain-tab">Sign In</TabsTrigger>
               <TabsTrigger value="signup" className="captain-tab">Create Account</TabsTrigger>
@@ -153,9 +175,22 @@ export default function CaptainLogin() {
                     className="captain-input"
                   />
                 </div>
+
+                {/* Turnstile widget */}
+                <div className="flex justify-center pt-1">
+                  <Turnstile
+                    ref={siTurnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setSiToken(token)}
+                    onExpire={() => setSiToken("")}
+                    onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
+                    options={{ theme: "dark", size: "normal" }}
+                  />
+                </div>
+
                 <Button
                   type="submit"
-                  disabled={signIn.isPending || !eventId}
+                  disabled={signIn.isPending || !eventId || !siToken}
                   className="captain-submit-btn w-full"
                 >
                   {signIn.isPending ? "Signing in…" : "⭐ Enter Command Center"}
@@ -235,9 +270,22 @@ export default function CaptainLogin() {
                     className="captain-input"
                   />
                 </div>
+
+                {/* Turnstile widget */}
+                <div className="flex justify-center pt-1">
+                  <Turnstile
+                    ref={suTurnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setSuToken(token)}
+                    onExpire={() => setSuToken("")}
+                    onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
+                    options={{ theme: "dark", size: "normal" }}
+                  />
+                </div>
+
                 <Button
                   type="submit"
-                  disabled={signUp.isPending || !eventId}
+                  disabled={signUp.isPending || !eventId || !suToken}
                   className="captain-submit-btn w-full"
                 >
                   {signUp.isPending ? "Verifying…" : "⭐ Activate Captain Account"}
