@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
@@ -35,10 +36,15 @@ export default function CaptainLogin() {
   const [suPass, setSuPass] = useState("");
   const [suConfirm, setSuConfirm] = useState("");
   const [suToken, setSuToken] = useState("");
+  const [suCenterId, setSuCenterId] = useState<number | null>(null);
+  const [suCenterName, setSuCenterName] = useState<string>("");
+  const [showCenterPicker, setShowCenterPicker] = useState(false);
+  const [centerSearch, setCenterSearch] = useState("");
   const suTurnstileRef = useRef<any>(null);
 
   const eventQuery = trpc.event.active.useQuery();
   const eventId = eventQuery.data?.id ?? 0;
+  const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: Number(eventId) }, { enabled: tab === "signup" && Number(eventId) > 0 });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
     onSuccess: (data) => {
@@ -90,10 +96,15 @@ export default function CaptainLogin() {
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) { toast.error("Event not loaded yet."); return; }
+    if (!suCenterId) { toast.error("Please select your bowling center."); return; }
     if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
     if (!suToken) { toast.error("Please complete the security check."); return; }
-    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken });
+    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken });
   }
+
+  const filteredCenters = (centersQuery.data ?? []).filter((c) =>
+    c.centerName.toLowerCase().includes(centerSearch.toLowerCase())
+  );
 
   return (
     <div className="captain-login-bg min-h-screen flex flex-col">
@@ -104,7 +115,7 @@ export default function CaptainLogin() {
         </button>
         <div className="flex items-center gap-2">
           <span className="text-2xl">⭐</span>
-          <span className="font-black text-white text-lg tracking-widest uppercase">Captain Portal</span>
+          <span className="font-black text-white text-lg tracking-widest uppercase">B.O.B. Roll-off Passport</span>
         </div>
         <div className="w-24" />
       </header>
@@ -226,6 +237,22 @@ export default function CaptainLogin() {
                     />
                   </div>
                 </div>
+                {/* ── Bowling Center picker ── */}
+                <div>
+                  <Label className="captain-label">Bowling Center</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setCenterSearch(""); setShowCenterPicker(true); }}
+                    className="captain-input w-full text-left flex items-center justify-between gap-2 cursor-pointer"
+                  >
+                    {suCenterName ? (
+                      <span className="text-white truncate">{suCenterName}</span>
+                    ) : (
+                      <span className="text-white/40">Select your bowling center…</span>
+                    )}
+                    <span className="text-white/50 text-xs shrink-0">▼</span>
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="captain-label">Email (optional)</Label>
@@ -294,6 +321,48 @@ export default function CaptainLogin() {
             </TabsContent>
           </Tabs>
         </div>
+
+      {/* ── Center Picker Dialog ── */}
+      <Dialog open={showCenterPicker} onOpenChange={setShowCenterPicker}>
+        <DialogContent className="bg-[#0a0a1a] border border-yellow-500/20 text-white max-w-sm w-full max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-bold">Select Your Bowling Center</DialogTitle>
+          </DialogHeader>
+          <Input
+            className="captain-input mt-2 shrink-0"
+            placeholder="Search centers…"
+            value={centerSearch}
+            onChange={(e) => setCenterSearch(e.target.value)}
+            autoFocus
+          />
+          <div className="overflow-y-auto flex-1 mt-3 space-y-1 pr-1">
+            {centersQuery.isLoading && (
+              <p className="text-white/50 text-sm text-center py-4">Loading centers…</p>
+            )}
+            {!centersQuery.isLoading && filteredCenters.length === 0 && (
+              <p className="text-white/50 text-sm text-center py-4">No centers found.</p>
+            )}
+            {filteredCenters.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setSuCenterId(c.id);
+                  setSuCenterName(c.centerName);
+                  setShowCenterPicker(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  suCenterId === c.id
+                    ? "bg-yellow-500/30 text-yellow-300 font-semibold"
+                    : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                {c.centerName}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
         {/* Responsibility reminder */}
         <div className="captain-responsibilities">

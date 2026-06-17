@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 // ─── Local storage keys ───────────────────────────────────────────────────────
@@ -49,10 +50,15 @@ export default function BowlerLogin() {
   const [suPass2, setSuPass2] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suToken, setSuToken] = useState("");
+  const [suCenterId, setSuCenterId] = useState<number | null>(null);
+  const [suCenterName, setSuCenterName] = useState<string>("");
+  const [showCenterPicker, setShowCenterPicker] = useState(false);
+  const [centerSearch, setCenterSearch] = useState("");
   const suTurnstileRef = useRef<any>(null);
 
   const eventQuery = trpc.event.active.useQuery();
   const eventId: number = (eventQuery.data?.id as number | undefined) ?? 1;
+  const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId }, { enabled: tab === "signup" });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
     onSuccess: (data) => {
@@ -102,6 +108,7 @@ export default function BowlerLogin() {
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!suFirst || !suLast || !suPass) return toast.error("Please fill in all fields.");
+    if (!suCenterId) return toast.error("Please select your bowling center.");
     if (suPass !== suPass2) return toast.error("Passwords do not match.");
     if (!suToken) return toast.error("Please complete the security check.");
     signUp.mutate({
@@ -110,9 +117,14 @@ export default function BowlerLogin() {
       password: suPass,
       email: suEmail || undefined,
       eventId,
+      centerId: suCenterId,
       turnstileToken: suToken,
     });
   }
+
+  const filteredCenters = (centersQuery.data ?? []).filter((c) =>
+    c.centerName.toLowerCase().includes(centerSearch.toLowerCase())
+  );
 
   return (
     <div className="bowler-portal-bg min-h-screen flex flex-col">
@@ -225,10 +237,10 @@ export default function BowlerLogin() {
 
             {/* ── SIGN UP ── */}
             <TabsContent value="signup">
-              <div className="bowler-info-box mb-4">
+                <div className="bowler-info-box mb-4">
                 <span className="text-amber-300 font-semibold text-sm">📋 Name Verification</span>
                 <p className="text-white/70 text-xs mt-1">
-                  Your name must match the roster exactly. If you have trouble, contact your Event Director.
+                  Your first name, last name, and bowling center must match the roster exactly. If you have trouble, contact your Event Director.
                 </p>
               </div>
               <form onSubmit={handleSignUp} className="space-y-4">
@@ -253,6 +265,22 @@ export default function BowlerLogin() {
                       autoComplete="family-name"
                     />
                   </div>
+                </div>
+                {/* ── Bowling Center picker ── */}
+                <div>
+                  <Label className="bowler-label">Bowling Center</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setCenterSearch(""); setShowCenterPicker(true); }}
+                    className="bowler-input w-full text-left flex items-center justify-between gap-2 cursor-pointer"
+                  >
+                    {suCenterName ? (
+                      <span className="text-white truncate">{suCenterName}</span>
+                    ) : (
+                      <span className="text-white/40">Select your bowling center…</span>
+                    )}
+                    <span className="text-white/50 text-xs shrink-0">▼</span>
+                  </button>
                 </div>
                 <div>
                   <Label className="bowler-label">Email <span className="text-white/40">(optional)</span></Label>
@@ -318,6 +346,48 @@ export default function BowlerLogin() {
           </Tabs>
         </div>
       </div>
+
+      {/* ── Center Picker Dialog ── */}
+      <Dialog open={showCenterPicker} onOpenChange={setShowCenterPicker}>
+        <DialogContent className="bg-[#1a1040] border border-white/10 text-white max-w-sm w-full max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-bold">Select Your Bowling Center</DialogTitle>
+          </DialogHeader>
+          <Input
+            className="bowler-input mt-2 shrink-0"
+            placeholder="Search centers…"
+            value={centerSearch}
+            onChange={(e) => setCenterSearch(e.target.value)}
+            autoFocus
+          />
+          <div className="overflow-y-auto flex-1 mt-3 space-y-1 pr-1">
+            {centersQuery.isLoading && (
+              <p className="text-white/50 text-sm text-center py-4">Loading centers…</p>
+            )}
+            {!centersQuery.isLoading && filteredCenters.length === 0 && (
+              <p className="text-white/50 text-sm text-center py-4">No centers found.</p>
+            )}
+            {filteredCenters.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setSuCenterId(c.id);
+                  setSuCenterName(c.centerName);
+                  setShowCenterPicker(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  suCenterId === c.id
+                    ? "bg-amber-500/30 text-amber-300 font-semibold"
+                    : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                {c.centerName}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

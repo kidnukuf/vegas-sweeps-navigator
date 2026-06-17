@@ -133,4 +133,12 @@
 - [x] Map hotel fields (Check In, Check Out, Room Type, Roommate First Name, Roommate Last Name) from import into hotel_records table
 - [x] Map add-on fields (Guest $15, extra banquet, extra pool party) into payment_records
 - [x] Ensure Phone and Email columns are accepted but treated as optional/empty without errors
-- [ ] Test import end-to-end with the new 24-column bob_roster.csv (452 rows, 0 errors expected)
+- [x] Test import end-to-end with the new 22-column bob_roster.csv (452 rows, 0 errors expected)
+
+## Phase 13: Center-Verified Bowler Sign-Up + Header Rename (Jun 17)
+
+- [x] Add tRPC procedure listCenters to bowlerAuth router — returns distinct center names for the active event
+- [x] Update bowlerAuth.signUp to require centerId and verify first name + last name + center all match a roster record
+- [x] Add center selection popup (Dialog) to BowlerLogin sign-up form (populated from DB, searchable)
+- [x] Add center selection popup (Dialog) to CaptainLogin sign-up form (populated from DB, searchable)
+- [x] Update all portal headers (Bowler, Captain, Doorman, Event Director) to show "B.O.B. Roll-off Passport"

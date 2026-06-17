@@ -63,12 +63,17 @@ async function verifyTurnstile(token: string, ip?: string): Promise<void> {
   }
 }
 
-// ─── SHARED: look up a bowler by full name + event ────────────────────────────
+// ─── SHARED: look up a bowler by full name + event (+ optional centerId) ─────
 async function findBowlerByName(
   firstName: string,
   lastName: string,
-  eventId: number
+  eventId: number,
+  centerId?: number
 ) {
+  const centerClause = centerId ? "AND b.centerId = ?" : "";
+  const params: unknown[] = centerId
+    ? [eventId, firstName, lastName, centerId]
+    : [eventId, firstName, lastName];
   const rows = await rawQuery<{
     id: number;
     legalFirstName: string;
@@ -100,8 +105,9 @@ async function findBowlerByName(
      WHERE b.eventId = ?
        AND LOWER(TRIM(b.legalFirstName)) = LOWER(TRIM(?))
        AND LOWER(TRIM(b.legalLastName))  = LOWER(TRIM(?))
+       ${centerClause}
      LIMIT 1`,
-    [eventId, firstName, lastName]
+    params
   );
   return rows[0] ?? null;
 }
@@ -187,6 +193,20 @@ async function getTeamRoster(teamId: number) {
 // ─── ROUTER ───────────────────────────────────────────────────────────────────
 export const bowlerAuthRouter = router({
 
+  // ── LIST CENTERS for sign-up popup ─────────────────────────────────────────
+  listCenters: publicProcedure
+    .input(z.object({ eventId: z.number() }))
+    .query(async ({ input }) => {
+      const rows = await rawQuery<{ id: number; centerName: string }>(
+        `SELECT DISTINCT bc.id, bc.centerName
+         FROM bowling_centers bc
+         INNER JOIN bowlers b ON b.centerId = bc.id AND b.eventId = ?
+         ORDER BY bc.centerName`,
+        [input.eventId]
+      );
+      return rows;
+    }),
+
   // ── BOWLER SIGN-UP ──────────────────────────────────────────────────────────
   signUp: publicProcedure
     .input(
@@ -194,6 +214,7 @@ export const bowlerAuthRouter = router({
         firstName: z.string().min(1),
         lastName: z.string().min(1),
         eventId: z.number(),
+        centerId: z.number().int().positive(),
         password: z.string().min(6, "Password must be at least 6 characters"),
         email: z.string().email().optional(),
         phone: z.string().optional(),
@@ -206,13 +227,14 @@ export const bowlerAuthRouter = router({
         ?? (ctx as any)?.req?.ip as string | undefined;
       await verifyTurnstile(input.turnstileToken, ip);
 
-      const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId);
+      // Look up bowler by first name + last name + center (3-field match)
+      const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId, input.centerId);
 
       if (!bowler) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message:
-            "No bowler found with that name in this event. Please check your spelling or contact your Event Director.",
+            "No bowler found matching that name and bowling center. Please check your spelling or contact your Event Director.",
         });
       }
 
