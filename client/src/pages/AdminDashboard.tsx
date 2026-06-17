@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -142,7 +142,41 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const toggleCenter = (name: string) => setCollapsedCenters((prev) => { const s = new Set(prev); s.has(name) ? s.delete(name) : s.add(name); return s; });
   const toggleTeam = (key: string) => setCollapsedTeams((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
 
-  const EVENT_ID = 1;
+  // ─── Active event selection (multi-event support) ──────────────────────────
+  const SELECTED_EVENT_KEY = "vsn_selected_event_id";
+  const [selectedEventId, setSelectedEventId] = useState<number>(() => {
+    const saved = Number(localStorage.getItem(SELECTED_EVENT_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : 1;
+  });
+  const EVENT_ID = selectedEventId;
+  const selectEvent = (id: number) => {
+    setSelectedEventId(id);
+    localStorage.setItem(SELECTED_EVENT_KEY, String(id));
+  };
+
+  const { data: events = [], refetch: refetchEvents } = trpc.event.list.useQuery();
+  const activeEvent = useMemo(
+    () => (events as Record<string, unknown>[]).find((e) => Number(e.id) === EVENT_ID) ?? null,
+    [events, EVENT_ID]
+  );
+
+  // Event create / rename state
+  const [showEventMenu, setShowEventMenu] = useState(false);
+  const [eventModal, setEventModal] = useState<null | { mode: "create" | "rename"; name: string; year: string; id?: number }>(null);
+
+  const createEventMut = trpc.event.create.useMutation({
+    onSuccess: (res) => {
+      toast.success("Event created");
+      setEventModal(null);
+      refetchEvents();
+      if (res?.id) selectEvent(res.id);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const renameEventMut = trpc.event.rename.useMutation({
+    onSuccess: () => { toast.success("Event renamed"); setEventModal(null); refetchEvents(); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const { data: bowlers = [], isLoading, refetch } = trpc.bowlers.adminList.useQuery({ eventId: EVENT_ID });
   const { data: stats } = trpc.bowlers.stats.useQuery({ eventId: EVENT_ID });
@@ -160,10 +194,31 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   });
   const [confirmReset, setConfirmReset] = useState(false);
 
+  // ─── Permanent bowler deletion ─────────────────────────────────────
+  const [showDeletePanel, setShowDeletePanel] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const deleteBowlerMut = trpc.bowlers.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Bowler permanently deleted");
+      setEditingBowler(null);
+      setShowDeletePanel(false);
+      setDeleteConfirmText("");
+      refetch();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const updateBowler = trpc.bowlers.update.useMutation({
     onSuccess: () => { toast.success("Bowler updated"); refetch(); setEditingBowler(null); },
     onError: (e) => toast.error(e.message),
   });
+
+  // Reset destructive-action panels whenever the edited bowler changes.
+  useEffect(() => {
+    setConfirmReset(false);
+    setShowDeletePanel(false);
+    setDeleteConfirmText("");
+  }, [editingBowler?.id]);
 
   const createDoorman = trpc.appAuth.createDoorman.useMutation({
     onSuccess: () => { toast.success("Doorman created"); refetchDoormen(); setNewDoorman({ designation: "", password: "" }); },
@@ -171,6 +226,11 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   });
 
   const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const eventSlug = useMemo(() => {
+    const name = String(activeEvent?.eventName ?? "event");
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event";
+  }, [activeEvent]);
 
   const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
     const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
@@ -183,7 +243,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const exportFullRoster = () => {
     const rows = (bowlers as Bowler[]);
     if (!rows.length) { toast.error("No data to export"); return; }
-    downloadCSV("vegas-sweeps-full-roster.csv",
+    downloadCSV(`${eventSlug}-full-roster.csv`,
       ["ScantronID","FirstName","LastName","Phone","Email","Center","Team","Status","CheckIn","Room","Banquet","LaneAssignment","SquadTime"],
       rows.map((b) => [b.scantronId,b.legalFirstName,b.legalLastName,b.phone,b.email,b.centerName,b.teamName,b.registrationStatus,b.checkinDate,b.roomType,b.banquetAmount,b.laneAssignment,b.squadTime] as string[])
     );
@@ -202,14 +262,14 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       allRows.push([`=== ${center} (${members.length} bowlers) ===`, "", "", "", "", "", ""]);
       members.forEach((b) => allRows.push([center,b.scantronId,b.legalFirstName,b.legalLastName,b.teamName,b.registrationStatus,b.phone] as string[]));
     });
-    downloadCSV("vegas-sweeps-by-center.csv", headers, allRows);
+    downloadCSV(`${eventSlug}-by-center.csv`, headers, allRows);
     toast.success("Per-center export done"); setShowExportMenu(false);
   };
 
   const exportCheckedIn = () => {
     const rows = (bowlers as Bowler[]).filter((b) => b.registrationStatus === "checked_in");
     if (!rows.length) { toast.error("No checked-in bowlers yet"); return; }
-    downloadCSV("vegas-sweeps-checkedin.csv",
+    downloadCSV(`${eventSlug}-checkedin.csv`,
       ["ScantronID","FirstName","LastName","Center","Team","Phone","LaneAssignment","SquadTime"],
       rows.map((b) => [b.scantronId,b.legalFirstName,b.legalLastName,b.centerName,b.teamName,b.phone,b.laneAssignment,b.squadTime] as string[])
     );
@@ -219,7 +279,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const exportAuditLog = () => {
     const logs = (auditLog as Record<string, unknown>[]);
     if (!logs.length) { toast.error("No audit log entries yet"); return; }
-    downloadCSV("vegas-sweeps-audit-log.csv",
+    downloadCSV(`${eventSlug}-audit-log.csv`,
       ["Timestamp","Action","ActorRole","ActorId","TargetType","TargetId","Details"],
       logs.map((l) => [l.createdAt,l.action,l.actorRole,l.actorId,l.targetType,l.targetId,l.details] as string[])
     );
@@ -303,8 +363,48 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 </div>
               )}
             </div>
+            <div className="relative">
+              <button onClick={() => setShowEventMenu(!showEventMenu)} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">🗓️ Events ▾</button>
+              {showEventMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-yellow-500/30 rounded-xl shadow-xl z-50 min-w-[260px] overflow-hidden">
+                  <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-gray-500 border-b border-white/10">Switch active event</div>
+                  {(events as Record<string, unknown>[]).map((e) => {
+                    const id = Number(e.id);
+                    const isActive = id === EVENT_ID;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => { selectEvent(id); setShowEventMenu(false); }}
+                        className={`w-full px-4 py-2.5 text-left text-sm transition-colors flex items-center justify-between gap-2 ${isActive ? "bg-yellow-500/15 text-yellow-300" : "hover:bg-white/5 text-gray-200"}`}
+                      >
+                        <span className="truncate">{String(e.eventName)} <span className="text-gray-500">· {String(e.eventYear)}</span></span>
+                        {isActive && <span className="text-[10px] text-yellow-400">● active</span>}
+                      </button>
+                    );
+                  })}
+                  <div className="border-t border-white/10">
+                    <button onClick={() => { setEventModal({ mode: "create", name: "", year: String(new Date().getFullYear()) }); setShowEventMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm hover:bg-green-500/10 text-green-300 transition-colors">＋ Create New Event</button>
+                    <button
+                      onClick={() => { if (activeEvent) { setEventModal({ mode: "rename", name: String(activeEvent.eventName), year: String(activeEvent.eventYear), id: EVENT_ID }); } setShowEventMenu(false); }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-yellow-500/10 text-yellow-300 transition-colors"
+                    >✏️ Rename Current Event</button>
+                  </div>
+                </div>
+              )}
+            </div>
             <button onClick={() => setLocation("/import")} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-semibold transition-colors">📥 Import Data</button>
           </div>
+        </div>
+      </div>
+
+      {/* Active event title bar */}
+      <div className="bg-gradient-to-r from-yellow-500/10 via-purple-500/5 to-transparent border-b border-yellow-500/20 px-4 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center gap-3 flex-wrap">
+          <span className="text-[10px] uppercase tracking-widest text-gray-500">Active Event</span>
+          <span className="text-lg font-bold text-yellow-300" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+            {activeEvent ? `${activeEvent.eventName} · ${activeEvent.eventYear}` : `Event #${EVENT_ID}`}
+          </span>
+          <span className="text-xs text-gray-500">All data below is scoped to this event</span>
         </div>
       </div>
 
@@ -703,6 +803,88 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Permanent delete section */}
+            <div className="mt-4 pt-4 border-t border-red-500/20">
+              {!showDeletePanel ? (
+                <button
+                  onClick={() => { setShowDeletePanel(true); setDeleteConfirmText(""); }}
+                  className="w-full py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-600/40 text-red-400 hover:text-red-300 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  🗑️ Delete Bowler Permanently
+                </button>
+              ) : (
+                <div className="bg-red-950/30 border border-red-600/50 rounded-lg p-3 space-y-2">
+                  <p className="text-red-300 text-sm font-bold">⚠️ This action is PERMANENT.</p>
+                  <p className="text-gray-300 text-xs">
+                    This will permanently delete <span className="text-white font-semibold">{String(editingBowler.legalFirstName ?? "")} {String(editingBowler.legalLastName ?? "")}</span> and all of their related records (hotel, payment, tokens, wristbands, check-ins). <span className="text-red-300 font-semibold">The data cannot be recovered.</span>
+                  </p>
+                  <label className="block text-xs text-gray-400 mt-2">Type <span className="font-mono text-red-300 font-bold">DELETE</span> to confirm:</label>
+                  <input
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    className="w-full bg-black/50 border border-red-500/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-red-400"
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => deleteBowlerMut.mutate({ id: editingBowler.id as number, actorRole: "EventDirector" })}
+                      disabled={deleteConfirmText !== "DELETE" || deleteBowlerMut.isPending}
+                      className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      {deleteBowlerMut.isPending ? "Deleting..." : "Permanently Delete"}
+                    </button>
+                    <button onClick={() => { setShowDeletePanel(false); setDeleteConfirmText(""); }} className="flex-1 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Event create / rename modal */}
+      {eventModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={() => setEventModal(null)}>
+          <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-yellow-400 mb-4">{eventModal.mode === "create" ? "Create New Event" : "Rename Event"}</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Event Name</label>
+                <input
+                  value={eventModal.name}
+                  onChange={(e) => setEventModal({ ...eventModal, name: e.target.value })}
+                  placeholder="e.g. Funtime Team Challenge 2027"
+                  className="w-full bg-black/50 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Year</label>
+                <input
+                  type="number"
+                  value={eventModal.year}
+                  onChange={(e) => setEventModal({ ...eventModal, year: e.target.value })}
+                  className="w-full bg-black/50 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => {
+                  const name = eventModal.name.trim();
+                  const year = parseInt(eventModal.year, 10);
+                  if (!name) { toast.error("Event name is required"); return; }
+                  if (!Number.isFinite(year)) { toast.error("Valid year is required"); return; }
+                  if (eventModal.mode === "create") createEventMut.mutate({ eventName: name, eventYear: year });
+                  else if (eventModal.id) renameEventMut.mutate({ id: eventModal.id, eventName: name, eventYear: year });
+                }}
+                disabled={createEventMut.isPending || renameEventMut.isPending}
+                className="flex-1 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition-colors disabled:opacity-50"
+              >
+                {createEventMut.isPending || renameEventMut.isPending ? "Saving..." : eventModal.mode === "create" ? "Create Event" : "Save Name"}
+              </button>
+              <button onClick={() => setEventModal(null)} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
             </div>
           </div>
         </div>

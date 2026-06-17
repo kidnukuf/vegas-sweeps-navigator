@@ -107,20 +107,21 @@
 
 ## Phase 10: Fix Import Crash & Full Column Mapping
 
-- [ ] Fix import crash: client referenced importResult.ids but server returns generatedIds
-- [ ] Send raw rows (original headers) to server so its header-based lookups work
-- [ ] Keep raw row data in ParsedRow for each parsed bowler
-- [ ] Add column aliases for Squad Time, Lane #, Gender, Under 21, Sanction #, etc. (preview display)
-- [ ] Test import end-to-end with the real xlsx-derived CSV
+- [x] Fix import crash: client referenced importResult.ids but server returns generatedIds
+- [x] Send raw rows (original headers) to server so its header-based lookups work
+- [x] Keep raw row data in ParsedRow for each parsed bowler
+- [x] Add column aliases for Squad Time, Lane #, Gender, Under 21, Sanction #, etc. (preview display)
+- [x] Test import end-to-end with the real xlsx-derived CSV
 
 ## Phase 11: Import Verify + Multi-Event + Bowler Delete (Jun 17)
 
 - [x] Fix center-name aliases (Bowlero River Grove Sat -> Saturday) and exact-match center lookup
 - [x] Fix legacy NOT NULL columns (legalName, phone) blocking bowler inserts
-- [ ] Verify full roster (452 rows) imports with 0 center-not-found errors
-- [ ] Multi-event: create new event button + rename event (Event Director)
-- [ ] Multi-event: all data (bowlers/teams/imports) scoped per event, manageable simultaneously
-- [ ] Active event title displayed at top of Event Director section
-- [ ] Event switcher to change which event is active
-- [ ] Per-event scoped export: only selected event's data is exported to local server
-- [ ] Delete bowler button (Event Director) with PERMANENT-deletion warning + confirm verification step
+- [x] Verify full roster (452 rows) imports with 0 center-not-found errors (450 updated, 0 errors)
+- [x] Multi-event: create new event button + rename event (Event Director)
+- [x] Multi-event: all data (bowlers/teams/imports) scoped per event, manageable simultaneously
+- [x] Active event title displayed at top of Event Director section
+- [x] Event switcher to change which event is active
+- [x] Per-event scoped export: only the selected event's data is exported (client-side CSV download; queries eventId-scoped, filenames event-slugged)
+- [x] Import scoped to the selected/active event (ImportData reads the same selected-event as the dashboard, no longer hardcoded to event 1)
+- [x] Delete bowler button (Event Director) with PERMANENT-deletion warning + confirm verification step (type DELETE, audit-logged before removal)

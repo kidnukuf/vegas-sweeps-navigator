@@ -7,7 +7,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { broadcastTokenInvalidation } from "./_core/sse";
 import {
-  getAllCenters, getActiveEvent, getLeaguesByEvent, getTeamsByCenter,
+  getAllCenters, getActiveEvent, getAllEvents, getEventById, createEvent, renameEvent, deleteBowler, getLeaguesByEvent, getTeamsByCenter,
   getBowlersByTeam, getBowlerById, getBowlerByScantronId, searchBowlers,
   matchBowlerForSignup, updateBowlerRegistrationStatus, updateBowler,
   getAllBowlersForAdmin, getAdminStats, getAppUserByUsername, createAppUser,
@@ -53,6 +53,53 @@ export const appRouter = router({
     active: publicProcedure.query(async () => {
       return getActiveEvent();
     }),
+    list: publicProcedure.query(async () => {
+      return getAllEvents();
+    }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getEventById(input.id);
+      }),
+    create: publicProcedure
+      .input(z.object({
+        eventName: z.string().min(1),
+        eventYear: z.number().int(),
+        actorId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await createEvent(input.eventName, input.eventYear);
+        await writeAuditLog({
+          eventId: id,
+          actorRole: "EventDirector",
+          actorId: input.actorId,
+          action: "create_event",
+          targetId: id,
+          targetType: "event",
+          details: `${input.eventName} (${input.eventYear})`,
+        });
+        return { success: true, id };
+      }),
+    rename: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        eventName: z.string().min(1),
+        eventYear: z.number().int().optional(),
+        actorId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await renameEvent(input.id, input.eventName, input.eventYear);
+        await writeAuditLog({
+          eventId: input.id,
+          actorRole: "EventDirector",
+          actorId: input.actorId,
+          action: "rename_event",
+          targetId: input.id,
+          targetType: "event",
+          details: `${input.eventName}${input.eventYear ? ` (${input.eventYear})` : ""}`,
+        });
+        return { success: true };
+      }),
   }),
 
   // ─── BOWLERS ──────────────────────────────────────────────────────────────
@@ -134,6 +181,31 @@ export const appRouter = router({
           targetType: "bowler",
           details: "Password cleared by Event Director",
         });
+        return { success: true };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        actorRole: z.string().optional(),
+        actorId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const bowler = await getBowlerById(input.id) as Record<string, unknown> | null;
+        const label = bowler
+          ? `${bowler.legalFirstName ?? ""} ${bowler.legalLastName ?? ""} (scantronId=${bowler.scantronId ?? "n/a"})`.trim()
+          : `bowler #${input.id}`;
+        // Log BEFORE deletion so the audit trail retains the record.
+        await writeAuditLog({
+          eventId: (bowler?.eventId as number) ?? undefined,
+          actorRole: input.actorRole ?? "EventDirector",
+          actorId: input.actorId,
+          action: "delete_bowler",
+          targetId: input.id,
+          targetType: "bowler",
+          details: `PERMANENTLY DELETED: ${label}`,
+        });
+        await deleteBowler(input.id);
         return { success: true };
       }),
 

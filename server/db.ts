@@ -62,6 +62,13 @@ export async function rawQuery<T = Record<string, unknown>>(query: string, param
   return rows as T[];
 }
 
+// Like rawQuery but returns the OkPacket (insertId / affectedRows) for write statements.
+export async function rawExec(query: string, params: unknown[] = []): Promise<{ insertId: number; affectedRows: number }> {
+  const pool = getPool();
+  const [result] = await pool.execute(query, params);
+  return result as unknown as { insertId: number; affectedRows: number };
+}
+
 // ─── BOWLING CENTERS ─────────────────────────────────────────────────────────
 export async function getAllCenters() {
   return rawQuery("SELECT * FROM bowling_centers ORDER BY centerCode");
@@ -81,6 +88,57 @@ export async function getCenterByName(name: string) {
 export async function getActiveEvent() {
   const rows = await rawQuery("SELECT * FROM events WHERE status = 'active' ORDER BY id DESC LIMIT 1");
   return rows[0] ?? null;
+}
+
+export async function getAllEvents() {
+  return rawQuery("SELECT * FROM events ORDER BY id DESC");
+}
+
+export async function getEventById(id: number) {
+  const rows = await rawQuery("SELECT * FROM events WHERE id = ? LIMIT 1", [id]);
+  return rows[0] ?? null;
+}
+
+export async function createEvent(eventName: string, eventYear: number) {
+  const result = await rawExec(
+    "INSERT INTO events (eventName, eventYear, status) VALUES (?, ?, 'active')",
+    [eventName, eventYear]
+  );
+  return result.insertId;
+}
+
+export async function renameEvent(id: number, eventName: string, eventYear?: number) {
+  if (eventYear !== undefined) {
+    await rawQuery("UPDATE events SET eventName = ?, eventYear = ? WHERE id = ?", [eventName, eventYear, id]);
+  } else {
+    await rawQuery("UPDATE events SET eventName = ? WHERE id = ?", [eventName, id]);
+  }
+}
+
+// Deletes a bowler and its dependent records. The live DB has historically used
+// both snake_case and camelCase variants for some tables, so we only delete from
+// the dependent tables that actually exist and have a `bowlerId` column.
+export async function deleteBowler(bowlerId: number) {
+  const candidates = [
+    "hotel_records", "hotelRecords",
+    "payment_records", "paymentRecords",
+    "entry_tokens", "entryTokens",
+    "wristbands",
+    "check_ins", "checkIns",
+    "lane_assignments", "laneAssignments",
+    "redemptions",
+  ];
+  for (const table of candidates) {
+    const cols = await rawQuery(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'bowlerId'`,
+      [table]
+    );
+    if (cols.length > 0) {
+      await rawQuery(`DELETE FROM \`${table}\` WHERE bowlerId = ?`, [bowlerId]);
+    }
+  }
+  await rawQuery("DELETE FROM bowlers WHERE id = ?", [bowlerId]);
 }
 
 // ─── LEAGUES ─────────────────────────────────────────────────────────────────
@@ -116,12 +174,14 @@ export async function getBowlersByTeam(teamId: number) {
 
 export async function getBowlerById(id: number) {
   const rows = await rawQuery(`
-    SELECT b.*, bc.centerName, bc.centerCode, t.teamName, t.teamCode, l.leagueName, l.leagueCode, l.eventCode, l.squadTime,
+    SELECT b.*, bc.centerName, bc.centerCode, t.teamName, t.teamCode, l.leagueName, l.leagueCode, l.eventCode,
+           ev.squadTime,
            la.laneNumber, la.timeSlot, la.bowlingDate
     FROM bowlers b
     LEFT JOIN bowling_centers bc ON b.centerId = bc.id
     LEFT JOIN teams t ON b.teamId = t.id
     LEFT JOIN leagues l ON b.leagueId = l.id
+    LEFT JOIN events ev ON ev.id = b.eventId
     LEFT JOIN lane_assignments la ON la.teamId = b.teamId AND la.eventId = b.eventId
     WHERE b.id = ? LIMIT 1
   `, [id]);

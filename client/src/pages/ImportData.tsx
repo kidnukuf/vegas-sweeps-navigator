@@ -145,6 +145,14 @@ export default function ImportData() {
   const [activeTab, setActiveTab] = useState<"file" | "google" | "paste">("file");
   const [isDragging, setIsDragging] = useState(false);
 
+  // Import into the event currently selected in the Event Director dashboard.
+  const [selectedEventId] = useState<number>(() => {
+    const saved = Number(localStorage.getItem("vsn_selected_event_id"));
+    return Number.isFinite(saved) && saved > 0 ? saved : 1;
+  });
+  const { data: events = [] } = trpc.event.list.useQuery();
+  const selectedEvent = (events as Record<string, unknown>[]).find((e) => Number(e.id) === selectedEventId) ?? null;
+
   const importMutation = trpc.import.process.useMutation({
     onSuccess: (data: unknown) => {
       const d = data as { imported: number; updated: number; errors: number; generatedIds: string[] };
@@ -204,7 +212,7 @@ export default function ImportData() {
     if (validRows.length === 0) { toast.error("No valid rows to import."); return; }
     // Send the RAW row data keyed by original headers so the server's header-based lookups work
     const rawRows = validRows.map(r => r.raw);
-    importMutation.mutate({ rows: rawRows as unknown as Record<string, unknown>[], eventId: 1, sourceType: activeTab === "google" ? "google_sheets" : activeTab === "paste" ? "paste" : "csv", sourceName: activeTab === "file" ? "uploaded file" : activeTab === "google" ? googleUrl : "pasted data" });
+    importMutation.mutate({ rows: rawRows as unknown as Record<string, unknown>[], eventId: selectedEventId, sourceType: activeTab === "google" ? "google_sheets" : activeTab === "paste" ? "paste" : "csv", sourceName: activeTab === "file" ? "uploaded file" : activeTab === "google" ? googleUrl : "pasted data" });
   };
 
   const errorCount = parsedRows.filter(r => r.errors.length > 0).length;
@@ -220,6 +228,12 @@ export default function ImportData() {
         <h1 className="text-xl font-black text-yellow-400 tracking-widest" style={{ textShadow: "0 0 12px rgba(255,215,0,0.5)" }}>
           IMPORT BOWLER DATA
         </h1>
+        <span className="ml-auto text-xs text-gray-400">
+          Importing into:{" "}
+          <span className="text-yellow-300 font-semibold">
+            {selectedEvent ? `${selectedEvent.eventName} · ${selectedEvent.eventYear}` : `Event #${selectedEventId}`}
+          </span>
+        </span>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
