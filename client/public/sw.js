@@ -1,7 +1,7 @@
-// Vegas Sweeps Funtime — Service Worker v4.0
-// v4: skip all Vite dev assets (/@fs/, /@vite/, /src/, /node_modules/)
-//     to prevent stale chunk caching in development
-const CACHE_NAME = "vegas-sweeps-v4";
+// Vegas Sweeps Funtime — Service Worker v5.0
+// v5: bumped cache version to force eviction of stale JS bundles that caused
+//     React error #310 on the published site. Old caches are deleted on activate.
+const CACHE_NAME = "vegas-sweeps-v5";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
@@ -165,7 +165,19 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets (production only): cache-first with network fallback
+  // JS/CSS bundles: NEVER cache via service worker — they have hashed filenames
+  // and are already cache-busted by the browser's HTTP cache. Caching them here
+  // causes stale bundle issues after republish (React error #310 symptom).
+  if (
+    url.pathname.startsWith("/assets/") &&
+    (url.pathname.endsWith(".js") || url.pathname.endsWith(".css"))
+  ) {
+    // Network-only for JS/CSS bundles
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Static assets (icons, manifest, etc.): cache-first with network fallback
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
