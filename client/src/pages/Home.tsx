@@ -34,13 +34,13 @@ export default function Home() {
               filter: "drop-shadow(0 0 30px rgba(255,215,0,0.5))",
             }}
           >
-            VEGAS SWEEPS
+            B.O.B. Roll-off Passport
           </h1>
           <h2
             className="text-2xl md:text-3xl font-bold text-cyan-400 mb-2"
             style={{ textShadow: "0 0 20px rgba(0,255,255,0.6)" }}
           >
-            FUNTIME
+            Bowlers Orleans Bound
           </h2>
           {event && (
             <p className="text-gray-400 text-lg mt-2">
