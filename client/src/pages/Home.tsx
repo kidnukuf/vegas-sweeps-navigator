@@ -141,7 +141,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-gray-600 text-sm">
-          <p>Vegas Sweeps Funtime Event Management System</p>
+          <p>B.O.B. Roll-off Passport Event Management System</p>
           <p className="mt-1 text-xs">Powered by local-first technology • Works offline</p>
         </div>
       </div>

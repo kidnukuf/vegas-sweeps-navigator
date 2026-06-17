@@ -10,7 +10,7 @@ interface SponsorAdBannerProps {
 const SPONSORS = [
   {
     id: 1,
-    name: "Vegas Sweeps Official Sponsor",
+    name: "B.O.B. Roll-off Passport Official Sponsor",
     tagline: "Your Ad Here — Contact Event Director",
     bgColor: "from-yellow-900/30 to-yellow-800/10",
     borderColor: "border-yellow-500/30",

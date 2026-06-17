@@ -86,7 +86,7 @@ export default function BowlerProfile() {
         <SponsorAdBanner slot="bottom" />
 
         <div className="text-center py-4 text-xs text-gray-700">
-          Vegas Sweeps Funtime 2026 · Powered by EventDirector
+          B.O.B. Roll-off Passport 2026 · Powered by EventDirector
         </div>
       </div>
     </div>

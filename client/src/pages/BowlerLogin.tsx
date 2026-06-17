@@ -78,7 +78,7 @@ export default function BowlerLogin() {
       localStorage.setItem(BOWLER_TOKEN_KEY, data.token);
       localStorage.setItem(BOWLER_ID_KEY, String(data.bowlerId));
       localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, data.isCapitain ? "1" : "0");
-      toast.success("Account created! Welcome to Vegas Sweeps.");
+      toast.success("Account created! Welcome to B.O.B. Roll-off Passport.");
       if (data.isCapitain) {
         navigate("/captain");
       } else {
@@ -126,7 +126,7 @@ export default function BowlerLogin() {
         </button>
         <div className="flex items-center gap-2">
           <span className="text-2xl">🎳</span>
-          <span className="font-bold text-white text-lg tracking-wide">Vegas Sweeps</span>
+          <span className="font-bold text-white text-lg tracking-wide">B.O.B. Roll-off Passport</span>
         </div>
         <div className="w-16" />
       </header>

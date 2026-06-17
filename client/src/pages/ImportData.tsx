@@ -59,6 +59,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   "league member": "leagueMember", "returning bowler?": "returningBowler",
   "t-shirt size": "shirtSize", "room with bowler?": "roomWithBowler",
   "banquet $80": "banquetAmount", "guest $15": "guestAmount", "special notes": "specialNotes",
+  "extra banquet": "extraBanquet", "extra pool party": "extraPoolParty",
 };
 
 function parseCSV(text: string): string[][] {

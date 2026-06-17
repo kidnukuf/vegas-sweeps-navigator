@@ -133,7 +133,7 @@ export default function DoormanCheckIn() {
             <h1 className="text-2xl font-black tracking-widest" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#00ffff", textShadow: "0 0 20px rgba(0,255,255,0.6)" }}>
               DOORMAN LOGIN
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Vegas Sweeps Funtime 2026</p>
+            <p className="text-gray-500 text-sm mt-1">B.O.B. Roll-off Passport 2026</p>
           </div>
           <div className="space-y-3 mb-5">
             <div>

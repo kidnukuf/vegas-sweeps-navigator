@@ -125,3 +125,12 @@
 - [x] Per-event scoped export: only the selected event's data is exported (client-side CSV download; queries eventId-scoped, filenames event-slugged)
 - [x] Import scoped to the selected/active event (ImportData reads the same selected-event as the dashboard, no longer hardcoded to event 1)
 - [x] Delete bowler button (Event Director) with PERMANENT-deletion warning + confirm verification step (type DELETE, audit-logged before removal)
+
+## Phase 12: Rename + Import Overhaul (Jun 17)
+
+- [ ] Rename app to "B.O.B. Roll-off Passport" in all UI text, page titles, manifest, service worker, and metadata (B.O.B. = Bowlers Orleans Bound)
+- [ ] Update import parser column aliases to match new 24-column sheet layout
+- [ ] Map hotel fields (Check In, Check Out, Room Type, Roommate First Name, Roommate Last Name) from import into hotel_records table
+- [ ] Map add-on fields (Guest $15, extra banquet, extra pool party) into payment_records
+- [ ] Ensure Phone and Email columns are accepted but treated as optional/empty without errors
+- [ ] Test import end-to-end with the new 24-column bob_roster.csv (452 rows, 0 errors expected)

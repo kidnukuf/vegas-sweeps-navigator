@@ -1,7 +1,7 @@
-// Vegas Sweeps Funtime — Service Worker v5.0
+// B.O.B. Roll-off Passport — Service Worker v5.0
 // v5: bumped cache version to force eviction of stale JS bundles that caused
 //     React error #310 on the published site. Old caches are deleted on activate.
-const CACHE_NAME = "vegas-sweeps-v5";
+const CACHE_NAME = "bob-passport-v1";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
@@ -10,7 +10,7 @@ const STATIC_ASSETS = [
 ];
 
 // IndexedDB helpers for offline bowler data cache
-const IDB_NAME = "vegas-sweeps-offline";
+const IDB_NAME = "bob-passport-offline";
 const IDB_VERSION = 1;
 const IDB_STORE = "bowler-cache";
 
@@ -191,7 +191,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => {
           if (event.request.mode === "navigate") {
-            return caches.match("/").then((r) => r || new Response("Offline — Vegas Sweeps Funtime", { status: 503 }));
+            return caches.match("/").then((r) => r || new Response("Offline — B.O.B. Roll-off Passport", { status: 503 }));
           }
           return new Response("Offline", { status: 503 });
         });

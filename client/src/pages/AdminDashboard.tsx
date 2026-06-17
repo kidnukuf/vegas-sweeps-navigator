@@ -506,7 +506,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                           <td className="px-4 py-2 text-gray-400 text-xs">{String(b.teamName ?? "—")}</td>
                           <td className="px-4 py-2 text-gray-400">{String(b.phone ?? "—")}</td>
                           <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[String(b.registrationStatus ?? "pre_registered")]}`}>{STATUS_LABELS[String(b.registrationStatus ?? "pre_registered")] ?? String(b.registrationStatus)}</span></td>
-                          <td className="px-4 py-2"><button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? "") }); }} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs transition-colors">Edit</button></td>
+                          <td className="px-4 py-2"><button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? ""), sanctionNumber: String(b.sanctionNumber ?? ""), gamesPlayed: String(b.gamesPlayed ?? ""), bestAverage: String(b.bestAverage ?? ""), tshirtSize: String(b.tshirtSize ?? ""), under21: b.under21 ? "true" : "false", leagueMember: b.leagueMember ? "true" : "false" }); }} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs transition-colors">Edit</button></td>
                         </tr>
                         );
                       })}
@@ -579,7 +579,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                                     </span>
                                   </td>
                                   <td className="px-4 py-2">
-                                    <button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? "") }); }}
+                                    <button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? ""), sanctionNumber: String(b.sanctionNumber ?? ""), gamesPlayed: String(b.gamesPlayed ?? ""), bestAverage: String(b.bestAverage ?? ""), tshirtSize: String(b.tshirtSize ?? ""), under21: b.under21 ? "true" : "false", leagueMember: b.leagueMember ? "true" : "false" });
+                                    }}
                                       className="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs transition-colors">Edit</button>
                                   </td>
                                 </tr>
@@ -684,7 +685,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                       <div className="text-gray-500 text-xs mt-1">Signed up: {b.createdAt ? new Date(b.createdAt as string).toLocaleString() : "—"}</div>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? ""), registrationStatus: "signed_up" }); setShowAllFields(true); }}
+                      <button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? ""), registrationStatus: "signed_up", sanctionNumber: String(b.sanctionNumber ?? ""), gamesPlayed: String(b.gamesPlayed ?? ""), bestAverage: String(b.bestAverage ?? ""), tshirtSize: String(b.tshirtSize ?? ""), under21: b.under21 ? "true" : "false", leagueMember: b.leagueMember ? "true" : "false" }); setShowAllFields(true); }}
                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-semibold transition-colors">Link / Edit</button>
                       <span className="px-2 py-1 bg-red-900/50 text-red-300 rounded text-xs">Unmatched</span>
                     </div>
@@ -753,6 +754,33 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                         className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500" />
                     </div>
                   ))}
+                  {/* Bowling stats fields from new sheet */}
+                  <div className="pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Bowling Stats</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["sanctionNumber", "gamesPlayed", "bestAverage", "tshirtSize"] as const).map((field) => (
+                        <div key={field}>
+                          <label className="text-xs text-gray-400 mb-1 block">{field === "sanctionNumber" ? "Sanction #" : field === "gamesPlayed" ? "# Games" : field === "bestAverage" ? "Best Avg" : "T-Shirt Size"}</label>
+                          <input value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
+                            className="w-full px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-sm focus:outline-none focus:border-yellow-500" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                        <input type="checkbox" checked={editFields.under21 === "true" || editFields.under21 === "1"}
+                          onChange={(e) => setEditFields({ ...editFields, under21: e.target.checked ? "true" : "false" })}
+                          className="accent-yellow-500" />
+                        Under 21
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                        <input type="checkbox" checked={editFields.leagueMember === "true" || editFields.leagueMember === "1"}
+                          onChange={(e) => setEditFields({ ...editFields, leagueMember: e.target.checked ? "true" : "false" })}
+                          className="accent-yellow-500" />
+                        League Member
+                      </label>
+                    </div>
+                  </div>
                   <div>
                     <label className="text-xs text-gray-400 mb-1 block">Registration Status Override</label>
                     <select value={editFields.registrationStatus ?? ""} onChange={(e) => setEditFields({ ...editFields, registrationStatus: e.target.value })}

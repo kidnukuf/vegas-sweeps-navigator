@@ -119,6 +119,15 @@ export const bowlers = mysqlTable("bowlers", {
     "unmatched",
   ]).default("pre_registered").notNull(),
   captainVerified: boolean("captainVerified").default(false),
+  // Bowling stats & event details (from import sheet)
+  sanctionNumber: varchar("sanctionNumber", { length: 20 }),
+  gamesPlayed: int("gamesPlayed"),
+  bestAverage: int("bestAverage"),
+  tshirtSize: varchar("tshirtSize", { length: 10 }),
+  under21: boolean("under21").default(false),
+  leagueMember: boolean("leagueMember").default(false),
+  squadTime: varchar("squadTime", { length: 50 }),
+  laneNumber: int("laneNumber"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -711,6 +711,25 @@ export const appRouter = router({
             const phone = String(row["Phone"] ?? row["phone"] ?? "").trim();
             const email = String(row["Email"] ?? row["email"] ?? "").trim();
 
+            // New 24-column sheet fields
+            const sanctionNumber = String(row["Sanction #"] ?? row["sanction_number"] ?? row["Sanction"] ?? "").trim() || undefined;
+            const gamesRaw = String(row["# Games"] ?? row["Games"] ?? row["games"] ?? "").trim();
+            const gamesPlayed = gamesRaw ? (parseInt(gamesRaw) || undefined) : undefined;
+            const avgRaw = String(row["Best Avg"] ?? row["Average"] ?? row["avg"] ?? "").trim();
+            const bestAverage = avgRaw ? (parseInt(avgRaw) || undefined) : undefined;
+            const tshirtSize = String(row["T-Shirt Size"] ?? row["Shirt Size"] ?? row["shirt"] ?? "").trim().toUpperCase() || undefined;
+            const under21Raw = String(row["Under 21?"] ?? row["Under 21"] ?? row["under21"] ?? "").trim().toUpperCase();
+            const under21 = ["Y", "YES", "TRUE", "1"].includes(under21Raw);
+            const leagueMemberRaw = String(row["League Member"] ?? row["league_member"] ?? "").trim().toUpperCase();
+            const leagueMember = ["Y", "YES", "TRUE", "1"].includes(leagueMemberRaw);
+            const squadTimeVal = String(row["Squad Time"] ?? row["squad_time"] ?? "").trim() || undefined;
+            const laneRaw = String(row["Lane #"] ?? row["Lane"] ?? row["lane"] ?? "").trim();
+            const laneNumber = laneRaw ? (parseInt(laneRaw) || undefined) : undefined;
+
+            // Add-on payments from new columns
+            const extraBanquet = parseFloat(String(row["extra banquet"] ?? row["Extra Banquet"] ?? "0").replace(/[$,]/g, "")) || 0;
+            const extraPoolParty = parseFloat(String(row["extra pool party"] ?? row["Extra Pool Party"] ?? "0").replace(/[$,]/g, "")) || 0;
+
             if (existing.length > 0) {
               // Update existing
               const bowlerId = existing[0].id as number;
@@ -719,20 +738,29 @@ export const appRouter = router({
                 teamId, centerId: center.id as number, isCapitain: isCapt,
                 notes: notes || undefined,
                 phone: phone || undefined, email: email || undefined,
+                sanctionNumber, gamesPlayed, bestAverage, tshirtSize,
+                under21, leagueMember, squadTime: squadTimeVal, laneNumber,
               });
               if (checkinDate || checkoutDate || roomType) {
                 await upsertHotelRecord(bowlerId, { checkinDate, checkoutDate, roomType, roommateRequested, roommateFirstName: roommateFirst, roommateLastName: roommateLast, roomAmount });
               }
-              if (banquetAmount || totalAmountDue) {
-                await upsertPaymentRecord(bowlerId, { roomAmount, banquetAmount, poolParty, extraGuestFee, totalAmountDue });
+              const effectiveBanquet = banquetAmount || extraBanquet;
+              const effectivePoolParty = poolParty || extraPoolParty > 0;
+              const effectiveExtraGuest = extraGuestFee || extraPoolParty;
+              if (effectiveBanquet || totalAmountDue || effectivePoolParty || effectiveExtraGuest) {
+                await upsertPaymentRecord(bowlerId, { roomAmount, banquetAmount: effectiveBanquet, poolParty: effectivePoolParty, extraGuestFee: effectiveExtraGuest, totalAmountDue });
               }
               updated++;
             } else {
               // Insert new bowler
               await rawQuery(
-                `INSERT INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus)
-                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered')`,
-                [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0, phone || null, email || null, notes || null]
+                `INSERT INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
+                   sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber)
+                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
+                 phone || null, email || null, notes || null,
+                 sanctionNumber || null, gamesPlayed ?? null, bestAverage ?? null, tshirtSize || null,
+                 under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null]
               );
               const newBowler = await rawQuery("SELECT id FROM bowlers WHERE scantronId = ? LIMIT 1", [scantronId]) as Record<string, unknown>[];
               const bowlerId = newBowler[0]?.id as number;
@@ -740,8 +768,11 @@ export const appRouter = router({
                 if (checkinDate || checkoutDate || roomType) {
                   await upsertHotelRecord(bowlerId, { checkinDate, checkoutDate, roomType, roommateRequested, roommateFirstName: roommateFirst, roommateLastName: roommateLast, roomAmount });
                 }
-                if (banquetAmount || totalAmountDue) {
-                  await upsertPaymentRecord(bowlerId, { roomAmount, banquetAmount, poolParty, extraGuestFee, totalAmountDue });
+                const effectiveBanquet2 = banquetAmount || extraBanquet;
+                const effectivePoolParty2 = poolParty || extraPoolParty > 0;
+                const effectiveExtraGuest2 = extraGuestFee || extraPoolParty;
+                if (effectiveBanquet2 || totalAmountDue || effectivePoolParty2 || effectiveExtraGuest2) {
+                  await upsertPaymentRecord(bowlerId, { roomAmount, banquetAmount: effectiveBanquet2, poolParty: effectivePoolParty2, extraGuestFee: effectiveExtraGuest2, totalAmountDue });
                 }
               }
               generatedIds.push(scantronId);
