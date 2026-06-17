@@ -16,6 +16,10 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
 
   const login = trpc.appAuth.login.useMutation({
     onSuccess: (data) => {
+      if (data.user?.appRole !== "EventDirector") {
+        toast.error("Access denied. Event Director credentials required.");
+        return;
+      }
       localStorage.setItem(ED_TOKEN_KEY, data.token ?? "");
       onAuth();
     },
