@@ -5,7 +5,7 @@
  * Includes Cloudflare Turnstile bot protection on all forms.
  */
 import { useState, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,10 @@ const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 
 export default function CaptainLogin() {
   const [, navigate] = useLocation();
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const search = useSearch();
+  const [tab, setTab] = useState<"signin" | "signup">(
+    new URLSearchParams(search).get("tab") === "signup" ? "signup" : "signin"
+  );
 
   // Sign-in state
   const [siFirst, setSiFirst] = useState("");
