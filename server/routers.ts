@@ -327,12 +327,13 @@ export const appRouter = router({
         return getDoormanAccounts(input.eventId);
       }),
 
-    // Doorman login by designation+password
+    // Doorman login by username+password
     doormanLogin: publicProcedure
       .input(z.object({ designation: z.string(), password: z.string() }))
       .mutation(async ({ input }) => {
-        const username = input.designation.toLowerCase();
-        const user = await getAppUserByUsername(username) as Record<string, unknown> | null;
+        // Accept either username (case-insensitive) or legacy designation lookup
+        let user = await getAppUserByUsername(input.designation) as Record<string, unknown> | null;
+        if (!user) user = await getAppUserByUsername(input.designation.toLowerCase()) as Record<string, unknown> | null;
         if (!user || user.appRole !== 'Doorman') return { success: false, error: 'Invalid credentials' };
         const valid = await bcrypt.compare(input.password, user.passwordHash as string);
         if (!valid) return { success: false, error: 'Invalid credentials' };

@@ -137,9 +137,9 @@ export default function DoormanCheckIn() {
           </div>
           <div className="space-y-3 mb-5">
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Designation</label>
-              <input value={designation} onChange={(e) => setDesignation(e.target.value.toUpperCase())} placeholder="e.g. DM1"
-                className="w-full px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 font-mono" />
+              <label className="text-xs text-gray-400 mb-1 block">Username</label>
+              <input value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="Enter username"
+                className="w-full px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500" />
             </div>
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Password</label>
