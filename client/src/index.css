@@ -265,7 +265,10 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .bowler-portal-bg {
-  background: linear-gradient(160deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  background-image: url('/manus-storage/bg-vegas-bowls_1fbd8c3e.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
 }
 
 .bowler-portal-header {
@@ -434,7 +437,10 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .captain-portal-bg {
-  background: linear-gradient(160deg, #0a0f1e 0%, #0f172a 50%, #1e1b4b 100%);
+  background-image: url('/manus-storage/bg-mardi-gras-bowl_d26e7756.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
 }
 
 .captain-portal-header {
@@ -535,7 +541,10 @@
 
 /* ─── Captain Login Portal ─────────────────────────────────────────────────── */
 .captain-login-bg {
-  background: radial-gradient(ellipse at 30% 0%, oklch(0.22 0.08 280) 0%, oklch(0.08 0.02 260) 60%);
+  background-image: url('/manus-storage/bg-mardi-gras-bowl_d26e7756.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
   min-height: 100vh;
 }
 

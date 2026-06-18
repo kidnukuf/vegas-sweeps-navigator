@@ -11,53 +11,65 @@ export default function Home() {
   const isCapitain = localStorage.getItem(BOWLER_IS_CAPTAIN_KEY) === "1";
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white overflow-hidden relative">
-      {/* Animated background glows */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl" />
-      </div>
+    <div
+      className="min-h-screen text-white overflow-hidden relative"
+      style={{
+        backgroundImage: "url('/manus-storage/bg-bowlers-orleans-bound_c7329b96.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col items-center min-h-screen px-4 py-12">
+      <div className="relative z-10 flex flex-col items-center min-h-screen px-4 py-10">
 
-        {/* ── Hero ── */}
+        {/* ── Logo + Hero ── */}
         <div className="text-center mb-10">
-          <div className="text-6xl mb-4 animate-bounce">🎳</div>
+          {/* App logo */}
+          <div className="flex justify-center mb-4">
+            <img
+              src="/manus-storage/logo-no-bg_c2fbc3b5.png"
+              alt="B.O.B. Roll-off Passport"
+              className="w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl"
+              style={{ filter: "drop-shadow(0 0 24px rgba(255,215,0,0.5))" }}
+            />
+          </div>
           <h1
-            className="text-5xl md:text-7xl font-black mb-3 tracking-tight"
+            className="text-4xl md:text-6xl font-black mb-2 tracking-tight"
             style={{
               fontFamily: "'Rajdhani', sans-serif",
               background: "linear-gradient(135deg, #ffd700, #ff8c00, #00ffff)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0 0 30px rgba(255,215,0,0.5))",
+              filter: "drop-shadow(0 0 30px rgba(255,215,0,0.6))",
             }}
           >
             B.O.B. Roll-off Passport
           </h1>
           <h2
-            className="text-2xl md:text-3xl font-bold text-cyan-400 mb-2"
-            style={{ textShadow: "0 0 20px rgba(0,255,255,0.6)" }}
+            className="text-xl md:text-2xl font-bold text-cyan-300 mb-2"
+            style={{ textShadow: "0 0 20px rgba(0,255,255,0.7)" }}
           >
             Bowlers Orleans Bound
           </h2>
           {event && (
-            <p className="text-gray-400 text-lg mt-2">
+            <p className="text-yellow-200/80 text-base mt-1">
               {(event as Record<string, unknown>).eventName as string} •{" "}
               {(event as Record<string, unknown>).bowlingDate as string}
             </p>
           )}
-          <div className="mt-4 h-px w-64 mx-auto bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
+          <div className="mt-4 h-px w-64 mx-auto bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-70" />
         </div>
 
         {/* ══════════════════════════════════════════════════════
-            BOWLER / CAPTAIN SECTION — warm consumer design
+            BOWLER / CAPTAIN SECTION
             ══════════════════════════════════════════════════════ */}
         <div className="w-full max-w-4xl mb-12">
           <div className="text-center mb-6">
-            <h2 className="text-xl font-bold text-white/80 uppercase tracking-widest text-sm mb-1">
-              Bowlers & Captains
+            <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest mb-1">
+              Bowlers &amp; Captains
             </h2>
             <p className="text-white/40 text-sm">Your personal event portal</p>
           </div>
@@ -68,15 +80,14 @@ export default function Home() {
               onClick={() => setLocation(bowlerToken ? "/bowler" : "/bowler-login")}
               className="group relative overflow-hidden rounded-2xl text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{
-                background: "linear-gradient(135deg, #0f0c29 0%, #302b63 60%, #24243e 100%)",
-                border: "1px solid rgba(245,158,11,0.3)",
-                boxShadow: "0 8px 32px rgba(245,158,11,0.15)",
+                background: "rgba(15,12,41,0.82)",
+                border: "1px solid rgba(245,158,11,0.45)",
+                boxShadow: "0 8px 32px rgba(245,158,11,0.2)",
+                backdropFilter: "blur(12px)",
               }}
             >
-              {/* Glow overlay on hover */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: "radial-gradient(circle at 30% 50%, rgba(245,158,11,0.1), transparent 70%)" }} />
-
+                style={{ background: "radial-gradient(circle at 30% 50%, rgba(245,158,11,0.12), transparent 70%)" }} />
               <div className="relative p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="text-4xl">🎳</div>
@@ -87,7 +98,7 @@ export default function Home() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Bowler Portal</h3>
-                <p className="text-white/50 text-sm leading-relaxed">
+                <p className="text-white/55 text-sm leading-relaxed">
                   {bowlerToken && !isCapitain
                     ? "View your profile, QR ticket, lane, and event details"
                     : "Sign in or create an account to access your event profile and QR ticket"}
@@ -105,14 +116,14 @@ export default function Home() {
               onClick={() => setLocation(bowlerToken && isCapitain ? "/captain" : "/captain-login")}
               className="group relative overflow-hidden rounded-2xl text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{
-                background: "linear-gradient(135deg, #0a0f1e 0%, #0f172a 60%, #1e1b4b 100%)",
-                border: "1px solid rgba(245,158,11,0.5)",
-                boxShadow: "0 8px 32px rgba(245,158,11,0.2)",
+                background: "rgba(10,15,30,0.82)",
+                border: "1px solid rgba(245,158,11,0.55)",
+                boxShadow: "0 8px 32px rgba(245,158,11,0.25)",
+                backdropFilter: "blur(12px)",
               }}
             >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: "radial-gradient(circle at 70% 50%, rgba(245,158,11,0.12), transparent 70%)" }} />
-
+                style={{ background: "radial-gradient(circle at 70% 50%, rgba(245,158,11,0.14), transparent 70%)" }} />
               <div className="relative p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="text-4xl">⭐</div>
@@ -123,7 +134,7 @@ export default function Home() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Team Captain Portal</h3>
-                <p className="text-white/50 text-sm leading-relaxed">
+                <p className="text-white/55 text-sm leading-relaxed">
                   {bowlerToken && isCapitain
                     ? "Manage your team roster, verify members, and track completion"
                     : "Captains: sign in to manage your team roster and verify members"}
@@ -138,11 +149,10 @@ export default function Home() {
           </div>
         </div>
 
-
         {/* Footer */}
-        <div className="mt-12 text-center text-gray-600 text-sm">
+        <div className="mt-8 text-center text-white/30 text-xs">
           <p>B.O.B. Roll-off Passport Event Management System</p>
-          <p className="mt-1 text-xs">Powered by local-first technology • Works offline</p>
+          <p className="mt-1">Powered by local-first technology • Works offline</p>
         </div>
       </div>
     </div>
