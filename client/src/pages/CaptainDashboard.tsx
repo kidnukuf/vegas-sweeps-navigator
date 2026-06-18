@@ -68,7 +68,7 @@ export default function CaptainDashboard() {
   const token = getBowlerToken();
 
   useEffect(() => {
-    if (!token) navigate("/bowler-login");
+    if (!token) navigate("/captain-login");
   }, [token, navigate]);
 
   const teamQuery = trpc.bowlerAuth.myTeam.useQuery(
@@ -86,7 +86,7 @@ export default function CaptainDashboard() {
 
   function handleLogout() {
     clearBowlerSession();
-    navigate("/bowler-login");
+    navigate("/captain-login");
   }
 
   if (teamQuery.isLoading) {

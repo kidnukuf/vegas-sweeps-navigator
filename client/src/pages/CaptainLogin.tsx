@@ -6,6 +6,7 @@
  */
 import { useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
+import { BOWLER_TOKEN_KEY, BOWLER_ID_KEY, BOWLER_IS_CAPTAIN_KEY } from "./BowlerLogin";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,9 @@ export default function CaptainLogin() {
         setSiToken("");
         return;
       }
-      localStorage.setItem("captainToken", data.token);
-      localStorage.setItem("captainBowlerId", String(data.bowlerId));
+      localStorage.setItem(BOWLER_TOKEN_KEY, data.token);
+      localStorage.setItem(BOWLER_ID_KEY, String(data.bowlerId));
+      localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, "1");
       toast.success("Welcome back, Captain!");
       navigate("/captain");
     },
@@ -77,8 +79,9 @@ export default function CaptainLogin() {
         setSuToken("");
         return;
       }
-      localStorage.setItem("captainToken", data.token);
-      localStorage.setItem("captainBowlerId", String(data.bowlerId));
+      localStorage.setItem(BOWLER_TOKEN_KEY, data.token);
+      localStorage.setItem(BOWLER_ID_KEY, String(data.bowlerId));
+      localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, "1");
       toast.success("Account created! Welcome, Captain.");
       navigate("/captain");
     },
