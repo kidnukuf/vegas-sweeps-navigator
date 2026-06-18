@@ -3,6 +3,10 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
+type DoormanTab = "checkin" | "passport";
+type PassportMode = "pool" | "banquet";
+type PassportScanResult = "granted" | "used" | "disabled" | "invalid" | null;
+
 type BowlerResult = Record<string, unknown>;
 
 export default function DoormanCheckIn() {
@@ -26,6 +30,17 @@ export default function DoormanCheckIn() {
   const [sseConnected, setSseConnected] = useState(false);
   const tokenInputRef = useRef<HTMLInputElement>(null);
 
+  // Passport scanner state
+  const [doormanTab, setDoormanTab] = useState<DoormanTab>("checkin");
+  const [passportMode, setPassportMode] = useState<PassportMode>("pool");
+  const [passportScanResult, setPassportScanResult] = useState<PassportScanResult>(null);
+  const [passportBowlerName, setPassportBowlerName] = useState("");
+  const [passportMessage, setPassportMessage] = useState("");
+  const [passportScanning, setPassportScanning] = useState(false);
+  const [passportManualToken, setPassportManualToken] = useState("");
+  const passportScannerRef = useRef<any>(null);
+  const passportDivId = "passport-qr-reader";
+
   // SSE subscription — real-time token invalidation from other doorman tablets
   useEffect(() => {
     if (!loggedIn) return;
@@ -42,6 +57,49 @@ export default function DoormanCheckIn() {
     es.onerror = () => setSseConnected(false);
     return () => es.close();
   }, [loggedIn]);
+
+  const passportScanMutation = trpc.bowlerAuth.scanPassport.useMutation({
+    onSuccess: (data) => {
+      setPassportScanResult(data.result);
+      setPassportMessage(data.message);
+      if ("bowlerName" in data && data.bowlerName) setPassportBowlerName(data.bowlerName);
+      stopPassportScanner();
+    },
+    onError: (err) => {
+      setPassportScanResult("invalid");
+      setPassportMessage(err.message);
+      stopPassportScanner();
+    },
+  });
+
+  function stopPassportScanner() {
+    setPassportScanning(false);
+    if (passportScannerRef.current) {
+      try { passportScannerRef.current.stop(); } catch { /* ignore */ }
+      passportScannerRef.current = null;
+    }
+  }
+
+  function handlePassportScanSuccess(decodedText: string) {
+    const match = decodedText.match(/\/scan\/(pool|banquet)\/([a-f0-9]+)/i);
+    if (match) {
+      passportScanMutation.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
+    } else {
+      passportScanMutation.mutate({ tokenValue: decodedText.trim(), passportType: passportMode });
+    }
+  }
+
+  function handlePassportManualSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!passportManualToken.trim()) return;
+    const match = passportManualToken.trim().match(/\/scan\/(pool|banquet)\/([a-f0-9]+)/i);
+    if (match) {
+      passportScanMutation.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
+    } else {
+      passportScanMutation.mutate({ tokenValue: passportManualToken.trim(), passportType: passportMode });
+    }
+    setPassportManualToken("");
+  }
 
   const loginMutation = trpc.appAuth.doormanLogin.useMutation({
     onSuccess: (data) => {
@@ -124,6 +182,33 @@ export default function DoormanCheckIn() {
     }
   }, [loggedIn]);
 
+  // Initialize passport QR scanner
+  useEffect(() => {
+    if (!passportScanning) return;
+    let mounted = true;
+    import("html5-qrcode").then(({ Html5Qrcode }) => {
+      if (!mounted) return;
+      const scanner = new Html5Qrcode(passportDivId);
+      passportScannerRef.current = scanner;
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText: string) => { if (mounted) handlePassportScanSuccess(decodedText); },
+        () => { /* ignore */ }
+      ).catch(() => {
+        toast.error("Camera access denied. Use manual entry.");
+        setPassportScanning(false);
+      });
+    });
+    return () => {
+      mounted = false;
+      if (passportScannerRef.current) {
+        try { passportScannerRef.current.stop(); } catch { /* ignore */ }
+        passportScannerRef.current = null;
+      }
+    };
+  }, [passportScanning]);
+
   if (!loggedIn) {
     return (
       <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
@@ -190,8 +275,22 @@ export default function DoormanCheckIn() {
         </div>
       )}
 
+      {/* Tab Selector */}
+      <div className="bg-[#111] border-b border-white/10 px-4 py-2 sticky top-0 z-50">
+        <div className="max-w-3xl mx-auto flex gap-1">
+          <button onClick={() => setDoormanTab("checkin")}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${doormanTab === "checkin" ? "bg-yellow-500 text-black" : "text-gray-400 hover:text-white"}`}>
+            🎳 Bowling Check-In
+          </button>
+          <button onClick={() => setDoormanTab("passport")}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${doormanTab === "passport" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"}`}>
+            🎫 Passport Scanner
+          </button>
+        </div>
+      </div>
+
       {/* Header */}
-      <div className="bg-[#1a1a1a] border-b border-yellow-500/30 px-4 py-4 sticky top-0 z-40">
+      <div className="bg-[#1a1a1a] border-b border-yellow-500/30 px-4 py-4 sticky top-[52px] z-40">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="font-bold" style={{ color: "#00ffff" }}>{designation}</span>
@@ -221,6 +320,101 @@ export default function DoormanCheckIn() {
         </div>
       )}
 
+      {/* ── PASSPORT SCANNER TAB ─────────────────────────────────────────── */}
+      {doormanTab === "passport" && (
+        <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+          {/* Passport scan result overlay */}
+          {passportScanResult && (
+            <div className={`rounded-2xl p-6 text-center shadow-2xl ${
+              passportScanResult === "granted" ? "bg-green-700 border-2 border-green-400" :
+              passportScanResult === "used" ? "bg-red-800 border-2 border-red-500" :
+              passportScanResult === "disabled" ? "bg-orange-700 border-2 border-orange-500" :
+              "bg-gray-800 border-2 border-gray-600"
+            }`}>
+              <div className="text-7xl mb-3">
+                {passportScanResult === "granted" ? "✅" : passportScanResult === "used" ? "🚫" : passportScanResult === "disabled" ? "⛔" : "❌"}
+              </div>
+              <div className="text-3xl font-black text-white mb-1">
+                {passportScanResult === "granted" ? "Entry Granted" : passportScanResult === "used" ? "Already Redeemed" : passportScanResult === "disabled" ? "Not Eligible" : "Invalid QR Code"}
+              </div>
+              {passportBowlerName && <div className="text-xl text-white/90 mb-1">{passportBowlerName}</div>}
+              <div className="text-white/70 text-sm mb-4">{passportMessage}</div>
+              <button onClick={() => { setPassportScanResult(null); setPassportBowlerName(""); setPassportMessage(""); }}
+                className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl border border-white/30">
+                Scan Next →
+              </button>
+            </div>
+          )}
+
+          {!passportScanResult && (
+            <>
+              {/* Mode selector */}
+              <div className="bg-[#1a1a1a] rounded-2xl p-1 flex gap-1 border border-white/10">
+                <button onClick={() => setPassportMode("pool")}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                    passportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg" : "text-gray-400 hover:text-white"
+                  }`}>
+                  🏊 Pool Party
+                </button>
+                <button onClick={() => setPassportMode("banquet")}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                    passportMode === "banquet" ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg" : "text-gray-400 hover:text-white"
+                  }`}>
+                  🍽️ Banquet Dinner
+                </button>
+              </div>
+
+              {/* Camera scanner */}
+              <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
+                {passportScanning ? (
+                  <div>
+                    <div id={passportDivId} className="w-full" />
+                    <div className="p-3 text-center">
+                      <button onClick={stopPassportScanner}
+                        className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg">
+                        Stop Camera
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <div className="text-6xl mb-4">📷</div>
+                    <p className="text-gray-500 text-sm mb-4">Tap to activate camera and scan a bowler's passport QR code.</p>
+                    <button onClick={() => setPassportScanning(true)}
+                      className={`w-full py-4 font-black text-lg rounded-xl text-white ${
+                        passportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600" : "bg-gradient-to-r from-purple-500 to-pink-600"
+                      }`}>
+                      Start Camera Scan
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Manual entry */}
+              <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Manual Entry</p>
+                <form onSubmit={handlePassportManualSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Paste QR URL or token..."
+                    value={passportManualToken}
+                    onChange={(e) => setPassportManualToken(e.target.value)}
+                    className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500 font-mono"
+                  />
+                  <button type="submit"
+                    disabled={passportScanMutation.isPending || !passportManualToken.trim()}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-900 font-black rounded-lg disabled:opacity-50">
+                    {passportScanMutation.isPending ? "..." : "Scan"}
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── CHECK-IN TAB ─────────────────────────────────────────────────────── */}
+      {doormanTab === "checkin" && (
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         {/* Last Checked-In Bowler Card */}
         {lastCheckedIn && (
@@ -357,6 +551,7 @@ export default function DoormanCheckIn() {
           </div>
         )}
       </div>
+      )}
 
       {/* Check-in Confirmation Modal */}
       {selectedBowler && (

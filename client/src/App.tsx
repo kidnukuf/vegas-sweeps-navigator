@@ -15,8 +15,11 @@ import ImportData from "./pages/ImportData";
 import ProgramDirector from "./pages/ProgramDirector";
 import BowlerLogin from "./pages/BowlerLogin";
 import BowlerDashboard from "./pages/BowlerDashboard";
+import BowlerConfirmation from "./pages/BowlerConfirmation";
 import CaptainDashboard from "./pages/CaptainDashboard";
 import CaptainLogin from "./pages/CaptainLogin";
+import CaptainConfirmation from "./pages/CaptainConfirmation";
+import ScanPassport from "./pages/ScanPassport";
 
 function Router() {
   return (
@@ -32,9 +35,12 @@ function Router() {
       <Route path="/bowler-login" component={BowlerLogin} />
       <Route path="/bowler" component={BowlerDashboard} />
       <Route path="/bowler-dashboard" component={BowlerDashboard} />
+      <Route path="/bowler-confirmation" component={BowlerConfirmation} />
       <Route path="/captain-login" component={CaptainLogin} />
       <Route path="/captain-dashboard" component={CaptainDashboard} />
       <Route path="/captain" component={CaptainDashboard} />
+      <Route path="/captain-confirmation" component={CaptainConfirmation} />
+      <Route path="/scan/:type/:token" component={ScanPassport} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -124,10 +124,180 @@ const STATUS_LABELS: Record<string, string> = {
   unmatched: "Unmatched",
 };
 
+// ─── Passport Manager Component ─────────────────────────────────────────────
+function PassportManager({
+  bowlers,
+  passportSearch,
+  setPassportSearch,
+  passportFilter,
+  setPassportFilter,
+  refetch,
+}: {
+  bowlers: Bowler[];
+  eventId: number;
+  passportSearch: string;
+  setPassportSearch: (v: string) => void;
+  passportFilter: "all" | "redeemed" | "pending" | "disabled";
+  setPassportFilter: (v: "all" | "redeemed" | "pending" | "disabled") => void;
+  refetch: () => void;
+}) {
+  const edToken = localStorage.getItem("vsn_ed_token") ?? "";
+  const disablePassport = trpc.bowlerAuth.disablePassport.useMutation({
+    onSuccess: () => { toast.success("Passport disabled"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const enablePassport = trpc.bowlerAuth.enablePassport.useMutation({
+    onSuccess: () => { toast.success("Passport re-enabled"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  // Only show signed-up bowlers (those who have tokens)
+  const signedUp = bowlers.filter((b) => b.poolPartyToken !== undefined || b.banquetToken !== undefined ||
+    b.registrationStatus === "signed_up" || b.registrationStatus === "verified" || b.registrationStatus === "checked_in");
+
+  const filtered = signedUp.filter((b) => {
+    const name = `${String(b.legalFirstName ?? "")} ${String(b.legalLastName ?? "")}`.toLowerCase();
+    const center = String(b.centerName ?? "").toLowerCase();
+    const q = passportSearch.toLowerCase();
+    if (q && !name.includes(q) && !center.includes(q)) return false;
+    if (passportFilter === "disabled") return b.poolPartyToken === null || b.banquetToken === null;
+    if (passportFilter === "redeemed") return b.poolPartyUsed || b.banquetUsed;
+    if (passportFilter === "pending") return !b.poolPartyUsed && !b.banquetUsed && b.poolPartyToken && b.banquetToken;
+    return true;
+  });
+
+  const stats = {
+    total: signedUp.length,
+    poolRedeemed: signedUp.filter((b) => b.poolPartyUsed).length,
+    banquetRedeemed: signedUp.filter((b) => b.banquetUsed).length,
+    disabled: signedUp.filter((b) => b.poolPartyToken === null || b.banquetToken === null).length,
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-bold text-yellow-400 mb-4">🎫 Passport Management</h2>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: "Total Signed Up", value: stats.total, color: "text-white" },
+          { label: "Pool Party Redeemed", value: `${stats.poolRedeemed} / ${stats.total}`, color: "text-cyan-400" },
+          { label: "Banquet Redeemed", value: `${stats.banquetRedeemed} / ${stats.total}`, color: "text-purple-400" },
+          { label: "Disabled Passports", value: stats.disabled, color: "text-orange-400" },
+        ].map((s) => (
+          <div key={s.label} className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4">
+            <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-4">
+        <input
+          type="text"
+          placeholder="🔍 Search by name or center..."
+          value={passportSearch}
+          onChange={(e) => setPassportSearch(e.target.value)}
+          className="flex-1 min-w-[200px] px-4 py-2.5 bg-[#1a1a1a] border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 text-sm"
+        />
+        {(["all", "pending", "redeemed", "disabled"] as const).map((f) => (
+          <button key={f} onClick={() => setPassportFilter(f)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              passportFilter === f ? "bg-yellow-500 text-black" : "bg-[#1a1a1a] text-gray-400 border border-white/10 hover:text-white"
+            }`}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-gray-500 text-xs border-b border-white/10">
+                <th className="px-4 py-3 text-left">Bowler</th>
+                <th className="px-4 py-3 text-left">Center</th>
+                <th className="px-4 py-3 text-center">🏊 Pool Party</th>
+                <th className="px-4 py-3 text-center">🍽️ Banquet</th>
+                <th className="px-4 py-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((b) => {
+                const bowlerId = b.id as number;
+                const poolDisabled = b.poolPartyToken === null;
+                const banquetDisabled = b.banquetToken === null;
+                const poolUsed = Boolean(b.poolPartyUsed);
+                const banquetUsed = Boolean(b.banquetUsed);
+                const hasTokens = b.poolPartyToken !== undefined;
+
+                return (
+                  <tr key={String(b.id)} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-white">{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</div>
+                      <div className="text-xs text-gray-500 font-mono">{String(b.scantronId ?? "")}</div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{String(b.centerName ?? "")}</td>
+                    <td className="px-4 py-3 text-center">
+                      {!hasTokens ? <span className="text-gray-600 text-xs">No account</span> :
+                        poolUsed ? <span className="text-green-400 text-xs font-bold">✅ Redeemed</span> :
+                        poolDisabled ? <span className="text-orange-400 text-xs font-bold">⛔ Disabled</span> :
+                        <span className="text-cyan-400 text-xs font-bold">🎫 Active</span>}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {!hasTokens ? <span className="text-gray-600 text-xs">No account</span> :
+                        banquetUsed ? <span className="text-green-400 text-xs font-bold">✅ Redeemed</span> :
+                        banquetDisabled ? <span className="text-orange-400 text-xs font-bold">⛔ Disabled</span> :
+                        <span className="text-purple-400 text-xs font-bold">🎫 Active</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {hasTokens && (
+                        <div className="flex gap-2 justify-center flex-wrap">
+                          {!poolUsed && (
+                            <button
+                              onClick={() => poolDisabled
+                                ? enablePassport.mutate({ token: edToken, bowlerId, passportType: "pool" })
+                                : disablePassport.mutate({ token: edToken, bowlerId, passportType: "pool" })}
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                poolDisabled ? "bg-cyan-700 hover:bg-cyan-600 text-white" : "bg-orange-700 hover:bg-orange-600 text-white"
+                              }`}>
+                              {poolDisabled ? "Enable Pool" : "Disable Pool"}
+                            </button>
+                          )}
+                          {!banquetUsed && (
+                            <button
+                              onClick={() => banquetDisabled
+                                ? enablePassport.mutate({ token: edToken, bowlerId, passportType: "banquet" })
+                                : disablePassport.mutate({ token: edToken, bowlerId, passportType: "banquet" })}
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                banquetDisabled ? "bg-purple-700 hover:bg-purple-600 text-white" : "bg-orange-700 hover:bg-orange-600 text-white"
+                              }`}>
+                              {banquetDisabled ? "Enable Banquet" : "Disable Banquet"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <div className="text-center py-8 text-gray-500 text-sm">No bowlers match the current filter.</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"roster" | "audit" | "doormen" | "qrtest" | "unmatched">("roster");
+  const [activeTab, setActiveTab] = useState<"roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports">("roster");
+  const [passportSearch, setPassportSearch] = useState("");
+  const [passportFilter, setPassportFilter] = useState<"all" | "redeemed" | "pending" | "disabled">("all");
   const [editingBowler, setEditingBowler] = useState<Bowler | null>(null);
   const [editFields, setEditFields] = useState<Record<string, string>>({});
   const [showAllFields, setShowAllFields] = useState(false);
@@ -431,10 +601,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-4">
         <div className="max-w-7xl mx-auto flex gap-1">
-          {(["roster", "doormen", "qrtest", "audit", "unmatched"] as const).map((tab) => (
+          {(["roster", "passports", "doormen", "qrtest", "audit", "unmatched"] as const).map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-4 py-3 text-sm font-semibold capitalize transition-colors border-b-2 ${activeTab === tab ? "border-yellow-500 text-yellow-400" : "border-transparent text-gray-500 hover:text-gray-300"}`}>
-              {tab === "qrtest" ? "QR Test" : tab === "unmatched" ? `Unmatched${unmatchedBowlers.length > 0 ? ` (${unmatchedBowlers.length})` : ""}` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === "qrtest" ? "QR Test" : tab === "unmatched" ? `Unmatched${unmatchedBowlers.length > 0 ? ` (${unmatchedBowlers.length})` : ""}` : tab === "passports" ? "🎫 Passports" : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -694,6 +864,18 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === "passports" && (
+          <PassportManager
+            bowlers={bowlers as Bowler[]}
+            eventId={EVENT_ID}
+            passportSearch={passportSearch}
+            setPassportSearch={setPassportSearch}
+            passportFilter={passportFilter}
+            setPassportFilter={setPassportFilter}
+            refetch={refetch}
+          />
         )}
 
         {activeTab === "audit" && (

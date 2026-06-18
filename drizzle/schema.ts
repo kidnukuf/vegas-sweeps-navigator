@@ -128,6 +128,11 @@ export const bowlers = mysqlTable("bowlers", {
   leagueMember: boolean("leagueMember").default(false),
   squadTime: varchar("squadTime", { length: 50 }),
   laneNumber: int("laneNumber"),
+  // Passport QR tokens (pool party + banquet dinner)
+  poolPartyToken: varchar("poolPartyToken", { length: 64 }).unique(),
+  poolPartyUsed: boolean("poolPartyUsed").default(false).notNull(),
+  banquetToken: varchar("banquetToken", { length: 64 }).unique(),
+  banquetUsed: boolean("banquetUsed").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
