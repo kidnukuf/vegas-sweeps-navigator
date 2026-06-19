@@ -154,6 +154,16 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime }: {
   );
 }
 
+// ─── Download QR helper ─────────────────────────────────────────────────────
+function downloadQR(dataUrl: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 // ─── QR Ticket (bowling entry) ────────────────────────────────────────────────
 function QRTicket({ bowlerId, scantronId }: { bowlerId: number; scantronId?: string | null }) {
   const tokenQuery = trpc.tokens.getForBowler.useQuery({ bowlerId });
@@ -187,6 +197,13 @@ function QRTicket({ bowlerId, scantronId }: { bowlerId: number; scantronId?: str
       <p className="text-white/50 text-xs text-center">
         Show this at the door{scantronId ? <> · Scantron: <span className="font-mono text-amber-300">{scantronId}</span></> : null}
       </p>
+      <Button
+        size="sm"
+        className="bowler-btn-secondary w-full mt-1"
+        onClick={() => downloadQR(tokenQuery.data!.qrDataUrl!, "BOB-Entry-Ticket.png")}
+      >
+        ⬇ Download Ticket
+      </Button>
     </div>
   );
 }
@@ -266,6 +283,13 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
             </div>
           </div>
           <p className="text-white/50 text-xs text-center">Present this QR code at the {title.toLowerCase()} entrance</p>
+          <Button
+            size="sm"
+            className="bowler-btn-secondary w-full"
+            onClick={() => downloadQR(qrDataUrl, `BOB-${title.replace(/\s+/g, "-")}-Passport.png`)}
+          >
+            ⬇ Download Ticket
+          </Button>
         </div>
       ) : (
         <div className="text-center py-3">
