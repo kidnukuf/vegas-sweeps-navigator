@@ -141,7 +141,10 @@ export default function BowlerLogin() {
         </button>
         <div className="flex items-center gap-2">
           <span className="text-2xl">🎳</span>
-          <span className="font-bold text-white text-lg tracking-wide">B.O.B. Roll-off Passport</span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-white text-base tracking-wide" style={{ fontFamily: "'Orbitron', sans-serif" }}>B.O.B. Roll-off Passport</span>
+            <span className="text-amber-300 text-xs font-semibold tracking-widest uppercase">Bowlers Orleans Bound</span>
+          </div>
         </div>
         <div className="w-16" />
       </header>
@@ -161,7 +164,7 @@ export default function BowlerLogin() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
           Bowler Portal
         </h1>
-        <p className="text-white/60 text-center mb-8 max-w-sm">
+        <p className="text-white/85 text-center mb-8 max-w-sm">
           Sign in to view your event details, QR ticket, lane assignment, and more.
         </p>
 

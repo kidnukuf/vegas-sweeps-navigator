@@ -37,9 +37,9 @@ export default function Home() {
             />
           </div>
           <h1
-            className="text-4xl md:text-6xl font-black mb-2 tracking-tight"
+            className="text-4xl md:text-6xl font-black mb-1 tracking-tight"
             style={{
-              fontFamily: "'Rajdhani', sans-serif",
+              fontFamily: "'Orbitron', 'Rajdhani', sans-serif",
               background: "linear-gradient(135deg, #ffd700, #ff8c00, #00ffff)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -48,11 +48,17 @@ export default function Home() {
           >
             B.O.B. Roll-off Passport
           </h1>
+          {/* Acronym expansion — always visible */}
+          <p className="text-base md:text-lg font-bold tracking-widest uppercase mb-1" style={{ color: '#ffd700', textShadow: '0 0 12px rgba(255,215,0,0.5)' }}>
+            <span style={{ color: '#00ffff' }}>B</span>owlers&nbsp;
+            <span style={{ color: '#00ffff' }}>O</span>rleans&nbsp;
+            <span style={{ color: '#00ffff' }}>B</span>ound
+          </p>
           <h2
-            className="text-xl md:text-2xl font-bold text-cyan-300 mb-2"
-            style={{ textShadow: "0 0 20px rgba(0,255,255,0.7)" }}
+            className="text-lg md:text-xl font-semibold text-cyan-200 mb-2"
+            style={{ textShadow: "0 0 16px rgba(0,255,255,0.6)" }}
           >
-            Bowlers Orleans Bound
+            Your Official Event Passport
           </h2>
           {event && (
             <p className="text-yellow-200/80 text-base mt-1">
@@ -68,10 +74,10 @@ export default function Home() {
             ══════════════════════════════════════════════════════ */}
         <div className="w-full max-w-4xl mb-12">
           <div className="text-center mb-6">
-            <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest mb-1">
+            <h2 className="text-sm font-bold text-white/90 uppercase tracking-widest mb-1">
               Bowlers &amp; Captains
             </h2>
-            <p className="text-white/40 text-sm">Your personal event portal</p>
+            <p className="text-white/70 text-sm">Your personal event portal</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -98,7 +104,7 @@ export default function Home() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Bowler Portal</h3>
-                <p className="text-white/55 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   {bowlerToken && !isCapitain
                     ? "View your profile, QR ticket, lane, and event details"
                     : "Sign in or create an account to access your event profile and QR ticket"}
@@ -134,7 +140,7 @@ export default function Home() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">Team Captain Portal</h3>
-                <p className="text-white/55 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   {bowlerToken && isCapitain
                     ? "Manage your team roster, verify members, and track completion"
                     : "Captains: sign in to manage your team roster and verify members"}
@@ -151,7 +157,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-8 text-center text-white/30 text-xs">
-          <p>B.O.B. Roll-off Passport Event Management System</p>
+          <p>B.O.B. (Bowlers Orleans Bound) Roll-off Passport — Event Management System</p>
           <p className="mt-1">Powered by local-first technology • Works offline</p>
         </div>
       </div>

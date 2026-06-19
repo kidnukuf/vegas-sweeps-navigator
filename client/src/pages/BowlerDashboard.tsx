@@ -51,8 +51,8 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value?: 
     <div className="flex items-start gap-3 py-2 border-b border-white/10 last:border-0">
       <span className="text-lg w-6 text-center flex-shrink-0">{icon}</span>
       <div>
-        <p className="text-white/50 text-xs">{label}</p>
-        <p className="text-white font-medium text-sm">{value}</p>
+        <p className="text-white/70 text-xs">{label}</p>
+        <p className="text-white font-semibold text-sm">{value}</p>
       </div>
     </div>
   );
@@ -91,7 +91,7 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime }: {
           <span className="text-2xl">🗺️</span>
           <div>
             <p className="text-amber-300 font-bold text-sm tracking-wide">Lane to Banquet</p>
-            <p className="text-white/50 text-xs">Tap to see your event directions</p>
+            <p className="text-white/75 text-xs">Tap to see your event directions</p>
           </div>
         </div>
         <span
@@ -116,7 +116,7 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime }: {
             <div className="flex items-center gap-3">
               <span className="text-lg">🎳</span>
               <div>
-                <p className="text-white/50 text-xs">Your Starting Lane</p>
+                <p className="text-white/75 text-xs">Your Starting Lane</p>
                 <p className="text-white font-bold text-base">Lane {laneNumber}</p>
               </div>
             </div>
@@ -125,7 +125,7 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime }: {
             <div className="flex items-center gap-3">
               <span className="text-lg">🕐</span>
               <div>
-                <p className="text-white/50 text-xs">Squad Time</p>
+                <p className="text-white/75 text-xs">Squad Time</p>
                 <p className="text-white font-semibold text-sm">{squadTime}</p>
               </div>
             </div>
@@ -134,7 +134,7 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime }: {
             <div className="flex items-start gap-3">
               <span className="text-lg">📍</span>
               <div>
-                <p className="text-white/50 text-xs">Lane to Banquet Directions</p>
+                <p className="text-white/75 text-xs">Lane to Banquet Directions</p>
                 <p className="text-amber-200 font-semibold text-sm leading-relaxed">{laneToEvent}</p>
               </div>
             </div>
@@ -239,7 +239,7 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
         <span className="text-3xl">{icon}</span>
         <div>
           <h3 className="text-white font-bold text-base">{title}</h3>
-          <p className="text-white/50 text-xs">{subtitle}</p>
+          <p className="text-white/75 text-xs">{subtitle}</p>
         </div>
       </div>
 
@@ -248,7 +248,7 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
           <span className="text-base">⏰</span>
           <div>
-            <p className="text-white/50 text-xs">Check-in Begins</p>
+            <p className="text-white/75 text-xs">Check-in Begins</p>
             <p className="text-amber-300 font-semibold text-sm">{checkInTime}</p>
           </div>
         </div>
@@ -257,14 +257,14 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
       {/* QR code area */}
       {!eligible ? (
         <div className="text-center py-4 px-3 rounded-xl bg-white/5 border border-white/10">
-          <p className="text-white/40 text-sm leading-relaxed">
+          <p className="text-white/80 text-sm leading-relaxed">
             If you are interested in attending, please see your team captain before the event begins.
           </p>
         </div>
       ) : tokenUsed ? (
         <div className="text-center py-4 px-3 rounded-xl bg-emerald-900/30 border border-emerald-500/30">
           <p className="text-emerald-400 font-semibold text-sm">✓ Passport Redeemed</p>
-          <p className="text-white/40 text-xs mt-1">This QR code has been scanned at the door.</p>
+          <p className="text-white/70 text-xs mt-1">This QR code has been scanned at the door.</p>
         </div>
       ) : qrDataUrl ? (
         <div className="flex flex-col items-center gap-3">
@@ -282,7 +282,7 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
               </div>
             </div>
           </div>
-          <p className="text-white/50 text-xs text-center">Present this QR code at the {title.toLowerCase()} entrance</p>
+          <p className="text-white/80 text-xs text-center">Present this QR code at the {title.toLowerCase()} entrance</p>
           <Button
             size="sm"
             className="bowler-btn-secondary w-full"
@@ -305,8 +305,8 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
 
       {/* Entrance flow explanation */}
       <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-        <p className="text-white/50 text-xs font-semibold mb-1">🚪 How Entry Works</p>
-        <p className="text-white/70 text-xs leading-relaxed">{entranceFlow}</p>
+        <p className="text-white/85 text-xs font-semibold mb-1">🚪 How Entry Works</p>
+        <p className="text-white/85 text-xs leading-relaxed">{entranceFlow}</p>
       </div>
     </div>
   );
@@ -370,7 +370,10 @@ export default function BowlerDashboard() {
       <header className="bowler-portal-header px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl">🎳</span>
-          <span className="font-bold text-white text-base">B.O.B. Roll-off Passport</span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-white text-sm" style={{ fontFamily: "'Orbitron', sans-serif" }}>B.O.B. Roll-off Passport</span>
+            <span className="text-amber-300 text-xs font-semibold tracking-wider">Bowlers Orleans Bound</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {isCapitain && (

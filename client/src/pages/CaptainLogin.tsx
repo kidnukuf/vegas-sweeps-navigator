@@ -121,7 +121,10 @@ export default function CaptainLogin() {
         </button>
         <div className="flex items-center gap-2">
           <span className="text-2xl">⭐</span>
-          <span className="font-black text-white text-lg tracking-widest uppercase">B.O.B. Roll-off Passport</span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-black text-white text-base tracking-widest uppercase" style={{ fontFamily: "'Orbitron', sans-serif" }}>B.O.B. Roll-off Passport</span>
+            <span className="text-amber-300 text-xs font-semibold tracking-widest uppercase">Bowlers Orleans Bound</span>
+          </div>
         </div>
         <div className="w-24" />
       </header>
@@ -136,7 +139,7 @@ export default function CaptainLogin() {
         </div>
 
         <h1 className="captain-login-title">TEAM CAPTAIN</h1>
-        <p className="captain-login-subtitle">Command your roster. Lead your team to Vegas.</p>
+        <p className="captain-login-subtitle" style={{ color: 'rgba(255,255,255,0.9)' }}>Command your roster. Lead your team to Vegas.</p>
 
         {/* Event info */}
         {eventQuery.data && (
@@ -156,7 +159,7 @@ export default function CaptainLogin() {
             {/* SIGN IN */}
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                <p className="text-sm text-gray-400 text-center mb-4">
+                <p className="text-sm text-white/80 text-center mb-4">
                   Sign in with the name on your event registration.
                 </p>
                 <div className="grid grid-cols-2 gap-3">

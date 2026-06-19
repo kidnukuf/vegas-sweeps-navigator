@@ -52,7 +52,8 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
           <h1 className="text-3xl font-black tracking-tight" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 20px rgba(255,215,0,0.4)" }}>
             EVENT DIRECTOR
           </h1>
-          <p className="text-gray-500 text-sm mt-1">B.O.B. Roll-off Passport · Staff access only</p>
+          <p className="text-gray-200 text-sm mt-1 font-semibold">B.O.B. (Bowlers Orleans Bound) Roll-off Passport</p>
+          <p className="text-gray-500 text-xs mt-0.5">Staff access only</p>
         </div>
 
         {/* Login card */}
