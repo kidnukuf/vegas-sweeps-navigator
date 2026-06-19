@@ -20,6 +20,7 @@ import CaptainDashboard from "./pages/CaptainDashboard";
 import CaptainLogin from "./pages/CaptainLogin";
 import CaptainConfirmation from "./pages/CaptainConfirmation";
 import ScanPassport from "./pages/ScanPassport";
+import DoormanTablet from "./pages/DoormanTablet";
 
 function Router() {
   return (
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/captain" component={CaptainDashboard} />
       <Route path="/captain-confirmation" component={CaptainConfirmation} />
       <Route path="/scan/:type/:token" component={ScanPassport} />
+      <Route path="/doorman-tablet" component={DoormanTablet} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

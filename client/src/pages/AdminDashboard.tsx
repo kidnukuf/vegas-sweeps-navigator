@@ -295,7 +295,7 @@ function PassportManager({
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports">("roster");
+  const [activeTab, setActiveTab] = useState<"roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan">("roster");
   const [passportSearch, setPassportSearch] = useState("");
   const [passportFilter, setPassportFilter] = useState<"all" | "redeemed" | "pending" | "disabled">("all");
   const [editingBowler, setEditingBowler] = useState<Bowler | null>(null);
@@ -304,6 +304,19 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [newDoorman, setNewDoorman] = useState({ designation: "", password: "" });
   const [testQr, setTestQr] = useState<{ qrDataUrl: string; tokenValue: string } | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
+  // Tablet PIN
+  const [tabletPin, setTabletPin] = useState("");
+  const [tabletPinSaved, setTabletPinSaved] = useState(false);
+  // Admin camera scanner
+  const [adminScanMode, setAdminScanMode] = useState<"checkin" | "passport">("checkin");
+  const [adminPassportMode, setAdminPassportMode] = useState<"pool" | "banquet">("pool");
+  const [adminScanning, setAdminScanning] = useState(false);
+  const [adminScanResult, setAdminScanResult] = useState<string | null>(null);
+  const [adminScannerRef, setAdminScannerRef] = useState<any>(null);
+  const adminScanDivId = "admin-camera-qr";
+  // Help card open state (per card key)
+  const [openHelp, setOpenHelp] = useState<string | null>(null);
+  const toggleHelp = (key: string) => setOpenHelp((prev) => prev === key ? null : key);
   const [collapsedCenters, setCollapsedCenters] = useState<Set<string>>(new Set());
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
@@ -311,6 +324,37 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
   const toggleCenter = (name: string) => setCollapsedCenters((prev) => { const s = new Set(prev); s.has(name) ? s.delete(name) : s.add(name); return s; });
   const toggleTeam = (key: string) => setCollapsedTeams((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
+
+  // Admin camera scanner lifecycle
+  useEffect(() => {
+    if (!adminScanning) return;
+    let mounted = true;
+    import("html5-qrcode").then(({ Html5Qrcode }) => {
+      if (!mounted) return;
+      const scanner = new Html5Qrcode(adminScanDivId);
+      setAdminScannerRef(scanner);
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (text: string) => {
+          if (!mounted) return;
+          if (adminScanMode === "passport") {
+            const m = text.match(/\/scan\/(pool|banquet)\/([a-f0-9-]+)/i);
+            if (m) adminPassportScan.mutate({ tokenValue: m[2], passportType: m[1] as "pool" | "banquet" });
+            else adminPassportScan.mutate({ tokenValue: text.trim(), passportType: adminPassportMode });
+          } else {
+            validateToken.mutate({ tokenValue: text.trim(), method: "QR" });
+            setAdminScanning(false);
+          }
+        },
+        () => {}
+      ).catch(() => { toast.error("Camera access denied"); setAdminScanning(false); });
+    });
+    return () => {
+      mounted = false;
+      if (adminScannerRef) { try { adminScannerRef.stop(); } catch { /* ignore */ } }
+    };
+  }, [adminScanning]);
 
   // ─── Active event selection (multi-event support) ──────────────────────────
   const SELECTED_EVENT_KEY = "vsn_selected_event_id";
@@ -460,6 +504,28 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     onSuccess: (data) => setTestQr(data),
   });
 
+  const setTabletPinMut = trpc.setTabletPin.useMutation({
+    onSuccess: () => { toast.success("Tablet PIN saved"); setTabletPinSaved(true); setTimeout(() => setTabletPinSaved(false), 3000); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const adminPassportScan = trpc.bowlerAuth.scanPassport.useMutation({
+    onSuccess: (data) => {
+      const name = "bowlerName" in data ? String((data as Record<string,unknown>).bowlerName ?? "") : "";
+      if (data.result === "granted") setAdminScanResult(`✅ GRANTED${name ? " — " + name : ""}`);
+      else if (data.result === "used") setAdminScanResult(`🚫 ALREADY REDEEMED${name ? " — " + name : ""}`);
+      else if (data.result === "disabled") setAdminScanResult("⛔ PASSPORT DISABLED");
+      else setAdminScanResult("❌ INVALID QR CODE");
+      stopAdminScanner();
+    },
+    onError: (e) => { setAdminScanResult(`❌ ERROR: ${e.message}`); stopAdminScanner(); },
+  });
+
+  function stopAdminScanner() {
+    setAdminScanning(false);
+    if (adminScannerRef) { try { adminScannerRef.stop(); } catch { /* ignore */ } setAdminScannerRef(null); }
+  }
+
   const validateToken = trpc.tokens.validate.useMutation({
     onSuccess: (data) => {
       if ((data as Record<string, unknown>).isTest) setTestResult("✅ TEST QR SYSTEM WORKING — Token scanned and invalidated successfully");
@@ -601,10 +667,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-4">
         <div className="max-w-7xl mx-auto flex gap-1">
-          {(["roster", "passports", "doormen", "qrtest", "audit", "unmatched"] as const).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
+          {(["roster", "passports", "doormen", "scan", "qrtest", "audit", "unmatched"] as const).map((tab) => (
+            <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
               className={`px-4 py-3 text-sm font-semibold capitalize transition-colors border-b-2 ${activeTab === tab ? "border-yellow-500 text-yellow-400" : "border-transparent text-gray-500 hover:text-gray-300"}`}>
-              {tab === "qrtest" ? "QR Test" : tab === "unmatched" ? `Unmatched${unmatchedBowlers.length > 0 ? ` (${unmatchedBowlers.length})` : ""}` : tab === "passports" ? "🎫 Passports" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === "qrtest" ? "QR Test" : tab === "unmatched" ? `Unmatched${unmatchedBowlers.length > 0 ? ` (${unmatchedBowlers.length})` : ""}` : tab === "passports" ? "🎫 Passports" : tab === "scan" ? "📷 Scan" : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -613,6 +679,20 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === "roster" && (
           <div>
+            {/* Help flip-card for Roster */}
+            <div className="relative mb-4">
+              <button onClick={() => toggleHelp("roster")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>
+              {openHelp === "roster" && (
+                <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-5 mb-4 text-sm text-gray-300 leading-relaxed" style={{ animation: "flipIn 0.25s ease-out" }}>
+                  <h3 className="text-yellow-400 font-bold mb-2">📋 Roster — How It Works</h3>
+                  <p className="mb-2">The roster is your master list of all pre-registered bowlers. Each row represents one bowler imported from your Google Sheet.</p>
+                  <p className="mb-2"><strong>Hierarchy view:</strong> Bowlers grouped by center → team. Color-coded: gray = not signed up, yellow = all signed up, green = captain verified.</p>
+                  <p className="mb-2"><strong>Flat view:</strong> All bowlers in a searchable table. Click any row to edit their details, reset their password, or permanently delete them.</p>
+                  <p className="mb-2"><strong>Status badges:</strong> Pre-Reg → Signed Up → Verified → Checked In. You can manually change a bowler's status from the edit panel.</p>
+                  <p><strong>Search:</strong> Type a name, phone number, scantron ID, center name, or team name to filter instantly.</p>
+                </div>
+              )}
+            </div>
             <div className="mb-4 flex gap-3 flex-wrap">
               <input type="text" placeholder="🔍 Search by name, ID, phone, center, team..." value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -774,10 +854,51 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         )}
 
         {activeTab === "doormen" && (
-          <div className="max-w-2xl">
-            <h2 className="text-xl font-bold text-yellow-400 mb-4">Doorman Accounts</h2>
-            <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5 mb-5">
-              <h3 className="text-sm font-semibold text-gray-400 mb-3">Create New Doorman</h3>
+          <div className="max-w-2xl space-y-6">
+            {/* Help flip-card */}
+            <div className="relative">
+              <button onClick={() => toggleHelp("doormen")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>
+              {openHelp === "doormen" && (
+                <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-5 mb-4 text-sm text-gray-300 leading-relaxed" style={{ animation: "flipIn 0.25s ease-out" }}>
+                  <h3 className="text-yellow-400 font-bold mb-2">🚪 Doorman Tablet Mode — How It Works</h3>
+                  <p className="mb-2">The Doorman Tablet requires <strong>no login</strong>. You give the tablet to your doorman with the screen already open at <strong>bobrolloffpassport.com/doorman-tablet</strong>. The doorman enters the PIN you set below to unlock the scanner.</p>
+                  <p className="mb-2"><strong>To set up:</strong> Enter a 4–6 digit PIN below and tap Save PIN. Write it down and give it to your doorman. The tablet will auto-lock after 10 minutes of inactivity.</p>
+                  <p className="mb-2"><strong>Passport Scanner:</strong> Scans Pool Party and Banquet Dinner QR codes from bowler phones. Each code can only be scanned once — the system marks it used immediately.</p>
+                  <p><strong>Bowling Check-In:</strong> Scans the Entry Ticket QR from the bowler portal to check them in for bowling. Also supports Bluetooth HID scanners and manual token entry.</p>
+                </div>
+              )}
+            </div>
+
+            <h2 className="text-xl font-bold text-yellow-400">🚪 Doorman Tablet Setup</h2>
+
+            {/* Tablet PIN section */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-cyan-500/30 p-5">
+              <h3 className="text-sm font-semibold text-cyan-400 mb-1">Tablet Unlock PIN</h3>
+              <p className="text-gray-500 text-xs mb-4">Set a 4–6 digit PIN. Give the tablet to your doorman pre-opened at <span className="font-mono text-cyan-400">bobrolloffpassport.com/doorman-tablet</span>. The doorman enters this PIN to unlock the scanner — no login required.</p>
+              <div className="flex gap-3 items-center flex-wrap">
+                <input
+                  type="number"
+                  placeholder="4–6 digit PIN"
+                  value={tabletPin}
+                  onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, 6); setTabletPin(v); }}
+                  className="w-36 px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-lg font-mono tracking-widest focus:outline-none focus:border-cyan-500"
+                />
+                <button
+                  onClick={() => { if (tabletPin.length < 4) { toast.error("PIN must be at least 4 digits"); return; } setTabletPinMut.mutate({ eventId: EVENT_ID, pin: tabletPin }); }}
+                  disabled={setTabletPinMut.isPending || tabletPin.length < 4}
+                  className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold rounded-lg text-sm transition-all active:scale-95">
+                  {setTabletPinMut.isPending ? "Saving..." : tabletPinSaved ? "✅ Saved!" : "Save PIN"}
+                </button>
+                <a href="/doorman-tablet" target="_blank" rel="noopener noreferrer"
+                  className="px-5 py-2 bg-[#111] border border-white/20 hover:border-cyan-500/40 text-gray-300 hover:text-white font-semibold rounded-lg text-sm transition-all">
+                  Open Doorman Tablet →
+                </a>
+              </div>
+            </div>
+
+            {/* Legacy doorman accounts (kept for reference) */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5">
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Legacy Doorman Accounts <span className="text-gray-600 font-normal">(optional — not needed for tablet mode)</span></h3>
               <div className="flex gap-3 flex-wrap">
                 <input placeholder="Designation (e.g. DM1)" value={newDoorman.designation}
                   onChange={(e) => setNewDoorman({ ...newDoorman, designation: e.target.value })}
@@ -791,21 +912,117 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   {createDoorman.isPending ? "Creating..." : "Create"}
                 </button>
               </div>
+              <div className="space-y-2 mt-3">
+                {(doormen as Record<string, unknown>[]).map((d) => (
+                  <div key={String(d.id)} className="flex items-center justify-between bg-[#111] rounded-xl border border-white/10 px-4 py-3">
+                    <div><span className="font-bold text-cyan-400">{String(d.designation)}</span><span className="text-gray-500 text-sm ml-3">{String(d.username)}</span></div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${d.active ? "bg-green-900 text-green-300" : "bg-gray-700 text-gray-400"}`}>{d.active ? "Active" : "Inactive"}</span>
+                  </div>
+                ))}
+                {(doormen as unknown[]).length === 0 && <p className="text-gray-500 text-sm">No legacy accounts created.</p>}
+              </div>
             </div>
-            <div className="space-y-2">
-              {(doormen as Record<string, unknown>[]).map((d) => (
-                <div key={String(d.id)} className="flex items-center justify-between bg-[#1a1a1a] rounded-xl border border-white/10 px-4 py-3">
-                  <div><span className="font-bold text-cyan-400">{String(d.designation)}</span><span className="text-gray-500 text-sm ml-3">{String(d.username)}</span></div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${d.active ? "bg-green-900 text-green-300" : "bg-gray-700 text-gray-400"}`}>{d.active ? "Active" : "Inactive"}</span>
+          </div>
+        )}
+
+        {activeTab === "scan" && (
+          <div className="max-w-lg space-y-5">
+            {/* Help flip-card */}
+            <div className="relative">
+              <button onClick={() => toggleHelp("scan")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>
+              {openHelp === "scan" && (
+                <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-5 mb-2 text-sm text-gray-300 leading-relaxed" style={{ animation: "flipIn 0.25s ease-out" }}>
+                  <h3 className="text-yellow-400 font-bold mb-2">📷 Admin Camera Scanner — How It Works</h3>
+                  <p className="mb-2">This scanner lets <strong>you</strong> (the Event Director) scan QR codes directly from your own tablet or phone without needing the doorman tablet.</p>
+                  <p className="mb-2"><strong>Check-In mode:</strong> Scans a bowler's Entry Ticket QR to mark them as checked in for bowling. The token is invalidated immediately after scanning.</p>
+                  <p><strong>Passport mode:</strong> Scans Pool Party or Banquet Dinner passport QR codes. Select the correct event type before scanning. Each passport can only be redeemed once.</p>
                 </div>
-              ))}
-              {(doormen as unknown[]).length === 0 && <p className="text-gray-500 text-sm">No doorman accounts created yet.</p>}
+              )}
+            </div>
+
+            <h2 className="text-xl font-bold text-yellow-400">📷 Admin QR Scanner</h2>
+
+            {/* Mode selector */}
+            <div className="bg-[#1a1a1a] rounded-2xl p-1 flex gap-1 border border-white/10">
+              <button onClick={() => { setAdminScanMode("checkin"); setAdminScanResult(null); stopAdminScanner(); }}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${adminScanMode === "checkin" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"}`}>
+                🎳 Bowling Check-In
+              </button>
+              <button onClick={() => { setAdminScanMode("passport"); setAdminScanResult(null); stopAdminScanner(); }}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${adminScanMode === "passport" ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-gray-400 hover:text-white"}`}>
+                🎫 Passport
+              </button>
+            </div>
+
+            {adminScanMode === "passport" && (
+              <div className="bg-[#1a1a1a] rounded-2xl p-1 flex gap-1 border border-white/10">
+                <button onClick={() => setAdminPassportMode("pool")}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${adminPassportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white" : "text-gray-400 hover:text-white"}`}>
+                  🏊 Pool Party
+                </button>
+                <button onClick={() => setAdminPassportMode("banquet")}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${adminPassportMode === "banquet" ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white" : "text-gray-400 hover:text-white"}`}>
+                  🍽️ Banquet Dinner
+                </button>
+              </div>
+            )}
+
+            {/* Result */}
+            {adminScanResult && (
+              <div className={`rounded-2xl p-5 text-center font-bold text-lg border-2 ${
+                adminScanResult.startsWith("✅") ? "bg-green-900/40 border-green-500 text-green-300" :
+                adminScanResult.startsWith("🚫") ? "bg-red-900/40 border-red-500 text-red-300" :
+                adminScanResult.startsWith("⛔") ? "bg-orange-900/40 border-orange-500 text-orange-300" :
+                "bg-gray-800 border-gray-600 text-gray-300"
+              }`}>
+                {adminScanResult}
+                <button onClick={() => setAdminScanResult(null)} className="block mx-auto mt-3 px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-normal transition-colors">Scan Next</button>
+              </div>
+            )}
+
+            {/* Camera */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
+              {adminScanning ? (
+                <div>
+                  <div id={adminScanDivId} className="w-full" />
+                  <div className="p-3 text-center">
+                    <button onClick={stopAdminScanner} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors">Stop Camera</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <div className="text-6xl mb-4">📷</div>
+                  <p className="text-gray-500 text-sm mb-4">
+                    {adminScanMode === "checkin" ? "Scan a bowler's Entry Ticket QR to check them in for bowling." : `Scan a bowler's ${adminPassportMode === "pool" ? "Pool Party" : "Banquet Dinner"} passport QR.`}
+                  </p>
+                  <button onClick={() => { setAdminScanResult(null); setAdminScanning(true); }}
+                    className={`w-full py-4 font-black text-lg rounded-xl text-white transition-all active:scale-95 ${
+                      adminScanMode === "checkin" ? "" : adminPassportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600" : "bg-gradient-to-r from-purple-500 to-pink-600"
+                    }`}
+                    style={adminScanMode === "checkin" ? { background: "linear-gradient(135deg, #ffd700, #ffaa00)", color: "#000" } : {}}>
+                    📷 Start Camera Scan
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {activeTab === "qrtest" && (
           <div className="max-w-lg">
+            {/* Help flip-card */}
+            <div className="relative mb-4">
+              <button onClick={() => toggleHelp("qrtest")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>
+              {openHelp === "qrtest" && (
+                <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-5 mb-4 text-sm text-gray-300 leading-relaxed" style={{ animation: "flipIn 0.25s ease-out" }}>
+                  <h3 className="text-yellow-400 font-bold mb-2">🔲 QR System Test — How It Works</h3>
+                  <p className="mb-2">Use this before every event to confirm the entire QR pipeline is working: token generation, network connectivity, and scanner invalidation.</p>
+                  <p className="mb-2"><strong>Step 1:</strong> Click Generate Test QR. A QR code appears using the reserved ID <span className="font-mono text-yellow-400">0000000000</span> — never assigned to a real bowler.</p>
+                  <p className="mb-2"><strong>Step 2:</strong> Either click Simulate Scan (manual test), or use the 📷 Scan tab to scan the QR with your camera (full end-to-end test).</p>
+                  <p><strong>Success:</strong> You should see ✅ TEST QR SYSTEM WORKING. If you see an error, check your internet connection and try again.</p>
+                </div>
+              )}
+            </div>
             <h2 className="text-xl font-bold text-yellow-400 mb-2">QR Code System Test</h2>
             <p className="text-gray-400 text-sm mb-5">Generates a test QR using reserved ID <span className="font-mono text-yellow-400">0000000000</span> — never assigned to a real bowler. Tests scanner, network, and token invalidation.</p>
             <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-6 text-center">
@@ -867,6 +1084,20 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         )}
 
         {activeTab === "passports" && (
+          <div className="mb-4 relative">
+            <button onClick={() => toggleHelp("passports")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>
+            {openHelp === "passports" && (
+              <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-5 mb-4 text-sm text-gray-300 leading-relaxed" style={{ animation: "flipIn 0.25s ease-out" }}>
+                <h3 className="text-yellow-400 font-bold mb-2">🎫 Passport Management — How It Works</h3>
+                <p className="mb-2">Passports are single-use QR codes that bowlers show at the Pool Party and Banquet Dinner entrance. Each passport can only be scanned once.</p>
+                <p className="mb-2"><strong>Active:</strong> The bowler has a valid passport not yet redeemed. <strong>Redeemed:</strong> Already scanned at the door. <strong>Disabled:</strong> You have manually blocked this bowler's passport (e.g., they did not pay).</p>
+                <p className="mb-2"><strong>To disable a passport:</strong> Find the bowler and click Disable next to Pool Party or Banquet. This prevents entry even if they show the QR code.</p>
+                <p><strong>To re-enable:</strong> Click Enable next to the disabled passport. The same QR code becomes valid again immediately.</p>
+              </div>
+            )}
+          </div>
+        )}
+        {activeTab === "passports" && (
           <PassportManager
             bowlers={bowlers as Bowler[]}
             eventId={EVENT_ID}
@@ -880,6 +1111,19 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
         {activeTab === "audit" && (
           <div>
+            {/* Help flip-card */}
+            <div className="relative mb-4">
+              <button onClick={() => toggleHelp("audit")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>
+              {openHelp === "audit" && (
+                <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-5 mb-4 text-sm text-gray-300 leading-relaxed" style={{ animation: "flipIn 0.25s ease-out" }}>
+                  <h3 className="text-yellow-400 font-bold mb-2">📝 Audit Log — How It Works</h3>
+                  <p className="mb-2">The audit log records every significant action taken in the system: sign-ups, check-ins, passport scans, password resets, and admin edits.</p>
+                  <p className="mb-2"><strong>Each entry shows:</strong> timestamp, action type, who performed it (bowler, captain, doorman, or admin), and what was affected.</p>
+                  <p className="mb-2"><strong>Export:</strong> Use the Export button in the header to download the full audit log as a CSV for your records.</p>
+                  <p><strong>Tip:</strong> If a bowler claims they were checked in but the roster shows otherwise, search the audit log for their scantron ID to see exactly what happened and when.</p>
+                </div>
+              )}
+            </div>
             <h2 className="text-xl font-bold text-yellow-400 mb-4">Audit Log</h2>
             <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
               <div className="overflow-x-auto">

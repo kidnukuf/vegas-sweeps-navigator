@@ -431,6 +431,21 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── TABLET PIN (doorman tablet mode) ─────────────────────────────────────
+  setTabletPin: publicProcedure
+    .input(z.object({ eventId: z.number(), pin: z.string().min(4).max(6) }))
+    .mutation(async ({ input }) => {
+      await rawQuery('UPDATE events SET tabletPin=? WHERE id=?', [input.pin, input.eventId]);
+      return { success: true };
+    }),
+
+  getTabletPin: publicProcedure
+    .input(z.object({ eventId: z.number() }))
+    .query(async ({ input }) => {
+      const rows = await rawQuery('SELECT tabletPin FROM events WHERE id=?', [input.eventId]) as Record<string, unknown>[];
+      return { pin: rows[0]?.tabletPin ?? null };
+    }),
+
   // ─── QR TOKENS ────────────────────────────────────────────────────────────
   tokens: router({
     generate: publicProcedure

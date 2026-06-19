@@ -36,6 +36,7 @@ export const events = mysqlTable("events", {
   bowlingDate: varchar("bowlingDate", { length: 20 }),
   squadTime: varchar("squadTime", { length: 50 }),
   status: mysqlEnum("status", ["planning", "active", "completed"]).default("planning").notNull(),
+  tabletPin: varchar("tabletPin", { length: 6 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

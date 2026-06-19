@@ -184,3 +184,8 @@
 - [x] Table: all bowlers, pool party token status (active/disabled/redeemed), banquet token status
 - [x] Disable / Re-enable buttons per bowler per passport type
 - [x] Redemption count summary (e.g., 142/450 pool party redeemed)
+
+## Phase 15: Doorman Tablet Mode & Admin Help Guides
+- [ ] Build PIN-protected Doorman Tablet Mode (/doorman-tablet): ED sets PIN in admin, tablet unlocks with PIN, camera QR scanner only — no separate login required
+- [ ] Add camera-based QR scanner to admin panel (ED can scan bowler QR codes from their own tablet)
+- [ ] Add contextual flip-card help guides throughout admin dashboard — one per major feature, collapsed/sleek by default

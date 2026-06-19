@@ -173,6 +173,11 @@
 ::-webkit-scrollbar-thumb:hover { background: #ffd70066; }
 
 /* ─── Animations ─────────────────────────────────────────────────── */
+@keyframes flipIn {
+  from { opacity: 0; transform: perspective(600px) rotateX(-12deg) translateY(-6px); }
+  to   { opacity: 1; transform: perspective(600px) rotateX(0deg)  translateY(0); }
+}
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 8px #00ffff44; }
   50% { box-shadow: 0 0 20px #00ffff88, 0 0 40px #00ffff22; }
