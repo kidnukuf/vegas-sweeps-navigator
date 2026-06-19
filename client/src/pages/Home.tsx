@@ -17,7 +17,7 @@ export default function Home() {
         backgroundImage: "url('/manus-storage/bg-bowlers-orleans-bound_c7329b96.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundAttachment: "fixed",
+        backgroundAttachment: "scroll", // fixed breaks on iOS/Android mobile
       }}
     >
       {/* Dark overlay for readability */}

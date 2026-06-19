@@ -268,7 +268,7 @@
   background-image: url('/manus-storage/bg-vegas-bowls_1fbd8c3e.jpg');
   background-size: cover;
   background-position: center top;
-  background-attachment: fixed;
+  background-attachment: scroll; /* fixed breaks on iOS/Android mobile */
 }
 
 .bowler-portal-header {
@@ -440,7 +440,7 @@
   background-image: url('/manus-storage/bg-mardi-gras-bowl_d26e7756.jpg');
   background-size: cover;
   background-position: center top;
-  background-attachment: fixed;
+  background-attachment: scroll; /* fixed breaks on iOS/Android mobile */
 }
 
 .captain-portal-header {
@@ -544,7 +544,7 @@
   background-image: url('/manus-storage/bg-mardi-gras-bowl_d26e7756.jpg');
   background-size: cover;
   background-position: center top;
-  background-attachment: fixed;
+  background-attachment: scroll; /* fixed breaks on iOS/Android mobile */
   min-height: 100vh;
 }
 
