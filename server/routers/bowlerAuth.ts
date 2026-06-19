@@ -98,12 +98,10 @@ async function findBowlerByName(
             b.email, b.phone, b.scantronId, b.registrationStatus,
             b.passwordHash, b.isCapitain, b.teamId, b.centerId,
             t.teamName, bc.centerName,
-            la.laneNumber, l.squadTime
+            b.laneNumber, b.squadTime
      FROM bowlers b
      LEFT JOIN teams t ON t.id = b.teamId
      LEFT JOIN bowling_centers bc ON bc.id = b.centerId
-     LEFT JOIN leagues l ON l.id = b.leagueId
-     LEFT JOIN lane_assignments la ON la.teamId = b.teamId AND la.eventId = b.eventId
      WHERE b.eventId = ?
        AND LOWER(TRIM(b.legalFirstName)) = LOWER(TRIM(?))
        AND LOWER(TRIM(b.legalLastName))  = LOWER(TRIM(?))
@@ -149,15 +147,13 @@ async function getBowlerProfile(bowlerId: number) {
             b.email, b.phone, b.scantronId, b.registrationStatus,
             b.isCapitain, b.captainVerified, b.teamId, b.centerId,
             t.teamName, t.teamCode, bc.centerName,
-            la.laneNumber, l.squadTime,
+            b.laneNumber, b.squadTime,
             e.eventName, e.bowlingDate,
             h.hotelName, h.checkinDate, h.checkoutDate, h.roomType,
             p.totalAmountDue, p.paid
      FROM bowlers b
      LEFT JOIN teams t ON t.id = b.teamId
      LEFT JOIN bowling_centers bc ON bc.id = b.centerId
-     LEFT JOIN leagues l ON l.id = b.leagueId
-     LEFT JOIN lane_assignments la ON la.teamId = b.teamId AND la.eventId = b.eventId
      LEFT JOIN events e ON e.id = b.eventId
      LEFT JOIN hotel_records h ON h.bowlerId = b.id
      LEFT JOIN payment_records p ON p.bowlerId = b.id
