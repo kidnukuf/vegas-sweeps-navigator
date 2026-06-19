@@ -876,6 +876,77 @@ export const appRouter = router({
 
   // ─── BOWLER / CAPTAIN AUTH ─────────────────────────────────────────────────
   bowlerAuth: bowlerAuthRouter,
+
+  // ─── OFFLINE PACKAGE ──────────────────────────────────────────────────────────────────────────────────
+  offline: router({
+    // Export all active passport tokens + bowler names as a JSON snapshot
+    exportSnapshot: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input }) => {
+        const rows = await rawQuery(
+          `SELECT b.id, b.legalFirstName, b.legalLastName, b.scantronId,
+                  b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
+                  et.tokenValue AS bowlingToken, et.isUsed AS bowlingUsed
+           FROM bowlers b
+           LEFT JOIN entry_tokens et ON et.bowlerId = b.id AND et.eventId = ? AND et.isUsed = 0 AND et.tokenType != 'test'
+           WHERE b.eventId = ? AND b.registrationStatus != 'pre_registered'`,
+          [input.eventId, input.eventId]
+        ) as Record<string, unknown>[];
+        const event = await getActiveEvent() as Record<string, unknown> | null;
+        return {
+          exportedAt: Date.now(),
+          eventId: input.eventId,
+          eventName: (event as Record<string, unknown>)?.eventName ?? 'B.O.B. Roll-off',
+          tabletPin: (event as Record<string, unknown>)?.tabletPin ?? null,
+          bowlers: rows,
+        };
+      }),
+
+    // Cloud sync-back: offline server posts redemptions after connectivity returns
+    syncRedemptions: publicProcedure
+      .input(z.object({
+        deviceId: z.string(),
+        redemptions: z.array(z.object({
+          token: z.string(),
+          passportType: z.enum(['pool', 'banquet', 'bowling']),
+          bowlerId: z.number().optional(),
+          scannedAt: z.number(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        let synced = 0;
+        let skipped = 0;
+        for (const r of input.redemptions) {
+          try {
+            if (r.passportType === 'bowling') {
+              const token = await getTokenByValue(r.token) as Record<string, unknown> | null;
+              if (token && !token.isUsed) {
+                await invalidateToken(typeof token.id === 'number' ? token.id : Number(token.id));
+                if (r.bowlerId) await createCheckIn(r.bowlerId, typeof token.eventId === 'number' ? token.eventId : 1, 'QR', undefined, typeof token.id === 'number' ? token.id : undefined);
+                synced++;
+              } else { skipped++; }
+            } else if (r.passportType === 'pool') {
+              const existing = await rawQuery('SELECT poolPartyUsed FROM bowlers WHERE poolPartyToken=?', [r.token]) as Record<string, unknown>[];
+              if (existing[0] && !existing[0].poolPartyUsed) {
+                await rawQuery('UPDATE bowlers SET poolPartyUsed=1 WHERE poolPartyToken=?', [r.token]);
+                synced++;
+              } else { skipped++; }
+            } else if (r.passportType === 'banquet') {
+              const existing = await rawQuery('SELECT banquetUsed FROM bowlers WHERE banquetToken=?', [r.token]) as Record<string, unknown>[];
+              if (existing[0] && !existing[0].banquetUsed) {
+                await rawQuery('UPDATE bowlers SET banquetUsed=1 WHERE banquetToken=?', [r.token]);
+                synced++;
+              } else { skipped++; }
+            }
+            await rawQuery(
+              'INSERT INTO offline_sync_queue (token, passport_type, bowler_id, scanned_at, device_id, synced_to_cloud, synced_at, created_at) VALUES (?,?,?,?,?,1,?,?)',
+              [r.token, r.passportType, r.bowlerId ?? null, r.scannedAt, input.deviceId, Date.now(), Date.now()]
+            );
+          } catch { skipped++; }
+        }
+        return { success: true, synced, skipped, total: input.redemptions.length };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

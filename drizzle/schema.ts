@@ -1,5 +1,6 @@
 import {
   int,
+  bigint,
   mysqlEnum,
   mysqlTable,
   text,
@@ -324,3 +325,18 @@ export const importSessions = mysqlTable("import_sessions", {
 });
 
 export type ImportSession = typeof importSessions.$inferSelect;
+
+// ─── OFFLINE SYNC QUEUE (redemptions queued while offline, replayed to cloud) ────────────────────────────────────────────────────────────────
+export const offlineSyncQueue = mysqlTable("offline_sync_queue", {
+  id: int("id").autoincrement().primaryKey(),
+  token: varchar("token", { length: 255 }).notNull(),
+  passportType: varchar("passport_type", { length: 20 }).notNull(), // 'pool' | 'banquet' | 'bowling'
+  bowlerId: int("bowler_id"),
+  scannedAt: int("scanned_at").notNull(),
+  deviceId: varchar("device_id", { length: 100 }),
+  syncedToCloud: int("synced_to_cloud").default(0),
+  syncedAt: int("synced_at"),
+  createdAt: int("created_at").notNull(),
+});
+
+export type OfflineSyncQueue = typeof offlineSyncQueue.$inferSelect;

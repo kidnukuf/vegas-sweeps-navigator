@@ -189,3 +189,12 @@
 - [x] Build PIN-protected Doorman Tablet Mode (/doorman-tablet): ED sets PIN in admin, tablet unlocks with PIN, camera QR scanner only — no separate login required
 - [x] Add camera-based QR scanner to admin panel (ED can scan bowler QR codes from their own tablet)
 - [x] Add contextual flip-card help guides throughout admin dashboard — one per major feature, collapsed/sleek by default
+
+## Phase 16: Windows Offline Package (Zero-Install Local Server)
+- [ ] Add offline_sync_queue table to schema — stores redemptions queued while offline for cloud sync-back
+- [ ] Add tRPC endpoint: admin.exportOfflineSnapshot — returns all active passport tokens + bowler names as JSON
+- [ ] Build offline-server/ directory: Express + better-sqlite3, serves /doorman-tablet UI, validates QR locally, queues redemptions
+- [ ] Bundle Node.js 22 Windows binary (node.exe) + offline server into BOB-Offline-Package.zip with START.bat double-click launcher
+- [ ] Build cloud sync-back endpoint: POST /api/offline-sync — accepts batched redemptions, deduplicates, writes to cloud DB
+- [ ] Add "Download Offline Package" button to admin dashboard (exports snapshot + triggers ZIP download)
+- [ ] Add auto-sync: when offline server detects internet, push queued redemptions to cloud and show sync status

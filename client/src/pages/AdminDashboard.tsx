@@ -908,6 +908,37 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </div>
             </div>
 
+            {/* Offline Package Download */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-purple-500/30 p-5">
+              <h3 className="text-sm font-semibold text-purple-400 mb-1">💻 Venue Offline Package (Windows)</h3>
+              <p className="text-gray-500 text-xs mb-4">No WiFi or mobile signal at the venue? Download the offline server package. Run it on your Windows laptop, connect doorman tablets to your laptop's hotspot, and scan QR codes with zero internet. All redemptions sync back to the cloud automatically when you reconnect.</p>
+              <div className="flex gap-3 flex-wrap">
+                <a
+                  href="/manus-storage/BOB-Offline-Server-Windows_73181527.zip"
+                  download="BOB-Offline-Server-Windows.zip"
+                  className="px-5 py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2">
+                  ⬇️ Download Offline Package (.zip, 36MB)
+                </a>
+                <button
+                  onClick={async () => {
+                    try {
+                      const utils = trpc.useUtils();
+                      const snap = await utils.offline.exportSnapshot.fetch({ eventId: EVENT_ID });
+                      const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = 'bob_snapshot.json'; a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('Snapshot downloaded — copy to the offline server folder');
+                    } catch (e) { toast.error('Failed to export snapshot'); }
+                  }}
+                  className="px-5 py-2 bg-[#111] border border-purple-500/30 hover:border-purple-500/60 text-purple-300 hover:text-white font-semibold rounded-lg text-sm transition-all active:scale-95">
+                  📥 Download Bowler Snapshot (.json)
+                </button>
+              </div>
+              <p className="text-gray-600 text-xs mt-3">Setup order: 1) Download package → 2) Extract ZIP → 3) Download snapshot → 4) Copy snapshot into the extracted folder → 5) Double-click START.bat at the venue</p>
+            </div>
+
             {/* Legacy doorman accounts (kept for reference) */}
             <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5">
               <h3 className="text-sm font-semibold text-gray-400 mb-3">Legacy Doorman Accounts <span className="text-gray-600 font-normal">(optional — not needed for tablet mode)</span></h3>
