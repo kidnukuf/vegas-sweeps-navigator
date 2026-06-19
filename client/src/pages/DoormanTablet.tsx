@@ -1,6 +1,121 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+
+// ─── Confetti particle ────────────────────────────────────────────────────────
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  rotation: number;
+  rotationSpeed: number;
+  opacity: number;
+  shape: "rect" | "circle";
+}
+
+function ConfettiBurst({ active }: { active: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Particle[]>([]);
+  const rafRef = useRef<number>(0);
+
+  const COLORS = ["#00ff88", "#00e5ff", "#ffd700", "#ff6b6b", "#c084fc", "#34d399", "#f9a825", "#ffffff"];
+
+  const spawnParticles = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const cx = canvas.width / 2;
+    const cy = canvas.height * 0.45;
+    const particles: Particle[] = [];
+    for (let i = 0; i < 120; i++) {
+      const angle = (Math.random() * Math.PI * 2);
+      const speed = 4 + Math.random() * 10;
+      particles.push({
+        id: i,
+        x: cx + (Math.random() - 0.5) * 80,
+        y: cy + (Math.random() - 0.5) * 40,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 6,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        size: 5 + Math.random() * 7,
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 12,
+        opacity: 1,
+        shape: Math.random() > 0.4 ? "rect" : "circle",
+      });
+    }
+    particlesRef.current = particles;
+  }, []);
+
+  useEffect(() => {
+    if (!active) {
+      cancelAnimationFrame(rafRef.current);
+      particlesRef.current = [];
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      return;
+    }
+    spawnParticles();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    function animate() {
+      if (!canvas || !ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particlesRef.current = particlesRef.current
+        .map((p) => ({
+          ...p,
+          x: p.x + p.vx,
+          y: p.y + p.vy,
+          vy: p.vy + 0.35,
+          vx: p.vx * 0.98,
+          rotation: p.rotation + p.rotationSpeed,
+          opacity: p.y > canvas.height * 0.85 ? Math.max(0, p.opacity - 0.04) : p.opacity,
+        }))
+        .filter((p) => p.opacity > 0 && p.y < canvas.height + 20);
+
+      for (const p of particlesRef.current) {
+        ctx.save();
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        if (p.shape === "rect") {
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if (particlesRef.current.length > 0) {
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    }
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [active, spawnParticles]);
+
+  if (!active) return null;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={window.innerWidth}
+      height={window.innerHeight}
+      className="fixed inset-0 z-[110] pointer-events-none"
+    />
+  );
+}
 
 type PassportMode = "pool" | "banquet";
 type ScanResult = "granted" | "used" | "disabled" | "invalid" | null;
@@ -111,6 +226,18 @@ function PinPad({ onUnlock }: { onUnlock: () => void }) {
           60% { transform: translateX(-8px); }
           80% { transform: translateX(4px); }
         }
+        @keyframes grantedPop {
+          0%   { transform: scale(0.6) translateY(30px); opacity: 0; }
+          60%  { transform: scale(1.08) translateY(-6px); opacity: 1; }
+          80%  { transform: scale(0.97) translateY(2px); }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes checkmarkBounce {
+          0%   { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+          50%  { transform: scale(1.3) rotate(8deg); opacity: 1; }
+          75%  { transform: scale(0.9) rotate(-4deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
       `}</style>
     </div>
   );
@@ -129,6 +256,8 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
   const [checkInResult, setCheckInResult] = useState<{ success: boolean; message: string; bowlerName?: string } | null>(null);
   const [showDenied, setShowDenied] = useState(false);
   const [lastGranted, setLastGranted] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [checkmarkPop, setCheckmarkPop] = useState(false);
   const [sseConnected, setSseConnected] = useState(false);
   const [inactiveTimer, setInactiveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const scannerRef = useRef<any>(null);
@@ -169,6 +298,12 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
       setScanMessage(data.message);
       if ("bowlerName" in data && data.bowlerName) setBowlerName(data.bowlerName);
       stopScanner();
+      if (data.result === "granted") {
+        setShowConfetti(true);
+        setCheckmarkPop(true);
+        setTimeout(() => setShowConfetti(false), 3500);
+        setTimeout(() => setCheckmarkPop(false), 3000);
+      }
     },
     onError: (err) => { setScanResult("invalid"); setScanMessage(err.message); stopScanner(); },
   });
@@ -180,6 +315,10 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
         setCheckInResult({ success: true, message: "ENTRY GRANTED", bowlerName: name });
         setLastGranted(name);
         setShowDenied(false);
+        setShowConfetti(true);
+        setCheckmarkPop(true);
+        setTimeout(() => setShowConfetti(false), 3500);
+        setTimeout(() => setCheckmarkPop(false), 3000);
         setTimeout(() => setCheckInResult(null), 5000);
       } else {
         setCheckInResult({ success: false, message: `DENIED — ${data.error}` });
@@ -268,6 +407,9 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white">
+      {/* Confetti canvas */}
+      <ConfettiBurst active={showConfetti} />
+
       {/* DENIED flash */}
       {showDenied && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
@@ -281,15 +423,34 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
         </div>
       )}
 
-      {/* GRANTED flash */}
+      {/* GRANTED flash — animated checkmark pop-up */}
       {checkInResult?.success && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
-          style={{ background: "rgba(0,200,0,0.08)" }}>
-          <div className="text-center bg-[#0a1a0a] border-2 border-green-500 rounded-3xl px-10 py-8 shadow-[0_0_60px_rgba(0,255,0,0.4)]">
-            <div className="text-7xl font-black text-green-400 tracking-widest" style={{ textShadow: "0 0 30px rgba(0,255,0,0.8)" }}>
-              ✅ GRANTED
+          style={{ background: "rgba(0,200,0,0.10)" }}>
+          <div
+            className="text-center rounded-3xl px-10 py-8"
+            style={{
+              background: "linear-gradient(135deg, #052e16, #14532d)",
+              border: "3px solid #22c55e",
+              boxShadow: "0 0 80px rgba(34,197,94,0.6), 0 0 160px rgba(34,197,94,0.2)",
+              animation: checkmarkPop ? "grantedPop 0.45s cubic-bezier(0.23,1,0.32,1) both" : "none",
+            }}
+          >
+            <div
+              className="text-[6rem] leading-none mb-2"
+              style={{
+                filter: "drop-shadow(0 0 24px rgba(34,197,94,0.9))",
+                animation: checkmarkPop ? "checkmarkBounce 0.5s cubic-bezier(0.23,1,0.32,1) 0.1s both" : "none",
+              }}
+            >
+              ✅
             </div>
-            <div className="text-green-300 text-2xl mt-2 font-bold">{checkInResult.bowlerName}</div>
+            <div className="text-5xl font-black text-green-400 tracking-widest mb-2" style={{ textShadow: "0 0 30px rgba(0,255,0,0.8)" }}>
+              GRANTED
+            </div>
+            {checkInResult.bowlerName && (
+              <div className="text-green-200 text-2xl font-bold mt-1">{checkInResult.bowlerName}</div>
+            )}
           </div>
         </div>
       )}
