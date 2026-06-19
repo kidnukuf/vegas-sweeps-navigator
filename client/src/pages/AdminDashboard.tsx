@@ -317,6 +317,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   // Help card open state (per card key)
   const [openHelp, setOpenHelp] = useState<string | null>(null);
   const toggleHelp = (key: string) => setOpenHelp((prev) => prev === key ? null : key);
+  const trpcUtils = trpc.useUtils();
   const [collapsedCenters, setCollapsedCenters] = useState<Set<string>>(new Set());
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
@@ -922,8 +923,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 <button
                   onClick={async () => {
                     try {
-                      const utils = trpc.useUtils();
-                      const snap = await utils.offline.exportSnapshot.fetch({ eventId: EVENT_ID });
+                      const snap = await trpcUtils.offline.exportSnapshot.fetch({ eventId: EVENT_ID });
                       const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');

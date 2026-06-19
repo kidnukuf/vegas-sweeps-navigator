@@ -191,10 +191,10 @@
 - [x] Add contextual flip-card help guides throughout admin dashboard — one per major feature, collapsed/sleek by default
 
 ## Phase 16: Windows Offline Package (Zero-Install Local Server)
-- [ ] Add offline_sync_queue table to schema — stores redemptions queued while offline for cloud sync-back
-- [ ] Add tRPC endpoint: admin.exportOfflineSnapshot — returns all active passport tokens + bowler names as JSON
-- [ ] Build offline-server/ directory: Express + better-sqlite3, serves /doorman-tablet UI, validates QR locally, queues redemptions
-- [ ] Bundle Node.js 22 Windows binary (node.exe) + offline server into BOB-Offline-Package.zip with START.bat double-click launcher
-- [ ] Build cloud sync-back endpoint: POST /api/offline-sync — accepts batched redemptions, deduplicates, writes to cloud DB
-- [ ] Add "Download Offline Package" button to admin dashboard (exports snapshot + triggers ZIP download)
-- [ ] Add auto-sync: when offline server detects internet, push queued redemptions to cloud and show sync status
+- [x] Add offline_sync_queue table to schema — stores redemptions queued while offline for cloud sync-back
+- [x] Add tRPC endpoint: offline.exportSnapshot — returns all active passport tokens + bowler names as JSON
+- [x] Build offline-server/ directory: Express + sql.js (pure JS SQLite), serves /doorman-tablet UI, validates QR locally, queues redemptions
+- [x] Bundle Node.js 22 Windows binary (node.exe) + offline server into BOB-Offline-Server-Windows.zip with START.bat double-click launcher
+- [x] Build cloud sync-back endpoint: offline.syncRedemptions tRPC mutation — accepts batched redemptions, deduplicates, writes to cloud DB
+- [x] Add "Download Offline Package" + "Download Bowler Snapshot" buttons to admin dashboard Doormen tab
+- [x] Add auto-sync: offline server polls every 30s, pushes queued redemptions to cloud when internet detected
