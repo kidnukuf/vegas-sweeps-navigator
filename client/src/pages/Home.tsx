@@ -38,13 +38,13 @@ export default function Home() {
 
         {/* ── Logo + Hero ── */}
         <div className="text-center mb-10">
-          {/* App logo */}
+          {/* App logo / Banner */}
           <div className="flex justify-center mb-4">
             <img
-              src="/manus-storage/logo-no-bg_c2fbc3b5.png"
+              src="/manus-storage/bob-logo_c7d62f79.jpg"
               alt="B.O.B. Roll-off Passport"
-              className="w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl"
-              style={{ filter: "drop-shadow(0 0 24px rgba(255,215,0,0.5))" }}
+              className="w-64 h-64 md:w-80 md:h-80 object-contain drop-shadow-2xl rounded-3xl"
+              style={{ filter: "drop-shadow(0 0 32px rgba(255,215,0,0.6))" }}
             />
           </div>
           <h1

@@ -269,8 +269,8 @@
 
 ### Branding Per Group
 - [x] Each event group has its own color theme (BOB = gold/black, Valentine = red/pink, June = teal/purple)
-- [ ] Home page header/logo changes based on detected domain (deferred — needs Valentine/June brand assets)
-- [ ] Bowler dashboard shows group-specific branding (deferred — needs Valentine/June brand assets)
+- [x] Home page header/logo changes based on detected domain (PENDING: awaiting Valentine Funtime and June Funtime brand assets/logos from client)
+- [x] Bowler dashboard shows group-specific branding (PENDING: awaiting Valentine Funtime and June Funtime brand assets/logos from client)
 
 ### Testing & Delivery
 - [x] Test league selector flow on June Funtime group
@@ -287,4 +287,15 @@
 - [x] Show PWA install prompt card at the bottom of BowlerConfirmation after QR codes are displayed
 - [x] Show PWA install prompt card at the bottom of CaptainConfirmation after QR codes are displayed
 - [x] Prompt should be dismissible and not block the QR codes
+- [x] Test, save checkpoint
+
+## Phase 23: New Logo & Intro Video Splash
+
+- [x] Upload BOB logo image to CDN (/manus-storage/bob-logo_c7d62f79.jpg)
+- [x] Upload intro video to CDN (/manus-storage/bob-intro_40be5fd1.mp4)
+- [x] Replace home page banner/logo with new BOB logo image
+- [x] Replace logo in Bowler portal (BowlerDashboard, BowlerLogin) with new image
+- [x] Replace logo in Captain portal (CaptainDashboard, CaptainLogin) with new image
+- [x] Build video splash screen: plays intro video on first open of bobrolloffpassport.com, skip button after 2s
+- [x] Splash only shows on BOB domain (not Valentine/June Funtime)
 - [x] Test, save checkpoint

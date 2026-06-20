@@ -22,6 +22,7 @@ import CaptainConfirmation from "./pages/CaptainConfirmation";
 import ScanPassport from "./pages/ScanPassport";
 import DoormanTablet from "./pages/DoormanTablet";
 import LeagueSelector from "./pages/LeagueSelector";
+import { VideoSplash } from "./components/VideoSplash";
 
 function Router() {
   return (
@@ -57,6 +58,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
+          <VideoSplash />
           <OfflineBanner />
           <Toaster />
           <Router />

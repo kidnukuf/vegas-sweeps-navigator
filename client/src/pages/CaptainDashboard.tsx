@@ -345,7 +345,12 @@ export default function CaptainDashboard() {
       {/* ── Header ── */}
       <header className="captain-portal-header px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 bob-header-group cursor-default select-none">
-          <span className="text-xl">⭐</span>
+          <img
+            src="/manus-storage/bob-logo_c7d62f79.jpg"
+            alt="B.O.B. Roll-off Passport"
+            className="w-10 h-10 rounded-xl object-cover"
+            style={{ filter: "drop-shadow(0 0 6px rgba(255,215,0,0.5))" }}
+          />
           <div className="flex flex-col leading-tight">
             <span className="bob-header-title font-bold text-white text-sm" style={{ fontFamily: "'Orbitron', sans-serif" }}>B.O.B. Roll-off Passport</span>
             <span className="bob-header-subtitle text-amber-300 text-xs font-semibold tracking-wider">Bowlers Orleans Bound</span>
