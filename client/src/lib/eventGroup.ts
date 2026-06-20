@@ -25,7 +25,19 @@ export function detectGroupSlug(): GroupSlug {
 /** Theme config per group */
 export const GROUP_THEMES: Record<
   GroupSlug,
-  { name: string; color: string; accent: string; description: string; isMultiEvent: boolean }
+  {
+    name: string;
+    color: string;
+    accent: string;
+    description: string;
+    isMultiEvent: boolean;
+    logoUrl?: string;
+    bannerUrl?: string;
+    icon192?: string;
+    icon512?: string;
+    faviconUrl?: string;
+    bgColor?: string;
+  }
 > = {
   bob: {
     name: "B.O.B. Roll-off Passport",
@@ -33,6 +45,12 @@ export const GROUP_THEMES: Record<
     accent: "#b8860b",
     description: "Bowlers Orleans Bound — Annual Flagship Event",
     isMultiEvent: false,
+    logoUrl: "/manus-storage/bob-logo_c7d62f79.jpg",
+    bannerUrl: "/manus-storage/bob-logo_c7d62f79.jpg",
+    icon192: "/icon-192.png",
+    icon512: "/icon-512.png",
+    faviconUrl: "/favicon.ico",
+    bgColor: "#0d0d0d",
   },
   valentine: {
     name: "Valentine Funtime",
@@ -40,6 +58,12 @@ export const GROUP_THEMES: Record<
     accent: "#c2185b",
     description: "Valentine Funtime Roll-off — February Event",
     isMultiEvent: false,
+    logoUrl: "/manus-storage/valentine-logo-1_ace6cce5.jpg",
+    bannerUrl: "/manus-storage/valentine-logo-2_51b648e0.jpg",
+    icon192: "/manus-storage/valentine-icon-192_be6ddb33.png",
+    icon512: "/manus-storage/valentine-icon-512_1226a666.png",
+    faviconUrl: "/manus-storage/valentine-favicon_1fbd211d.ico",
+    bgColor: "#1a0020",
   },
   "june-funtime": {
     name: "June Funtime Roll-Off",
@@ -47,6 +71,7 @@ export const GROUP_THEMES: Record<
     accent: "#0097a7",
     description: "June Funtime Roll-Off — 4 Leagues",
     isMultiEvent: true,
+    bgColor: "#001a1f",
   },
 };
 

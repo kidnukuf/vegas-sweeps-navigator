@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { getBowlerToken, clearBowlerSession } from "./BowlerLogin";
 import { normalizeSquadTime } from "@/lib/squadTime";
+import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -344,18 +345,26 @@ export default function CaptainDashboard() {
     <div className="captain-portal-bg min-h-screen flex flex-col">
       {/* ── Header ── */}
       <header className="captain-portal-header px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 bob-header-group cursor-default select-none">
-          <img
-            src="/manus-storage/bob-logo_c7d62f79.jpg"
-            alt="B.O.B. Roll-off Passport"
-            className="w-10 h-10 rounded-xl object-cover"
-            style={{ filter: "drop-shadow(0 0 6px rgba(255,215,0,0.5))" }}
-          />
-          <div className="flex flex-col leading-tight">
-            <span className="bob-header-title font-bold text-white text-sm" style={{ fontFamily: "'Orbitron', sans-serif" }}>B.O.B. Roll-off Passport</span>
-            <span className="bob-header-subtitle text-amber-300 text-xs font-semibold tracking-wider">Bowlers Orleans Bound</span>
-          </div>
-        </div>
+        {(() => {
+          const groupSlug = detectGroupSlug();
+          const groupTheme = GROUP_THEMES[groupSlug];
+          const primaryColor = groupTheme.color;
+          const logoUrl = groupTheme.logoUrl ?? "/manus-storage/bob-logo_c7d62f79.jpg";
+          return (
+            <div className="flex items-center gap-2 bob-header-group cursor-default select-none">
+              <img
+                src={logoUrl}
+                alt={groupTheme.name}
+                className="w-10 h-10 rounded-xl object-cover"
+                style={{ filter: `drop-shadow(0 0 6px ${primaryColor}80)` }}
+              />
+              <div className="flex flex-col leading-tight">
+                <span className="bob-header-title font-bold text-white text-sm" style={{ fontFamily: "'Orbitron', sans-serif" }}>{groupTheme.name}</span>
+                <span className="bob-header-subtitle text-xs font-semibold tracking-wider" style={{ color: primaryColor }}>{groupTheme.description}</span>
+              </div>
+            </div>
+          );
+        })()}
         <div className="flex items-center gap-2">
           <Button
             size="sm"

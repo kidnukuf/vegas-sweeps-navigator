@@ -299,3 +299,14 @@
 - [x] Build video splash screen: plays intro video on first open of bobrolloffpassport.com, skip button after 2s
 - [x] Splash only shows on BOB domain (not Valentine/June Funtime)
 - [x] Test, save checkpoint
+
+## Phase 24: Valentine Funtime Branding
+
+- [x] Upload valentine-logo-1.jpg and valentine-logo-2.jpg to CDN
+- [x] Generate PWA icons (192x192, 512x512, favicon.ico) for Valentine Funtime
+- [x] Update Home.tsx to show Valentine Funtime banner when on valentinefuntime.com domain (dark purple gradient bg, both logos, pink/purple gradient title, dynamic footer text, domain-aware portal card borders/hover colors)
+- [x] Update bowler/captain portal headers to show Valentine logo on valentinefuntime.com (BowlerLogin, CaptainLogin, BowlerDashboard, CaptainDashboard all domain-aware)
+- [x] Update eventGroup.ts with Valentine Funtime CDN URLs (logoUrl, bannerUrl, icon192, icon512, faviconUrl, bgColor)
+- [x] Update GROUP_THEMES for valentine group with pink/red/purple colors (#e91e8c, #c2185b)
+- [x] Add dynamic PWA icon injection in App.tsx (PwaIconInjector component updates favicon, apple-touch-icon, and manifest on Valentine domain)
+- [x] Test (TypeScript clean, 0 errors), save checkpoint
