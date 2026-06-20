@@ -170,6 +170,14 @@ export default function Home() {
         <div className="mt-8 text-center text-white/30 text-xs">
           <p>B.O.B. (Bowlers Orleans Bound) Roll-off Passport — Event Management System</p>
           <p className="mt-1">Powered by local-first technology • Works offline</p>
+          <p className="mt-3">
+            <a
+              href="/ed"
+              className="text-white/20 hover:text-yellow-400/60 transition-colors text-xs tracking-widest uppercase"
+            >
+              ⚙ Event Director Terminal
+            </a>
+          </p>
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 import { normalizeSquadTime } from "@/lib/squadTime";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 
 const BOWLER_TOKEN_KEY = "vsn_bowler_token";
 
@@ -298,6 +299,9 @@ function PassportStep({ profile, onDone }: { profile: any; onDone: () => void })
             </>
           )}
         </div>
+
+        {/* PWA Install Prompt */}
+        <PwaInstallPrompt />
 
         {/* Go to Dashboard */}
         <Button

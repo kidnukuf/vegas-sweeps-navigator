@@ -35,6 +35,7 @@ function Router() {
       <Route path="/import" component={ImportData} />
       <Route path="/program-director" component={ProgramDirector} />
       <Route path="/league-select" component={LeagueSelector} />
+      <Route path="/ed" component={AdminDashboard} />
       <Route path="/bowler-login" component={BowlerLogin} />
       <Route path="/bowler" component={BowlerDashboard} />
       <Route path="/bowler-dashboard" component={BowlerDashboard} />

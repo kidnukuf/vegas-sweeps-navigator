@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 
 import { normalizeSquadTime } from "@/lib/squadTime";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 
 const BOWLER_TOKEN_KEY = "vsn_bowler_token";
 
@@ -353,6 +354,7 @@ function PassportStep({ profile, onViewTeam, onDone }: { profile: any; onViewTea
           >
             ⭐ View My Team's Status →
           </Button>
+          <PwaInstallPrompt />
           <Button
             onClick={onDone}
             className="w-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-amber-900 font-black text-lg py-3 rounded-xl"
@@ -498,6 +500,7 @@ function TeamVerificationStep({ token, profile, onBack, onDone }: {
           >
             ← Back to My Passport
           </Button>
+          <PwaInstallPrompt />
           <Button
             onClick={onDone}
             className="w-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-amber-900 font-black text-lg py-3 rounded-xl"
