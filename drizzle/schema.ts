@@ -28,8 +28,24 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // ─── EVENTS ─────────────────────────────────────────────────────────────────
+// --- EVENT GROUPS (brands: BOB, Valentine Funtime, June Funtime Roll-Off)
+export const eventGroups = mysqlTable("event_groups", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  domain: varchar("domain", { length: 255 }),
+  themeColor: varchar("themeColor", { length: 32 }).default("#ffd700"),
+  logoUrl: text("logoUrl"),
+  description: text("description"),
+  isMultiEvent: boolean("isMultiEvent").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EventGroup = typeof eventGroups.$inferSelect;
+
 export const events = mysqlTable("events", {
   id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId"),
   eventName: varchar("eventName", { length: 255 }).notNull(),
   eventYear: int("eventYear").notNull(),
   startDate: varchar("startDate", { length: 20 }),
@@ -38,6 +54,7 @@ export const events = mysqlTable("events", {
   squadTime: varchar("squadTime", { length: 50 }),
   status: mysqlEnum("status", ["planning", "active", "completed"]).default("planning").notNull(),
   tabletPin: varchar("tabletPin", { length: 6 }),
+  sortOrder: int("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

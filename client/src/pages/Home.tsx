@@ -1,10 +1,21 @@
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { getBowlerToken, BOWLER_IS_CAPTAIN_KEY } from "./BowlerLogin";
+import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const { data: event } = trpc.event.active.useQuery();
+  const groupSlug = detectGroupSlug();
+  const groupTheme = GROUP_THEMES[groupSlug];
+
+  // Domain routing: for multi-event groups (e.g. June Funtime), show league selector first
+  useEffect(() => {
+    if (groupTheme.isMultiEvent) {
+      setLocation("/league-select");
+    }
+  }, [groupTheme.isMultiEvent, setLocation]);
 
   // Check if a bowler is already signed in
   const bowlerToken = getBowlerToken();

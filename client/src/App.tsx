@@ -21,6 +21,7 @@ import CaptainLogin from "./pages/CaptainLogin";
 import CaptainConfirmation from "./pages/CaptainConfirmation";
 import ScanPassport from "./pages/ScanPassport";
 import DoormanTablet from "./pages/DoormanTablet";
+import LeagueSelector from "./pages/LeagueSelector";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/bowler/:id" component={BowlerProfile} />
       <Route path="/import" component={ImportData} />
       <Route path="/program-director" component={ProgramDirector} />
+      <Route path="/league-select" component={LeagueSelector} />
       <Route path="/bowler-login" component={BowlerLogin} />
       <Route path="/bowler" component={BowlerDashboard} />
       <Route path="/bowler-dashboard" component={BowlerDashboard} />

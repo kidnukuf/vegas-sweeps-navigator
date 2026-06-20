@@ -236,3 +236,44 @@
 - [x] Add disableGuestPass and enableGuestPass tRPC procedures on the server
 - [x] Add disable/enable buttons for each guest pool pass in the ED Passport Management table
 - [x] Test and save checkpoint
+
+## Phase 21: Multi-Event Multi-Brand Platform
+
+### Architecture
+- [ ] Add `event_groups` table: id, name, slug, domain, theme (color/logo), description
+- [ ] Add `groupId` foreign key to `events` table
+- [ ] Seed 3 event groups: BOB Roll-off (bobrolloffpassport.com), Valentine Funtime (valentinefuntime.com), June Funtime Roll-Off (junefuntimerolloff.com)
+- [ ] Seed 6 events: BOB 2026, Valentine Funtime 2026, Funtime 1/2/3/4 (June)
+- [ ] Run migration SQL for new tables/columns
+
+### Domain Routing
+- [ ] Add domain-detection utility: reads window.location.hostname, maps to groupId
+- [ ] Home page: if domain maps to a group with multiple events (June Funtime), show league selector modal before proceeding
+- [ ] League selector modal: "Which league are you bowling in?" — shows event cards for Funtime 1, 2, 3, 4
+- [ ] Store selected eventId in sessionStorage so bowler sign-up/sign-in uses correct event
+- [ ] Single-event groups (BOB, Valentine) skip the selector and go straight to sign-in
+
+### Bowler Sign-up/Sign-in Per-Event Isolation
+- [ ] Bowler sign-up: always scoped to a specific eventId (passed via URL param or session)
+- [ ] Bowler sign-in: scantronId is unique per event (same bowler in Funtime 1 and Funtime 3 has different scantronIds)
+- [ ] Bowler dashboard: shows event name/brand prominently so bowler knows which event they're viewing
+- [ ] If bowler has registrations in multiple events (same name, different events), show event picker after sign-in
+
+### ED Portal Multi-Event Management
+- [ ] ED sidebar: show all event groups with expandable event list under each group
+- [ ] ED can switch active event by clicking any event in sidebar — all tabs (roster, passports, import, etc.) filter to that event
+- [ ] Currently selected event name shown prominently at top of every ED tab
+- [ ] ED can create new events within a group (name, dates, squad times)
+- [ ] ED can import roster per-event (existing import flow already uses eventId)
+- [ ] ED passport management, doorman, and export all respect the selected eventId
+
+### Branding Per Group
+- [ ] Each event group has its own color theme (BOB = gold/black, Valentine = red/pink, June = teal/purple)
+- [ ] Home page header/logo changes based on detected domain
+- [ ] Bowler dashboard shows group-specific branding
+
+### Testing & Delivery
+- [ ] Test league selector flow on June Funtime group
+- [ ] Test bowler sign-up isolation: same name in two events gets separate tokens
+- [ ] Test ED switching between events
+- [ ] Save checkpoint

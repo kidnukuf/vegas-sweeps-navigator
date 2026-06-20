@@ -100,6 +100,42 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+    listGroups: publicProcedure.query(async () => {
+      return rawQuery(`SELECT * FROM event_groups ORDER BY id`) as Promise<Record<string, unknown>[]>;
+    }),
+    listByGroup: publicProcedure
+      .input(z.object({ groupId: z.number() }))
+      .query(async ({ input }) => {
+        return rawQuery(
+          `SELECT * FROM events WHERE groupId = ? ORDER BY sortOrder, id`,
+          [input.groupId]
+        ) as Promise<Record<string, unknown>[]>;
+      }),
+    createInGroup: publicProcedure
+      .input(z.object({
+        groupId: z.number(),
+        eventName: z.string().min(1),
+        eventYear: z.number().int(),
+        sortOrder: z.number().optional(),
+        actorId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await rawQuery(
+          `INSERT INTO events (groupId, eventName, eventYear, status, sortOrder) VALUES (?, ?, ?, 'planning', ?)`,
+          [input.groupId, input.eventName, input.eventYear, input.sortOrder ?? 0]
+        ) as unknown as Record<string, unknown>;
+        const id = (result as any).insertId as number;
+        await writeAuditLog({
+          eventId: id,
+          actorRole: "EventDirector",
+          actorId: input.actorId,
+          action: "create_event",
+          targetId: id,
+          targetType: "event",
+          details: `${input.eventName} (${input.eventYear}) in group ${input.groupId}`,
+        });
+        return { success: true, id };
+      }),
   }),
 
   // ─── BOWLERS ──────────────────────────────────────────────────────────────
@@ -306,7 +342,7 @@ export const appRouter = router({
     getWithMembers: publicProcedure
       .input(z.object({ teamId: z.number() }))
       .query(async ({ input }) => {
-        const team = await getTeamById(input.teamId) as Record<string, unknown>;
+        const team = await getTeamById(input.teamId) as unknown as Record<string, unknown>;
         const members = await getBowlersByTeam(input.teamId);
         return { team, members };
       }),
@@ -424,7 +460,7 @@ export const appRouter = router({
         const username = input.email.toLowerCase();
         const passwordHash = await bcrypt.hash(input.password, 10);
         await createAppUser({ username, designation: username, appRole: 'Bowler', passwordHash, bowlerId: input.bowlerId, eventId: bowler.eventId as number });
-        const newUser = await getAppUserByUsername(username) as Record<string, unknown>;
+        const newUser = await getAppUserByUsername(username) as unknown as Record<string, unknown>;
         await rawQuery('UPDATE bowlers SET appUserId=?, registrationStatus=?, phone=COALESCE(?,phone) WHERE id=?', [newUser.id, 'signed_up', input.phone || null, input.bowlerId]);
         await writeAuditLog({ actorRole: 'Bowler', actorId: input.bowlerId, action: 'bowler_claimed', targetId: input.bowlerId, targetType: 'bowler', details: `Claimed by ${input.email}` });
         return { success: true, scantronId: bowler.scantronId, bowlerId: input.bowlerId };

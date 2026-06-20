@@ -4,7 +4,7 @@
  * bowling imagery. Completely different from the admin panel.
  * Includes Cloudflare Turnstile bot protection on all forms.
  */
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { trpc } from "@/lib/trpc";
@@ -59,8 +59,15 @@ export default function BowlerLogin() {
   const [centerSearch, setCenterSearch] = useState("");
   const suTurnstileRef = useRef<any>(null);
 
+  // Resolve eventId: prefer sessionStorage (set by LeagueSelector), fall back to active event
+  const [sessionEventId] = useState<number | null>(() => {
+    const val = sessionStorage.getItem("selectedEventId");
+    return val ? parseInt(val, 10) : null;
+  });
   const eventQuery = trpc.event.active.useQuery();
-  const eventId: number = (eventQuery.data?.id as number | undefined) ?? 1;
+  const eventId: number = sessionEventId ?? (eventQuery.data?.id as number | undefined) ?? 1;
+  const eventByIdQuery = trpc.event.getById.useQuery({ id: eventId }, { enabled: eventId > 0 });
+  const currentEventName = (eventByIdQuery.data as any)?.eventName as string | undefined;
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId }, { enabled: tab === "signup" });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
@@ -164,6 +171,12 @@ export default function BowlerLogin() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
           Bowler Portal
         </h1>
+        {currentEventName && (
+          <div className="mb-3 px-4 py-2 rounded-full text-center text-sm font-bold"
+               style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.4)" }}>
+            📋 Registering for: {currentEventName}
+          </div>
+        )}
         <p className="text-white/85 text-center mb-8 max-w-sm">
           Sign in to view your event details, QR ticket, lane assignment, and more.
         </p>
