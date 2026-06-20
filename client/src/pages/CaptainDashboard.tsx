@@ -517,6 +517,29 @@ export default function CaptainDashboard() {
           eligible={p.poolPartyToken !== null && p.poolPartyToken !== undefined}
         />
 
+        {/* ── Guest Pool Party Passes (A, B, C...) ── */}
+        {Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex-1 h-px bg-white/20" />
+              <span className="text-white/40 text-xs font-semibold tracking-widest uppercase">Guest Pool Passes</span>
+              <div className="flex-1 h-px bg-white/20" />
+            </div>
+            {(p as any).guestPoolQRs.map((g: { suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }) => (
+              <PassportBox
+                key={g.suffix}
+                title={`Guest Pool Pass ${g.suffix}`}
+                icon="🎟️"
+                subtitle={`Guest Pool Party Entry — Pass ${g.suffix}`}
+                entranceFlow={`Guest pool party pass. Present at the pool party entrance for your guest. One scan per pass — cannot be reused. Pass ID: ${(p as any).scantronId}${g.suffix}`}
+                qrDataUrl={g.used ? null : g.qrDataUrl}
+                tokenUsed={g.used}
+                eligible={!g.disabled}
+              />
+            ))}
+          </>
+        )}
+
         {/* ── Responsibilities ── */}
         <div className="captain-card">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2">

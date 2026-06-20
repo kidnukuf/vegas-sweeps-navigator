@@ -132,6 +132,8 @@ export const bowlers = mysqlTable("bowlers", {
   laneNumber: int("laneNumber"),
   // Lane-to-event info (column 44 in import sheet — e.g. "Lanes 1-4 → Banquet Hall A")
   laneToEvent: text("laneToEvent"),
+  // Guest pool party add-ons: $15 per extra guest entry (column U in sheet)
+  guestPoolPartyAmount: decimal("guestPoolPartyAmount", { precision: 10, scale: 2 }).default("0.00"),
   // Passport QR tokens (pool party + banquet dinner)
   poolPartyToken: varchar("poolPartyToken", { length: 64 }).unique(),
   poolPartyUsed: boolean("poolPartyUsed").default(false).notNull(),
@@ -340,3 +342,17 @@ export const offlineSyncQueue = mysqlTable("offline_sync_queue", {
 });
 
 export type OfflineSyncQueue = typeof offlineSyncQueue.$inferSelect;
+
+// ─── GUEST POOL PARTY TOKENS (extra QR codes for paid guests) ────────────────
+// Each $15 in column U generates one token: suffix A = first guest, B = second, etc.
+export const guestPoolPartyTokens = mysqlTable("guest_pool_party_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  bowlerId: int("bowlerId").notNull(),
+  suffix: varchar("suffix", { length: 2 }).notNull(), // A, B, C, ...
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  used: boolean("used").default(false).notNull(),
+  disabled: boolean("disabled").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type GuestPoolPartyToken = typeof guestPoolPartyTokens.$inferSelect;

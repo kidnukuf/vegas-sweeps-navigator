@@ -212,3 +212,19 @@
 - [x] After bowler login confirmed: writeQRCodesToSheet() called in submitContactInfo (fire-and-forget)
 - [x] Normalize Squad Time display: M3→Monday 3pm, M10→Monday 10am, T10→Tuesday 10am — in app UI (normalizeSquadTime()) and in Google Sheet (449 cells updated)
 - [x] Write tests for Google Sheets helper (integration tested via gws CLI directly)
+
+## Phase 19: Guest Pool Party Additional QR Codes
+- [ ] Add guestPoolPartyAmount (int, default 0) column to bowlers table in schema
+- [ ] Run migration SQL via webdev_execute_sql
+- [ ] Update import parser: read column U ($15 amounts), parse dollar amount, divide by 15 to get count, store in guestPoolPartyAmount
+- [ ] Add guestPoolPartyTokens table: id, bowlerId, suffix (A/B/C...), token (uuid), used (bool), disabled (bool), createdAt
+- [ ] Run migration SQL for guestPoolPartyTokens table
+- [ ] Generate guest pool party tokens at submitContactInfo: for each $15 in guestPoolPartyAmount, create token with suffix A, B, C...
+- [ ] Also generate tokens at signIn if guestPoolPartyAmount > 0 and tokens don't yet exist
+- [ ] Write guest QR URLs back to Google Sheet columns Y (first guest), Z (second guest) after generation
+- [ ] Display extra guest pool party QR codes in BowlerDashboard (below main pool party passport)
+- [ ] Display extra guest pool party QR codes in CaptainDashboard
+- [ ] Display extra guest pool party QR codes in BowlerConfirmation and CaptainConfirmation
+- [ ] Add guest pool party token scanning to Doorman portal (scanPassport handles guestPoolParty type)
+- [ ] Add guest pool party tokens to Event Director Passport Management tab
+- [ ] Run tests and save checkpoint

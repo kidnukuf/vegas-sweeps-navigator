@@ -94,12 +94,13 @@ async function findBowlerByName(
     centerName: string | null;
     laneNumber: number | null;
     squadTime: string | null;
+    guestPoolPartyAmount: string | null;
   }>(
     `SELECT b.id, b.legalFirstName, b.legalLastName, b.preferredName,
             b.email, b.phone, b.scantronId, b.registrationStatus,
             b.passwordHash, b.isCapitain, b.teamId, b.centerId,
             t.teamName, bc.centerName,
-            b.laneNumber, b.squadTime
+            b.laneNumber, b.squadTime, b.guestPoolPartyAmount
      FROM bowlers b
      LEFT JOIN teams t ON t.id = b.teamId
      LEFT JOIN bowling_centers bc ON bc.id = b.centerId
@@ -149,6 +150,7 @@ async function getBowlerProfile(bowlerId: number) {
     poolPartyUsed: number;
     banquetToken: string | null;
     banquetUsed: number;
+    guestPoolPartyAmount: string | null;
   }>(
     `SELECT b.id, b.legalFirstName, b.legalLastName, b.preferredName,
             b.email, b.phone, b.scantronId, b.registrationStatus,
@@ -158,7 +160,8 @@ async function getBowlerProfile(bowlerId: number) {
             e.eventName, e.bowlingDate,
             h.hotelName, h.checkinDate, h.checkoutDate, h.roomType,
             p.totalAmountDue, p.paid,
-            b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed
+            b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
+            b.guestPoolPartyAmount
      FROM bowlers b
      LEFT JOIN teams t ON t.id = b.teamId
      LEFT JOIN bowling_centers bc ON bc.id = b.centerId
@@ -181,7 +184,19 @@ async function getBowlerProfile(bowlerId: number) {
   if (row.banquetToken && !row.banquetUsed) {
     banquetQR = await QRCode.toDataURL(`${appOrigin}/scan/banquet/${row.banquetToken}`, { width: 300, margin: 2 });
   }
-  return { ...row, poolPartyQR, banquetQR };
+  // Fetch guest pool party tokens
+  const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number }>(
+    `SELECT suffix, token, used, disabled FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+    [bowlerId]
+  );
+  const guestPoolQRs: Array<{ suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
+  for (const gt of guestTokenRows) {
+    if (!gt.disabled) {
+      const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
+      guestPoolQRs.push({ suffix: gt.suffix, qrDataUrl, used: Boolean(gt.used), disabled: false });
+    }
+  }
+  return { ...row, poolPartyQR, banquetQR, guestPoolQRs };
 }
 
 // ─── SHARED: get team roster for captain dashboard ────────────────────────────
@@ -294,6 +309,22 @@ export const bowlerAuthRouter = router({
       params.push(bowler.id);
 
       await rawQuery(`UPDATE bowlers SET ${updates.join(", ")} WHERE id = ?`, params);
+
+      // Generate guest pool party tokens: each $15 = 1 extra QR code (suffix A, B, C...)
+      const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
+      const guestCount = Math.floor(guestAmount / 15);
+      const SUFFIXES = ["A","B","C","D","E"];
+      if (guestCount > 0) {
+        // Remove any existing guest tokens for this bowler first (idempotent)
+        await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowler.id]);
+        for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
+          const guestToken = uuidv4().replace(/-/g, "");
+          await rawQuery(
+            `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
+            [bowler.id, SUFFIXES[i], guestToken]
+          );
+        }
+      }
 
       // Notify ED of successful sign-up (differentiate captain vs bowler)
       const isCapt = Boolean(bowler.isCapitain);
@@ -463,6 +494,19 @@ export const bowlerAuthRouter = router({
         banquetQR = await QRCode.toDataURL(`${appOrigin}/scan/banquet/${profile.banquetToken}`, { width: 300, margin: 2 });
       }
 
+      // Fetch guest pool tokens for this bowler
+      const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number }>(
+        `SELECT suffix, token, used, disabled FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+        [bowlerId]
+      );
+      const guestPoolQRs: Array<{ suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
+      for (const gt of guestTokenRows) {
+        if (!gt.disabled) {
+          const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
+          guestPoolQRs.push({ suffix: gt.suffix, qrDataUrl, used: Boolean(gt.used), disabled: false });
+        }
+      }
+
       // Write QR URLs back to Google Sheet (fire-and-forget, never blocks user)
       writeQRCodesToSheet({
         firstName: profile.legalFirstName,
@@ -470,19 +514,53 @@ export const bowlerAuthRouter = router({
         laneNumber: profile.laneNumber ?? null,
         banquetToken: profile.banquetToken ?? null,
         poolPartyToken: profile.poolPartyToken ?? null,
+        guestPoolTokens: guestTokenRows.filter(g => !g.disabled).map(g => ({ suffix: g.suffix, token: g.token })),
         appOrigin,
       }).catch((err) => console.error("[googleSheets] write-back failed:", err));
 
-      return { ...profile, poolPartyQR, banquetQR };
+      return { ...profile, poolPartyQR, banquetQR, guestPoolQRs };
     }),
 
   // ── SCAN PASSPORT (doorman scans QR) ────────────────────────────────────────
   scanPassport: publicProcedure
     .input(z.object({
       tokenValue: z.string().min(1),
-      passportType: z.enum(["pool", "banquet"]),
+      passportType: z.enum(["pool", "banquet", "guest-pool"]),
     }))
     .mutation(async ({ input }) => {
+      // ── Guest pool party token (separate table) ──────────────────────────────
+      if (input.passportType === "guest-pool") {
+        const guestRows = await rawQuery<{
+          id: number; bowlerId: number; suffix: string; used: number; disabled: number;
+          legalFirstName: string; legalLastName: string;
+        }>(
+          `SELECT g.id, g.bowlerId, g.suffix, g.used, g.disabled,
+                  b.legalFirstName, b.legalLastName
+           FROM guest_pool_party_tokens g
+           JOIN bowlers b ON b.id = g.bowlerId
+           WHERE g.token = ? LIMIT 1`,
+          [input.tokenValue]
+        );
+        if (!guestRows[0]) {
+          return { result: "invalid" as const, message: "Invalid QR Code — guest token not found." };
+        }
+        const g = guestRows[0];
+        const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        if (g.disabled) {
+          return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
+        }
+        if (g.used) {
+          return { result: "used" as const, message: "Already Redeemed", bowlerName };
+        }
+        await rawQuery(`UPDATE guest_pool_party_tokens SET used = 1 WHERE id = ?`, [g.id]);
+        return {
+          result: "granted" as const,
+          message: `Guest Entry Granted (Pass ${g.suffix})`,
+          bowlerName,
+        };
+      }
+
+      // ── Main bowler pool or banquet token ────────────────────────────────────
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
       const usedCol = input.passportType === "pool" ? "poolPartyUsed" : "banquetUsed";
       const rows = await rawQuery<{

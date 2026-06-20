@@ -570,6 +570,29 @@ export default function BowlerDashboard() {
           eligible={poolEligible}
         />
 
+        {/* ── 10. Guest Pool Party Passes (A, B, C...) ── */}
+        {Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex-1 h-px bg-white/20" />
+              <span className="text-white/40 text-xs font-semibold tracking-widest uppercase">Guest Pool Passes</span>
+              <div className="flex-1 h-px bg-white/20" />
+            </div>
+            {(p as any).guestPoolQRs.map((g: { suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }) => (
+              <PassportBox
+                key={g.suffix}
+                title={`Guest Pool Pass ${g.suffix}`}
+                icon="🎟️"
+                subtitle={`Guest Pool Party Entry — Pass ${g.suffix}`}
+                entranceFlow={`This is a guest pool party pass. Present this QR code at the pool party entrance for your guest. One scan per pass — cannot be reused. Pass ID: ${p.scantronId}${g.suffix}`}
+                qrDataUrl={g.used ? null : g.qrDataUrl}
+                tokenUsed={g.used}
+                eligible={!g.disabled}
+              />
+            ))}
+          </>
+        )}
+
         {/* Bottom spacer */}
         <div className="h-8" />
       </div>

@@ -22,6 +22,7 @@ interface ParsedRow {
   roomAmount: string;
   banquetAmount: string;
   poolParty: boolean;
+  guestPoolPartyAmount: string;
   totalDue: string;
   paid: boolean;
   errors: string[];
@@ -58,9 +59,10 @@ const COLUMN_ALIASES: Record<string, string> = {
   "1st choice squad": "choiceSquad1", "2nd choice squad": "choiceSquad2",
   "league member": "leagueMember", "returning bowler?": "returningBowler",
   "t-shirt size": "shirtSize", "room with bowler?": "roomWithBowler",
-  "banquet $80": "banquetAmount", "guest $15": "poolParty", "special notes": "specialNotes",
+  "banquet $80": "banquetAmount", "special notes": "specialNotes",
   "extra banquet": "extraBanquet", "extra pool party": "poolParty",
-  "guest pool party": "poolParty",
+  "guest pool party": "guestPoolPartyAmount",
+  "guest $15": "guestPoolPartyAmount",
 };
 
 function parseCSV(text: string): string[][] {
@@ -126,6 +128,7 @@ function parseRows(rawRows: string[][], headerMap: Record<number, string>, heade
       roomAmount: get("roomAmount"),
       banquetAmount: get("banquetAmount"),
       poolParty: ["yes", "true", "1", "y"].includes(get("poolParty").toLowerCase()),
+      guestPoolPartyAmount: get("guestPoolPartyAmount"),
       totalDue: get("totalDue"),
       paid: ["yes", "true", "1", "y", "paid"].includes(get("paid").toLowerCase()),
       errors,

@@ -9,7 +9,13 @@
  * Column layout (1-indexed):
  *   A=Phone, B=Email, C=Squad Time, D=Lane #, E=Center,
  *   F=Team #, G=Captain, H=First Name, I=Last Name, ...
+ *   U=Guest Pool Party ($15 increments)
  *   W=Banquet QR URL, X=Pool Party QR URL
+ *   Y=Guest pool qr code (suffix A)
+ *   Z=Additional guest pool qr code (suffix B)
+ *   AA=Guest banquet qr code
+ *   AB=Additional guest banquet qr code
+ *   AC=Guest reentry qr code
  */
 
 import { execSync } from "child_process";
@@ -17,12 +23,17 @@ import { execSync } from "child_process";
 const SPREADSHEET_ID = "1Azwl5Lmj4BK69htTXB0PmWO8ww6jY_zz7OtmJjHSiFg";
 const SHEET_NAME = "TeamChallenge2026_Ledger_Final";
 
-// Column indices (0-based for array, 1-based for sheet)
-const COL_FIRST_NAME = 7;  // H (0-based: 7)
-const COL_LAST_NAME  = 8;  // I (0-based: 8)
-const COL_LANE       = 3;  // D (0-based: 3)
-const COL_BANQUET_QR = 22; // W (0-based: 22)
-const COL_POOL_QR    = 23; // X (0-based: 23)
+// Column indices (0-based for array access)
+const COL_FIRST_NAME = 7;  // H
+const COL_LAST_NAME  = 8;  // I
+const COL_LANE       = 3;  // D
+const COL_BANQUET_QR = 22; // W
+const COL_POOL_QR    = 23; // X
+const COL_GUEST_POOL_A = 24; // Y — 1st extra guest pool QR (suffix A)
+const COL_GUEST_POOL_B = 25; // Z — 2nd extra guest pool QR (suffix B)
+
+// Sheet column letters for guest pool QR codes (up to 5 guests = A–E)
+const GUEST_POOL_COLUMNS = ["Y", "Z", "AA", "AB", "AC"];
 
 function gws(params: object, body?: object): unknown {
   const args = ["gws", "sheets", "spreadsheets", "values"];
@@ -48,8 +59,7 @@ async function findBowlerRow(
   laneNumber: number | null
 ): Promise<number | null> {
   try {
-    // Read all rows: columns H (First Name), I (Last Name), D (Lane #)
-    const data = gws({ range: `${SHEET_NAME}!A1:Z` }) as { values?: string[][] };
+    const data = gws({ range: `${SHEET_NAME}!A1:AC` }) as { values?: string[][] };
     const rows = data.values ?? [];
 
     for (let i = 1; i < rows.length; i++) { // skip header row
@@ -74,14 +84,19 @@ async function findBowlerRow(
 }
 
 /**
- * Write the Banquet QR URL and Pool Party QR URL into the bowler's row.
- * Called after a bowler successfully submits contact info (sign-up confirmed).
+ * Write the Banquet QR URL, Pool Party QR URL, and any guest pool QR URLs
+ * into the bowler's row in the Google Sheet.
  *
- * @param firstName      Bowler's legal first name
- * @param lastName       Bowler's legal last name
- * @param laneNumber     Bowler's lane number (used to disambiguate same-name bowlers)
- * @param banquetQRUrl   Full URL for the banquet QR code (e.g. https://…/scan/banquet/TOKEN)
- * @param poolPartyQRUrl Full URL for the pool party QR code (e.g. https://…/scan/pool/TOKEN)
+ * Guest pool QR codes use the bowler's scantronId + suffix A, B, C, etc.
+ * Each $15 in column U = one additional guest pool QR code.
+ *
+ * @param firstName         Bowler's legal first name
+ * @param lastName          Bowler's legal last name
+ * @param laneNumber        Bowler's lane number (used to disambiguate same-name bowlers)
+ * @param banquetToken      UUID token for banquet QR
+ * @param poolPartyToken    UUID token for pool party QR
+ * @param guestPoolTokens   Array of {suffix, token} for extra guest pool QR codes
+ * @param appOrigin         Base URL for QR scan links
  */
 export async function writeQRCodesToSheet(params: {
   firstName: string;
@@ -89,14 +104,15 @@ export async function writeQRCodesToSheet(params: {
   laneNumber: number | null;
   banquetToken: string | null;
   poolPartyToken: string | null;
+  guestPoolTokens?: Array<{ suffix: string; token: string }>;
   appOrigin: string;
 }): Promise<void> {
-  const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, appOrigin } = params;
+  const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], appOrigin } = params;
 
   const banquetQRUrl   = banquetToken   ? `${appOrigin}/scan/banquet/${banquetToken}`   : null;
   const poolPartyQRUrl = poolPartyToken ? `${appOrigin}/scan/pool/${poolPartyToken}`     : null;
 
-  if (!banquetQRUrl && !poolPartyQRUrl) return; // nothing to write
+  if (!banquetQRUrl && !poolPartyQRUrl && guestPoolTokens.length === 0) return;
 
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
@@ -105,21 +121,23 @@ export async function writeQRCodesToSheet(params: {
       return;
     }
 
-    // Build batch update — write W and X columns
     const updateData: { range: string; values: string[][] }[] = [];
 
     if (banquetQRUrl) {
-      updateData.push({
-        range: `${SHEET_NAME}!W${rowNum}`,
-        values: [[banquetQRUrl]],
-      });
+      updateData.push({ range: `${SHEET_NAME}!W${rowNum}`, values: [[banquetQRUrl]] });
     }
     if (poolPartyQRUrl) {
-      updateData.push({
-        range: `${SHEET_NAME}!X${rowNum}`,
-        values: [[poolPartyQRUrl]],
-      });
+      updateData.push({ range: `${SHEET_NAME}!X${rowNum}`, values: [[poolPartyQRUrl]] });
     }
+
+    // Write guest pool QR URLs into Y, Z, AA, AB, AC (up to 5 guests)
+    for (let i = 0; i < Math.min(guestPoolTokens.length, GUEST_POOL_COLUMNS.length); i++) {
+      const col = GUEST_POOL_COLUMNS[i];
+      const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
+      updateData.push({ range: `${SHEET_NAME}!${col}${rowNum}`, values: [[guestUrl]] });
+    }
+
+    if (updateData.length === 0) return;
 
     const body = {
       valueInputOption: "RAW",
@@ -127,9 +145,8 @@ export async function writeQRCodesToSheet(params: {
     };
 
     gws({}, body);
-    console.log(`[googleSheets] QR URLs written for ${firstName} ${lastName} (row ${rowNum})`);
+    console.log(`[googleSheets] QR URLs written for ${firstName} ${lastName} (row ${rowNum}, ${guestPoolTokens.length} guest pool codes)`);
   } catch (err) {
-    // Never throw — sheet write-back must never block the user flow
     console.error("[googleSheets] writeQRCodesToSheet error (non-fatal):", err);
   }
 }

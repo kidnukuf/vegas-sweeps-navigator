@@ -722,10 +722,11 @@ export const appRouter = router({
             const roomAmount = parseFloat(String(row["Amount Due"] ?? row["Room Amount Due"] ?? row["room_amount"] ?? "0").replace(/[$,]/g, "")) || 0;
             // Banquet: "extra banquet" column
             const extraBanquet = parseFloat(String(row["extra banquet"] ?? row["Extra Banquet"] ?? row["Banquet $80"] ?? row["banquet"] ?? "0").replace(/[$,]/g, "")) || 0;
-            // Pool party: "Guest Pool Party" column (renamed from "Guest $15" / "extra pool party")
+            // Pool party: "Guest Pool Party" column — each $15 = 1 extra guest QR code
             const guestPoolPartyRaw = String(row["Guest Pool Party"] ?? row["Guest $15"] ?? row["extra pool party"] ?? row["Extra Pool Party"] ?? "0").replace(/[$,]/g, "").trim();
-            const poolParty = parseFloat(guestPoolPartyRaw) > 0 || ["y", "yes", "true", "1", "x"].includes(guestPoolPartyRaw.toLowerCase());
-            const extraGuestFee = parseFloat(guestPoolPartyRaw) || 0;
+            const guestPoolPartyAmount = parseFloat(guestPoolPartyRaw) || 0;
+            const poolParty = guestPoolPartyAmount > 0 || ["y", "yes", "true", "1", "x"].includes(guestPoolPartyRaw.toLowerCase());
+            const extraGuestFee = guestPoolPartyAmount;
             const totalAmountDue = parseFloat(String(row["Total Amount"] ?? row["total"] ?? "0").replace(/[$,]/g, "")) || 0;
             const notes = String(row["Special Notes"] ?? row["notes"] ?? "").trim();
             // Phone and Email are present but typically empty — accept gracefully
@@ -759,6 +760,7 @@ export const appRouter = router({
                 phone: phone || undefined, email: email || undefined,
                 sanctionNumber, gamesPlayed, bestAverage, tshirtSize,
                 under21, leagueMember, squadTime: squadTimeVal, laneNumber, laneToEvent,
+                guestPoolPartyAmount: guestPoolPartyAmount.toFixed(2),
               });
               if (checkinDate || checkoutDate || roomType) {
                 await upsertHotelRecord(bowlerId, { checkinDate, checkoutDate, roomType, roommateRequested, roommateFirstName: roommateFirst, roommateLastName: roommateLast, roomAmount });
@@ -774,12 +776,13 @@ export const appRouter = router({
               // Insert new bowler
               await rawQuery(
                 `INSERT INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
-                   sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, laneToEvent)
-                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                   sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, laneToEvent, guestPoolPartyAmount)
+                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
                  phone || null, email || null, notes || null,
                  sanctionNumber || null, gamesPlayed ?? null, bestAverage ?? null, tshirtSize || null,
-                 under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null, laneToEvent || null]
+                 under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null, laneToEvent || null,
+                 guestPoolPartyAmount.toFixed(2)]
               );
               const newBowler = await rawQuery("SELECT id FROM bowlers WHERE scantronId = ? LIMIT 1", [scantronId]) as Record<string, unknown>[];
               const bowlerId = newBowler[0]?.id as number;
