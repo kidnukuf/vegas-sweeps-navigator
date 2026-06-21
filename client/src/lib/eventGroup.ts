@@ -67,11 +67,16 @@ export const GROUP_THEMES: Record<
   },
   "june-funtime": {
     name: "June Funtime Roll-Off",
-    color: "#00bcd4",
-    accent: "#0097a7",
-    description: "June Funtime Roll-Off — 4 Leagues",
+    color: "#d4af37",
+    accent: "#4a0e8f",
+    description: "June Funtime Bowling Event — Mardi Gras Hotel & Casino",
     isMultiEvent: true,
-    bgColor: "#001a1f",
+    logoUrl: "/manus-storage/june-logo-1_a6163a08.jpg",
+    bannerUrl: "/manus-storage/june-logo-2_937344ed.jpg",
+    icon192: "/manus-storage/june-icon-192_719215b4.png",
+    icon512: "/manus-storage/june-icon-512_0b7c52c3.png",
+    faviconUrl: "/manus-storage/june-favicon-32_21b28f14.png",
+    bgColor: "#1a0a2e",
   },
 };
 

@@ -24,8 +24,8 @@ export default function Home() {
   // Determine background and branding based on group
   const isValentine = groupSlug === "valentine";
   const isJune = groupSlug === "june-funtime";
-  const bgImage = isValentine
-    ? undefined // Valentine uses solid dark bg with gradient
+  const bgImage = (isValentine || isJune)
+    ? undefined // Valentine & June use solid dark bg with gradient
     : "/manus-storage/bg-bowlers-orleans-bound_c7329b96.jpg";
   const primaryColor = groupTheme.color;
   const accentColor = groupTheme.accent;
@@ -38,7 +38,7 @@ export default function Home() {
         background: isValentine
           ? "linear-gradient(135deg, #1a0020 0%, #2d0035 30%, #1a0a2e 60%, #0d0015 100%)"
           : isJune
-          ? "linear-gradient(135deg, #001a1f 0%, #002a35 50%, #001a1f 100%)"
+          ? "linear-gradient(135deg, #1a0a2e 0%, #2a0a4e 30%, #1a0a2e 60%, #0d0820 100%)"
           : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -70,6 +70,22 @@ export default function Home() {
                   style={{ filter: `drop-shadow(0 0 24px rgba(233,30,140,0.5))` }}
                 />
               </div>
+            ) : isJune ? (
+              // June Funtime: show both images stacked — banner on top, logo below
+              <div className="flex flex-col items-center gap-3">
+                <img
+                  src="/manus-storage/june-logo-2_937344ed.jpg"
+                  alt="June Funtime Bowling Event"
+                  className="w-72 md:w-96 object-contain drop-shadow-2xl rounded-3xl"
+                  style={{ filter: `drop-shadow(0 0 32px rgba(212,175,55,0.7))` }}
+                />
+                <img
+                  src="/manus-storage/june-logo-1_a6163a08.jpg"
+                  alt="June Funtime Roll-Off"
+                  className="w-64 h-64 md:w-80 md:h-80 object-contain drop-shadow-2xl rounded-3xl"
+                  style={{ filter: `drop-shadow(0 0 24px rgba(212,175,55,0.5))` }}
+                />
+              </div>
             ) : (
               <img
                 src="/manus-storage/bob-logo_c7d62f79.jpg"
@@ -86,7 +102,7 @@ export default function Home() {
               background: isValentine
                 ? "linear-gradient(135deg, #e91e8c, #ff69b4, #ffd700)"
                 : isJune
-                ? "linear-gradient(135deg, #00bcd4, #00e5ff, #7c4dff)"
+                ? "linear-gradient(135deg, #d4af37, #f5d060, #7b2fbe)"
                 : "linear-gradient(135deg, #ffd700, #ff8c00, #00ffff)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -97,7 +113,7 @@ export default function Home() {
           </h1>
           <h2
             className="text-lg md:text-xl font-semibold mb-2"
-            style={{ color: isValentine ? "#ff69b4" : "#67e8f9", textShadow: `0 0 16px ${primaryColor}99` }}
+            style={{ color: isValentine ? "#ff69b4" : isJune ? "#d4af37" : "#67e8f9", textShadow: `0 0 16px ${primaryColor}99` }}
           >
             Your Official Event Passport
           </h2>

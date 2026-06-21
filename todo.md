@@ -310,3 +310,13 @@
 - [x] Update GROUP_THEMES for valentine group with pink/red/purple colors (#e91e8c, #c2185b)
 - [x] Add dynamic PWA icon injection in App.tsx (PwaIconInjector component updates favicon, apple-touch-icon, and manifest on Valentine domain)
 - [x] Test (TypeScript clean, 0 errors), save checkpoint
+
+## Phase 25: June Funtime Branding
+
+- [x] Upload june-logo-1.jpg, june-logo-2.jpg, june-logo-3.jpg to CDN
+- [x] Generate PWA icons (192x192, 512x512, favicon-32) for June Funtime from logo-2
+- [x] Update eventGroup.ts GROUP_THEMES for june-funtime: gold (#d4af37) + deep purple (#4a0e8f) Mardi Gras palette, logoUrl, bannerUrl, icon192, icon512, faviconUrl, bgColor (#1a0a2e)
+- [x] Update Home.tsx: June Funtime shows deep purple gradient bg, both logos (banner + logo), gold/purple gradient title, gold subtitle color
+- [x] All portal headers (BowlerLogin, CaptainLogin, BowlerDashboard, CaptainDashboard) already domain-aware via Phase 24 — automatically show June logo and gold color on junefuntimerolloff.com
+- [x] PwaIconInjector in App.tsx already handles June Funtime favicon/manifest swap
+- [x] TypeScript clean (0 errors), save checkpoint
