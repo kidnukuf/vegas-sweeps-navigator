@@ -1,21 +1,26 @@
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { getBowlerToken, BOWLER_IS_CAPTAIN_KEY } from "./BowlerLogin";
-import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
+import {
+  detectGroupSlug,
+  detectWebsiteBrand,
+  detectJuneGroupNumber,
+  setJuneGroupNumber,
+  GROUP_THEMES,
+} from "@/lib/eventGroup";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const { data: event } = trpc.event.active.useQuery();
+  const brand = detectWebsiteBrand();
+  const [juneGroup, setJuneGroup] = useState<number | null>(() => detectJuneGroupNumber());
+
+  // For funtimeteamchallenge.com, require group selection before showing portal
+  const needsGroupSelect = brand === "june" && juneGroup === null;
+
   const groupSlug = detectGroupSlug();
   const groupTheme = GROUP_THEMES[groupSlug];
-
-  // Domain routing: for multi-event groups (e.g. June Funtime), show league selector first
-  useEffect(() => {
-    if (groupTheme.isMultiEvent) {
-      setLocation("/league-select");
-    }
-  }, [groupTheme.isMultiEvent, setLocation]);
 
   // Check if a bowler is already signed in
   const bowlerToken = getBowlerToken();
@@ -23,12 +28,71 @@ export default function Home() {
 
   // Determine background and branding based on group
   const isValentine = groupSlug === "valentine";
-  const isJune = groupSlug === "june-funtime";
+  const isJune = brand === "june";
   const bgImage = (isValentine || isJune)
     ? undefined // Valentine & June use solid dark bg with gradient
     : "/manus-storage/bg-bowlers-orleans-bound_c7329b96.jpg";
   const primaryColor = groupTheme.color;
   const accentColor = groupTheme.accent;
+
+  // ── Group selector screen for funtimeteamchallenge.com ──────────────────────
+  if (needsGroupSelect) {
+    return (
+      <div className="min-h-screen text-white flex flex-col items-center justify-center px-4"
+        style={{ background: "linear-gradient(135deg, #1a0a2e 0%, #2a0a4e 40%, #0d0820 100%)" }}>
+        <div className="flex flex-col items-center gap-3 mb-10">
+          <img
+            src="/manus-storage/june-logo-2_937344ed.jpg"
+            alt="Funtime Team Challenge"
+            className="w-64 md:w-80 object-contain rounded-3xl"
+            style={{ filter: "drop-shadow(0 0 32px rgba(212,175,55,0.7))" }}
+          />
+          <img
+            src="/manus-storage/june-logo-1_a6163a08.jpg"
+            alt="June Funtime"
+            className="w-52 md:w-64 object-contain rounded-3xl"
+            style={{ filter: "drop-shadow(0 0 20px rgba(212,175,55,0.5))" }}
+          />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-black text-center mb-2 tracking-tight"
+          style={{ fontFamily: "'Orbitron', sans-serif", background: "linear-gradient(135deg, #d4af37, #f5d060, #7b2fbe)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          Funtime Team Challenge
+        </h1>
+        <p className="text-white/60 text-sm mb-10 text-center">Select your group to continue</p>
+        <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+          {[1, 2, 3, 4].map((n) => (
+            <button
+              key={n}
+              onClick={() => {
+                setJuneGroupNumber(n);
+                setJuneGroup(n);
+              }}
+              className="group relative overflow-hidden rounded-2xl py-8 text-center cursor-pointer transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]"
+              style={{
+                background: "rgba(15,10,35,0.85)",
+                border: "1px solid rgba(212,175,55,0.45)",
+                boxShadow: "0 8px 32px rgba(212,175,55,0.2)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{ background: "radial-gradient(circle at 50% 50%, rgba(212,175,55,0.18), transparent 70%)" }} />
+              <div className="relative">
+                <div className="text-4xl font-black mb-1"
+                  style={{ fontFamily: "'Orbitron', sans-serif", color: "#d4af37", textShadow: "0 0 20px rgba(212,175,55,0.6)" }}>
+                  {n}
+                </div>
+                <div className="text-white/70 text-xs font-semibold uppercase tracking-wider">Group {n}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <p className="mt-10 text-white/25 text-xs text-center">
+          Funtime Team Challenge — Event Management System
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -221,6 +285,16 @@ export default function Home() {
         <div className="mt-8 text-center text-white/30 text-xs">
           <p>{groupTheme.name} — Event Management System</p>
           <p className="mt-1">Powered by local-first technology • Works offline</p>
+          {isJune && juneGroup && (
+            <p className="mt-2">
+              <button
+                onClick={() => { sessionStorage.removeItem("juneGroupNumber"); setJuneGroup(null); }}
+                className="text-yellow-500/40 hover:text-yellow-400/70 transition-colors text-xs tracking-wider"
+              >
+                ← Change Group (currently Group {juneGroup})
+              </button>
+            </p>
+          )}
           <p className="mt-3">
             <a
               href="/ed"

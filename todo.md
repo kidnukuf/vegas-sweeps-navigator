@@ -320,3 +320,15 @@
 - [x] All portal headers (BowlerLogin, CaptainLogin, BowlerDashboard, CaptainDashboard) already domain-aware via Phase 24 — automatically show June logo and gold color on junefuntimerolloff.com
 - [x] PwaIconInjector in App.tsx already handles June Funtime favicon/manifest swap
 - [x] TypeScript clean (0 errors), save checkpoint
+
+## Phase 27: Full Domain Isolation — 3 Websites + ED Group Selector
+
+- [x] Updated eventGroup.ts: 3-website model (bob / valentine / june), 4 June group slugs (june-group-1 through june-group-4), domain-brand map includes new domains (vegasvalentinefuntime.com, funtimeteamchallenge.com), GROUP_THEMES has all 6 slugs
+- [x] Added groupSlug and groupNumber columns to events table (ALTER TABLE migration)
+- [x] Added event.listByGroupSlug and event.activeByGroupSlug tRPC procedures to server
+- [x] Updated AdminDashboard groupedEvents logic to use slug-based grouping with labeled sections (B.O.B., Vegas Valentine Funtime, Funtime Team Challenge Group 1-4)
+- [x] Updated Events dropdown in ED portal to show events grouped by website/group with color-coded section headers
+- [x] Updated BowlerLogin: uses trpc.event.activeByGroupSlug to resolve eventId from domain slug (fully isolated per website)
+- [x] Updated CaptainLogin: uses trpc.event.activeByGroupSlug to resolve eventId from domain slug (fully isolated per website)
+- [x] Home.tsx already has June group selector (Group 1-4 picker) and "Change Group" footer link
+- [x] TypeScript clean (0 errors), push to GitHub, save checkpoint

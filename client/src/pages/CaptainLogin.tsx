@@ -47,8 +47,18 @@ export default function CaptainLogin() {
   const [centerSearch, setCenterSearch] = useState("");
   const suTurnstileRef = useRef<any>(null);
 
-  const eventQuery = trpc.event.active.useQuery();
-  const eventId = eventQuery.data?.id ?? 0;
+  // Resolve eventId from domain/group slug — fully isolated per website
+  const groupSlugForEvent = detectGroupSlug();
+  const { data: groupEventData } = trpc.event.activeByGroupSlug.useQuery(
+    { groupSlug: groupSlugForEvent },
+    { enabled: !!groupSlugForEvent }
+  );
+  // Fallback: sessionStorage (set by LeagueSelector or Home group picker)
+  const [sessionEventId] = useState<number | null>(() => {
+    const val = sessionStorage.getItem("selectedEventId");
+    return val ? parseInt(val, 10) : null;
+  });
+  const eventId: number = sessionEventId ?? (groupEventData as any)?.id ?? 0;
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: Number(eventId) }, { enabled: tab === "signup" && Number(eventId) > 0 });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
@@ -156,9 +166,9 @@ export default function CaptainLogin() {
         <p className="captain-login-subtitle" style={{ color: 'rgba(255,255,255,0.9)' }}>Command your roster. Lead your team to Vegas.</p>
 
         {/* Event info */}
-        {eventQuery.data && (
+        {groupEventData && (
           <div className="captain-event-pill">
-            🎳 {String(eventQuery.data.eventName ?? "")} · {eventQuery.data.bowlingDate ? new Date(String(eventQuery.data.bowlingDate)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""}
+            🎳 {String((groupEventData as any).eventName ?? "")} · {(groupEventData as any).bowlingDate ? new Date(String((groupEventData as any).bowlingDate)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""}
           </div>
         )}
 

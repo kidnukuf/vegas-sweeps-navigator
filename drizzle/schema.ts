@@ -46,6 +46,10 @@ export type EventGroup = typeof eventGroups.$inferSelect;
 export const events = mysqlTable("events", {
   id: int("id").autoincrement().primaryKey(),
   groupId: int("groupId"),
+  /** Slug matching GROUP_THEMES key: 'bob' | 'valentine' | 'june-group-1' ... 'june-group-4' */
+  groupSlug: varchar("groupSlug", { length: 64 }).default("bob"),
+  /** For June groups: 1-4. Null for BOB and Valentine. */
+  groupNumber: int("groupNumber"),
   eventName: varchar("eventName", { length: 255 }).notNull(),
   eventYear: int("eventYear").notNull(),
   startDate: varchar("startDate", { length: 20 }),

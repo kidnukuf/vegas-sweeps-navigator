@@ -421,13 +421,46 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     [events, EVENT_ID]
   );
   // Build grouped events map for the multi-brand dropdown
+  // Groups events by groupSlug first (new model), falling back to groupId (legacy)
   const groupedEvents = useMemo(() => {
-    const groups = eventGroups as Record<string, unknown>[];
     const evts = events as Record<string, unknown>[];
-    return groups.map((g) => ({
-      group: g,
-      events: evts.filter((e) => Number(e.groupId) === Number(g.id)),
-    })).filter((g) => g.events.length > 0 || groups.length <= 1);
+    // Collect all unique slugs present in the event list
+    const slugOrder = ["bob", "valentine", "june-group-1", "june-group-2", "june-group-3", "june-group-4"];
+    const slugLabels: Record<string, string> = {
+      "bob": "B.O.B. Roll-off Passport",
+      "valentine": "Vegas Valentine Funtime",
+      "june-group-1": "Funtime Team Challenge — Group 1",
+      "june-group-2": "Funtime Team Challenge — Group 2",
+      "june-group-3": "Funtime Team Challenge — Group 3",
+      "june-group-4": "Funtime Team Challenge — Group 4",
+    };
+    const slugColors: Record<string, string> = {
+      "bob": "#ffd700",
+      "valentine": "#e91e8c",
+      "june-group-1": "#d4af37",
+      "june-group-2": "#d4af37",
+      "june-group-3": "#d4af37",
+      "june-group-4": "#d4af37",
+    };
+    const grouped = slugOrder
+      .map((slug) => ({
+        slug,
+        label: slugLabels[slug] ?? slug,
+        color: slugColors[slug] ?? "#ffd700",
+        events: evts.filter((e) => (e.groupSlug as string) === slug),
+      }))
+      .filter((g) => g.events.length > 0);
+    // Fallback: if no events have groupSlug, use old groupId-based grouping
+    if (grouped.length === 0) {
+      const groups = eventGroups as Record<string, unknown>[];
+      return groups.map((g) => ({
+        slug: String(g.slug ?? ""),
+        label: String(g.name ?? ""),
+        color: String(g.themeColor ?? "#ffd700"),
+        events: evts.filter((e) => Number(e.groupId) === Number(g.id)),
+      })).filter((g) => g.events.length > 0);
+    }
+    return grouped;
   }, [eventGroups, events]);
 
   // Event create / rename state
@@ -672,11 +705,11 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               {showEventMenu && (
                 <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-yellow-500/30 rounded-xl shadow-xl z-50 min-w-[260px] overflow-hidden">
                   <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-gray-500 border-b border-white/10">Switch active event</div>
-                  {groupedEvents.length > 0 ? groupedEvents.map(({ group, events: gEvts }) => (
-                    <div key={String(group.id)}>
+                  {groupedEvents.length > 0 ? groupedEvents.map(({ slug, label, color, events: gEvts }) => (
+                    <div key={slug}>
                       <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider font-bold border-b border-white/5"
-                           style={{ color: String(group.themeColor ?? "#ffd700"), background: `${String(group.themeColor ?? "#ffd700")}10` }}>
-                        {String(group.name)}
+                           style={{ color, background: `${color}18` }}>
+                        {label}
                       </div>
                       {gEvts.map((e) => {
                         const id = Number(e.id);
@@ -688,7 +721,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                             className={`w-full px-5 py-2 text-left text-sm transition-colors flex items-center justify-between gap-2 ${isActive ? "bg-yellow-500/15 text-yellow-300" : "hover:bg-white/5 text-gray-200"}`}
                           >
                             <span className="truncate">{String(e.eventName)} <span className="text-gray-500">· {String(e.eventYear)}</span></span>
-                            {isActive && <span className="text-[10px] text-yellow-400">● active</span>}
+                            {isActive && <span className="text-[10px]" style={{ color }}>● selected</span>}
                           </button>
                         );
                       })}
@@ -707,6 +740,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                       </button>
                     );
                   })}
+                  {/* Import Data shortcut per group */}
+                  <div className="border-t border-white/5 px-4 py-2 text-[10px] text-gray-600 italic">
+                    Select an event above, then click “Import Data” to load bowlers into that event.
+                  </div>
                   <div className="border-t border-white/10">
                     <button onClick={() => { setEventModal({ mode: "create", name: "", year: String(new Date().getFullYear()) }); setShowEventMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm hover:bg-green-500/10 text-green-300 transition-colors">＋ Create New Event</button>
                     <button

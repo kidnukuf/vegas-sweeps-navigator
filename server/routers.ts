@@ -111,6 +111,24 @@ export const appRouter = router({
           [input.groupId]
         ) as Promise<Record<string, unknown>[]>;
       }),
+    listByGroupSlug: publicProcedure
+      .input(z.object({ groupSlug: z.string() }))
+      .query(async ({ input }) => {
+        return rawQuery(
+          `SELECT * FROM events WHERE groupSlug = ? ORDER BY sortOrder, id`,
+          [input.groupSlug]
+        ) as Promise<Record<string, unknown>[]>;
+      }),
+    activeByGroupSlug: publicProcedure
+      .input(z.object({ groupSlug: z.string() }))
+      .query(async ({ input }) => {
+        // Return the most recent active or planning event for this group slug
+        const rows = await rawQuery(
+          `SELECT * FROM events WHERE groupSlug = ? ORDER BY FIELD(status,'active','planning','completed'), sortOrder, id LIMIT 1`,
+          [input.groupSlug]
+        ) as Record<string, unknown>[];
+        return rows[0] ?? null;
+      }),
     createInGroup: publicProcedure
       .input(z.object({
         groupId: z.number(),

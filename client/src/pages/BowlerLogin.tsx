@@ -60,15 +60,19 @@ export default function BowlerLogin() {
   const [centerSearch, setCenterSearch] = useState("");
   const suTurnstileRef = useRef<any>(null);
 
-  // Resolve eventId: prefer sessionStorage (set by LeagueSelector), fall back to active event
+  // Resolve eventId from domain/group slug — fully isolated per website
+  const groupSlugForEvent = detectGroupSlug();
+  const { data: groupEventData } = trpc.event.activeByGroupSlug.useQuery(
+    { groupSlug: groupSlugForEvent },
+    { enabled: !!groupSlugForEvent }
+  );
+  // Prefer sessionStorage (set by LeagueSelector or Home group picker), then slug-resolved event
   const [sessionEventId] = useState<number | null>(() => {
     const val = sessionStorage.getItem("selectedEventId");
     return val ? parseInt(val, 10) : null;
   });
-  const eventQuery = trpc.event.active.useQuery();
-  const eventId: number = sessionEventId ?? (eventQuery.data?.id as number | undefined) ?? 1;
-  const eventByIdQuery = trpc.event.getById.useQuery({ id: eventId }, { enabled: eventId > 0 });
-  const currentEventName = (eventByIdQuery.data as any)?.eventName as string | undefined;
+  const eventId: number = sessionEventId ?? (groupEventData as any)?.id ?? 1;
+  const currentEventName = (groupEventData as any)?.eventName as string | undefined;
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId }, { enabled: tab === "signup" });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
