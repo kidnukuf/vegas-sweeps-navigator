@@ -735,7 +735,7 @@ export const appRouter = router({
             const firstName = String(row["First Name"] ?? row["first_name"] ?? row["FirstName"] ?? "").trim();
             const lastName = String(row["Last Name"] ?? row["last_name"] ?? row["LastName"] ?? "").trim();
             const teamName = String(row["Team Name"] ?? row["team_name"] ?? "").trim();
-            const captRaw = String(row["Capt"] ?? row["Captain"] ?? row["capt"] ?? row["captain"] ?? "").trim().toLowerCase();
+            const captRaw = String(row["Capt"] ?? row["Captain"] ?? row["Is Captain"] ?? row["capt"] ?? row["captain"] ?? "").trim().toLowerCase();
             const isCapt = ["y", "yes", "true", "1", "x"].includes(captRaw);
 
             if (!firstName || !lastName) { skipped++; continue; }
@@ -801,8 +801,8 @@ export const appRouter = router({
             ) as Record<string, unknown>[];
 
             // Parse hotel/payment data — 22-column B.O.B. layout (Jun 17 v2)
-            const checkinDate = String(row["Check In"] ?? row["checkin_date"] ?? "").trim();
-            const checkoutDate = String(row["Check Out"] ?? row["checkout_date"] ?? "").trim();
+            const checkinDate = String(row["Check In"] ?? row["Check-In Date"] ?? row["checkin_date"] ?? "").trim();
+            const checkoutDate = String(row["Check Out"] ?? row["Check-Out Date"] ?? row["checkout_date"] ?? "").trim();
             // Room Type removed from sheet — keep fallback for legacy imports
             const roomType = String(row["Room Type"] ?? row["room_type"] ?? "").trim();
             const roommateFirst = String(row["Roommate First Name"] ?? row["Roommate First"] ?? row["roommate_first"] ?? "").trim();
@@ -831,7 +831,7 @@ export const appRouter = router({
             const sanctionNumber = String(row["Sanction #"] ?? row["sanction_number"] ?? row["Sanction"] ?? "").trim() || undefined;
             const gamesRaw = String(row["# Games"] ?? row["Games"] ?? row["games"] ?? "").trim();
             const gamesPlayed = gamesRaw ? (parseInt(gamesRaw) || undefined) : undefined;
-            const avgRaw = String(row["Best Avg"] ?? row["Average"] ?? row["avg"] ?? "").trim();
+            const avgRaw = String(row["Best Avg"] ?? row["High Avg"] ?? row["Average"] ?? row["avg"] ?? "").trim();
             const bestAverage = avgRaw ? (parseInt(avgRaw) || undefined) : undefined;
             const tshirtSize = String(row["T-Shirt Size"] ?? row["Shirt Size"] ?? row["shirt"] ?? "").trim().toUpperCase() || undefined;
             const under21Raw = String(row["Under 21?"] ?? row["Under 21"] ?? row["under21"] ?? "").trim().toUpperCase();
