@@ -709,7 +709,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <div className="relative">
               <button onClick={() => setShowExportMenu(!showExportMenu)} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-semibold transition-colors">📤 Export ▾</button>
               {showExportMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-yellow-500/30 rounded-xl shadow-xl z-50 min-w-[200px] overflow-hidden">
+                <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-yellow-500/30 rounded-xl shadow-xl z-50 min-w-[200px] overflow-hidden"
+                     style={{ maxWidth: "calc(100vw - 1rem)", right: 0 }}>
                   <button onClick={exportFullRoster} className="w-full px-4 py-2.5 text-left text-sm hover:bg-yellow-500/10 text-yellow-300 transition-colors">📋 Full Roster</button>
                   <button onClick={exportByCenter} className="w-full px-4 py-2.5 text-left text-sm hover:bg-yellow-500/10 text-yellow-300 transition-colors">🏠 Per-Center Roster</button>
                   <button onClick={exportCheckedIn} className="w-full px-4 py-2.5 text-left text-sm hover:bg-yellow-500/10 text-cyan-300 transition-colors">✅ Check-In Status</button>
@@ -720,7 +721,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <div className="relative">
               <button onClick={() => setShowEventMenu(!showEventMenu)} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">🗓️ Events ▾</button>
               {showEventMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-[#1a1a1a] border border-yellow-500/30 rounded-xl shadow-xl z-50 min-w-[260px] overflow-hidden">
+                <div className="absolute top-full mt-1 bg-[#1a1a1a] border border-yellow-500/30 rounded-xl shadow-xl z-50 overflow-hidden"
+                     style={{ minWidth: "260px", maxWidth: "calc(100vw - 1rem)", maxHeight: "70vh", overflowY: "auto", right: 0 }}>
                   <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-gray-500 border-b border-white/10">Switch active event</div>
                   {groupedEvents.length > 0 ? groupedEvents.map(({ slug, label, color, events: gEvts }) => (
                     <div key={slug}>
