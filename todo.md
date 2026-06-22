@@ -345,17 +345,17 @@
 
 ## Phase 29: Banquet Info — Time, Table Assignment, Location
 
-- [ ] Read updated Google Sheet to confirm column W (banquet table), X (extra banquet), Y (extra pool party) headers
-- [ ] Add banquetTable column to bowlers table in schema
-- [ ] Add banquetLocation and banquetTime columns to events table in schema
-- [ ] Run migration SQL for new columns
-- [ ] Update import parser: parse column W as banquetTable, update X/Y column aliases for extra banquet and extra pool party
-- [ ] Update ED portal: add Banquet Location + Banquet Time fields to Event Settings (applies to all bowlers in that event)
-- [ ] Update ED portal: add banquetTable field to bowler edit panel
-- [ ] Update server bowler profile query to return banquetTable, banquetTime, banquetLocation (from event)
-- [ ] Update BowlerDashboard Lane to Banquet section: show banquet time, table, location, early-arrival note
-- [ ] Update CaptainDashboard Lane to Banquet section: same as bowler
-- [ ] TypeScript check, push to GitHub, save checkpoint
+- [x] Read updated Google Sheet to confirm column W (banquet table), X (extra banquet), Y (extra pool party) headers
+- [x] Add banquetTable column to bowlers table in schema
+- [x] Add banquetLocation and banquetTime columns to events table in schema
+- [x] Run migration SQL for new columns
+- [x] Update import parser: parse column W as banquetTable, update X/Y column aliases for extra banquet and extra pool party
+- [x] Update ED portal: add Banquet Location + Banquet Time fields to Event Settings (applies to all bowlers in that event)
+- [x] Update ED portal: add banquetTable field to bowler edit panel
+- [x] Update server bowler profile query to return banquetTable, banquetTime, banquetLocation (from event)
+- [x] Update BowlerDashboard Lane to Banquet section: show banquet time, table, location, early-arrival note
+- [x] Update CaptainDashboard Lane to Banquet section: same as bowler
+- [x] TypeScript check, push to GitHub, save checkpoint
 
 ## Phase 30: Contact Info Request Flow (Bowler → ED → Google Sheet)
 - [x] Add contact_requests table (bowlerId, phone, email, status pending/confirmed/rejected, sheetRow, spreadsheetId, createdAt, confirmedAt)
