@@ -337,8 +337,8 @@
 
 - [x] Detect wwwfuntimeteamchallenge.com in App.tsx and auto-redirect to /ed (EdDomainRedirector component)
 - [x] Update AdminDashboard login header to show "Funtime Team Challenge — Staff Access Portal" in gold/purple when on that domain
-- [ ] Add DNS CNAME for wwwfuntimeteamchallenge.com → vegasweeps-y8eywesk.manus.space in Cloudflare (manual — API token needs DNS Edit scope)
-- [ ] Add DNS CNAME for funtimeteamchallenge.com → vegasweeps-y8eywesk.manus.space in Cloudflare (manual)
-- [ ] Add DNS CNAME for vegasvalentinefuntime.com → vegasweeps-y8eywesk.manus.space in Cloudflare (manual)
-- [ ] Add all 3 new domains to Manus Management UI (Settings → Domains)
+- [x] Add DNS CNAME for wwwfuntimeteamchallenge.com → vegasweeps-y8eywesk.manus.space in Cloudflare (done manually by user)
+- [x] Add DNS CNAME for funtimeteamchallenge.com → vegasweeps-y8eywesk.manus.space in Cloudflare (done manually by user)
+- [x] Add DNS CNAME for vegasvalentinefuntime.com → vegasweeps-y8eywesk.manus.space in Cloudflare (done manually by user)
+- [x] Add all 3 new domains to Manus Management UI (all 5 domains now bound and live)
 - [x] TypeScript check (0 errors), save checkpoint

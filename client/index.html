@@ -17,16 +17,39 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="B.O.B. Passport" />
     <script>
-      // Register service worker only in production (not dev/preview)
+      // Register service worker only on real production domains (not dev/preview)
       if ('serviceWorker' in navigator) {
-        const isProd = location.hostname !== 'localhost' &&
-                       location.hostname !== '127.0.0.1' &&
-                       !location.hostname.includes('.manus.computer') &&
-                       !location.hostname.includes('.manuspre.computer');
+        const h = location.hostname;
+        const isProd = h !== 'localhost' &&
+                       h !== '127.0.0.1' &&
+                       !h.includes('.manus.computer') &&
+                       !h.includes('.manuspre.computer') &&
+                       !h.includes('.manus.space');  // also skip Manus preview domains
         if (isProd) {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => {
+              // If a new SW is waiting, activate it immediately
+              if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+              reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      // New SW installed — reload once to pick up fresh bundles
+                      newWorker.postMessage('SKIP_WAITING');
+                    }
+                  });
+                }
+              });
+            })
+            .catch(() => {});
+          // Reload the page once when the SW controller changes (new SW took over)
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) { refreshing = true; location.reload(); }
+          });
         } else {
-          // Unregister any stale SW in dev to prevent caching issues
+          // Unregister any stale SW in dev/preview to prevent caching issues
           navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
         }
       }

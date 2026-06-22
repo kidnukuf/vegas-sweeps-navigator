@@ -1,13 +1,14 @@
-// B.O.B. Roll-off Passport — Service Worker v5.0
-// v5: bumped cache version to force eviction of stale JS bundles that caused
-//     React error #310 on the published site. Old caches are deleted on activate.
-const CACHE_NAME = "bob-passport-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/manifest.json",
-  "/icon-192.png",
-  "/icon-512.png",
-];
+// B.O.B. Roll-off Passport — Service Worker v7.0
+// v7: Network-first for HTML navigation (fixes white screen after publish).
+//     Cache version tied to build timestamp so stale caches are always evicted.
+//     JS/CSS bundles: network-only (they are already hashed by Vite).
+//     API calls: network-first with IDB offline fallback.
+
+// ── IMPORTANT: bump this string on every deploy to evict old caches ──────────
+// This is auto-replaced by the build process via the __manus__/version.json
+// timestamp. If that fails, the date string below ensures forward progress.
+const CACHE_VERSION = "bob-v7-" + (self.__BUILD_TS__ || "20260622");
+const CACHE_NAME = CACHE_VERSION;
 
 // IndexedDB helpers for offline bowler data cache
 const IDB_NAME = "bob-passport-offline";
@@ -52,35 +53,27 @@ async function idbGet(key) {
   } catch { return null; }
 }
 
-// Install: pre-cache only minimal static assets (not app routes)
+// Install: skip waiting immediately so new SW takes over without delay
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return Promise.all(
-        STATIC_ASSETS.map((url) =>
-          cache.add(url).catch(() => { /* skip unavailable */ })
-        )
-      );
-    })
-  );
-  // Take control immediately
   self.skipWaiting();
 });
 
-// Activate: clean up ALL old caches and take control
+// Activate: delete ALL old caches (any name != current) and claim clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch: never intercept Vite dev server assets
+// Fetch handler
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // NEVER cache Vite dev server assets — these change on every build
+  // ── Never intercept dev/preview server assets ─────────────────────────────
   if (
     url.pathname.startsWith("/@fs/") ||
     url.pathname.startsWith("/@vite/") ||
@@ -95,16 +88,51 @@ self.addEventListener("fetch", (event) => {
     url.hostname === "localhost" ||
     url.hostname === "127.0.0.1"
   ) {
-    // Pass through to network without caching
-    return;
+    return; // pass through
   }
 
-  // SSE stream: never cache, never intercept
+  // ── SSE stream: never intercept ───────────────────────────────────────────
   if (url.pathname === "/api/events/stream") {
     return;
   }
 
-  // tRPC API calls: network-first with IndexedDB fallback for read queries
+  // ── HTML navigation: ALWAYS network-first, fall back to cache ─────────────
+  // This is the key fix: the HTML shell MUST come from the network so it
+  // always references the latest hashed JS/CSS bundle filenames.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            // Update the cache with the fresh HTML
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          // Offline: serve cached HTML shell if available
+          return caches.match(event.request)
+            .then((cached) => cached || caches.match("/"))
+            .then((cached) => cached || new Response(
+              "<html><body style='background:#0d0d0d;color:#ffd700;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'><div style='text-align:center'><h2>You're offline</h2><p>Please reconnect to use B.O.B. Roll-off Passport.</p></div></body></html>",
+              { status: 503, headers: { "Content-Type": "text/html" } }
+            ));
+        })
+    );
+    return;
+  }
+
+  // ── JS/CSS bundles: network-only (Vite hashes filenames, no need to cache) ─
+  if (
+    url.pathname.startsWith("/assets/") &&
+    (url.pathname.endsWith(".js") || url.pathname.endsWith(".css"))
+  ) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // ── tRPC API: network-first with IDB offline fallback for read queries ─────
   if (url.pathname.startsWith("/api/trpc/")) {
     const isCacheable = event.request.method === "GET" &&
       (url.pathname.includes("bowlers.adminList") ||
@@ -142,42 +170,30 @@ self.addEventListener("fetch", (event) => {
 
     // Non-cacheable API calls (mutations): network only
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(
+      fetch(event.request).catch(() =>
+        new Response(
           JSON.stringify({ error: "OFFLINE", message: "No network connection. Action unavailable offline." }),
           { status: 503, headers: { "Content-Type": "application/json" } }
-        );
-      })
+        )
+      )
     );
     return;
   }
 
-  // Other API calls
+  // ── Other API calls: network-only ─────────────────────────────────────────
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(
+      fetch(event.request).catch(() =>
+        new Response(
           JSON.stringify({ error: "OFFLINE", message: "No network connection." }),
           { status: 503, headers: { "Content-Type": "application/json" } }
-        );
-      })
+        )
+      )
     );
     return;
   }
 
-  // JS/CSS bundles: NEVER cache via service worker — they have hashed filenames
-  // and are already cache-busted by the browser's HTTP cache. Caching them here
-  // causes stale bundle issues after republish (React error #310 symptom).
-  if (
-    url.pathname.startsWith("/assets/") &&
-    (url.pathname.endsWith(".js") || url.pathname.endsWith(".css"))
-  ) {
-    // Network-only for JS/CSS bundles
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  // Static assets (icons, manifest, etc.): cache-first with network fallback
+  // ── Static assets (icons, manifest, fonts): cache-first, network fallback ──
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -189,12 +205,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => {
-          if (event.request.mode === "navigate") {
-            return caches.match("/").then((r) => r || new Response("Offline — B.O.B. Roll-off Passport", { status: 503 }));
-          }
-          return new Response("Offline", { status: 503 });
-        });
+        .catch(() => new Response("Offline", { status: 503 }));
     })
   );
 });
