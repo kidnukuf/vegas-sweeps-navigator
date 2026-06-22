@@ -72,6 +72,7 @@ export const bowlingCenters = mysqlTable("bowling_centers", {
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 50 }),
   address: text("address"),
+  phone: varchar("phone", { length: 20 }),
   contactName: varchar("contactName", { length: 255 }),
   contactPhone: varchar("contactPhone", { length: 20 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

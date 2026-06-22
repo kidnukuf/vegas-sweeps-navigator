@@ -716,11 +716,23 @@ export const appRouter = router({
 
             if (!firstName || !lastName) { skipped++; continue; }
 
-            // Find center — exact match only (substring matching caused River Grove collisions)
-            const center = centerMap.get(centerName.toLowerCase()) as Record<string, unknown> | undefined;
+            // Find center — exact match first, then fuzzy partial match
+            let center = centerMap.get(centerName.toLowerCase()) as Record<string, unknown> | undefined;
+            if (!center && centerName) {
+              // Try partial/fuzzy match: check if any DB center name contains the input or vice versa
+              const lowerInput = centerName.toLowerCase();
+              const entries = Array.from(centerMap.entries());
+              for (let ei = 0; ei < entries.length; ei++) {
+                const [key, val] = entries[ei];
+                if (key.includes(lowerInput) || lowerInput.includes(key)) {
+                  center = val as Record<string, unknown>;
+                  break;
+                }
+              }
+            }
             if (!center) {
               errors++;
-              errorDetails.push({ row: firstName + " " + lastName, error: `Center not found: ${centerName}` });
+              errorDetails.push({ row: firstName + " " + lastName, error: `Center not found: "${centerName}" — use an official center name from the Bowlero Vegas Funtime League list` });
               continue;
             }
 
@@ -769,19 +781,21 @@ export const appRouter = router({
             const checkoutDate = String(row["Check Out"] ?? row["checkout_date"] ?? "").trim();
             // Room Type removed from sheet — keep fallback for legacy imports
             const roomType = String(row["Room Type"] ?? row["room_type"] ?? "").trim();
-            const roommateFirst = String(row["Roommate First Name"] ?? row["roommate_first"] ?? "").trim();
-            const roommateLast = String(row["Roommate Last Name"] ?? row["roommate_last"] ?? "").trim();
+            const roommateFirst = String(row["Roommate First Name"] ?? row["Roommate First"] ?? row["roommate_first"] ?? "").trim();
+            const roommateLast = String(row["Roommate Last Name"] ?? row["Roommate Last"] ?? row["roommate_last"] ?? "").trim();
             // roommateRequested: infer from roommate name being present
             const roommateRequested = !!(roommateFirst || roommateLast);
-            const roomAmount = parseFloat(String(row["Amount Due"] ?? row["Room Amount Due"] ?? row["room_amount"] ?? "0").replace(/[$,]/g, "")) || 0;
-            // Banquet: "extra banquet" column
-            const extraBanquet = parseFloat(String(row["extra banquet"] ?? row["Extra Banquet"] ?? row["Banquet $80"] ?? row["banquet"] ?? "0").replace(/[$,]/g, "")) || 0;
-            // Pool party: "Guest Pool Party" column — each $15 = 1 extra guest QR code
-            const guestPoolPartyRaw = String(row["Guest Pool Party"] ?? row["Guest $15"] ?? row["extra pool party"] ?? row["Extra Pool Party"] ?? "0").replace(/[$,]/g, "").trim();
+            const roomAmount = parseFloat(String(row["Amount Due"] ?? row["Room Amount Due"] ?? row["Room Amount"] ?? row["room_amount"] ?? "0").replace(/[$,]/g, "")) || 0;
+            // Banquet: accept "Banquet" column (time string like "6:00 PM") or legacy numeric extra banquet
+            const banquetRaw = String(row["extra banquet"] ?? row["Extra Banquet"] ?? row["Banquet $80"] ?? row["Banquet"] ?? row["banquet"] ?? "0").trim();
+            const extraBanquet = parseFloat(banquetRaw.replace(/[$,]/g, "")) || 0;
+            // Pool party: accept "Pool Party" column (time string) or legacy numeric
+            const poolPartyRaw = String(row["Guest Pool Party"] ?? row["Guest $15"] ?? row["extra pool party"] ?? row["Extra Pool Party"] ?? row["Pool Party"] ?? "0").replace(/[$,]/g, "").trim();
+            const guestPoolPartyRaw = poolPartyRaw;
             const guestPoolPartyAmount = parseFloat(guestPoolPartyRaw) || 0;
-            const poolParty = guestPoolPartyAmount > 0 || ["y", "yes", "true", "1", "x"].includes(guestPoolPartyRaw.toLowerCase());
+            const poolParty = guestPoolPartyAmount > 0 || ["y", "yes", "true", "1", "x"].includes(guestPoolPartyRaw.toLowerCase()) || (poolPartyRaw.includes("PM") || poolPartyRaw.includes("AM"));
             const extraGuestFee = guestPoolPartyAmount;
-            const totalAmountDue = parseFloat(String(row["Total Amount"] ?? row["total"] ?? "0").replace(/[$,]/g, "")) || 0;
+            const totalAmountDue = parseFloat(String(row["Total Due"] ?? row["Total Amount"] ?? row["total"] ?? "0").replace(/[$,]/g, "")) || 0;
             const notes = String(row["Special Notes"] ?? row["notes"] ?? "").trim();
             // Phone and Email are present but typically empty — accept gracefully
             const phone = String(row["Phone"] ?? row["phone"] ?? "").trim();
