@@ -41,6 +41,10 @@ export default function BowlerLogin() {
     new URLSearchParams(search).get("tab") === "signup" ? "signup" : "signin"
   );
 
+  // ED contact popup state
+  const [showEdContact, setShowEdContact] = useState(false);
+  const [loginErrorMsg, setLoginErrorMsg] = useState("");
+
   // Sign-in state
   const [siFirst, setSiFirst] = useState("");
   const [siLast, setSiLast] = useState("");
@@ -92,6 +96,8 @@ export default function BowlerLogin() {
       toast.error(err.message);
       siTurnstileRef.current?.reset();
       setSiToken("");
+      setLoginErrorMsg(err.message);
+      setShowEdContact(true);
     },
   });
 
@@ -111,6 +117,8 @@ export default function BowlerLogin() {
       toast.error(err.message);
       suTurnstileRef.current?.reset();
       setSuToken("");
+      setLoginErrorMsg(err.message);
+      setShowEdContact(true);
     },
   });
 
@@ -384,6 +392,50 @@ export default function BowlerLogin() {
           </Tabs>
         </div>
       </div>
+
+      {/* ── ED Contact Dialog ── */}
+      <Dialog open={showEdContact} onOpenChange={setShowEdContact}>
+        <DialogContent className="bg-[#1a1040] border border-amber-500/30 text-white max-w-sm w-full">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
+              <span className="text-2xl">⚠️</span> Unable to Sign In
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            {loginErrorMsg && (
+              <div className="rounded-xl px-4 py-3 text-sm text-red-300 font-medium"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+                {loginErrorMsg}
+              </div>
+            )}
+            <p className="text-white/75 text-sm leading-relaxed">
+              Your name or bowling center may not match the event roster exactly.
+              Please double-check your spelling and try again, or contact your
+              Event Director for help.
+            </p>
+            <div className="rounded-2xl p-4 text-center"
+              style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.25)" }}>
+              <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-2">Event Director</p>
+              <p className="text-white font-bold text-base mb-3">Cassie Davis</p>
+              <a
+                href="mailto:CaDavis@LSEnt.com?subject=B.O.B.%20Roll-off%20Passport%20%E2%80%94%20Sign-In%20Help&body=Hi%20Cassie%2C%0A%0AI%20am%20having%20trouble%20signing%20in%20to%20the%20B.O.B.%20Roll-off%20Passport.%0A%0AName%3A%20%0ABowling%20Center%3A%20%0AError%20message%3A%20"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-black text-sm transition-all duration-200 active:scale-95"
+                style={{ background: "linear-gradient(135deg, #ffd700, #f59e0b)", boxShadow: "0 0 20px rgba(255,215,0,0.3)" }}
+                onClick={() => setShowEdContact(false)}
+              >
+                <span className="text-lg">✉️</span>
+                Email CaDavis@LSEnt.com
+              </a>
+            </div>
+            <button
+              onClick={() => setShowEdContact(false)}
+              className="w-full py-2.5 rounded-xl text-white/60 text-sm font-medium transition-colors hover:text-white hover:bg-white/5"
+            >
+              Try Again
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Center Picker Dialog ── */}
       <Dialog open={showCenterPicker} onOpenChange={setShowCenterPicker}>
