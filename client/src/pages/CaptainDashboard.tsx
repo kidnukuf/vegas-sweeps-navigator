@@ -191,7 +191,8 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime, hotelName, c
           {/* ── Reg: Hotel Registration ── */}
           {hasHotel && (
             <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <p className="text-blue-300 text-xs font-semibold mb-2">🏨 Reg — Hotel Registration</p>
+              <p className="text-blue-300 text-xs font-semibold mb-1">🏨 Hotel Registration Tool</p>
+              <p className="text-blue-200/40 text-xs italic mb-2">This feature may not be fully available at time of check-in. Coming soon.</p>
               <div className="space-y-1.5">
                 {hotelName && (
                   <div className="flex items-center gap-2">
