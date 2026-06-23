@@ -25,6 +25,7 @@ import ScanPassport from "./pages/ScanPassport";
 import DoormanTablet from "./pages/DoormanTablet";
 import LeagueSelector from "./pages/LeagueSelector";
 import SeatingChart from "./pages/SeatingChart";
+import AdLanding from "./pages/AdLanding";
 import { VideoSplash } from "./components/VideoSplash";
 import { useLocation } from "wouter";
 
@@ -122,6 +123,8 @@ function Router() {
       <Route path="/scan/:type/:token" component={ScanPassport} />
       <Route path="/doorman-tablet" component={DoormanTablet} />
       <Route path="/seating-chart" component={SeatingChart} />
+      <Route path="/ad" component={AdLanding} />
+      <Route path="/invite" component={AdLanding} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -398,4 +398,4 @@
 - [x] Create shared AppFooter component with 2026 copyright, disclaimer, privacy, and terms statements
 - [x] Add AppFooter to all public-facing pages: Home, BowlerLogin, BowlerDashboard, BowlerConfirmation, CaptainLogin, CaptainDashboard
 - [x] Add AppFooter to ED portal pages: AdminDashboard (EventDirectorDashboard)
-- [ ] Save checkpoint and publish
+- [x] Save checkpoint and publish
