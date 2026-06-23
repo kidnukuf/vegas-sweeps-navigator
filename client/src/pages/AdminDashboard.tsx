@@ -844,6 +844,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </DropdownMenuContent>
             </DropdownMenu>
             <button onClick={() => setLocation("/import")} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-semibold transition-colors">📥 Import Data</button>
+            <button onClick={() => setLocation("/seating-chart")} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">🪑 Seating Chart</button>
           </div>
         </div>
       </div>

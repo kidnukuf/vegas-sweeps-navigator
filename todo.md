@@ -366,3 +366,15 @@
 - [x] BowlerDashboard: replace "contact info unavailable" static text with inline form (phone + email fields, 10-digit validation, Send button, success state)
 - [x] CaptainDashboard: same inline contact info form
 - [x] AdminDashboard: add Contact Requests panel (Roster tab or new section) — list pending requests with bowler name, submitted phone/email, Confirm button
+
+## Phase 31: Seating Chart Tool (ED Portal)
+- [ ] Scaffold SeatingChart.tsx page and add route in App.tsx
+- [ ] Add "Seating Chart" nav link in ED portal sidebar/tabs
+- [ ] Build CSV/paste upload step with event title input
+- [ ] Build ID parser: CC(2)-LL(2)-EE(2)-TT(2)-BB(2), guest detection (11-char IDs with letter suffix)
+- [ ] Build seating algorithm: center isolation (CC), per-league balancing, minimize spread, guests adjacent to linked bowler
+- [ ] Build table config: seats-per-table (default 8, adjustable), max 80 tables
+- [ ] Build 80-table venue grid: left section (41 tables, 7 cols x 6 rows, col1 missing row6), right section (39 tables, 7 cols x 6 rows, col8 missing row1, cols13-14 missing row6)
+- [ ] Build confirmation grid: color-coded by league (19 league colors), bowler name + seat code + original row number
+- [ ] Build output panel: single column XX-O format (e.g. 04-H), copy-paste ready, rows match original upload order
+- [ ] TypeScript check, push to GitHub, save checkpoint
