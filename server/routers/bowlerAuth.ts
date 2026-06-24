@@ -14,7 +14,7 @@ import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { rawQuery } from "../db";
 import { notifyOwner } from "../_core/notification";
-import { writeQRCodesToSheet, writeContactInfoToSheet } from "../googleSheets";
+import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -617,6 +617,13 @@ export const bowlerAuthRouter = router({
           return { result: "used" as const, message: "Already Redeemed", bowlerName };
         }
         await rawQuery(`UPDATE guest_pool_party_tokens SET used = 1 WHERE id = ?`, [g.id]);
+        // Fire-and-forget: write scan timestamp to Google Sheet column AG
+        writeScanUsedToSheet({
+          firstName: g.legalFirstName,
+          lastName: g.legalLastName,
+          laneNumber: null,
+          type: "guest_pool",
+        }).catch((err) => console.error("[googleSheets] guest_pool scan write-back failed:", err));
         return {
           result: "granted" as const,
           message: `Guest Entry Granted (Pass ${g.suffix})`,
@@ -650,6 +657,13 @@ export const bowlerAuthRouter = router({
       }
       // Mark as used
       await rawQuery(`UPDATE bowlers SET ${usedCol} = 1 WHERE id = ?`, [bowler.id]);
+      // Fire-and-forget: write scan timestamp to Google Sheet (AC=banquet, AE=pool)
+      writeScanUsedToSheet({
+        firstName: bowler.legalFirstName,
+        lastName: bowler.legalLastName,
+        laneNumber: null,
+        type: input.passportType as "banquet" | "pool",
+      }).catch((err) => console.error("[googleSheets] scan write-back failed:", err));
       return {
         result: "granted" as const,
         message: "Entry Granted",
