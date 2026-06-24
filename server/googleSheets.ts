@@ -4,36 +4,43 @@
  * Google Drive connector in Manus. No API keys or service account JSON needed.
  *
  * Sheet: TeamChallenge2026_Ledger_Final
- * Spreadsheet ID: 1Azwl5Lmj4BK69htTXB0PmWO8ww6jY_zz7OtmJjHSiFg
+ * Spreadsheet ID: 1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
  *
- * Column layout (1-indexed):
- *   A=Phone, B=Email, C=Squad Time, D=Lane #, E=Center,
- *   F=Team #, G=Captain, H=First Name, I=Last Name, ...
- *   U=Guest Pool Party ($15 increments)
- *   W=Banquet QR URL, X=Pool Party QR URL
- *   Y=Guest pool qr code (suffix A)
- *   Z=Additional guest pool qr code (suffix B)
- *   AA=Guest banquet qr code
- *   AB=Additional guest banquet qr code
- *   AC=Guest reentry qr code
+ * Column layout (A=col 0, 0-indexed):
+ *   A=Bowler ID (write-back), B=Phone, C=Email, D=Squad Day & Time, E=Lane #,
+ *   F=Center, G=Team #, H=Captain, I=First Name, J=Last Name,
+ *   K=Under 21?, L=Sanction #, M=# Games, N=Best Avg, O=Team Name,
+ *   P=League Member, Q=T-Shirt Size, R=Hotel Confirmation,
+ *   S=Check In, T=Check Out, U=Roommate First Name, V=Roommate Last Name,
+ *   W=Guest Pool Party, X=Extra Banquet,
+ *   Y=Banquet QR URL, Z=Pool Party QR URL,
+ *   AA=Guest pool qr code (suffix A), AB=Additional guest pool qr code (suffix B),
+ *   AC=Guest banquet qr code, AD=Additional guest banquet qr code,
+ *   AE=Guest reentry qr code
  */
 
 import { execSync } from "child_process";
 
-const SPREADSHEET_ID = "1Azwl5Lmj4BK69htTXB0PmWO8ww6jY_zz7OtmJjHSiFg";
+const SPREADSHEET_ID = "1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM";
 const SHEET_NAME = "TeamChallenge2026_Ledger_Final";
 
-// Column indices (0-based for array access)
-const COL_FIRST_NAME = 7;  // H
-const COL_LAST_NAME  = 8;  // I
-const COL_LANE       = 3;  // D
-const COL_BANQUET_QR = 22; // W
-const COL_POOL_QR    = 23; // X
-const COL_GUEST_POOL_A = 24; // Y — 1st extra guest pool QR (suffix A)
-const COL_GUEST_POOL_B = 25; // Z — 2nd extra guest pool QR (suffix B)
+// Column indices (0-based for array access after the new Bowler ID column A)
+const COL_BOWLER_ID   = 0;  // A — write-back: scantron ID
+const COL_PHONE       = 1;  // B
+const COL_EMAIL       = 2;  // C
+const COL_LANE        = 4;  // E
+const COL_FIRST_NAME  = 8;  // I
+const COL_LAST_NAME   = 9;  // J
+const COL_BANQUET_QR  = 24; // Y
+const COL_POOL_QR     = 25; // Z
+const COL_GUEST_POOL_A = 26; // AA — 1st extra guest pool QR (suffix A)
+const COL_GUEST_POOL_B = 27; // AB — 2nd extra guest pool QR (suffix B)
 
-// Sheet column letters for guest pool QR codes (up to 5 guests = A–E)
-const GUEST_POOL_COLUMNS = ["Y", "Z", "AA", "AB", "AC"];
+// Sheet column letters for guest pool QR codes (up to 5 guests = AA–AE)
+const GUEST_POOL_COLUMNS = ["AA", "AB", "AC", "AD", "AE"];
+
+// Suppress unused-variable warnings for constants only used in comments/docs
+void COL_PHONE; void COL_EMAIL; void COL_GUEST_POOL_A; void COL_GUEST_POOL_B;
 
 function gws(params: object, body?: object): unknown {
   const args = ["gws", "sheets", "spreadsheets", "values"];
@@ -59,7 +66,7 @@ async function findBowlerRow(
   laneNumber: number | null
 ): Promise<number | null> {
   try {
-    const data = gws({ range: `${SHEET_NAME}!A1:AC` }) as { values?: string[][] };
+    const data = gws({ range: `${SHEET_NAME}!A1:AE` }) as { values?: string[][] };
     const rows = data.values ?? [];
 
     for (let i = 1; i < rows.length; i++) { // skip header row
@@ -84,11 +91,39 @@ async function findBowlerRow(
 }
 
 /**
+ * Write the Bowler ID (scantronId) into column A of the bowler's row.
+ * Called immediately after import generates the ID for a new bowler.
+ */
+export async function writeBowlerIdToSheet(params: {
+  firstName: string;
+  lastName: string;
+  laneNumber: number | null;
+  scantronId: string;
+}): Promise<void> {
+  const { firstName, lastName, laneNumber, scantronId } = params;
+  if (!scantronId) return;
+  try {
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    if (!rowNum) {
+      console.warn(`[googleSheets] writeBowlerIdToSheet: Bowler not found: ${firstName} ${lastName} lane ${laneNumber}`);
+      return;
+    }
+    gws({}, {
+      valueInputOption: "RAW",
+      data: [{ range: `${SHEET_NAME}!A${rowNum}`, values: [[scantronId]] }],
+    });
+    console.log(`[googleSheets] Bowler ID ${scantronId} written for ${firstName} ${lastName} (row ${rowNum})`);
+  } catch (err) {
+    console.error("[googleSheets] writeBowlerIdToSheet error (non-fatal):", err);
+  }
+}
+
+/**
  * Write the Banquet QR URL, Pool Party QR URL, and any guest pool QR URLs
  * into the bowler's row in the Google Sheet.
  *
- * Guest pool QR codes use the bowler's scantronId + suffix A, B, C, etc.
- * Each $15 in column U = one additional guest pool QR code.
+ * New column positions (post Bowler ID insert):
+ *   Y=Banquet QR URL, Z=Pool Party QR URL, AA–AE=Guest pool QR codes
  *
  * @param firstName         Bowler's legal first name
  * @param lastName          Bowler's legal last name
@@ -124,13 +159,15 @@ export async function writeQRCodesToSheet(params: {
     const updateData: { range: string; values: string[][] }[] = [];
 
     if (banquetQRUrl) {
-      updateData.push({ range: `${SHEET_NAME}!W${rowNum}`, values: [[banquetQRUrl]] });
+      // Column Y (index 24) = Banquet QR URL
+      updateData.push({ range: `${SHEET_NAME}!Y${rowNum}`, values: [[banquetQRUrl]] });
     }
     if (poolPartyQRUrl) {
-      updateData.push({ range: `${SHEET_NAME}!X${rowNum}`, values: [[poolPartyQRUrl]] });
+      // Column Z (index 25) = Pool Party QR URL
+      updateData.push({ range: `${SHEET_NAME}!Z${rowNum}`, values: [[poolPartyQRUrl]] });
     }
 
-    // Write guest pool QR URLs into Y, Z, AA, AB, AC (up to 5 guests)
+    // Write guest pool QR URLs into AA, AB, AC, AD, AE (up to 5 guests)
     for (let i = 0; i < Math.min(guestPoolTokens.length, GUEST_POOL_COLUMNS.length); i++) {
       const col = GUEST_POOL_COLUMNS[i];
       const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
@@ -139,12 +176,7 @@ export async function writeQRCodesToSheet(params: {
 
     if (updateData.length === 0) return;
 
-    const body = {
-      valueInputOption: "RAW",
-      data: updateData,
-    };
-
-    gws({}, body);
+    gws({}, { valueInputOption: "RAW", data: updateData });
     console.log(`[googleSheets] QR URLs written for ${firstName} ${lastName} (row ${rowNum}, ${guestPoolTokens.length} guest pool codes)`);
   } catch (err) {
     console.error("[googleSheets] writeQRCodesToSheet error (non-fatal):", err);
@@ -152,8 +184,9 @@ export async function writeQRCodesToSheet(params: {
 }
 
 /**
- * Write phone and email into columns A and B of the bowler's row in the Google Sheet.
+ * Write phone and email into columns B and C of the bowler's row in the Google Sheet.
  * Called when the Event Director confirms a contact info request.
+ * (Column A is now Bowler ID, so phone=B and email=C)
  */
 export async function writeContactInfoToSheet(params: {
   firstName: string;
@@ -170,8 +203,8 @@ export async function writeContactInfoToSheet(params: {
       return { rowNum: null };
     }
     const updateData = [
-      { range: `${SHEET_NAME}!A${rowNum}`, values: [[phone]] },
-      { range: `${SHEET_NAME}!B${rowNum}`, values: [[email]] },
+      { range: `${SHEET_NAME}!B${rowNum}`, values: [[phone]] },   // B = Phone
+      { range: `${SHEET_NAME}!C${rowNum}`, values: [[email]] },   // C = Email
     ];
     gws({}, { valueInputOption: "RAW", data: updateData });
     console.log(`[googleSheets] Contact info written for ${firstName} ${lastName} (row ${rowNum})`);

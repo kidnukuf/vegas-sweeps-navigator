@@ -20,6 +20,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import QRCode from "qrcode";
+import { writeBowlerIdToSheet } from "./googleSheets";
 
 // ─── ID GENERATION ────────────────────────────────────────────────────────────
 export function generateScantronId(cc: string, l: string, ee: string, tt: string, bb: string): string {
@@ -945,6 +946,13 @@ export const appRouter = router({
               }
               generatedIds.push(scantronId);
               imported++;
+              // Fire-and-forget: write the Bowler ID back to column A of the Google Sheet
+              writeBowlerIdToSheet({
+                firstName,
+                lastName,
+                laneNumber: laneNumber ?? null,
+                scantronId,
+              }).catch((e: unknown) => console.warn("[import] sheet write-back failed:", e));
             }
           } catch (err) {
             errors++;

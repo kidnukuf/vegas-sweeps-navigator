@@ -192,24 +192,23 @@ function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime, hotelName, c
           {/* ── Reg: Hotel Registration ── */}
           {hasHotel && (
             <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <p className="text-blue-300 text-xs font-semibold mb-1">🏨 Hotel Registration Tool</p>
-              <p className="text-blue-200/40 text-xs italic mb-2">This feature may not be fully available at time of check-in. Coming soon.</p>
+              <p className="text-blue-300 text-xs font-semibold mb-2">🏨 Reg: Hotel Registration</p>
               <div className="space-y-1.5">
+                {confirmationCode && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🔑</span>
+                    <div>
+                      <p className="text-white/50 text-xs">Registration #</p>
+                      <p className="text-amber-300 font-mono font-bold text-lg tracking-widest">{confirmationCode}</p>
+                    </div>
+                  </div>
+                )}
                 {hotelName && (
                   <div className="flex items-center gap-2">
                     <span className="text-base">🏨</span>
                     <div>
                       <p className="text-white/50 text-xs">Hotel</p>
                       <p className="text-white font-semibold text-sm">{hotelName}</p>
-                    </div>
-                  </div>
-                )}
-                {confirmationCode && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🔑</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Confirmation #</p>
-                      <p className="text-amber-300 font-mono font-bold text-sm tracking-wider">{confirmationCode}</p>
                     </div>
                   </div>
                 )}

@@ -413,3 +413,10 @@
 - [x] Add deleteEvent tRPC procedure with cascade delete of all bowlers/passports for that event
 - [x] Add delete-event button in ED portal event selector with typed "delete" confirmation modal
 - [x] Save checkpoint, push to GitHub
+
+## Phase 39: Google Sheet Reformat + Bowler ID Write-back + Hotel Reg# in Dashboard
+- [ ] Insert Bowler ID as new column A in Google Sheet (shift all existing columns right by 1)
+- [ ] Update import parser to read new column positions (B=Phone, C=Email, D=Squad, E=Lane, F=Center, G=Team#, H=Captain, I=FirstName, J=LastName, K=Under21, L=Sanction, M=Games, N=BestAvg, O=TeamName, P=LeagueMember, Q=TShirt, R=HotelConf, S=CheckIn, T=CheckOut, U=RoommateFirst, V=RoommateLast, W=GuestPool, X=ExtraBanquet, Y=BanquetQR, Z=PoolPartyQR, AA-AE=guest QRs)
+- [ ] On bowler sign-up completion: write Bowler ID to col A and QR URLs to cols Y-AE of the matching sheet row
+- [ ] Replace hotel QR code with hotel confirmation/registration number in BowlerDashboard Lane→Banquet section
+- [ ] Save checkpoint, push to GitHub
