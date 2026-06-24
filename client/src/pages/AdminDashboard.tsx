@@ -518,6 +518,21 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     onError: (e) => toast.error(e.message),
   });
 
+  // Delete event state
+  const [deleteEventModal, setDeleteEventModal] = useState<null | { id: number; name: string; year: number }>(null);
+  const [deleteEventConfirmText, setDeleteEventConfirmText] = useState("");
+  const deleteEventMut = trpc.events.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Event permanently deleted.");
+      setDeleteEventModal(null);
+      setDeleteEventConfirmText("");
+      refetchEvents();
+      // Reset to first remaining event or 0
+      setSelectedEventId(0);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const { data: bowlers = [], isLoading, refetch } = trpc.bowlers.adminList.useQuery({ eventId: EVENT_ID });
   const { data: stats } = trpc.bowlers.stats.useQuery({ eventId: EVENT_ID });
   const { data: auditLog = [] } = trpc.audit.list.useQuery({ eventId: EVENT_ID, limit: 200 });
@@ -852,6 +867,15 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   onClick={() => { if (activeEvent) setEventModal({ mode: "rename", name: String(activeEvent.eventName), year: String(activeEvent.eventYear), id: EVENT_ID }); }}
                   className="text-yellow-300 focus:bg-yellow-500/10 focus:text-yellow-300 cursor-pointer"
                 >✏️ Rename Current Event</DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (!activeEvent) return;
+                    setDeleteEventConfirmText("");
+                    setDeleteEventModal({ id: EVENT_ID, name: String(activeEvent.eventName), year: Number(activeEvent.eventYear) });
+                  }}
+                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400 cursor-pointer"
+                >🗑️ Delete Current Event…</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <button onClick={() => setLocation("/import")} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-semibold transition-colors">📥 Import Data</button>
@@ -1713,6 +1737,51 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Event Confirmation Modal ── */}
+      {deleteEventModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4" onClick={() => setDeleteEventModal(null)}>
+          <div className="bg-[#1a1a1a] border border-red-500/50 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">⚠️</span>
+              <h3 className="text-xl font-black text-red-400">Delete Event</h3>
+            </div>
+            <div className="rounded-xl px-4 py-3 mb-4 text-sm"
+              style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)" }}>
+              <p className="text-red-300 font-bold mb-1">🚨 This action is permanent and cannot be undone.</p>
+              <p className="text-white/70 text-sm">
+                You are about to permanently delete <span className="text-white font-bold">{deleteEventModal.name} {deleteEventModal.year}</span> and
+                all associated bowlers, passports, check-ins, tokens, and audit records.
+                This data will be lost forever and cannot be retrieved.
+              </p>
+            </div>
+            <p className="text-white/60 text-sm mb-2">
+              To confirm, type <span className="font-black text-red-400 tracking-widest">delete</span> in the box below:
+            </p>
+            <input
+              className="w-full bg-black/50 border border-red-500/40 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-red-400 mb-4"
+              placeholder='Type "delete" to confirm'
+              value={deleteEventConfirmText}
+              onChange={(e) => setDeleteEventConfirmText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => deleteEventMut.mutate({ eventId: deleteEventModal.id })}
+                disabled={deleteEventConfirmText !== "delete" || deleteEventMut.isPending}
+                className="flex-1 py-2.5 rounded-xl font-black text-white text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: deleteEventConfirmText === "delete" ? "linear-gradient(135deg, #dc2626, #991b1b)" : "rgba(239,68,68,0.2)" }}
+              >
+                {deleteEventMut.isPending ? "Deleting…" : "🗑️ Permanently Delete Event"}
+              </button>
+              <button
+                onClick={() => { setDeleteEventModal(null); setDeleteEventConfirmText(""); }}
+                className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors"
+              >Cancel</button>
             </div>
           </div>
         </div>

@@ -407,3 +407,9 @@
 - [x] Add Support Inbox tab/section in AdminDashboard ED portal with message list and reply UI
 - [x] Wire ED reply to send notifyOwner notification to Cassie
 - [x] Save checkpoint, push to GitHub
+
+## Phase 38: Support Notification + Delete Event
+- [x] Add notifyOwner call in support.submit tRPC procedure (fires when bowler submits login-help form)
+- [x] Add deleteEvent tRPC procedure with cascade delete of all bowlers/passports for that event
+- [x] Add delete-event button in ED portal event selector with typed "delete" confirmation modal
+- [x] Save checkpoint, push to GitHub
