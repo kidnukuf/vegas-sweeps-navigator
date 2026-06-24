@@ -423,3 +423,11 @@
 - [x] QR write-back already uses Y/Z/AA-AE which now match the new column layout
 - [x] Replace hotel QR code with hotel confirmation/registration number in BowlerDashboard and CaptainDashboard Lane→Banquet section (Reg# shown prominently at top, "Coming soon" removed)
 - [x] Save checkpoint, push to GitHub
+
+## Phase 40: Guest ID Suffix System + Adjacent Seating
+- [x] Change guest pool QR tokens: use bowlerId+suffix (e.g. 0101020305A, 0101020305B) instead of random UUIDs — all 3 generation sites in bowlerAuth.ts updated
+- [x] Update DB token storage: guest_pool tokens stored with value = scantronId+suffix
+- [x] Update doorman QR parsers (DoormanCheckIn + DoormanTablet): regex updated from [a-f0-9] to [a-zA-Z0-9] to accept alphanumeric suffix tokens
+- [x] Update seating algorithm: block-aware placement prevents host+guest from being split across table boundaries; guests always land in the seat immediately after their bowler
+- [x] Google Sheet write-back unchanged (same AA–AE columns), token values now reflect new ID format
+- [x] Save checkpoint, push to GitHub

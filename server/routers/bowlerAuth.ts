@@ -317,14 +317,16 @@ export const bowlerAuthRouter = router({
       await rawQuery(`UPDATE bowlers SET ${updates.join(", ")} WHERE id = ?`, params);
 
       // Generate guest pool party tokens: each $15 = 1 extra QR code (suffix A, B, C...)
+      // Token = scantronId (10-digit bowler ID) + suffix letter, e.g. "0101020305A"
       const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
       const guestCount = Math.floor(guestAmount / 15);
       const SUFFIXES = ["A","B","C","D","E"];
+      const bowlerScantronId = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
       if (guestCount > 0) {
         // Remove any existing guest tokens for this bowler first (idempotent)
         await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowler.id]);
         for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
-          const guestToken = uuidv4().replace(/-/g, "");
+          const guestToken = `${bowlerScantronId}${SUFFIXES[i]}`;
           await rawQuery(
             `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
             [bowler.id, SUFFIXES[i], guestToken]
@@ -398,13 +400,14 @@ export const bowlerAuthRouter = router({
           const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
           const guestCount = Math.floor(guestAmount / 15);
           const SUFFIXES = ["A","B","C","D","E"];
+          const bowlerSid = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
           if (guestCount > 0) {
             const existing = await rawQuery<{ count: number }>(
               `SELECT COUNT(*) as count FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowler.id]
             );
             if ((existing[0]?.count ?? 0) === 0) {
               for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
-                const guestToken = uuidv4().replace(/-/g, "");
+                const guestToken = `${bowlerSid}${SUFFIXES[i]}`;
                 await rawQuery(
                   `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
                   [bowler.id, SUFFIXES[i], guestToken]
@@ -535,13 +538,18 @@ export const bowlerAuthRouter = router({
       const guestAmountSCI = parseFloat(bowlerForGuest[0]?.guestPoolPartyAmount ?? "0") || 0;
       const guestCountSCI = Math.floor(guestAmountSCI / 15);
       const SUFFIXES_SCI = ["A","B","C","D","E"];
+      // Fetch scantronId for deterministic guest token generation
+      const bowlerScantronRow = await rawQuery<{ scantronId: string | null }>(
+        `SELECT scantronId FROM bowlers WHERE id = ? LIMIT 1`, [bowlerId]
+      );
+      const bowlerSidSCI = String(bowlerScantronRow[0]?.scantronId ?? bowlerId).padStart(10, "0");
       if (guestCountSCI > 0) {
         const existingGuest = await rawQuery<{ count: number }>(
           `SELECT COUNT(*) as count FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowlerId]
         );
         if ((existingGuest[0]?.count ?? 0) === 0) {
           for (let i = 0; i < Math.min(guestCountSCI, SUFFIXES_SCI.length); i++) {
-            const guestToken = uuidv4().replace(/-/g, "");
+            const guestToken = `${bowlerSidSCI}${SUFFIXES_SCI[i]}`;
             await rawQuery(
               `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
               [bowlerId, SUFFIXES_SCI[i], guestToken]

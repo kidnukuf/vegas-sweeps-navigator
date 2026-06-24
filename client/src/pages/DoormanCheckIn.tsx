@@ -81,7 +81,7 @@ export default function DoormanCheckIn() {
   }
 
   function handlePassportScanSuccess(decodedText: string) {
-    const match = decodedText.match(/\/scan\/(pool|banquet|guest-pool)\/([a-f0-9]+)/i);
+    const match = decodedText.match(/\/scan\/(pool|banquet|guest-pool)\/([a-zA-Z0-9]+)/i);
     if (match) {
       passportScanMutation.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
     } else {
@@ -92,7 +92,7 @@ export default function DoormanCheckIn() {
   function handlePassportManualSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!passportManualToken.trim()) return;
-    const match = passportManualToken.trim().match(/\/scan\/(pool|banquet|guest-pool)\/([a-f0-9]+)/i);
+    const match = passportManualToken.trim().match(/\/scan\/(pool|banquet|guest-pool)\/([a-zA-Z0-9]+)/i);
     if (match) {
       passportScanMutation.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
     } else {

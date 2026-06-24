@@ -368,7 +368,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
   }
 
   function handlePassportScan(decodedText: string) {
-    const match = decodedText.match(/\/scan\/(pool|banquet|guest-pool)\/([a-f0-9-]+)/i);
+    const match = decodedText.match(/\/scan\/(pool|banquet|guest-pool)\/([a-zA-Z0-9]+)/i);
     if (match) {
       passportScan.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
     } else {

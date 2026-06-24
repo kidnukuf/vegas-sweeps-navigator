@@ -219,31 +219,79 @@ export function runSeatingAlgorithm(
       );
     }
 
+    // Pre-compute host+guest block sizes so we can detect split risk
+    // A "block" is a bowler + all their guests (1..N people)
+    const blocks: SeatingRow[][] = [];
+    for (const b of groupBowlers) {
+      const cleanId = b.rawId.replace(/[-\s]/g, '');
+      const myGuests = guestsByHost.get(cleanId) ?? [];
+      blocks.push([b, ...myGuests]);
+    }
+
     let personIdx = 0;
-    for (const tableSize of sizes) {
-      if (nextTable > maxTables) {
-        warnings.push(`Reached max table limit (${maxTables}). ${totalPeople - personIdx} people from group ${groupKey} could not be seated.`);
+    let seatInTable = 0;
+    let tableNum = nextTable++;
+    if (!tableMap.has(tableNum)) tableMap.set(tableNum, []);
+    let currentTableSize = sizes[tableNum - (nextTable - sizes.length - 1)] ?? maxSeatsPerTable;
+    // Recalculate per-table sizes index relative to this group
+    const groupTableStart = nextTable - 1; // first table of this group (already incremented)
+    // Reset: we'll manage table advancement manually for block-aware placement
+    nextTable--; // undo the pre-increment; we'll increment as we open new tables
+    tableNum = 0;
+    seatInTable = 0;
+    let tableIdx = -1; // index into sizes[]
+
+    const openNextTable = () => {
+      tableIdx++;
+      tableNum = nextTable++;
+      seatInTable = 0;
+      if (!tableMap.has(tableNum)) tableMap.set(tableNum, []);
+      currentTableSize = sizes[tableIdx] ?? maxSeatsPerTable;
+    };
+
+    openNextTable(); // open the first table for this group
+
+    for (const block of blocks) {
+      if (nextTable > maxTables + 1 && tableIdx >= sizes.length) {
+        warnings.push(`Reached max table limit (${maxTables}). Some people from group ${groupKey} could not be seated.`);
         break;
       }
 
-      const tableNum = nextTable++;
-      if (!tableMap.has(tableNum)) tableMap.set(tableNum, []);
+      // If this block won't fit in the remaining seats of the current table AND
+      // there is a next table available, push the entire block to the next table
+      // to keep the host and all guests adjacent.
+      const remainingSeats = currentTableSize - seatInTable;
+      if (block.length > 1 && block.length > remainingSeats && tableIdx + 1 < sizes.length) {
+        // Pad remaining seats with a note (no person assigned) — just advance
+        // Actually: just open the next table; empty seats at end are fine
+        openNextTable();
+      }
 
-      for (let seat = 0; seat < tableSize && personIdx < expanded.length; seat++, personIdx++) {
-        const person = expanded[personIdx];
+      for (const person of block) {
+        // If current table is full, open the next one
+        if (seatInTable >= currentTableSize) {
+          if (tableIdx + 1 >= sizes.length) {
+            warnings.push(`Group ${groupKey}: ran out of table space. Some people unassigned.`);
+            break;
+          }
+          openNextTable();
+        }
+
         const assignment: SeatAssignment = {
           originalIndex: person.originalIndex,
           rawId: person.rawId,
           name: person.name,
           tableNum,
-          seatLetter: seatLetter(seat),
-          seatCode: formatSeatCode(tableNum, seat),
+          seatLetter: seatLetter(seatInTable),
+          seatCode: formatSeatCode(tableNum, seatInTable),
           cc: person.cc,
           ll: person.ll,
           isGuest: person.isGuest,
         };
         assignments.push(assignment);
         tableMap.get(tableNum)!.push(assignment);
+        seatInTable++;
+        personIdx++;
       }
     }
   }
