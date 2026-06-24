@@ -51,7 +51,10 @@ const COLUMN_ALIASES: Record<string, string> = {
   "total": "totalDue", "total due": "totalDue", "amount due": "totalDue", "total amount": "totalDue",
   "paid": "paid", "payment status": "paid", "paid y/n": "paid",
   // Display-only aliases (server stores these via raw headers / notes)
-  "squad time": "squadTime", "lane #": "laneNumber", "lane": "laneNumber",
+  // Squad / lane / center
+  "squad day & time": "squadTime", "squad time": "squadTime", "squad": "squadTime",
+  "lane #": "laneNumber", "lane": "laneNumber",
+  // Bowler stats
   "gender": "gender", "under 21?": "under21", "under 21": "under21",
   "sanction #": "sanctionNumber", "sanction": "sanctionNumber",
   "# games": "numGames", "high avg": "highAvg", "best avg": "bestAvg",
@@ -59,10 +62,16 @@ const COLUMN_ALIASES: Record<string, string> = {
   "1st choice squad": "choiceSquad1", "2nd choice squad": "choiceSquad2",
   "league member": "leagueMember", "returning bowler?": "returningBowler",
   "t-shirt size": "shirtSize", "room with bowler?": "roomWithBowler",
-  "banquet $80": "banquetAmount", "special notes": "specialNotes",
-  "extra banquet": "extraBanquet", "extra pool party": "poolParty",
-  "guest pool party": "guestPoolPartyAmount",
-  "guest $15": "guestPoolPartyAmount",
+  // Hotel
+  "hotel confirmation": "hotelConfirmation", "hotel conf": "hotelConfirmation", "conf #": "hotelConfirmation",
+  "hotel registration #": "hotelRegistration", "hotel registration": "hotelRegistration", "registration #": "hotelRegistration", "reg #": "hotelRegistration",
+  // Banquet / pool
+  "banquet $80": "banquetAmount",
+  "extra banquet": "extraBanquet", "extra banquet qr code": "extraBanquet",
+  "extra pool party": "poolParty",
+  "guest pool party": "guestPoolPartyAmount", "guest $15": "guestPoolPartyAmount",
+  // Notes
+  "special notes": "specialNotes",
 };
 
 function parseCSV(text: string): string[][] {
