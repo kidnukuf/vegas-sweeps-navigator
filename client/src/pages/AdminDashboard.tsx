@@ -521,7 +521,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   // Delete event state
   const [deleteEventModal, setDeleteEventModal] = useState<null | { id: number; name: string; year: number }>(null);
   const [deleteEventConfirmText, setDeleteEventConfirmText] = useState("");
-  const deleteEventMut = trpc.events.delete.useMutation({
+  const deleteEventMut = trpc.event.delete.useMutation({
     onSuccess: () => {
       toast.success("Event permanently deleted.");
       setDeleteEventModal(null);

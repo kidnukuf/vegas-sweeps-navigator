@@ -101,6 +101,33 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    delete: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { eventId } = input;
+        // Cascade: delete all child records before deleting the event
+        // Order matters: delete leaf tables first, then bowlers, then event
+        await rawQuery('DELETE FROM guest_pool_party_tokens WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM offline_sync_queue WHERE bowler_id IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM redemptions WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM entry_tokens WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM check_ins WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM wristbands WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM contact_requests WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM hotel_records WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM payment_records WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
+        await rawQuery('DELETE FROM support_messages WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM audit_log WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM app_users WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM lane_assignments WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM import_sessions WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM teams WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM leagues WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM bowlers WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM events WHERE id=?', [eventId]);
+        return { success: true };
+      }),
     listGroups: publicProcedure.query(async () => {
       return rawQuery(`SELECT * FROM event_groups ORDER BY id`) as Promise<Record<string, unknown>[]>;
     }),
@@ -1198,24 +1225,6 @@ export const appRouter = router({
       }),
   }),
 
-  // ─── EVENT MANAGEMENT ────────────────────────────────────────────────────
-  events: router({
-    delete: publicProcedure
-      .input(z.object({ eventId: z.number().int().positive() }))
-      .mutation(async ({ input }) => {
-        const { eventId } = input;
-        // Cascade: delete all child records before deleting the event
-        await rawQuery('DELETE FROM entry_tokens WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM check_ins WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM wristbands WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM contact_requests WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM hotel_records WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM payment_records WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM audit_log WHERE eventId=?', [eventId]);
-        await rawQuery('DELETE FROM bowlers WHERE eventId=?', [eventId]);
-        await rawQuery('DELETE FROM events WHERE id=?', [eventId]);
-        return { success: true };
-      }),
-  }),
 });
+
 export type AppRouter = typeof appRouter;
