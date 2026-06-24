@@ -106,22 +106,25 @@ export const appRouter = router({
       .input(z.object({ eventId: z.number().int().positive() }))
       .mutation(async ({ input }) => {
         const { eventId } = input;
-        // Cascade: delete all child records before deleting the event
-        // Order matters: delete leaf tables first, then bowlers, then event
-        await rawQuery('DELETE FROM guest_pool_party_tokens WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM offline_sync_queue WHERE bowler_id IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM redemptions WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM entry_tokens WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM checkIns WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM wristbands WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM contact_requests WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM hotel_records WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        await rawQuery('DELETE FROM payment_records WHERE bowlerId IN (SELECT id FROM bowlers WHERE eventId=?)', [eventId]);
-        // support_messages has no eventId column — delete all (global inbox)
-        await rawQuery('DELETE FROM support_messages WHERE 1=1', []);
+        // Verified against live DB tables (June 24 2026):
+        // Exists: guest_pool_party_tokens, offline_sync_queue, payment_records, entry_tokens,
+        //         checkIns, contact_requests, hotel_records, hotelRecords, auditLog, app_users,
+        //         lane_assignments, laneAssignments, import_sessions, teams, leagues, bowlers, events
+        // Does NOT exist: redemptions, wristbands (skip these)
+        // support_messages has no eventId column (skip event-scoped delete)
+        const bowlerSubquery = 'SELECT id FROM bowlers WHERE eventId=?';
+        await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM offline_sync_queue WHERE bowler_id IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM payment_records WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM entry_tokens WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM checkIns WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM contact_requests WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM hotel_records WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM hotelRecords WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
         await rawQuery('DELETE FROM auditLog WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM app_users WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM lane_assignments WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM laneAssignments WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM import_sessions WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM teams WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM leagues WHERE eventId=?', [eventId]);
