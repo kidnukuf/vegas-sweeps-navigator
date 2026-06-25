@@ -1245,6 +1245,9 @@ export const appRouter = router({
             const isCapt = ["y", "yes", "true", "1", "x"].includes(captRaw);
 
             if (!firstName || !lastName) { skipped++; continue; }
+            // Skip placeholder/vacant rows
+            const firstLower = firstName.toLowerCase();
+            if (firstLower === 'vacant' || firstLower === 'tbd' || firstLower === 'open' || firstLower.startsWith('vacant') || firstLower.startsWith('tbd')) { skipped++; continue; }
 
             // Find center — exact match first, then fuzzy partial match
             let center = centerMap.get(centerName.toLowerCase()) as Record<string, unknown> | undefined;
@@ -1315,8 +1318,11 @@ export const appRouter = router({
               row["hotel_confirmation"] ?? row["hotelConfirmation"] ?? row["confirmation_code"] ?? ""
             ).trim();
             // Col N / O: Check-in / Check-out dates
-            const checkinDate = String(row["Check In"] ?? row["Check-In Date"] ?? row["checkin_date"] ?? "").trim();
-            const checkoutDate = String(row["Check Out"] ?? row["Check-Out Date"] ?? row["checkout_date"] ?? "").trim();
+            const BLANK_DATE = new Set(['-', '--', 'n/a', 'na', 'none', 'tbd', '']);
+            const rawCheckin = String(row["Check In"] ?? row["Check-In Date"] ?? row["checkin_date"] ?? "").trim();
+            const rawCheckout = String(row["Check Out"] ?? row["Check-Out Date"] ?? row["checkout_date"] ?? "").trim();
+            const checkinDate = BLANK_DATE.has(rawCheckin.toLowerCase()) ? '' : rawCheckin;
+            const checkoutDate = BLANK_DATE.has(rawCheckout.toLowerCase()) ? '' : rawCheckout;
             // Room Type — legacy fallback only (removed from current sheet)
             const roomType = String(row["Room Type"] ?? row["room_type"] ?? "").trim();
             const roommateFirst = String(row["Roommate First Name"] ?? row["Roommate First"] ?? row["roommate_first"] ?? "").trim();
