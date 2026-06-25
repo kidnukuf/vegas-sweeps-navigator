@@ -4,7 +4,7 @@
  * Google Drive connector in Manus. No API keys or service account JSON needed.
  *
  * Sheet: "June 23 1152pm" (tab name as of 2026-06-23)
- * Spreadsheet ID: 1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
+ * Spreadsheet ID: 1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg (live master — small-batch test event)
  *
  * DEFINITIVE COLUMN LAYOUT (A=col 0, 0-indexed):
  *
@@ -55,7 +55,7 @@
 
 import { execSync } from "child_process";
 
-const SPREADSHEET_ID = "1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM";
+const SPREADSHEET_ID = "1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg";
 const SHEET_NAME = "June 23 1152pm";
 
 // ── Column indices (0-based) ──────────────────────────────────────────────────
