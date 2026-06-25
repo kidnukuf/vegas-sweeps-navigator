@@ -55,8 +55,26 @@
 
 import { execSync } from "child_process";
 
+// Default (master) sheet target — used when an event does not specify its own.
 const SPREADSHEET_ID = "1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg";
 const SHEET_NAME = "June 23 1152pm";
+
+/**
+ * Per-event sheet target. Each event can point at its own spreadsheet file and tab.
+ * When a field is missing, the master default is used so existing flows never break.
+ */
+export type SheetTarget = {
+  spreadsheetId?: string | null;
+  sheetName?: string | null;
+};
+
+/** Resolve an event's sheet target to concrete values, falling back to the master default. */
+export function resolveSheetTarget(target?: SheetTarget): { spreadsheetId: string; sheetName: string } {
+  return {
+    spreadsheetId: (target?.spreadsheetId && target.spreadsheetId.trim()) || SPREADSHEET_ID,
+    sheetName: (target?.sheetName && target.sheetName.trim()) || SHEET_NAME,
+  };
+}
 
 // ── Column indices (0-based) ──────────────────────────────────────────────────
 // 🟠 App writes
@@ -111,15 +129,15 @@ void COL_GUEST_POOL_B;
 const GUEST_POOL_COLUMNS = ["AF", "AH"];
 
 // ── gws helper ────────────────────────────────────────────────────────────────
-function gws(params: object, body?: object): unknown {
+function gws(params: object, body: object | undefined, spreadsheetId: string): unknown {
   const args = ["gws", "sheets", "spreadsheets", "values"];
   if (body) {
     args.push("batchUpdate");
-    args.push("--params", JSON.stringify({ spreadsheetId: SPREADSHEET_ID }));
+    args.push("--params", JSON.stringify({ spreadsheetId }));
     args.push("--json", JSON.stringify(body));
   } else {
     args.push("get");
-    args.push("--params", JSON.stringify({ spreadsheetId: SPREADSHEET_ID, ...params }));
+    args.push("--params", JSON.stringify({ spreadsheetId, ...params }));
   }
   const result = execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
   return JSON.parse(result);
@@ -132,10 +150,11 @@ function gws(params: object, body?: object): unknown {
 async function findBowlerRow(
   firstName: string,
   lastName: string,
-  laneNumber: number | null
+  laneNumber: number | null,
+  resolved: { spreadsheetId: string; sheetName: string }
 ): Promise<number | null> {
   try {
-    const data = gws({ range: `'${SHEET_NAME}'!A1:AJ` }) as { values?: string[][] };
+    const data = gws({ range: `'${resolved.sheetName}'!A1:AJ` }, undefined, resolved.spreadsheetId) as { values?: string[][] };
     const rows = data.values ?? [];
 
     for (let i = 1; i < rows.length; i++) {
@@ -168,19 +187,21 @@ export async function writeBowlerIdToSheet(params: {
   lastName: string;
   laneNumber: number | null;
   scantronId: string;
+  target?: SheetTarget;
 }): Promise<void> {
-  const { firstName, lastName, laneNumber, scantronId } = params;
+  const { firstName, lastName, laneNumber, scantronId, target } = params;
   if (!scantronId) return;
+  const resolved = resolveSheetTarget(target);
   try {
-    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) {
       console.warn(`[googleSheets] writeBowlerIdToSheet: not found: ${firstName} ${lastName} lane ${laneNumber}`);
       return;
     }
     gws({}, {
       valueInputOption: "RAW",
-      data: [{ range: `'${SHEET_NAME}'!A${rowNum}`, values: [[scantronId]] }],
-    });
+      data: [{ range: `'${resolved.sheetName}'!A${rowNum}`, values: [[scantronId]] }],
+    }, resolved.spreadsheetId);
     console.log(`[googleSheets] Bowler ID ${scantronId} → row ${rowNum} (${firstName} ${lastName})`);
   } catch (err) {
     console.error("[googleSheets] writeBowlerIdToSheet error (non-fatal):", err);
@@ -199,8 +220,10 @@ export async function writeQRCodesToSheet(params: {
   poolPartyToken: string | null;
   guestPoolTokens?: Array<{ suffix: string; token: string }>;
   appOrigin: string;
+  target?: SheetTarget;
 }): Promise<void> {
-  const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], appOrigin } = params;
+  const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], appOrigin, target } = params;
+  const resolved = resolveSheetTarget(target);
 
   const banquetQRUrl   = banquetToken   ? `${appOrigin}/scan/banquet/${banquetToken}`   : null;
   const poolPartyQRUrl = poolPartyToken ? `${appOrigin}/scan/pool/${poolPartyToken}`     : null;
@@ -208,7 +231,7 @@ export async function writeQRCodesToSheet(params: {
   if (!banquetQRUrl && !poolPartyQRUrl && guestPoolTokens.length === 0) return;
 
   try {
-    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) {
       console.warn(`[googleSheets] writeQRCodesToSheet: not found: ${firstName} ${lastName} lane ${laneNumber}`);
       return;
@@ -218,29 +241,29 @@ export async function writeQRCodesToSheet(params: {
 
     if (banquetQRUrl) {
       // AB (col 27) = Banquet QR URL
-      updateData.push({ range: `'${SHEET_NAME}'!AB${rowNum}`, values: [[banquetQRUrl]] });
+      updateData.push({ range: `'${resolved.sheetName}'!AB${rowNum}`, values: [[banquetQRUrl]] });
     }
     if (poolPartyQRUrl) {
       // AD (col 29) = Pool Party QR URL
-      updateData.push({ range: `'${SHEET_NAME}'!AD${rowNum}`, values: [[poolPartyQRUrl]] });
+      updateData.push({ range: `'${resolved.sheetName}'!AD${rowNum}`, values: [[poolPartyQRUrl]] });
     }
 
     // Guest pool QR URLs → AF (suffix A), AH (suffix B)
     for (let i = 0; i < Math.min(guestPoolTokens.length, GUEST_POOL_COLUMNS.length); i++) {
       const col = GUEST_POOL_COLUMNS[i];
       const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
-      updateData.push({ range: `'${SHEET_NAME}'!${col}${rowNum}`, values: [[guestUrl]] });
+      updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestUrl]] });
     }
 
     // Also write Guest Pool Party QR URL to X (col 23) if first guest token exists
     if (guestPoolTokens.length > 0) {
       const guestPoolUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[0].token}`;
-      updateData.push({ range: `'${SHEET_NAME}'!X${rowNum}`, values: [[guestPoolUrl]] });
+      updateData.push({ range: `'${resolved.sheetName}'!X${rowNum}`, values: [[guestPoolUrl]] });
     }
 
     if (updateData.length === 0) return;
 
-    gws({}, { valueInputOption: "RAW", data: updateData });
+    gws({}, { valueInputOption: "RAW", data: updateData }, resolved.spreadsheetId);
     console.log(`[googleSheets] QR URLs written for ${firstName} ${lastName} (row ${rowNum}, ${guestPoolTokens.length} guest codes)`);
   } catch (err) {
     console.error("[googleSheets] writeQRCodesToSheet error (non-fatal):", err);
@@ -256,10 +279,12 @@ export async function writeContactInfoToSheet(params: {
   laneNumber: number | null;
   phone: string;
   email: string;
+  target?: SheetTarget;
 }): Promise<{ rowNum: number | null }> {
-  const { firstName, lastName, laneNumber, phone, email } = params;
+  const { firstName, lastName, laneNumber, phone, email, target } = params;
+  const resolved = resolveSheetTarget(target);
   try {
-    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) {
       console.warn(`[googleSheets] writeContactInfo: not found: ${firstName} ${lastName}`);
       return { rowNum: null };
@@ -267,10 +292,10 @@ export async function writeContactInfoToSheet(params: {
     gws({}, {
       valueInputOption: "RAW",
       data: [
-        { range: `'${SHEET_NAME}'!B${rowNum}`, values: [[phone]] },  // B = Phone
-        { range: `'${SHEET_NAME}'!C${rowNum}`, values: [[email]] },  // C = Email
+        { range: `'${resolved.sheetName}'!B${rowNum}`, values: [[phone]] },  // B = Phone
+        { range: `'${resolved.sheetName}'!C${rowNum}`, values: [[email]] },  // C = Email
       ],
-    });
+    }, resolved.spreadsheetId);
     console.log(`[googleSheets] Contact info written for ${firstName} ${lastName} (row ${rowNum})`);
     return { rowNum };
   } catch (err) {
@@ -289,8 +314,10 @@ export async function writeScanUsedToSheet(params: {
   laneNumber: number | null;
   type: "banquet" | "pool" | "guest_pool";
   timestamp?: string;
+  target?: SheetTarget;
 }): Promise<void> {
-  const { firstName, lastName, laneNumber, type, timestamp = new Date().toISOString() } = params;
+  const { firstName, lastName, laneNumber, type, timestamp = new Date().toISOString(), target } = params;
+  const resolved = resolveSheetTarget(target);
   const colMap: Record<string, string> = {
     banquet:    "AC",  // col 28 — banquet qr code used
     pool:       "AE",  // col 30 — Pool party entry confirmed
@@ -299,12 +326,12 @@ export async function writeScanUsedToSheet(params: {
   const col = colMap[type];
   if (!col) return;
   try {
-    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) return;
     gws({}, {
       valueInputOption: "RAW",
-      data: [{ range: `'${SHEET_NAME}'!${col}${rowNum}`, values: [[timestamp]] }],
-    });
+      data: [{ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[timestamp]] }],
+    }, resolved.spreadsheetId);
     console.log(`[googleSheets] Scan used (${type}) written for ${firstName} ${lastName} row ${rowNum}`);
   } catch (err) {
     console.error("[googleSheets] writeScanUsedToSheet error (non-fatal):", err);
@@ -315,19 +342,21 @@ export async function writeScanUsedToSheet(params: {
  * Resolve the numeric sheetId (gid) of SHEET_NAME. Required for formatting requests.
  * Cached after first lookup.
  */
-let _cachedSheetId: number | null = null;
-function getSheetId(): number | null {
-  if (_cachedSheetId !== null) return _cachedSheetId;
+const _cachedSheetIds = new Map<string, number | null>();
+function getSheetId(resolved: { spreadsheetId: string; sheetName: string }): number | null {
+  const cacheKey = `${resolved.spreadsheetId}::${resolved.sheetName}`;
+  if (_cachedSheetIds.has(cacheKey)) return _cachedSheetIds.get(cacheKey) ?? null;
   try {
     const args = [
       "gws", "sheets", "spreadsheets", "get",
-      "--params", JSON.stringify({ spreadsheetId: SPREADSHEET_ID, fields: "sheets.properties" }),
+      "--params", JSON.stringify({ spreadsheetId: resolved.spreadsheetId, fields: "sheets.properties" }),
     ];
     const result = execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
     const parsed = JSON.parse(result) as { sheets?: Array<{ properties?: { sheetId?: number; title?: string } }> };
-    const match = (parsed.sheets ?? []).find((s) => s.properties?.title === SHEET_NAME);
-    _cachedSheetId = match?.properties?.sheetId ?? null;
-    return _cachedSheetId;
+    const match = (parsed.sheets ?? []).find((s) => s.properties?.title === resolved.sheetName);
+    const sheetId = match?.properties?.sheetId ?? null;
+    _cachedSheetIds.set(cacheKey, sheetId);
+    return sheetId;
   } catch (err) {
     console.error("[googleSheets] getSheetId error:", err);
     return null;
@@ -343,12 +372,14 @@ export async function markTshirtReceivedInSheet(params: {
   lastName: string;
   laneNumber: number | null;
   received?: boolean;
+  target?: SheetTarget;
 }): Promise<void> {
-  const { firstName, lastName, laneNumber, received = true } = params;
+  const { firstName, lastName, laneNumber, received = true, target } = params;
+  const resolved = resolveSheetTarget(target);
   try {
-    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) return;
-    const sheetId = getSheetId();
+    const sheetId = getSheetId(resolved);
     if (sheetId === null) return;
     // Purple when received, white (reset) when un-received.
     const color = received
@@ -373,7 +404,7 @@ export async function markTshirtReceivedInSheet(params: {
     };
     const args = [
       "gws", "sheets", "spreadsheets", "batchUpdate",
-      "--params", JSON.stringify({ spreadsheetId: SPREADSHEET_ID }),
+      "--params", JSON.stringify({ spreadsheetId: resolved.spreadsheetId }),
       "--json", JSON.stringify(body),
     ];
     execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });

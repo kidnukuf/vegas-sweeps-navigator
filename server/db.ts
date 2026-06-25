@@ -99,6 +99,36 @@ export async function getEventById(id: number) {
   return rows[0] ?? null;
 }
 
+/**
+ * Fetch the Google Sheet target (spreadsheet ID + tab name) for an event.
+ * Returns { spreadsheetId, sheetName } which may contain nulls; googleSheets
+ * helpers fall back to the master default when a field is empty.
+ */
+export async function getEventSheetTarget(
+  eventId: number
+): Promise<{ spreadsheetId: string | null; sheetName: string | null }> {
+  const rows = await rawQuery<{ sheetSpreadsheetId: string | null; sheetTabName: string | null }>(
+    "SELECT sheetSpreadsheetId, sheetTabName FROM events WHERE id = ? LIMIT 1",
+    [eventId]
+  );
+  const row = rows[0];
+  return {
+    spreadsheetId: row?.sheetSpreadsheetId ?? null,
+    sheetName: row?.sheetTabName ?? null,
+  };
+}
+
+export async function updateEventSheetTarget(
+  eventId: number,
+  spreadsheetId: string | null,
+  sheetTabName: string | null
+) {
+  await rawQuery(
+    "UPDATE events SET sheetSpreadsheetId = ?, sheetTabName = ? WHERE id = ?",
+    [spreadsheetId, sheetTabName, eventId]
+  );
+}
+
 export async function createEvent(eventName: string, eventYear: number) {
   const result = await rawExec(
     "INSERT INTO events (eventName, eventYear, status) VALUES (?, ?, 'active')",

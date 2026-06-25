@@ -89,6 +89,11 @@ export const events = mysqlTable("events", {
   // Heartbeat cron task uid for the checkout survey notification
   surveyNotifyTaskUid: varchar("surveyNotifyTaskUid", { length: 65 }),
   surveyNotifiedAt: bigint("surveyNotifiedAt", { mode: "number" }),
+  // ── Google Sheet routing (per-event read/write target) ───────────────────
+  // The spreadsheet file ID this event's import reads from and writes QR/IDs back to.
+  sheetSpreadsheetId: varchar("sheetSpreadsheetId", { length: 255 }),
+  // The tab/page name inside that spreadsheet for this event.
+  sheetTabName: varchar("sheetTabName", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

@@ -41,6 +41,8 @@ interface WizardState {
   hotelCheckoutTime: string;
   surveyEnabled: boolean;
   showHotelInfoCard: boolean;
+  sheetSpreadsheetId: string;
+  sheetTabName: string;
 }
 
 const EMPTY: WizardState = {
@@ -62,6 +64,8 @@ const EMPTY: WizardState = {
   hotelCheckoutTime: "",
   surveyEnabled: false,
   showHotelInfoCard: true,
+  sheetSpreadsheetId: "",
+  sheetTabName: "",
 };
 
 const inputCls =
@@ -100,6 +104,8 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
         hotelCheckoutTime: String(d.hotelCheckoutTime ?? ""),
         surveyEnabled: !!d.surveyEnabled,
         showHotelInfoCard: d.showHotelInfoCard === undefined ? true : !!d.showHotelInfoCard,
+        sheetSpreadsheetId: String(d.sheetSpreadsheetId ?? ""),
+        sheetTabName: String(d.sheetTabName ?? ""),
       });
     }
   }, [mode, settingsQuery.data]);
@@ -129,6 +135,8 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
       hotelCheckoutTime: s.hotelCheckoutTime || null,
       surveyEnabled: s.surveyEnabled,
       showHotelInfoCard: s.showHotelInfoCard,
+      sheetSpreadsheetId: s.sheetSpreadsheetId.trim() || null,
+      sheetTabName: s.sheetTabName.trim() || null,
     }),
     [s]
   );
@@ -164,6 +172,7 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
     { key: "banquet", title: "Banquet Dinner" },
     { key: "checkout", title: "Hotel Check-Out" },
     { key: "survey", title: "Post-Event Survey" },
+    { key: "sheet", title: "Google Sheet" },
     { key: "review", title: "Review & Save" },
   ];
   const last = steps.length - 1;
@@ -346,6 +355,36 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
               <p className="text-sm text-gray-400">
                 When on, bowlers receive a survey invitation at hotel check-out time. The survey unlocks in their portal after the banquet concludes.
               </p>
+            </div>
+          )}
+
+          {steps[step].key === "sheet" && (
+            <div className="space-y-5">
+              <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm text-gray-300 space-y-1">
+                <p className="font-semibold text-white">📊 Google Sheet — Import & Write-Back</p>
+                <p>The app reads bowler data from a Google Sheet tab and writes Bowler IDs, QR codes, and scan timestamps back to it. Set the sheet and tab for <span className="text-yellow-300 font-medium">this event</span> below.</p>
+                <p className="text-gray-400 text-xs mt-1">Leave blank to use the master default sheet. Each event can point at a different tab (or a different file entirely).</p>
+              </div>
+              <div>
+                <label className={labelCls}>Spreadsheet ID</label>
+                <input
+                  className={inputCls}
+                  value={s.sheetSpreadsheetId}
+                  onChange={(e) => set("sheetSpreadsheetId", e.target.value)}
+                  placeholder="e.g. 1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg"
+                />
+                <p className="mt-1 text-xs text-gray-400">Copy from the Google Sheet URL: docs.google.com/spreadsheets/d/<span className="text-yellow-300">THIS_PART</span>/edit</p>
+              </div>
+              <div>
+                <label className={labelCls}>Tab Name</label>
+                <input
+                  className={inputCls}
+                  value={s.sheetTabName}
+                  onChange={(e) => set("sheetTabName", e.target.value)}
+                  placeholder="e.g. June 23 1152pm"
+                />
+                <p className="mt-1 text-xs text-gray-400">Exact name of the sheet tab (bottom of the spreadsheet). Case-sensitive.</p>
+              </div>
             </div>
           )}
 

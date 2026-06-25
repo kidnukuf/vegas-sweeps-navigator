@@ -15,6 +15,7 @@ import { TRPCError } from "@trpc/server";
 import { rawQuery } from "../db";
 import { notifyOwner } from "../_core/notification";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
+import { getEventSheetTarget } from "../db";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -447,6 +448,7 @@ export const bowlerAuthRouter = router({
                 poolPartyToken: profile.poolPartyToken ?? null,
                 guestPoolTokens: newGuests.map(g => ({ suffix: g.suffix, token: g.token })),
                 appOrigin,
+                target: profile.eventId ? await getEventSheetTarget(profile.eventId) : undefined,
               });
             }
           }
@@ -521,12 +523,12 @@ export const bowlerAuthRouter = router({
         eventName: string | null; startDate: string | null; endDate: string | null; bowlingDate: string | null;
         poolPartyToken: string | null; poolPartyUsed: number;
         banquetToken: string | null; banquetUsed: number;
-        isCapitain: number;
+        isCapitain: number; eventId: number | null;
       }>(
         `SELECT b.id, b.legalFirstName, b.legalLastName, b.scantronId,
                 b.phone, b.email, b.squadTime, b.laneNumber, b.laneToEvent,
                 b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
-                b.isCapitain,
+                b.isCapitain, b.eventId,
                 t.teamName, bc.centerName,
                 e.eventName, e.startDate, e.endDate, e.bowlingDate
          FROM bowlers b
@@ -588,15 +590,19 @@ export const bowlerAuthRouter = router({
       }
 
       // Write QR URLs back to Google Sheet (fire-and-forget, never blocks user)
-      writeQRCodesToSheet({
-        firstName: profile.legalFirstName,
-        lastName: profile.legalLastName,
-        laneNumber: profile.laneNumber ?? null,
-        banquetToken: profile.banquetToken ?? null,
-        poolPartyToken: profile.poolPartyToken ?? null,
-        guestPoolTokens: guestTokenRows.filter(g => !g.disabled).map(g => ({ suffix: g.suffix, token: g.token })),
-        appOrigin,
-      }).catch((err) => console.error("[googleSheets] write-back failed:", err));
+      (async () => {
+        const sheetTarget = profile.eventId ? await getEventSheetTarget(profile.eventId) : undefined;
+        return writeQRCodesToSheet({
+          firstName: profile.legalFirstName,
+          lastName: profile.legalLastName,
+          laneNumber: profile.laneNumber ?? null,
+          banquetToken: profile.banquetToken ?? null,
+          poolPartyToken: profile.poolPartyToken ?? null,
+          guestPoolTokens: guestTokenRows.filter(g => !g.disabled).map(g => ({ suffix: g.suffix, token: g.token })),
+          appOrigin,
+          target: sheetTarget,
+        });
+      })().catch((err) => console.error("[googleSheets] write-back failed:", err));
 
       return { ...profile, poolPartyQR, banquetQR, guestPoolQRs };
     }),
@@ -612,10 +618,10 @@ export const bowlerAuthRouter = router({
       if (input.passportType === "guest-banquet") {
         const guestRows = await rawQuery<{
           id: number; suffix: string; banquetUsed: number; disabled: number;
-          legalFirstName: string; legalLastName: string;
+          legalFirstName: string; legalLastName: string; eventId: number | null;
         }>(
           `SELECT g.id, g.suffix, g.banquetUsed, g.disabled,
-                  b.legalFirstName, b.legalLastName
+                  b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g
            JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.banquetToken = ? LIMIT 1`,
@@ -633,12 +639,16 @@ export const bowlerAuthRouter = router({
           return { result: "used" as const, message: "Already Redeemed", bowlerName };
         }
         await rawQuery(`UPDATE guest_pool_party_tokens SET banquetUsed = 1 WHERE id = ?`, [g.id]);
-        writeScanUsedToSheet({
-          firstName: g.legalFirstName,
-          lastName: g.legalLastName,
-          laneNumber: null,
-          type: "guest_pool",
-        }).catch((err) => console.error("[googleSheets] guest_banquet scan write-back failed:", err));
+        (async () => {
+          const t = g.eventId ? await getEventSheetTarget(g.eventId) : undefined;
+          return writeScanUsedToSheet({
+            firstName: g.legalFirstName,
+            lastName: g.legalLastName,
+            laneNumber: null,
+            type: "guest_pool",
+            target: t,
+          });
+        })().catch((err) => console.error("[googleSheets] guest_banquet scan write-back failed:", err));
         return {
           result: "granted" as const,
           message: `Guest Banquet Entry Granted (Pass ${g.suffix})`,
@@ -650,10 +660,10 @@ export const bowlerAuthRouter = router({
       if (input.passportType === "guest-pool") {
         const guestRows = await rawQuery<{
           id: number; bowlerId: number; suffix: string; used: number; disabled: number;
-          legalFirstName: string; legalLastName: string;
+          legalFirstName: string; legalLastName: string; eventId: number | null;
         }>(
           `SELECT g.id, g.bowlerId, g.suffix, g.used, g.disabled,
-                  b.legalFirstName, b.legalLastName
+                  b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g
            JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.token = ? LIMIT 1`,
@@ -672,12 +682,16 @@ export const bowlerAuthRouter = router({
         }
         await rawQuery(`UPDATE guest_pool_party_tokens SET used = 1 WHERE id = ?`, [g.id]);
         // Fire-and-forget: write scan timestamp to Google Sheet column AG
-        writeScanUsedToSheet({
-          firstName: g.legalFirstName,
-          lastName: g.legalLastName,
-          laneNumber: null,
-          type: "guest_pool",
-        }).catch((err) => console.error("[googleSheets] guest_pool scan write-back failed:", err));
+        (async () => {
+          const t = g.eventId ? await getEventSheetTarget(g.eventId) : undefined;
+          return writeScanUsedToSheet({
+            firstName: g.legalFirstName,
+            lastName: g.legalLastName,
+            laneNumber: null,
+            type: "guest_pool",
+            target: t,
+          });
+        })().catch((err) => console.error("[googleSheets] guest_pool scan write-back failed:", err));
         return {
           result: "granted" as const,
           message: `Guest Entry Granted (Pass ${g.suffix})`,
@@ -691,9 +705,9 @@ export const bowlerAuthRouter = router({
       const rows = await rawQuery<{
         id: number; legalFirstName: string; legalLastName: string;
         poolPartyToken: string | null; poolPartyUsed: number;
-        banquetToken: string | null; banquetUsed: number;
+        banquetToken: string | null; banquetUsed: number; eventId: number | null;
       }>(
-        `SELECT id, legalFirstName, legalLastName, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed
+        `SELECT id, legalFirstName, legalLastName, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed, eventId
          FROM bowlers WHERE ${col} = ? LIMIT 1`,
         [input.tokenValue]
       );
@@ -712,12 +726,16 @@ export const bowlerAuthRouter = router({
       // Mark as used
       await rawQuery(`UPDATE bowlers SET ${usedCol} = 1 WHERE id = ?`, [bowler.id]);
       // Fire-and-forget: write scan timestamp to Google Sheet (AC=banquet, AE=pool)
-      writeScanUsedToSheet({
-        firstName: bowler.legalFirstName,
-        lastName: bowler.legalLastName,
-        laneNumber: null,
-        type: input.passportType as "banquet" | "pool",
-      }).catch((err) => console.error("[googleSheets] scan write-back failed:", err));
+      (async () => {
+        const t = bowler.eventId ? await getEventSheetTarget(bowler.eventId) : undefined;
+        return writeScanUsedToSheet({
+          firstName: bowler.legalFirstName,
+          lastName: bowler.legalLastName,
+          laneNumber: null,
+          type: input.passportType as "banquet" | "pool",
+          target: t,
+        });
+      })().catch((err) => console.error("[googleSheets] scan write-back failed:", err));
       return {
         result: "granted" as const,
         message: "Entry Granted",
@@ -918,13 +936,17 @@ export const bowlerAuthRouter = router({
       // Write to Google Sheet (fire-and-forget)
       const bowler = await getBowlerProfile(req.bowlerId);
       if (bowler) {
-        writeContactInfoToSheet({
-          firstName: bowler.legalFirstName ?? "",
-          lastName: bowler.legalLastName ?? "",
-          laneNumber: bowler.laneNumber ?? null,
-          phone: req.phone,
-          email: req.email,
-        }).catch((err: unknown) => console.error("[googleSheets] writeContactInfo failed:", err));
+        (async () => {
+          const t = bowler.eventId ? await getEventSheetTarget(bowler.eventId) : undefined;
+          return writeContactInfoToSheet({
+            firstName: bowler.legalFirstName ?? "",
+            lastName: bowler.legalLastName ?? "",
+            laneNumber: bowler.laneNumber ?? null,
+            phone: req.phone,
+            email: req.email,
+            target: t,
+          });
+        })().catch((err: unknown) => console.error("[googleSheets] writeContactInfo failed:", err));
       }
 
       return { success: true };

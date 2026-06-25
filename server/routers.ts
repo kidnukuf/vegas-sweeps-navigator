@@ -7,7 +7,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { broadcastTokenInvalidation } from "./_core/sse";
 import {
-  getAllCenters, getActiveEvent, getAllEvents, getEventById, createEvent, renameEvent, deleteBowler, getLeaguesByEvent, getTeamsByCenter,
+  getAllCenters, getActiveEvent, getAllEvents, getEventById, getEventSheetTarget, updateEventSheetTarget, createEvent, renameEvent, deleteBowler, getLeaguesByEvent, getTeamsByCenter,
   getBowlersByTeam, getBowlerById, getBowlerByScantronId, searchBowlers,
   matchBowlerForSignup, updateBowlerRegistrationStatus, updateBowler,
   getAllBowlersForAdmin, getAdminStats, getAppUserByUsername, createAppUser,
@@ -225,7 +225,8 @@ export const appRouter = router({
              hotelCheckinDay, hotelCheckinTime, registrationDay, registrationTime,
              tshirtsProvided, tshirtPickupLocation, tshirtPickupTime,
              poolPartyEnabled, poolPartyTime, banquetDay, banquetTime, banquetLocation,
-             hotelCheckoutDay, hotelCheckoutTime, surveyEnabled, surveyOpen, showHotelInfoCard
+             hotelCheckoutDay, hotelCheckoutTime, surveyEnabled, surveyOpen, showHotelInfoCard,
+             sheetSpreadsheetId, sheetTabName
            FROM events WHERE id=?`,
           [input.id]
         ) as Record<string, unknown>[];
@@ -253,6 +254,8 @@ export const appRouter = router({
         surveyEnabled: z.boolean().optional(),
         surveyOpen: z.boolean().optional(),
         showHotelInfoCard: z.boolean().optional(),
+        sheetSpreadsheetId: z.string().optional().nullable(),
+        sheetTabName: z.string().optional().nullable(),
         actorId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -278,6 +281,8 @@ export const appRouter = router({
           surveyEnabled: input.surveyEnabled,
           surveyOpen: input.surveyOpen,
           showHotelInfoCard: input.showHotelInfoCard,
+          sheetSpreadsheetId: input.sheetSpreadsheetId,
+          sheetTabName: input.sheetTabName,
         };
         for (const [key, val] of Object.entries(map)) {
           if (val !== undefined) {
@@ -810,9 +815,9 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const rows = await rawQuery<{
           id: number; legalFirstName: string; legalLastName: string;
-          laneNumber: number | null; isCaptain: number;
+          laneNumber: number | null; isCaptain: number; eventId: number | null;
         }>(
-          `SELECT id, legalFirstName, legalLastName, laneNumber, isCaptain
+          `SELECT id, legalFirstName, legalLastName, laneNumber, isCaptain, eventId
            FROM bowlers WHERE id = ? LIMIT 1`,
           [input.bowlerId]
         );
@@ -824,11 +829,13 @@ export const appRouter = router({
           [input.received ? 1 : 0, now, input.bowlerId]
         );
         // Fire-and-forget: color the captain's First Name cell purple in the sheet
+        const tshirtSheetTarget = b.eventId ? await getEventSheetTarget(b.eventId) : undefined;
         markTshirtReceivedInSheet({
           firstName: b.legalFirstName,
           lastName: b.legalLastName,
           laneNumber: b.laneNumber,
           received: input.received,
+          target: tshirtSheetTarget,
         }).catch((err) => console.error("[tshirts] sheet color write-back failed:", err));
         return { ok: true, received: input.received, receivedAt: now };
       }),
@@ -1207,6 +1214,9 @@ export const appRouter = router({
         const errorDetails: unknown[] = [];
         const generatedIds: string[] = [];
 
+        // Resolve this event's Google Sheet target once (falls back to master default).
+        const eventSheetTarget = await getEventSheetTarget(input.eventId);
+
         // Get all centers for lookup
         const centers = await getAllCenters() as Record<string, unknown>[];
         const centerMap = new Map<string, Record<string, unknown>>(centers.map(c => [
@@ -1484,7 +1494,7 @@ export const appRouter = router({
                 // Fire-and-forget: write Bowler ID + all QR URLs to the Google Sheet
                 Promise.resolve().then(async () => {
                   try {
-                    await writeBowlerIdToSheet({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId });
+                    await writeBowlerIdToSheet({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId, target: eventSheetTarget });
                     await writeQRCodesToSheet({
                       firstName,
                       lastName,
@@ -1493,6 +1503,7 @@ export const appRouter = router({
                       poolPartyToken: importPoolToken,
                       guestPoolTokens: importGuestTokens,
                       appOrigin: APP_ORIGIN,
+                      target: eventSheetTarget,
                     });
                   } catch (e) {
                     console.warn("[import] sheet write-back failed:", e);
