@@ -72,6 +72,36 @@ const COLUMN_ALIASES: Record<string, string> = {
   "guest pool party": "guestPoolPartyAmount", "guest $15": "guestPoolPartyAmount",
   // Notes
   "special notes": "specialNotes",
+
+  // ── App-written columns (orange in sheet) — recognized but IGNORED during import ──
+  // These are written back by the app; importing them would overwrite app data.
+  "bowler id": "_ignore",
+  "#a pool party qr code": "_ignore",
+  "#a pool qr code used": "_ignore",
+  "extra guest banquet qr code": "_ignore",
+  "#b qr code used": "_ignore",
+  "banquet qr code": "_ignore",
+  "banquet qr code used": "_ignore",
+  "pool party qr code": "_ignore",
+  "pool party entry used": "_ignore",
+  "#a pool qr code": "_ignore",
+  "#a pool entry used": "_ignore",
+  "#b pool qr code": "_ignore",
+  "#b pool qr used": "_ignore",
+  "#a banquet qr code": "_ignore",
+  "#b banquet used": "_ignore",
+  "#b banquet reentry": "_ignore",
+  "#a banquet reentry": "_ignore",
+  "banquet reentry code": "_ignore",
+  "#b pool reentry": "_ignore",
+  "#a pool reentry": "_ignore",
+  "pool reentry": "_ignore",
+  // Also catch any remaining QR/scan-related headers generically
+  "guest pool party qr": "_ignore",
+  "guest pool qr code used": "_ignore",
+  "guest pool entry confirmed": "_ignore",
+  "pool party entry confirmed": "_ignore",
+  "banquet used": "_ignore",
 };
 
 function parseCSV(text: string): string[][] {
@@ -99,6 +129,8 @@ function mapHeaders(headers: string[]): Record<number, string> {
   headers.forEach((h, i) => {
     const key = h.toLowerCase().trim();
     if (COLUMN_ALIASES[key]) map[i] = COLUMN_ALIASES[key];
+    // Generic catch-all: any header containing 'qr', 'scan', 'reentry' is app/doorman-written
+    else if (/qr|scan|reentry/i.test(h)) map[i] = "_ignore";
   });
   return map;
 }
@@ -440,11 +472,20 @@ export default function ImportData() {
             <div className="neon-card p-4">
               <h3 className="text-yellow-400 font-bold mb-3">🗂 Column Mapping Detected</h3>
               <div className="flex flex-wrap gap-2">
-                {rawHeaders.map((h, i) => (
-                  <span key={i} className={`text-xs px-2 py-1 rounded font-mono ${headerMap[i] ? "bg-green-900/40 text-green-400 border border-green-500/30" : "bg-red-900/20 text-red-400 border border-red-500/20"}`}>
-                    {h} {headerMap[i] ? `→ ${headerMap[i]}` : "⚠ unmapped"}
-                  </span>
-                ))}
+                {rawHeaders.map((h, i) => {
+                  const mapped = headerMap[i];
+                  const isIgnored = mapped === "_ignore";
+                  const isMapped = mapped && !isIgnored;
+                  return (
+                    <span key={i} className={`text-xs px-2 py-1 rounded font-mono ${
+                      isMapped ? "bg-green-900/40 text-green-400 border border-green-500/30"
+                      : isIgnored ? "bg-gray-900/40 text-gray-500 border border-gray-600/20"
+                      : "bg-red-900/20 text-red-400 border border-red-500/20"
+                    }`}>
+                      {h} {isMapped ? `→ ${mapped}` : isIgnored ? "(app-managed)" : "⚠ unmapped"}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 

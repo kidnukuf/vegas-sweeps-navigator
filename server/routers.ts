@@ -20,7 +20,10 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import QRCode from "qrcode";
-import { writeBowlerIdToSheet } from "./googleSheets";
+import { writeBowlerIdToSheet, writeQRCodesToSheet } from "./googleSheets";
+import { v4 as uuidv4 } from "uuid";
+
+const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
 // ─── ID GENERATION ────────────────────────────────────────────────────────────
 export function generateScantronId(cc: string, l: string, ee: string, tt: string, bb: string): string {
@@ -974,16 +977,53 @@ export const appRouter = router({
                 if (effectiveBanquet2 || totalAmountDue || effectivePoolParty2 || effectiveExtraGuest2) {
                   await upsertPaymentRecord(bowlerId, { roomAmount, banquetAmount: effectiveBanquet2, poolParty: effectivePoolParty2, extraGuestFee: effectiveExtraGuest2, totalAmountDue });
                 }
+
+                // ── Generate ALL passport QR tokens at import time ────────────────────
+                // This secures the system: tokens exist even if sign-up fails later.
+                const importPoolToken  = uuidv4().replace(/-/g, "");
+                const importBanquetToken = uuidv4().replace(/-/g, "");
+                await rawQuery(
+                  `UPDATE bowlers SET poolPartyToken = ?, banquetToken = ? WHERE id = ?`,
+                  [importPoolToken, importBanquetToken, bowlerId]
+                );
+
+                // Guest pool tokens: scantronId + suffix letter (A, B, C…)
+                // One token per $15 in guestPoolPartyAmount
+                const SUFFIXES = ["A","B","C","D","E"];
+                const guestCount = Math.floor(guestPoolPartyAmount / 15);
+                const importGuestTokens: Array<{ suffix: string; token: string }> = [];
+                if (guestCount > 0) {
+                  await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowlerId]);
+                  for (let gi = 0; gi < Math.min(guestCount, SUFFIXES.length); gi++) {
+                    const guestToken = `${scantronId}${SUFFIXES[gi]}`;
+                    await rawQuery(
+                      `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
+                      [bowlerId, SUFFIXES[gi], guestToken]
+                    );
+                    importGuestTokens.push({ suffix: SUFFIXES[gi], token: guestToken });
+                  }
+                }
+
+                // Fire-and-forget: write Bowler ID + all QR URLs to the Google Sheet
+                Promise.resolve().then(async () => {
+                  try {
+                    await writeBowlerIdToSheet({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId });
+                    await writeQRCodesToSheet({
+                      firstName,
+                      lastName,
+                      laneNumber: laneNumber ?? null,
+                      banquetToken: importBanquetToken,
+                      poolPartyToken: importPoolToken,
+                      guestPoolTokens: importGuestTokens,
+                      appOrigin: APP_ORIGIN,
+                    });
+                  } catch (e) {
+                    console.warn("[import] sheet write-back failed:", e);
+                  }
+                });
               }
               generatedIds.push(scantronId);
               imported++;
-              // Fire-and-forget: write the Bowler ID back to column A of the Google Sheet
-              writeBowlerIdToSheet({
-                firstName,
-                lastName,
-                laneNumber: laneNumber ?? null,
-                scantronId,
-              }).catch((e: unknown) => console.warn("[import] sheet write-back failed:", e));
             }
           } catch (err) {
             errors++;

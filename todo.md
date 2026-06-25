@@ -431,3 +431,15 @@
 - [x] Update seating algorithm: block-aware placement prevents host+guest from being split across table boundaries; guests always land in the seat immediately after their bowler
 - [x] Google Sheet write-back unchanged (same AA–AE columns), token values now reflect new ID format
 - [x] Save checkpoint, push to GitHub
+
+## Phase 20: Import-Time QR Generation + Column Mapping Fix (Jun 25)
+
+- [x] Fix COLUMN_ALIASES in ImportData.tsx: add "Bowler ID" and all 20+ QR/doorman columns as recognized-but-ignored (shown gray as "app-managed", not red "unmapped")
+- [x] Add generic catch-all in mapHeaders: any header containing 'qr', 'scan', or 'reentry' auto-maps to _ignore
+- [x] Update column mapping display: green = mapped, gray = app-managed, red = unmapped
+- [x] Generate banquet token + pool party token at import time (not at sign-up) — stored in bowlers.banquetToken and bowlers.poolPartyToken immediately
+- [x] Generate guest pool tokens at import time: scantronId+A, +B, etc. (one per $15 in guestPoolPartyAmount)
+- [x] Write Bowler ID + all QR URLs to Google Sheet immediately after import (fire-and-forget, non-blocking)
+- [x] Update bowlerAuth.signUp: reuse pre-generated tokens from import; only fallback-generate if somehow missing
+- [x] Update bowlerAuth.signIn: remove redundant guest-token generation; keep safety fallback only
+- [x] Update bowlerAuth.submitContactInfo: remove redundant guest-token generation; keep safety fallback only

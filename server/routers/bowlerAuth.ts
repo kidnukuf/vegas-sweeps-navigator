@@ -292,11 +292,18 @@ export const bowlerAuthRouter = router({
 
       const hash = await bcrypt.hash(input.password, 12);
 
-      // Generate unique passport tokens
-      const poolPartyToken = uuidv4().replace(/-/g, "");
-      const banquetToken = uuidv4().replace(/-/g, "");
+      // Reuse passport tokens pre-generated at import time.
+      // Only generate new ones if somehow missing (safety fallback).
+      const bowlerRow = await rawQuery<{ poolPartyToken: string | null; banquetToken: string | null }>(
+        `SELECT poolPartyToken, banquetToken FROM bowlers WHERE id = ? LIMIT 1`,
+        [bowler.id]
+      );
+      const existingPoolToken   = bowlerRow[0]?.poolPartyToken ?? null;
+      const existingBanquetToken = bowlerRow[0]?.banquetToken ?? null;
+      const poolPartyToken  = existingPoolToken   ?? uuidv4().replace(/-/g, "");
+      const banquetToken    = existingBanquetToken ?? uuidv4().replace(/-/g, "");
 
-      // Update the bowler record with password + passport tokens + optional contact info
+      // Update the bowler record with password + (possibly new) passport tokens + optional contact info
       const updates: string[] = ["passwordHash = ?", "poolPartyToken = ?", "banquetToken = ?"];
       const params: unknown[] = [hash, poolPartyToken, banquetToken];
 
@@ -316,15 +323,18 @@ export const bowlerAuthRouter = router({
 
       await rawQuery(`UPDATE bowlers SET ${updates.join(", ")} WHERE id = ?`, params);
 
-      // Generate guest pool party tokens: each $15 = 1 extra QR code (suffix A, B, C...)
-      // Token = scantronId (10-digit bowler ID) + suffix letter, e.g. "0101020305A"
-      const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
-      const guestCount = Math.floor(guestAmount / 15);
+      // Guest pool party tokens: reuse pre-generated ones from import (scantronId+A, +B, …).
+      // Only create them now if they were not generated at import (safety fallback).
+      const existingGuests = await rawQuery<{ suffix: string; token: string }>(
+        `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+        [bowler.id]
+      );
       const SUFFIXES = ["A","B","C","D","E"];
       const bowlerScantronId = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
-      if (guestCount > 0) {
-        // Remove any existing guest tokens for this bowler first (idempotent)
-        await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowler.id]);
+      const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
+      const guestCount = Math.floor(guestAmount / 15);
+      if (guestCount > 0 && existingGuests.length === 0) {
+        // Fallback: create tokens if import didn't generate them
         for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
           const guestToken = `${bowlerScantronId}${SUFFIXES[i]}`;
           await rawQuery(
@@ -392,20 +402,24 @@ export const bowlerAuthRouter = router({
 
       const token = signToken({ bowlerId: bowler.id, role: "Bowler" });
 
-      // Fire-and-forget: ensure guest tokens exist, then sync QR URLs to Google Sheet
+      // QR tokens were pre-generated at import time — no generation needed here.
+      // Fallback: if somehow tokens are missing (pre-import data), create them now.
       const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
       (async () => {
         try {
-          // Generate guest tokens if not yet created
+          const profile = await getBowlerProfile(bowler.id);
+          if (!profile) return;
+
+          // Safety fallback: create guest tokens if import didn't generate them
           const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
           const guestCount = Math.floor(guestAmount / 15);
-          const SUFFIXES = ["A","B","C","D","E"];
-          const bowlerSid = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
           if (guestCount > 0) {
             const existing = await rawQuery<{ count: number }>(
               `SELECT COUNT(*) as count FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowler.id]
             );
             if ((existing[0]?.count ?? 0) === 0) {
+              const SUFFIXES = ["A","B","C","D","E"];
+              const bowlerSid = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
               for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
                 const guestToken = `${bowlerSid}${SUFFIXES[i]}`;
                 await rawQuery(
@@ -413,24 +427,22 @@ export const bowlerAuthRouter = router({
                   [bowler.id, SUFFIXES[i], guestToken]
                 );
               }
+              // Also write the newly-created QR URLs to the sheet
+              const newGuests = await rawQuery<{ suffix: string; token: string }>(
+                `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+                [bowler.id]
+              );
+              await writeQRCodesToSheet({
+                firstName: profile.legalFirstName,
+                lastName: profile.legalLastName,
+                laneNumber: profile.laneNumber ?? null,
+                banquetToken: profile.banquetToken ?? null,
+                poolPartyToken: profile.poolPartyToken ?? null,
+                guestPoolTokens: newGuests.map(g => ({ suffix: g.suffix, token: g.token })),
+                appOrigin,
+              });
             }
           }
-          // Sync QR URLs to Google Sheet
-          const profile = await getBowlerProfile(bowler.id);
-          if (!profile) return;
-          const guestTokens = await rawQuery<{ suffix: string; token: string; disabled: number }>(
-            `SELECT suffix, token, disabled FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
-            [bowler.id]
-          );
-          await writeQRCodesToSheet({
-            firstName: profile.legalFirstName,
-            lastName: profile.legalLastName,
-            laneNumber: profile.laneNumber ?? null,
-            banquetToken: profile.banquetToken ?? null,
-            poolPartyToken: profile.poolPartyToken ?? null,
-            guestPoolTokens: guestTokens.filter(g => !g.disabled).map(g => ({ suffix: g.suffix, token: g.token })),
-            appOrigin,
-          });
         } catch (err) {
           console.error("[googleSheets] signIn write-back failed:", err);
         }
@@ -531,23 +543,20 @@ export const bowlerAuthRouter = router({
         banquetQR = await QRCode.toDataURL(`${appOrigin}/scan/banquet/${profile.banquetToken}`, { width: 300, margin: 2 });
       }
 
-      // Generate guest pool party tokens if not yet created (idempotent)
-      const bowlerForGuest = await rawQuery<{ guestPoolPartyAmount: string | null }>(
-        `SELECT guestPoolPartyAmount FROM bowlers WHERE id = ? LIMIT 1`, [bowlerId]
+      // Guest pool party tokens are pre-generated at import time.
+      // Safety fallback: create them here only if they are missing.
+      const bowlerForGuest = await rawQuery<{ guestPoolPartyAmount: string | null; scantronId: string | null }>(
+        `SELECT guestPoolPartyAmount, scantronId FROM bowlers WHERE id = ? LIMIT 1`, [bowlerId]
       );
       const guestAmountSCI = parseFloat(bowlerForGuest[0]?.guestPoolPartyAmount ?? "0") || 0;
       const guestCountSCI = Math.floor(guestAmountSCI / 15);
-      const SUFFIXES_SCI = ["A","B","C","D","E"];
-      // Fetch scantronId for deterministic guest token generation
-      const bowlerScantronRow = await rawQuery<{ scantronId: string | null }>(
-        `SELECT scantronId FROM bowlers WHERE id = ? LIMIT 1`, [bowlerId]
-      );
-      const bowlerSidSCI = String(bowlerScantronRow[0]?.scantronId ?? bowlerId).padStart(10, "0");
       if (guestCountSCI > 0) {
         const existingGuest = await rawQuery<{ count: number }>(
           `SELECT COUNT(*) as count FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowlerId]
         );
         if ((existingGuest[0]?.count ?? 0) === 0) {
+          const SUFFIXES_SCI = ["A","B","C","D","E"];
+          const bowlerSidSCI = String(bowlerForGuest[0]?.scantronId ?? bowlerId).padStart(10, "0");
           for (let i = 0; i < Math.min(guestCountSCI, SUFFIXES_SCI.length); i++) {
             const guestToken = `${bowlerSidSCI}${SUFFIXES_SCI[i]}`;
             await rawQuery(
