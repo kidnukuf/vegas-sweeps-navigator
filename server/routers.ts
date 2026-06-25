@@ -1300,7 +1300,9 @@ export const appRouter = router({
             // Col M: Hotel Confirmation # (confirmation code from hotel)
             const hotelConfirmation = String(
               row["Hotel Confirmation #"] ?? row["Hotel Confirmation"] ?? row["Confirmation #"] ??
-              row["Confirmation"] ?? row["hotel_confirmation"] ?? row["hotelConfirmation"] ?? ""
+              row["Confirmation"] ?? row["Conf #"] ?? row["Conf"] ?? row["Confirmation Number"] ??
+              row["Confirmation Code"] ?? row["Confirmation No"] ?? row["Confirmation No."] ??
+              row["hotel_confirmation"] ?? row["hotelConfirmation"] ?? row["confirmation_code"] ?? ""
             ).trim();
             // Col N / O: Check-in / Check-out dates
             const checkinDate = String(row["Check In"] ?? row["Check-In Date"] ?? row["checkin_date"] ?? "").trim();
