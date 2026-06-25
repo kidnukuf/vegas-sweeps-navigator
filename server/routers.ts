@@ -1317,7 +1317,7 @@ export const appRouter = router({
             const banquetTable = String(
               row["Assigned Table #"] ?? row["Assigned Table"] ?? row["Table #"] ??
               row["Table"] ?? row["banquet_table"] ?? row["Banquet Table"] ?? ""
-            ).trim() || undefined;
+            ).trim() || null;
 
             // ── Extra banquet tickets (Col S / X) ────────────────────────────────────
             // Accepts numeric count, dollar amount, or Y/N
@@ -1375,21 +1375,21 @@ export const appRouter = router({
             const email = String(row["Email"] ?? row["email"] ?? "").trim();
 
             // Bowling stats fields
-            const sanctionNumber = String(row["Sanction #"] ?? row["sanction_number"] ?? row["Sanction"] ?? "").trim() || undefined;
+            const sanctionNumber = String(row["Sanction #"] ?? row["sanction_number"] ?? row["Sanction"] ?? "").trim() || null;
             const gamesRaw = String(row["# Games"] ?? row["Games"] ?? row["games"] ?? "").trim();
-            const gamesPlayed = gamesRaw ? (parseInt(gamesRaw) || undefined) : undefined;
+            const gamesPlayed = gamesRaw ? (parseInt(gamesRaw) || null) : null;
             const avgRaw = String(row["Best Avg"] ?? row["High Avg"] ?? row["Average"] ?? row["avg"] ?? "").trim();
-            const bestAverage = avgRaw ? (parseInt(avgRaw) || undefined) : undefined;
-            const tshirtSize = String(row["T-Shirt Size"] ?? row["Shirt Size"] ?? row["shirt"] ?? "").trim().toUpperCase() || undefined;
+            const bestAverage = avgRaw ? (parseInt(avgRaw) || null) : null;
+            const tshirtSize = String(row["T-Shirt Size"] ?? row["Shirt Size"] ?? row["shirt"] ?? "").trim().toUpperCase() || null;
             const under21Raw = String(row["Under 21?"] ?? row["Under 21"] ?? row["under21"] ?? "").trim().toUpperCase();
             const under21 = ["Y", "YES", "TRUE", "1"].includes(under21Raw);
             const leagueMemberRaw = String(row["League Member"] ?? row["league_member"] ?? "").trim().toUpperCase();
             const leagueMember = ["Y", "YES", "TRUE", "1"].includes(leagueMemberRaw);
-            const squadTimeVal = String(row["Squad Time"] ?? row["squad_time"] ?? "").trim() || undefined;
+            const squadTimeVal = String(row["Squad Day & Time"] ?? row["Squad Time"] ?? row["squad_time"] ?? row["Squad"] ?? "").trim() || null;
             const laneRaw = String(row["Lane #"] ?? row["Lane"] ?? row["lane"] ?? "").trim();
-            const laneNumber = laneRaw ? (parseInt(laneRaw) || undefined) : undefined;
+            const laneNumber = laneRaw ? (parseInt(laneRaw) || null) : null;
             // Column 44 — "Lane to Event" / "Lane to Banquet" directional info
-            const laneToEvent = String(row["Lane to Event"] ?? row["Lane to Banquet"] ?? row["lane_to_event"] ?? row["LaneToEvent"] ?? "").trim() || undefined;
+            const laneToEvent = String(row["Lane to Event"] ?? row["Lane to Banquet"] ?? row["lane_to_event"] ?? row["LaneToEvent"] ?? "").trim() || null;
 
             if (existing.length > 0) {
               // Update existing
@@ -1397,15 +1397,15 @@ export const appRouter = router({
               await updateBowler(bowlerId, {
                 legalFirstName: firstName, legalLastName: lastName,
                 teamId, centerId: center.id as number, isCapitain: isCapt,
-                notes: notes || undefined,
-                phone: phone || undefined, email: email || undefined,
+                notes: notes || null,
+                phone: phone || null, email: email || null,
                 sanctionNumber, gamesPlayed, bestAverage, tshirtSize,
                 under21, leagueMember, squadTime: squadTimeVal, laneNumber, laneToEvent,
                 guestPoolPartyAmount: guestPoolPartyAmount.toFixed(2),
-                banquetTable: banquetTable || undefined,
+                banquetTable: banquetTable || null,
               });
               if (checkinDate || checkoutDate || roomType || hotelConfirmation) {
-                await upsertHotelRecord(bowlerId, { checkinDate, checkoutDate, roomType, roommateRequested, roommateFirstName: roommateFirst, roommateLastName: roommateLast, roomAmount, confirmationCode: hotelConfirmation || undefined });
+                await upsertHotelRecord(bowlerId, { checkinDate: checkinDate || null, checkoutDate: checkoutDate || null, roomType: roomType || null, roommateRequested, roommateFirstName: roommateFirst || null, roommateLastName: roommateLast || null, roomAmount, confirmationCode: hotelConfirmation || null });
               }
               const effectiveBanquet = extraBanquet;
               const effectivePoolParty = poolParty;
@@ -1430,7 +1430,7 @@ export const appRouter = router({
               const bowlerId = newBowler[0]?.id as number;
               if (bowlerId) {
                 if (checkinDate || checkoutDate || roomType || hotelConfirmation) {
-                  await upsertHotelRecord(bowlerId, { checkinDate, checkoutDate, roomType, roommateRequested, roommateFirstName: roommateFirst, roommateLastName: roommateLast, roomAmount, confirmationCode: hotelConfirmation || undefined });
+                  await upsertHotelRecord(bowlerId, { checkinDate: checkinDate || null, checkoutDate: checkoutDate || null, roomType: roomType || null, roommateRequested, roommateFirstName: roommateFirst || null, roommateLastName: roommateLast || null, roomAmount, confirmationCode: hotelConfirmation || null });
                 }
                 const effectiveBanquet2 = extraBanquet;
                 const effectivePoolParty2 = poolParty;

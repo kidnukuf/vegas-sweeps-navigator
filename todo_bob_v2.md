@@ -46,3 +46,9 @@
 - [x] Vitest tests for new logic (bobLogic.test.ts, 14 tests; fixed 3 stale googleSheets tests)
 - [x] TypeScript check passes (no errors)
 - [x] Checkpoint + GitHub push
+
+## Bug Fixes
+- [x] Fix 350-bowler import error: undefined→null in hotel/payment upserts (MySQL2 rejects undefined bind params)
+- [x] Fix ImportData.tsx "Skipped" label (was showing errors count; now shows real skipped + errors separately)
+- [x] Fix Squad Day & Time column alias in server import parser
+- [x] Harden upsertHotelRecord/upsertPaymentRecord to filter undefined values defensively

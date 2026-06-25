@@ -185,7 +185,7 @@ export default function ImportData() {
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
   const [headerMap, setHeaderMap] = useState<Record<number, string>>({});
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [importResult, setImportResult] = useState<{ imported: number; updated: number; errors: number; generatedIds: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[] } | null>(null);
   const [googleUrl, setGoogleUrl] = useState("");
   const [pastedText, setPastedText] = useState("");
   const [activeTab, setActiveTab] = useState<"file" | "google" | "paste">("file");
@@ -209,8 +209,8 @@ export default function ImportData() {
 
   const importMutation = trpc.import.process.useMutation({
     onSuccess: async (data: unknown) => {
-      const d = data as { imported: number; updated: number; errors: number; generatedIds: string[] };
-      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [] });
+      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[] };
+      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [] });
       // Fetch the full roster to build the ID reference sheet
       const roster = await adminRosterQuery.refetch();
       if (roster.data) {
@@ -561,9 +561,13 @@ export default function ImportData() {
                   <div className="text-3xl font-black text-blue-400">{(importResult as {updated?:number}).updated ?? 0}</div>
                   <div className="text-gray-400 text-sm">Updated</div>
                 </div>
+                <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="text-3xl font-black text-yellow-400">{importResult.skipped}</div>
+                  <div className="text-gray-400 text-sm">Skipped (blank name)</div>
+                </div>
                 <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
                   <div className="text-3xl font-black text-red-400">{importResult.errors}</div>
-                  <div className="text-gray-400 text-sm">Skipped</div>
+                  <div className="text-gray-400 text-sm">Errors (center not found)</div>
                 </div>
               </div>
             </div>

@@ -409,30 +409,34 @@ export async function getImportHistory(eventId?: number) {
 
 // ─── HOTEL + PAYMENT ─────────────────────────────────────────────────────────
 export async function upsertHotelRecord(bowlerId: number, data: Record<string, unknown>) {
+  // Filter out undefined values — MySQL2 rejects undefined bind parameters
+  const safeData = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
   const existing = await rawQuery("SELECT id FROM hotel_records WHERE bowlerId = ? LIMIT 1", [bowlerId]);
   if (existing.length > 0) {
-    const keys = Object.keys(data);
+    const keys = Object.keys(safeData);
     if (keys.length === 0) return;
     const setClause = keys.map(k => `\`${k}\` = ?`).join(", ");
-    await rawQuery(`UPDATE hotel_records SET ${setClause} WHERE bowlerId = ?`, [...Object.values(data), bowlerId]);
+    await rawQuery(`UPDATE hotel_records SET ${setClause} WHERE bowlerId = ?`, [...Object.values(safeData), bowlerId]);
   } else {
-    const keys = ["bowlerId", ...Object.keys(data)];
-    const vals = [bowlerId, ...Object.values(data)];
+    const keys = ["bowlerId", ...Object.keys(safeData)];
+    const vals = [bowlerId, ...Object.values(safeData)];
     const placeholders = keys.map(() => "?").join(", ");
     await rawQuery(`INSERT INTO hotel_records (${keys.map(k => `\`${k}\``).join(", ")}) VALUES (${placeholders})`, vals);
   }
 }
 
 export async function upsertPaymentRecord(bowlerId: number, data: Record<string, unknown>) {
+  // Filter out undefined values — MySQL2 rejects undefined bind parameters
+  const safeData = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
   const existing = await rawQuery("SELECT id FROM payment_records WHERE bowlerId = ? LIMIT 1", [bowlerId]);
   if (existing.length > 0) {
-    const keys = Object.keys(data);
+    const keys = Object.keys(safeData);
     if (keys.length === 0) return;
     const setClause = keys.map(k => `\`${k}\` = ?`).join(", ");
-    await rawQuery(`UPDATE payment_records SET ${setClause} WHERE bowlerId = ?`, [...Object.values(data), bowlerId]);
+    await rawQuery(`UPDATE payment_records SET ${setClause} WHERE bowlerId = ?`, [...Object.values(safeData), bowlerId]);
   } else {
-    const keys = ["bowlerId", ...Object.keys(data)];
-    const vals = [bowlerId, ...Object.values(data)];
+    const keys = ["bowlerId", ...Object.keys(safeData)];
+    const vals = [bowlerId, ...Object.values(safeData)];
     const placeholders = keys.map(() => "?").join(", ");
     await rawQuery(`INSERT INTO payment_records (${keys.map(k => `\`${k}\``).join(", ")}) VALUES (${placeholders})`, vals);
   }
