@@ -20,7 +20,8 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import QRCode from "qrcode";
-import { writeBowlerIdToSheet, writeQRCodesToSheet } from "./googleSheets";
+import { writeBowlerIdToSheet, writeQRCodesToSheet, markTshirtReceivedInSheet } from "./googleSheets";
+import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
@@ -212,6 +213,91 @@ export const appRouter = router({
           [input.id]
         ) as Record<string, unknown>[];
         return { banquetLocation: rows[0]?.banquetLocation ?? null, banquetTime: rows[0]?.banquetTime ?? null };
+      }),
+
+    // ─── EVENT WIZARD SETTINGS (Section 1) ────────────────────────────────
+    // Full set of event-customization fields driving the bowler/captain portals.
+    getSettings: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const rows = await rawQuery(
+          `SELECT id, eventName, eventYear,
+             hotelCheckinDay, hotelCheckinTime, registrationDay, registrationTime,
+             tshirtsProvided, tshirtPickupLocation, tshirtPickupTime,
+             poolPartyEnabled, poolPartyTime, banquetDay, banquetTime, banquetLocation,
+             hotelCheckoutDay, hotelCheckoutTime, surveyEnabled, surveyOpen, showHotelInfoCard
+           FROM events WHERE id=?`,
+          [input.id]
+        ) as Record<string, unknown>[];
+        return rows[0] ?? null;
+      }),
+    updateSettings: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        eventName: z.string().min(1).optional(),
+        eventYear: z.number().int().optional(),
+        hotelCheckinDay: z.string().optional().nullable(),
+        hotelCheckinTime: z.string().optional().nullable(),
+        registrationDay: z.string().optional().nullable(),
+        registrationTime: z.string().optional().nullable(),
+        tshirtsProvided: z.boolean().optional(),
+        tshirtPickupLocation: z.string().optional().nullable(),
+        tshirtPickupTime: z.string().optional().nullable(),
+        poolPartyEnabled: z.boolean().optional(),
+        poolPartyTime: z.string().optional().nullable(),
+        banquetDay: z.string().optional().nullable(),
+        banquetTime: z.string().optional().nullable(),
+        banquetLocation: z.string().optional().nullable(),
+        hotelCheckoutDay: z.string().optional().nullable(),
+        hotelCheckoutTime: z.string().optional().nullable(),
+        surveyEnabled: z.boolean().optional(),
+        surveyOpen: z.boolean().optional(),
+        showHotelInfoCard: z.boolean().optional(),
+        actorId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const fields: string[] = [];
+        const values: unknown[] = [];
+        const map: Record<string, unknown> = {
+          eventName: input.eventName,
+          eventYear: input.eventYear,
+          hotelCheckinDay: input.hotelCheckinDay,
+          hotelCheckinTime: input.hotelCheckinTime,
+          registrationDay: input.registrationDay,
+          registrationTime: input.registrationTime,
+          tshirtsProvided: input.tshirtsProvided,
+          tshirtPickupLocation: input.tshirtPickupLocation,
+          tshirtPickupTime: input.tshirtPickupTime,
+          poolPartyEnabled: input.poolPartyEnabled,
+          poolPartyTime: input.poolPartyTime,
+          banquetDay: input.banquetDay,
+          banquetTime: input.banquetTime,
+          banquetLocation: input.banquetLocation,
+          hotelCheckoutDay: input.hotelCheckoutDay,
+          hotelCheckoutTime: input.hotelCheckoutTime,
+          surveyEnabled: input.surveyEnabled,
+          surveyOpen: input.surveyOpen,
+          showHotelInfoCard: input.showHotelInfoCard,
+        };
+        for (const [key, val] of Object.entries(map)) {
+          if (val !== undefined) {
+            fields.push(`\`${key}\`=?`);
+            values.push(typeof val === "boolean" ? (val ? 1 : 0) : val);
+          }
+        }
+        if (fields.length === 0) return { success: true };
+        values.push(input.id);
+        await rawQuery(`UPDATE events SET ${fields.join(", ")} WHERE id=?`, values);
+        await writeAuditLog({
+          eventId: input.id,
+          actorRole: "EventDirector",
+          actorId: input.actorId,
+          action: "update_event_settings",
+          targetId: input.id,
+          targetType: "event",
+          details: `Updated ${fields.length} settings`,
+        });
+        return { success: true };
       }),
   }),
 
@@ -713,6 +799,381 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── T-SHIRTS (captain marks batch received → purple sheet cell) ───────────
+  tshirts: router({
+    // Captain marks their team's T-shirt batch as picked up.
+    markReceived: publicProcedure
+      .input(z.object({
+        bowlerId: z.number(),
+        received: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const rows = await rawQuery<{
+          id: number; legalFirstName: string; legalLastName: string;
+          laneNumber: number | null; isCaptain: number;
+        }>(
+          `SELECT id, legalFirstName, legalLastName, laneNumber, isCaptain
+           FROM bowlers WHERE id = ? LIMIT 1`,
+          [input.bowlerId]
+        );
+        if (!rows[0]) throw new Error("Bowler not found");
+        const b = rows[0];
+        const now = input.received ? Date.now() : null;
+        await rawQuery(
+          `UPDATE bowlers SET tshirtsReceived = ?, tshirtsReceivedAt = ? WHERE id = ?`,
+          [input.received ? 1 : 0, now, input.bowlerId]
+        );
+        // Fire-and-forget: color the captain's First Name cell purple in the sheet
+        markTshirtReceivedInSheet({
+          firstName: b.legalFirstName,
+          lastName: b.legalLastName,
+          laneNumber: b.laneNumber,
+          received: input.received,
+        }).catch((err) => console.error("[tshirts] sheet color write-back failed:", err));
+        return { ok: true, received: input.received, receivedAt: now };
+      }),
+    // Read current status for a bowler (captain).
+    status: publicProcedure
+      .input(z.object({ bowlerId: z.number() }))
+      .query(async ({ input }) => {
+        const rows = await rawQuery<{ tshirtsReceived: number | null; tshirtsReceivedAt: number | null }>(
+          `SELECT tshirtsReceived, tshirtsReceivedAt FROM bowlers WHERE id = ? LIMIT 1`,
+          [input.bowlerId]
+        );
+        return {
+          received: Boolean(rows[0]?.tshirtsReceived),
+          receivedAt: rows[0]?.tshirtsReceivedAt ?? null,
+        };
+      }),
+  }),
+
+  // ─── ADVERTISEMENTS (sponsor tiers, weighted rotation) ────────────────────
+  ads: router({
+    // ED: list all ads for an event (any status)
+    list: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input }) => {
+        return rawQuery(
+          `SELECT id, eventId, sponsorName, tier, category, mediaType, mediaUrl, mediaKey,
+                  linkUrl, runUntil, enabled, createdAt, updatedAt
+           FROM advertisements WHERE eventId = ? ORDER BY
+             FIELD(tier,'gold','silver','bronze'), createdAt DESC`,
+          [input.eventId]
+        );
+      }),
+    // Public: active ads for portals (enabled + not past runUntil)
+    listActive: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input }) => {
+        const now = Date.now();
+        return rawQuery(
+          `SELECT id, sponsorName, tier, category, mediaType, mediaUrl, linkUrl
+           FROM advertisements
+           WHERE eventId = ? AND enabled = 1 AND (runUntil IS NULL OR runUntil >= ?)
+           ORDER BY FIELD(tier,'gold','silver','bronze')`,
+          [input.eventId, now]
+        );
+      }),
+    // ED: upload media (base64) -> S3, returns url+key
+    uploadMedia: publicProcedure
+      .input(z.object({
+        eventId: z.number(),
+        fileName: z.string(),
+        contentType: z.string(),
+        dataBase64: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.dataBase64, "base64");
+        const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const { key, url } = await storagePut(
+          `event-${input.eventId}-ads/${safeName}`,
+          buffer,
+          input.contentType
+        );
+        return { key, url };
+      }),
+    // ED: create an ad
+    create: publicProcedure
+      .input(z.object({
+        eventId: z.number(),
+        sponsorName: z.string().min(1),
+        tier: z.enum(["bronze", "silver", "gold"]),
+        category: z.enum(["bowling", "travel", "concerts", "restaurant"]),
+        mediaType: z.enum(["image", "video"]),
+        mediaUrl: z.string().min(1),
+        mediaKey: z.string().optional(),
+        linkUrl: z.string().optional(),
+        runUntil: z.number().nullable().optional(),
+        enabled: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const now = Date.now();
+        await rawQuery(
+          `INSERT INTO advertisements
+             (eventId, sponsorName, tier, category, mediaType, mediaUrl, mediaKey, linkUrl, runUntil, enabled, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [input.eventId, input.sponsorName, input.tier, input.category, input.mediaType,
+           input.mediaUrl, input.mediaKey ?? null, input.linkUrl ?? null,
+           input.runUntil ?? null, input.enabled ? 1 : 0, now, now]
+        );
+        return { ok: true };
+      }),
+    // ED: update an ad
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        sponsorName: z.string().optional(),
+        tier: z.enum(["bronze", "silver", "gold"]).optional(),
+        category: z.enum(["bowling", "travel", "concerts", "restaurant"]).optional(),
+        linkUrl: z.string().nullable().optional(),
+        runUntil: z.number().nullable().optional(),
+        enabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const sets: string[] = [];
+        const vals: unknown[] = [];
+        if (input.sponsorName !== undefined) { sets.push("sponsorName = ?"); vals.push(input.sponsorName); }
+        if (input.tier !== undefined) { sets.push("tier = ?"); vals.push(input.tier); }
+        if (input.category !== undefined) { sets.push("category = ?"); vals.push(input.category); }
+        if (input.linkUrl !== undefined) { sets.push("linkUrl = ?"); vals.push(input.linkUrl); }
+        if (input.runUntil !== undefined) { sets.push("runUntil = ?"); vals.push(input.runUntil); }
+        if (input.enabled !== undefined) { sets.push("enabled = ?"); vals.push(input.enabled ? 1 : 0); }
+        if (sets.length === 0) return { ok: true };
+        sets.push("updatedAt = ?"); vals.push(Date.now());
+        vals.push(input.id);
+        await rawQuery(`UPDATE advertisements SET ${sets.join(", ")} WHERE id = ?`, vals);
+        return { ok: true };
+      }),
+    // ED: delete an ad
+    remove: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await rawQuery(`DELETE FROM advertisements WHERE id = ?`, [input.id]);
+        return { ok: true };
+      }),
+  }),
+
+  // ─── RE-ENTRY (doorman-issued, bracelet-secured) ──────────────────────────
+  reentry: router({
+    // Doorman enters a bracelet number; system mints a single-use re-entry token
+    // bound to that bracelet and returns a QR for the patron to photograph.
+    issue: publicProcedure
+      .input(z.object({
+        eventId: z.number(),
+        doormanId: z.number().optional(),
+        braceletNumber: z.string().min(1),
+        bowlerId: z.number().optional(),
+        guestId: z.string().optional(),
+        passportType: z.enum(["pool", "banquet"]).default("pool"),
+      }))
+      .mutation(async ({ input }) => {
+        const tokenValue = "RE-" + crypto.randomBytes(20).toString("hex");
+        await rawQuery(
+          `INSERT INTO reentry_tokens (eventId, bowlerId, guestId, passportType, token, braceletNumber, issuedByDoormanId, issuedAt, used)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+          [input.eventId, input.bowlerId ?? null, input.guestId ?? null, input.passportType, tokenValue, input.braceletNumber, input.doormanId ?? null, Date.now()]
+        );
+        const qr = await QRCode.toDataURL(tokenValue, { width: 280, margin: 2 });
+        await writeAuditLog({
+          eventId: input.eventId,
+          actorRole: "Doorman",
+          actorId: input.doormanId ?? undefined,
+          action: "reentry_issued",
+          targetId: input.bowlerId,
+          targetType: input.guestId ? "guest" : "bowler",
+          details: `Bracelet #${input.braceletNumber} (${input.passportType})`,
+        });
+        return { success: true, token: tokenValue, qr, braceletNumber: input.braceletNumber };
+      }),
+
+    // Doorman scans the patron's re-entry QR. We surface the bracelet number that
+    // was captured at issuance so the doorman can match it to the physical band,
+    // then consume the single-use token.
+    verify: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        doormanId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const rows = await rawQuery(
+          `SELECT id, eventId, bowlerId, guestId, passportType, braceletNumber, used FROM reentry_tokens WHERE token=?`,
+          [input.token]
+        ) as Record<string, unknown>[];
+        const rec = rows[0];
+        if (!rec) return { success: false, error: "Invalid re-entry code" } as const;
+        if (rec.used) return { success: false, error: "This re-entry code was already used", braceletNumber: rec.braceletNumber as string } as const;
+        await rawQuery(
+          `UPDATE reentry_tokens SET used=1, usedAt=?, scannedByDoormanId=? WHERE id=?`,
+          [Date.now(), input.doormanId ?? null, rec.id]
+        );
+        let patronName: string | null = null;
+        if (rec.bowlerId) {
+          const b = await getBowlerById(rec.bowlerId as number) as Record<string, unknown> | null;
+          if (b) patronName = `${b.legalFirstName ?? ""} ${b.legalLastName ?? ""}`.trim();
+        }
+        await writeAuditLog({
+          eventId: rec.eventId as number,
+          actorRole: "Doorman",
+          actorId: input.doormanId ?? undefined,
+          action: "reentry_verified",
+          targetId: rec.bowlerId as number | undefined,
+          targetType: rec.guestId ? "guest" : "bowler",
+          details: `Bracelet #${rec.braceletNumber} (${rec.passportType})`,
+        });
+        return {
+          success: true,
+          braceletNumber: rec.braceletNumber as string,
+          passportType: rec.passportType as string,
+          guestId: (rec.guestId as string) ?? null,
+          patronName,
+        } as const;
+      }),
+
+    // History of re-entry tokens for an event (ED oversight)
+    listForEvent: publicProcedure
+      .input(z.object({ eventId: z.number(), limit: z.number().default(100) }))
+      .query(async ({ input }) => {
+        return rawQuery(
+          `SELECT id, bowlerId, guestId, passportType, braceletNumber, used, issuedAt, usedAt
+           FROM reentry_tokens WHERE eventId=? ORDER BY issuedAt DESC LIMIT ?`,
+          [input.eventId, input.limit]
+        );
+      }),
+  }),
+
+  // ─── POST-EVENT SURVEY ────────────────────────────────────────────────────
+  survey: router({
+    // Bowler-facing: is the survey available, and has this bowler already submitted?
+    status: publicProcedure
+      .input(z.object({ eventId: z.number(), bowlerId: z.number() }))
+      .query(async ({ input }) => {
+        const ev = await rawQuery(
+          `SELECT surveyEnabled, surveyOpen, poolPartyEnabled FROM events WHERE id=?`,
+          [input.eventId]
+        ) as Record<string, unknown>[];
+        const enabled = Boolean(ev[0]?.surveyEnabled);
+        const open = Boolean(ev[0]?.surveyOpen);
+        const poolPartyEnabled = Boolean(ev[0]?.poolPartyEnabled);
+        const existing = await rawQuery(
+          `SELECT id FROM survey_responses WHERE eventId=? AND bowlerId=? LIMIT 1`,
+          [input.eventId, input.bowlerId]
+        ) as Record<string, unknown>[];
+        return {
+          available: enabled && open,
+          enabled,
+          open,
+          poolPartyEnabled,
+          alreadySubmitted: existing.length > 0,
+        };
+      }),
+
+    // Bowler submits the survey (one per bowler per event).
+    submit: publicProcedure
+      .input(z.object({
+        eventId: z.number(),
+        bowlerId: z.number(),
+        q1Rating: z.number().min(1).max(5).optional().nullable(),
+        q1Comment: z.string().optional().nullable(),
+        q2Rating: z.number().min(1).max(5).optional().nullable(),
+        q2Comment: z.string().optional().nullable(),
+        q3Rating: z.number().min(1).max(5).optional().nullable(),
+        q3Comment: z.string().optional().nullable(),
+        q4Rating: z.number().min(1).max(5).optional().nullable(),
+        q4Comment: z.string().optional().nullable(),
+        q5Rating: z.number().min(1).max(5).optional().nullable(),
+        q5Comment: z.string().optional().nullable(),
+        q6Rating: z.number().min(1).max(5).optional().nullable(),
+        q6Comment: z.string().optional().nullable(),
+        q7Rating: z.number().min(1).max(5).optional().nullable(),
+        q7Comment: z.string().optional().nullable(),
+        q8Comment: z.string().optional().nullable(),
+        attendNextYear: z.string().optional().nullable(),
+        attendNextYearComment: z.string().optional().nullable(),
+        testimonialPermission: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        const existing = await rawQuery(
+          `SELECT id FROM survey_responses WHERE eventId=? AND bowlerId=? LIMIT 1`,
+          [input.eventId, input.bowlerId]
+        ) as Record<string, unknown>[];
+        if (existing.length > 0) {
+          return { success: false, error: "You have already submitted your survey. Thank you!" } as const;
+        }
+        await rawQuery(
+          `INSERT INTO survey_responses
+             (eventId, bowlerId, submittedAt,
+              q1Rating, q1Comment, q2Rating, q2Comment, q3Rating, q3Comment,
+              q4Rating, q4Comment, q5Rating, q5Comment, q6Rating, q6Comment,
+              q7Rating, q7Comment, q8Comment,
+              attendNextYear, attendNextYearComment, testimonialPermission)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            input.eventId, input.bowlerId, Date.now(),
+            input.q1Rating ?? null, input.q1Comment ?? null,
+            input.q2Rating ?? null, input.q2Comment ?? null,
+            input.q3Rating ?? null, input.q3Comment ?? null,
+            input.q4Rating ?? null, input.q4Comment ?? null,
+            input.q5Rating ?? null, input.q5Comment ?? null,
+            input.q6Rating ?? null, input.q6Comment ?? null,
+            input.q7Rating ?? null, input.q7Comment ?? null,
+            input.q8Comment ?? null,
+            input.attendNextYear ?? null, input.attendNextYearComment ?? null,
+            input.testimonialPermission ? 1 : 0,
+          ]
+        );
+        // Notify the ED when negative feedback (any rating <= 2) arrives so they can act fast.
+        const ratings = [input.q1Rating, input.q2Rating, input.q3Rating, input.q4Rating, input.q5Rating, input.q6Rating, input.q7Rating].filter((r): r is number => typeof r === "number");
+        const low = ratings.filter((r) => r <= 2);
+        if (low.length > 0) {
+          import('./_core/notification').then(({ notifyOwner }) =>
+            notifyOwner({
+              title: "New survey: needs attention",
+              content: `A bowler left ${low.length} low rating(s). Review the Survey tab for details.`,
+            })
+          ).catch(() => {});
+        }
+        return { success: true } as const;
+      }),
+
+    // ED: aggregate results (averages per question + raw responses).
+    results: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input }) => {
+        const rows = await rawQuery(
+          `SELECT * FROM survey_responses WHERE eventId=? ORDER BY submittedAt DESC`,
+          [input.eventId]
+        ) as Record<string, unknown>[];
+        const avg = (key: string) => {
+          const vals = rows.map((r) => r[key] as number | null).filter((v): v is number => typeof v === "number");
+          if (vals.length === 0) return null;
+          return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100;
+        };
+        return {
+          count: rows.length,
+          averages: {
+            q1: avg("q1Rating"), q2: avg("q2Rating"), q3: avg("q3Rating"),
+            q4: avg("q4Rating"), q5: avg("q5Rating"), q6: avg("q6Rating"), q7: avg("q7Rating"),
+          },
+          responses: rows,
+        };
+      }),
+
+    // ED: testimonials (only responses where the bowler granted permission).
+    testimonials: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input }) => {
+        return rawQuery(
+          `SELECT sr.id, sr.q1Rating, sr.q1Comment, sr.q7Rating, sr.q7Comment, sr.submittedAt,
+                  b.legalFirstName, b.legalLastName, b.centerName
+           FROM survey_responses sr
+           LEFT JOIN bowlers b ON b.id = sr.bowlerId
+           WHERE sr.eventId=? AND sr.testimonialPermission=1
+           ORDER BY sr.submittedAt DESC`,
+          [input.eventId]
+        );
+      }),
+  }),
+
   // ─── AUDIT LOG ────────────────────────────────────────────────────────────
   audit: router({
     list: publicProcedure
@@ -987,20 +1448,34 @@ export const appRouter = router({
                   [importPoolToken, importBanquetToken, bowlerId]
                 );
 
-                // Guest pool tokens: scantronId + suffix letter (A, B, C…)
-                // One token per $15 in guestPoolPartyAmount
-                const SUFFIXES = ["A","B","C","D","E"];
-                const guestCount = Math.floor(guestPoolPartyAmount / 15);
+                // Guest tokens: guest ID = scantronId + suffix letter (A, B, C…)
+                // Pool: one guest per $15 in guestPoolPartyAmount.
+                // Banquet: one guest per $80 in extraBanquet (dollar amount).
+                // A single guest gets BOTH a pool and a banquet pass if both were paid;
+                // the number of guest rows = max(poolGuests, banquetGuests).
+                const SUFFIXES = ["A","B","C","D","E","F","G","H"];
+                const poolGuestCount = Math.floor(guestPoolPartyAmount / 15);
+                const banquetGuestCount = extraBanquet >= 1 && extraBanquet < 80
+                  ? Math.round(extraBanquet) // Y/N or small integer count
+                  : Math.floor(extraBanquet / 80);
+                const totalGuestCount = Math.min(Math.max(poolGuestCount, banquetGuestCount), SUFFIXES.length);
                 const importGuestTokens: Array<{ suffix: string; token: string }> = [];
-                if (guestCount > 0) {
+                if (totalGuestCount > 0) {
                   await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowlerId]);
-                  for (let gi = 0; gi < Math.min(guestCount, SUFFIXES.length); gi++) {
-                    const guestToken = `${scantronId}${SUFFIXES[gi]}`;
+                  for (let gi = 0; gi < totalGuestCount; gi++) {
+                    const suffix = SUFFIXES[gi];
+                    const guestId = `${scantronId}${suffix}`;
+                    // pool token for this guest (only if they have a pool pass)
+                    const poolTok = gi < poolGuestCount ? guestId : null;
+                    // banquet token for this guest (only if they have a banquet pass)
+                    const banquetTok = gi < banquetGuestCount ? `${guestId}-BQ` : null;
+                    // `token` column is NOT NULL + unique; use pool token, else banquet token, else guestId
+                    const primaryToken = poolTok ?? banquetTok ?? guestId;
                     await rawQuery(
-                      `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
-                      [bowlerId, SUFFIXES[gi], guestToken]
+                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, suffix, token, banquetToken) VALUES (?, ?, ?, ?, ?, ?)`,
+                      [bowlerId, input.eventId, guestId, suffix, primaryToken, banquetTok]
                     );
-                    importGuestTokens.push({ suffix: SUFFIXES[gi], token: guestToken });
+                    if (poolTok) importGuestTokens.push({ suffix, token: poolTok });
                   }
                 }
 

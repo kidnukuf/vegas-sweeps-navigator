@@ -117,9 +117,9 @@ function ConfettiBurst({ active }: { active: boolean }) {
   );
 }
 
-type PassportMode = "pool" | "banquet" | "guest-pool";
+type PassportMode = "pool" | "banquet" | "guest-pool" | "guest-banquet";
 type ScanResult = "granted" | "used" | "disabled" | "invalid" | null;
-type TabletTab = "passport" | "checkin";
+type TabletTab = "passport" | "checkin" | "reentry";
 
 // ─── PIN Pad ──────────────────────────────────────────────────────────────────
 function PinPad({ onUnlock }: { onUnlock: () => void }) {
@@ -351,6 +351,41 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
     },
   });
 
+  // ── Re-Entry state ──────────────────────────────────────────────────────────
+  const [reentryMode, setReentryMode] = useState<"issue" | "verify">("issue");
+  const [reentryPassport, setReentryPassport] = useState<"pool" | "banquet">("pool");
+  const [braceletNumber, setBraceletNumber] = useState("");
+  const [issuedReentryQr, setIssuedReentryQr] = useState<string | null>(null);
+  const [issuedBracelet, setIssuedBracelet] = useState<string>("");
+  const [reentryScanToken, setReentryScanToken] = useState("");
+  const [reentryVerifyResult, setReentryVerifyResult] = useState<
+    { success: boolean; braceletNumber?: string; passportType?: string; patronName?: string | null; error?: string } | null
+  >(null);
+  const reentryEventId = (() => {
+    const saved = Number(localStorage.getItem("vsn_selected_event_id"));
+    return Number.isFinite(saved) && saved > 0 ? saved : 1;
+  })();
+
+  const reentryIssue = trpc.reentry.issue.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setIssuedReentryQr(data.qr);
+        setIssuedBracelet(data.braceletNumber);
+        playSound(STRIKE_SOUND);
+        toast.success(`Re-entry pass issued for bracelet #${data.braceletNumber}`);
+      }
+    },
+    onError: (e) => { playSound(BUZZER_SOUND); toast.error(e.message); },
+  });
+
+  const reentryVerify = trpc.reentry.verify.useMutation({
+    onSuccess: (data) => {
+      setReentryVerifyResult(data);
+      if (data.success) { playSound(STRIKE_SOUND); } else { playSound(BUZZER_SOUND); }
+    },
+    onError: (e) => { playSound(BUZZER_SOUND); setReentryVerifyResult({ success: false, error: e.message }); },
+  });
+
   function stopScanner() {
     setScanning(false);
     if (scannerRef.current) {
@@ -368,7 +403,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
   }
 
   function handlePassportScan(decodedText: string) {
-    const match = decodedText.match(/\/scan\/(pool|banquet|guest-pool)\/([a-zA-Z0-9]+)/i);
+    const match = decodedText.match(/\/scan\/(guest-banquet|guest-pool|pool|banquet)\/([a-zA-Z0-9-]+)/i);
     if (match) {
       passportScan.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
     } else {
@@ -495,6 +530,10 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === "checkin" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"}`}>
             🎳 Bowling Check-In
           </button>
+          <button onClick={() => setTab("reentry")}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === "reentry" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white" : "text-gray-400 hover:text-white"}`}>
+            🔁 Re-Entry
+          </button>
         </div>
       </div>
 
@@ -540,6 +579,10 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
                   className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${passportMode === "guest-pool" ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
                   🎟️ Guest Pool
                 </button>
+                <button onClick={() => setPassportMode("guest-banquet")}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${passportMode === "guest-banquet" ? "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
+                  🍽️ Guest Banquet
+                </button>
               </div>
 
               {/* Camera */}
@@ -566,7 +609,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
               {/* Manual entry */}
               <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
                 <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Manual Entry</p>
-                <form onSubmit={(e) => { e.preventDefault(); if (!manualToken.trim()) return; const m = manualToken.trim().match(/\/scan\/(pool|banquet|guest-pool)\/([a-f0-9-]+)/i); if (m) { passportScan.mutate({ tokenValue: m[2], passportType: m[1] as PassportMode }); } else { passportScan.mutate({ tokenValue: manualToken.trim(), passportType: passportMode }); } setManualToken(""); }} className="flex gap-2">
+                <form onSubmit={(e) => { e.preventDefault(); if (!manualToken.trim()) return; const m = manualToken.trim().match(/\/scan\/(guest-banquet|guest-pool|pool|banquet)\/([a-zA-Z0-9-]+)/i); if (m) { passportScan.mutate({ tokenValue: m[2], passportType: m[1] as PassportMode }); } else { passportScan.mutate({ tokenValue: manualToken.trim(), passportType: passportMode }); } setManualToken(""); }} className="flex gap-2">
                   <input type="text" placeholder="Paste QR URL or token..." value={manualToken} onChange={(e) => setManualToken(e.target.value)}
                     className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500 font-mono" />
                   <button type="submit" disabled={passportScan.isPending || !manualToken.trim()}
@@ -636,6 +679,113 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── RE-ENTRY ──────────────────────────────────────────────────────────── */}
+      {tab === "reentry" && (
+        <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+          {/* Mode toggle */}
+          <div className="bg-[#1a1a1a] rounded-2xl p-1 flex gap-1 border border-white/10">
+            <button onClick={() => { setReentryMode("issue"); setReentryVerifyResult(null); }}
+              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${reentryMode === "issue" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
+              ➕ Issue Re-Entry Pass
+            </button>
+            <button onClick={() => { setReentryMode("verify"); setIssuedReentryQr(null); }}
+              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${reentryMode === "verify" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
+              🔍 Verify Re-Entry
+            </button>
+          </div>
+
+          {reentryMode === "issue" && (
+            <>
+              {!issuedReentryQr ? (
+                <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5 space-y-4">
+                  <div>
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Step 1 · Pass Type</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setReentryPassport("pool")}
+                        className={`flex-1 py-2.5 rounded-lg font-bold text-sm ${reentryPassport === "pool" ? "bg-cyan-600 text-white" : "bg-[#111] text-gray-400 border border-white/10"}`}>🏊 Pool Party</button>
+                      <button onClick={() => setReentryPassport("banquet")}
+                        className={`flex-1 py-2.5 rounded-lg font-bold text-sm ${reentryPassport === "banquet" ? "bg-purple-600 text-white" : "bg-[#111] text-gray-400 border border-white/10"}`}>🍽️ Banquet</button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Step 2 · Bracelet Number</p>
+                    <p className="text-gray-500 text-xs mb-2">Write a number on the patron's bracelet, then enter that exact number here. It will be shown when their pass is scanned for re-entry.</p>
+                    <input value={braceletNumber} onChange={(e) => setBraceletNumber(e.target.value)}
+                      placeholder="e.g. 042" inputMode="numeric"
+                      className="w-full px-4 py-3 bg-[#111] border border-white/20 rounded-lg text-white text-lg font-mono focus:outline-none focus:border-emerald-500" />
+                  </div>
+                  <button
+                    onClick={() => reentryIssue.mutate({ eventId: reentryEventId, braceletNumber: braceletNumber.trim(), passportType: reentryPassport })}
+                    disabled={reentryIssue.isPending || !braceletNumber.trim()}
+                    className="w-full py-4 font-black text-lg rounded-xl text-white bg-gradient-to-r from-emerald-500 to-teal-600 disabled:opacity-50 transition-all active:scale-95">
+                    {reentryIssue.isPending ? "Generating..." : "Generate Re-Entry QR →"}
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-[#0a1a14] rounded-2xl border border-emerald-500/40 p-6 text-center space-y-4">
+                  <div className="text-emerald-400 font-black text-xl">Re-Entry Pass Ready</div>
+                  <p className="text-gray-300 text-sm">Have the patron photograph this QR code with their phone. They will scan it to re-enter.</p>
+                  <div className="bg-white rounded-xl p-4 inline-block">
+                    <img src={issuedReentryQr} alt="Re-entry QR" className="w-56 h-56" />
+                  </div>
+                  <div className="bg-emerald-900/40 rounded-xl py-3 px-4">
+                    <span className="text-emerald-300 text-sm">Bracelet Number</span>
+                    <div className="text-4xl font-black text-white tracking-widest">#{issuedBracelet}</div>
+                  </div>
+                  <button onClick={() => { setIssuedReentryQr(null); setBraceletNumber(""); setIssuedBracelet(""); }}
+                    className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-colors">
+                    Issue Another →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {reentryMode === "verify" && (
+            <>
+              {reentryVerifyResult ? (
+                <div className={`rounded-2xl p-6 text-center shadow-2xl ${reentryVerifyResult.success ? "bg-green-700 border-2 border-green-400" : "bg-red-800 border-2 border-red-500"}`}>
+                  <div className="text-7xl mb-3">{reentryVerifyResult.success ? "✅" : "🚫"}</div>
+                  <div className="text-2xl font-black text-white mb-2">{reentryVerifyResult.success ? "Valid Re-Entry" : "Denied"}</div>
+                  {reentryVerifyResult.success ? (
+                    <>
+                      {reentryVerifyResult.patronName && <div className="text-white/90 text-lg">{reentryVerifyResult.patronName}</div>}
+                      <div className="bg-black/30 rounded-xl py-3 px-4 mt-3">
+                        <span className="text-white/70 text-sm">Confirm bracelet matches</span>
+                        <div className="text-5xl font-black text-white tracking-widest">#{reentryVerifyResult.braceletNumber}</div>
+                      </div>
+                      <p className="text-white/70 text-xs mt-2">Check the number written on the patron's physical bracelet matches the number above before granting entry.</p>
+                    </>
+                  ) : (
+                    <div className="text-white/80 text-sm">{reentryVerifyResult.error}{reentryVerifyResult.braceletNumber ? ` (bracelet #${reentryVerifyResult.braceletNumber})` : ""}</div>
+                  )}
+                  <button onClick={() => { setReentryVerifyResult(null); setReentryScanToken(""); }}
+                    className="mt-4 px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl border border-white/30 transition-colors">
+                    Scan Next →
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Scan / Enter Re-Entry Code</p>
+                  <p className="text-gray-500 text-xs mb-3">Scan the patron's re-entry QR (or paste the code). The bracelet number entered at issuance will be shown so you can match it to their wristband.</p>
+                  <div className="flex gap-2">
+                    <input value={reentryScanToken} onChange={(e) => setReentryScanToken(e.target.value)}
+                      placeholder="Scan QR or paste code..."
+                      className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 font-mono"
+                      onKeyDown={(e) => { if (e.key === "Enter" && reentryScanToken.trim()) { reentryVerify.mutate({ token: reentryScanToken.trim() }); } }} />
+                    <button onClick={() => { if (reentryScanToken.trim()) reentryVerify.mutate({ token: reentryScanToken.trim() }); }}
+                      disabled={reentryVerify.isPending || !reentryScanToken.trim()}
+                      className="px-5 py-2 font-black rounded-lg text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white disabled:opacity-50 transition-all active:scale-95">
+                      {reentryVerify.isPending ? "..." : "VERIFY"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

@@ -312,6 +312,78 @@ export async function writeScanUsedToSheet(params: {
 }
 
 /**
+ * Resolve the numeric sheetId (gid) of SHEET_NAME. Required for formatting requests.
+ * Cached after first lookup.
+ */
+let _cachedSheetId: number | null = null;
+function getSheetId(): number | null {
+  if (_cachedSheetId !== null) return _cachedSheetId;
+  try {
+    const args = [
+      "gws", "sheets", "spreadsheets", "get",
+      "--params", JSON.stringify({ spreadsheetId: SPREADSHEET_ID, fields: "sheets.properties" }),
+    ];
+    const result = execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
+    const parsed = JSON.parse(result) as { sheets?: Array<{ properties?: { sheetId?: number; title?: string } }> };
+    const match = (parsed.sheets ?? []).find((s) => s.properties?.title === SHEET_NAME);
+    _cachedSheetId = match?.properties?.sheetId ?? null;
+    return _cachedSheetId;
+  } catch (err) {
+    console.error("[googleSheets] getSheetId error:", err);
+    return null;
+  }
+}
+
+/**
+ * Mark a captain's T-shirt batch as received by turning their First Name cell
+ * (column I) background purple. Fire-and-forget; non-fatal on failure.
+ */
+export async function markTshirtReceivedInSheet(params: {
+  firstName: string;
+  lastName: string;
+  laneNumber: number | null;
+  received?: boolean;
+}): Promise<void> {
+  const { firstName, lastName, laneNumber, received = true } = params;
+  try {
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber);
+    if (!rowNum) return;
+    const sheetId = getSheetId();
+    if (sheetId === null) return;
+    // Purple when received, white (reset) when un-received.
+    const color = received
+      ? { red: 0.61, green: 0.35, blue: 0.71 }   // purple
+      : { red: 1, green: 1, blue: 1 };           // white
+    const body = {
+      requests: [
+        {
+          repeatCell: {
+            range: {
+              sheetId,
+              startRowIndex: rowNum - 1,
+              endRowIndex: rowNum,
+              startColumnIndex: COL_FIRST_NAME,
+              endColumnIndex: COL_FIRST_NAME + 1,
+            },
+            cell: { userEnteredFormat: { backgroundColor: color } },
+            fields: "userEnteredFormat.backgroundColor",
+          },
+        },
+      ],
+    };
+    const args = [
+      "gws", "sheets", "spreadsheets", "batchUpdate",
+      "--params", JSON.stringify({ spreadsheetId: SPREADSHEET_ID }),
+      "--json", JSON.stringify(body),
+    ];
+    execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
+    console.log(`[googleSheets] T-shirt ${received ? "received" : "reset"} color for ${firstName} ${lastName} row ${rowNum}`);
+  } catch (err) {
+    console.error("[googleSheets] markTshirtReceivedInSheet error (non-fatal):", err);
+  }
+}
+
+/**
  * Normalize squad time codes to human-readable labels.
  */
 export function normalizeSquadTime(raw: string | null): string {

@@ -64,11 +64,21 @@ describe("writeQRCodesToSheet", () => {
     expect(mockExecSync).not.toHaveBeenCalled();
   });
 
+  // Build a real 36-column sheet row: First Name = col I (index 8),
+  // Last Name = col J (index 9), Lane # = col E (index 4).
+  function makeRow(first: string, last: string, lane: string): string[] {
+    const row = new Array(36).fill("");
+    row[4] = lane;  // E = Lane #
+    row[8] = first; // I = First Name
+    row[9] = last;  // J = Last Name
+    return row;
+  }
+
   it("finds the bowler row and writes QR URLs when tokens are present", async () => {
     // First call: gws values get (read all rows to find bowler)
     const fakeRows = [
-      ["Phone", "Email", "Squad Time", "Lane #", "Center", "Team #", "Captain", "First Name", "Last Name"],
-      ["", "", "Monday 3pm", "5", "Center A", "1", "y", "John", "Doe"],
+      new Array(36).fill("header"),
+      makeRow("John", "Doe", "5"),
     ];
     mockExecSync
       .mockReturnValueOnce(JSON.stringify({ values: fakeRows })) // get rows
@@ -96,8 +106,8 @@ describe("writeQRCodesToSheet", () => {
   it("logs a warning and does not throw when bowler is not found in sheet", async () => {
     // Return rows that don't contain our bowler
     const fakeRows = [
-      ["Phone", "Email", "Squad Time", "Lane #", "Center", "Team #", "Captain", "First Name", "Last Name"],
-      ["", "", "Monday 3pm", "5", "Center A", "1", "y", "Jane", "Smith"],
+      new Array(36).fill("header"),
+      makeRow("Jane", "Smith", "5"),
     ];
     mockExecSync.mockReturnValueOnce(JSON.stringify({ values: fakeRows }));
 
@@ -113,7 +123,7 @@ describe("writeQRCodesToSheet", () => {
       })
     ).resolves.toBeUndefined(); // must not throw
 
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("not found in sheet"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("not found"));
     warnSpy.mockRestore();
   });
 

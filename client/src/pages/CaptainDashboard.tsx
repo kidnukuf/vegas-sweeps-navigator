@@ -13,6 +13,8 @@ import { getBowlerToken, clearBowlerSession } from "./BowlerLogin";
 import { normalizeSquadTime } from "@/lib/squadTime";
 import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
+import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
+import AdRotator from "@/components/AdRotator";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -128,211 +130,6 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
   );
 }
 
-// ─── Animated "Lane to Banquet" placard (shared with BowlerDashboard) ─────────
-function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime, hotelName, confirmationCode, checkinDate, checkoutDate, roomType, banquetTable, banquetLocation, banquetTime }: {
-  laneToEvent?: string | null;
-  laneNumber?: number | null;
-  squadTime?: string | null;
-  hotelName?: string | null;
-  confirmationCode?: string | null;
-  checkinDate?: string | null;
-  checkoutDate?: string | null;
-  roomType?: string | null;
-  banquetTable?: string | null;
-  banquetLocation?: string | null;
-  banquetTime?: string | null;
-}) {
-  const [open, setOpen] = useState(false);
-  const [animating, setAnimating] = useState(false);
-
-  function handleClick() {
-    if (!open) {
-      setAnimating(true);
-      setTimeout(() => setAnimating(false), 600);
-    }
-    setOpen(o => !o);
-  }
-
-  const hasHotel = hotelName || confirmationCode || checkinDate || checkoutDate;
-  const hasBanquet = banquetTable || banquetLocation || banquetTime;
-  const hasInfo = laneToEvent || laneNumber || squadTime || hasHotel || hasBanquet;
-  if (!hasInfo) return null;
-
-  return (
-    <div
-      className={`captain-card cursor-pointer select-none transition-all duration-300 ${open ? "ring-2 ring-amber-400/60" : "hover:ring-1 hover:ring-amber-400/30"}`}
-      onClick={handleClick}
-      role="button"
-      aria-expanded={open}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🗺️</span>
-          <div>
-            <p className="text-amber-300 font-bold text-sm tracking-wide">Lane to Banquet</p>
-            <p className="text-white/50 text-xs">Tap to see your event directions</p>
-          </div>
-        </div>
-        <span
-          className={`text-amber-300 text-lg transition-transform duration-300 ${open ? "rotate-90" : "rotate-0"}`}
-          aria-hidden="true"
-        >
-          ▶
-        </span>
-      </div>
-
-      <div
-        className={`overflow-hidden transition-all duration-500 ease-out ${open ? "max-h-[2000px] opacity-100 mt-4" : "max-h-0 opacity-0 mt-0"}`}
-      >
-        {animating && (
-          <div className="h-0.5 w-full rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent mb-3 animate-pulse" />
-        )}
-        <div className="space-y-3 pt-1 border-t border-white/10">
-
-          {/* ── Reg: Hotel Registration ── */}
-          {hasHotel && (
-            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <p className="text-blue-300 text-xs font-semibold mb-2">🏨 Reg: Hotel Registration</p>
-              <div className="space-y-1.5">
-                {confirmationCode && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🔑</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Registration #</p>
-                      <p className="text-amber-300 font-mono font-bold text-lg tracking-widest">{confirmationCode}</p>
-                    </div>
-                  </div>
-                )}
-                {hotelName && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🏨</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Hotel</p>
-                      <p className="text-white font-semibold text-sm">{hotelName}</p>
-                    </div>
-                  </div>
-                )}
-                {checkinDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📅</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Check-In</p>
-                      <p className="text-white font-semibold text-sm">{checkinDate}</p>
-                    </div>
-                  </div>
-                )}
-                {checkoutDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📅</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Check-Out</p>
-                      <p className="text-white font-semibold text-sm">{checkoutDate}</p>
-                    </div>
-                  </div>
-                )}
-                {roomType && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🛏️</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Room Type</p>
-                      <p className="text-white font-semibold text-sm">{roomType}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {laneNumber && (
-            <div className="flex items-center gap-3">
-              <span className="text-lg">🎳</span>
-              <div>
-                <p className="text-white/50 text-xs">Your Starting Lane</p>
-                <p className="text-white font-bold text-base">Lane {laneNumber}</p>
-              </div>
-            </div>
-          )}
-          {squadTime && (
-            <div className="flex items-center gap-3">
-              <span className="text-lg">🕐</span>
-              <div>
-                <p className="text-white/50 text-xs">Squad Time</p>
-                <p className="text-white font-semibold text-sm">{normalizeSquadTime(squadTime)}</p>
-              </div>
-            </div>
-          )}
-          {laneToEvent && (
-            <div className="flex items-start gap-3">
-              <span className="text-lg">📍</span>
-              <div>
-                <p className="text-white/50 text-xs">Lane to Banquet Directions</p>
-                <p className="text-amber-200 font-semibold text-sm leading-relaxed">{laneToEvent}</p>
-              </div>
-            </div>
-          )}
-          {/* ── Banquet Table Assignment ── */}
-          {hasBanquet && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <p className="text-amber-300 text-xs font-semibold mb-2">🍽️ Banquet Dinner Assignment</p>
-              <div className="space-y-1.5">
-                {banquetLocation && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📍</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Banquet Location</p>
-                      <p className="text-white font-semibold text-sm">{banquetLocation}</p>
-                    </div>
-                  </div>
-                )}
-                {banquetTime && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🕐</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Dinner Time</p>
-                      <p className="text-white font-semibold text-sm">{banquetTime}</p>
-                    </div>
-                  </div>
-                )}
-                {banquetTable && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🪑</span>
-                    <div>
-                      <p className="text-white/50 text-xs">Your Table</p>
-                      <p className="text-amber-300 font-bold text-base">Table {banquetTable}</p>
-                      <p className="text-white/40 text-xs">Choose any available seat at your table</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-3 space-y-2">
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <p className="text-amber-300 text-xs font-semibold mb-1">⏰ Arrive 30 Minutes Early</p>
-              <p className="text-white/70 text-xs leading-relaxed">
-                As team captain, please ensure your team arrives at least 30 minutes before squad time.
-                Have all QR Passports ready for quick scanning at the door.
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-              <p className="text-cyan-300 text-xs font-semibold mb-1">🎳 Practice Reminder</p>
-              <p className="text-white/70 text-xs leading-relaxed">
-                Practice begins <span className="text-white font-semibold">10 minutes before</span> squad time. Remind your team not to be late!
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-              <p className="text-purple-300 text-xs font-semibold mb-1">🏆 Side Pots &amp; Brackets</p>
-              <p className="text-white/70 text-xs leading-relaxed">
-                Side pots and brackets are available at the <span className="text-white font-semibold">front desk</span>. Inform your team to visit the desk before the squad begins.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Completion ring (SVG) ────────────────────────────────────────────────────
 function CompletionRing({ verified, total }: { verified: number; total: number }) {
@@ -398,6 +195,21 @@ export default function CaptainDashboard() {
     { enabled: !!token, retry: false }
   );
 
+  const captainEventId = (teamQuery.data?.profile as any)?.eventId as number | undefined;
+  const captainEventSettingsQuery = trpc.event.getSettings.useQuery(
+    { id: captainEventId ?? 0 },
+    { enabled: !!captainEventId }
+  );
+
+  const captainBowlerId = (teamQuery.data?.profile as any)?.id as number | undefined;
+  const tshirtStatusQuery = trpc.tshirts.status.useQuery(
+    { bowlerId: captainBowlerId ?? 0 },
+    { enabled: !!captainBowlerId }
+  );
+  const markTshirts = trpc.tshirts.markReceived.useMutation({
+    onSuccess: () => { tshirtStatusQuery.refetch(); },
+  });
+
   const verifyBowler = trpc.bowlerAuth.verifyBowler.useMutation({
     onSuccess: () => {
       toast.success("Bowler verified!");
@@ -446,6 +258,7 @@ export default function CaptainDashboard() {
 
   const { profile: p, roster } = teamQuery.data ?? { profile: null, roster: [] };
   if (!p) return null;
+  const captainEventSettings = (captainEventSettingsQuery.data ?? null) as EventTripSettings | null;
 
   const verifiedCount = roster.filter((b) => b.captainVerified || b.registrationStatus === "verified" || b.registrationStatus === "checked_in").length;
   const signedUpCount = roster.filter((b) => b.registrationStatus !== "pre_registered").length;
@@ -528,6 +341,9 @@ export default function CaptainDashboard() {
           </div>
         </div>
 
+        {/* ── Sponsor ad (slot A) ── */}
+        <AdRotator eventId={captainEventId} slot={0} />
+
         {/* ── Lane to Banquet placard ── */}
         <LaneToBanquetPlacard
           laneToEvent={p.laneToEvent}
@@ -541,7 +357,11 @@ export default function CaptainDashboard() {
           banquetTable={(p as any).banquetTable}
           banquetLocation={(p as any).banquetLocation}
           banquetTime={(p as any).banquetTime}
+          ev={captainEventSettings}
         />
+
+        {/* ── Sponsor ad (slot B) ── */}
+        <AdRotator eventId={captainEventId} slot={1} />
 
         {/* ── Roster Table ── */}
         <div className="captain-card">
@@ -737,6 +557,79 @@ export default function CaptainDashboard() {
               />
             ))}
           </>
+        )}
+
+        {/* ── Guest Banquet Passes (A, B, C...) ── */}
+        {Array.isArray((p as any).guestBanquetQRs) && (p as any).guestBanquetQRs.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex-1 h-px bg-white/20" />
+              <span className="text-white/40 text-xs font-semibold tracking-widest uppercase">Guest Banquet Passes</span>
+              <div className="flex-1 h-px bg-white/20" />
+            </div>
+            {(p as any).guestBanquetQRs.map((g: { suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }) => (
+              <PassportBox
+                key={`bq-${g.suffix}`}
+                title={`Guest Banquet Pass ${g.suffix}`}
+                icon="🍽️"
+                subtitle={`Guest Banquet Dinner Entry — Pass ${g.suffix}`}
+                entranceFlow={`Guest banquet dinner pass. Present at the banquet hall entrance for your guest. One scan per pass — cannot be reused. Pass ID: ${(p as any).scantronId}${g.suffix}`}
+                qrDataUrl={g.used ? null : g.qrDataUrl}
+                tokenUsed={g.used}
+                eligible={!g.disabled}
+              />
+            ))}
+          </>
+        )}
+
+        {/* ── T-Shirt Distribution (only when event provides shirts) ── */}
+        {Boolean(captainEventSettings?.tshirtsProvided) && (
+          <div className="captain-card">
+            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <span>👕</span> Team T-Shirt Pickup
+            </h3>
+            <div className="space-y-2 text-sm text-white/70 mb-4">
+              {captainEventSettings?.tshirtPickupLocation && (
+                <p>📍 <span className="text-white/90">{captainEventSettings.tshirtPickupLocation}</span></p>
+              )}
+              {captainEventSettings?.tshirtPickupTime && (
+                <p>🕒 <span className="text-white/90">{captainEventSettings.tshirtPickupTime}</span></p>
+              )}
+              <p className="text-white/50 text-xs leading-relaxed">
+                As team captain, you collect all team T-shirts at once. After you have picked up
+                and verified every shirt for your team, tap the button below. This records the
+                pickup and marks your name purple on the Event Director's master sheet so staff
+                know your team has been taken care of.
+              </p>
+            </div>
+            {tshirtStatusQuery.data?.received ? (
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-purple-500/15 border border-purple-400/40 px-4 py-3">
+                <span className="text-purple-200 font-semibold flex items-center gap-2">
+                  <span>✅</span> Shirts received
+                  {tshirtStatusQuery.data.receivedAt && (
+                    <span className="text-purple-300/70 text-xs font-normal">
+                      {new Date(tshirtStatusQuery.data.receivedAt).toLocaleString()}
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={() => captainBowlerId && markTshirts.mutate({ bowlerId: captainBowlerId, received: false })}
+                  disabled={markTshirts.isPending}
+                  className="text-xs text-purple-300/70 hover:text-purple-200 underline disabled:opacity-50"
+                >
+                  Undo
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => captainBowlerId && markTshirts.mutate({ bowlerId: captainBowlerId, received: true })}
+                disabled={markTshirts.isPending || !captainBowlerId}
+                className="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white shadow-lg hover:from-purple-400 hover:to-fuchsia-500 transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {markTshirts.isPending ? "Saving…" : "Mark Team Shirts as Received"}
+              </button>
+            )}
+          </div>
         )}
 
         {/* ── Responsibilities ── */}

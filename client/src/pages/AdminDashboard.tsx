@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AppFooter from "@/components/AppFooter";
+import EventWizard from "@/components/EventWizard";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -363,10 +364,16 @@ function PassportManager({
   );
 }
 
+import AdManagerTab from "@/components/AdManagerTab";
+import SurveyResultsTab from "@/components/SurveyResultsTab";
+import SurveyControlsCard from "@/components/SurveyControlsCard";
+import GuidedHelpPanel from "@/components/GuidedHelpPanel";
+import { ED_HELP } from "@/lib/edHelpContent";
+
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey">("roster");
   // Support Inbox
   const [supportReplyId, setSupportReplyId] = useState<number | null>(null);
   const [supportReplyText, setSupportReplyText] = useState("");
@@ -503,6 +510,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   // Event create / rename state
   const [showEventMenu, setShowEventMenu] = useState(false);
   const [eventModal, setEventModal] = useState<null | { mode: "create" | "rename"; name: string; year: string; id?: number }>(null);
+  // Event Wizard (create new event + edit settings) — Section 1
+  const [wizard, setWizard] = useState<null | { mode: "create" | "edit"; eventId?: number }>(null);
 
   const createEventMut = trpc.event.create.useMutation({
     onSuccess: (res) => {
@@ -860,9 +869,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 </div>
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem
-                  onClick={() => setEventModal({ mode: "create", name: "", year: String(new Date().getFullYear()) })}
+                  onClick={() => setWizard({ mode: "create" })}
                   className="text-green-300 focus:bg-green-500/10 focus:text-green-300 cursor-pointer"
                 >＋ Create New Event</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => { if (activeEvent) setWizard({ mode: "edit", eventId: EVENT_ID }); }}
+                  className="text-blue-300 focus:bg-blue-500/10 focus:text-blue-300 cursor-pointer"
+                >⚙️ Edit Event Settings</DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => { if (activeEvent) setEventModal({ mode: "rename", name: String(activeEvent.eventName), year: String(activeEvent.eventYear), id: EVENT_ID }); }}
                   className="text-yellow-300 focus:bg-yellow-500/10 focus:text-yellow-300 cursor-pointer"
@@ -918,7 +931,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-4">
         <div className="max-w-7xl mx-auto flex gap-1">
-          {(["roster", "passports", "doormen", "scan", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+          {(["guide", "roster", "passports", "doormen", "scan", "ads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
             const newCount = tab === "support" ? (supportMessages as any[]).filter((m: any) => m.status === "new").length : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
@@ -928,6 +941,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   : tab === "passports" ? "🎫 Passports"
                   : tab === "scan" ? "📷 Scan"
                   : tab === "support" ? `📨 Support${newCount > 0 ? ` (${newCount})` : ""}`
+                  : tab === "ads" ? "📢 Ads"
+                  : tab === "survey" ? "⭐ Survey"
+                  : tab === "guide" ? "🧭 Guide"
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             );
@@ -936,6 +952,23 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {activeTab === "guide" && (
+          <div className="space-y-4 max-w-3xl">
+            <div className="mb-2">
+              <h2 className="text-xl font-bold text-yellow-300" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Your event, start to finish</h2>
+              <p className="text-sm text-gray-400">Nine steps from creating the event to reviewing feedback. Open any step for a plain-language and an expert explanation. Panels remember whether you left them open or closed.</p>
+            </div>
+            <GuidedHelpPanel {...ED_HELP.createEvent} />
+            <GuidedHelpPanel {...ED_HELP.importRoster} />
+            <GuidedHelpPanel {...ED_HELP.qrGeneration} />
+            <GuidedHelpPanel {...ED_HELP.doormanAssignment} />
+            <GuidedHelpPanel {...ED_HELP.reentryFlow} />
+            <GuidedHelpPanel {...ED_HELP.guestManagement} />
+            <GuidedHelpPanel {...ED_HELP.adManagement} />
+            <GuidedHelpPanel {...ED_HELP.surveyManagement} />
+            <GuidedHelpPanel {...ED_HELP.postEventExport} />
+          </div>
+        )}
         {activeTab === "roster" && (
           <div>
             {/* Help flip-card for Roster */}
@@ -1787,6 +1820,20 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         </div>
       )}
 
+      {/* Event Wizard (create new event + edit settings) */}
+      {wizard && (
+        <EventWizard
+          mode={wizard.mode}
+          eventId={wizard.eventId}
+          onClose={() => setWizard(null)}
+          onSaved={(id) => {
+            setWizard(null);
+            refetchEvents();
+            selectEvent(id);
+          }}
+        />
+      )}
+
       {/* Event create / rename modal */}
       {eventModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={() => setEventModal(null)}>
@@ -1931,6 +1978,32 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Advertisements Tab ── */}
+      {activeTab === "ads" && (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-black text-yellow-400">📢 Sponsor Advertisements</h2>
+            <p className="mt-1 mb-4 text-sm text-gray-500">
+              Sponsors appear in the Bowler and Captain portals. Higher tiers rotate more often
+              (Gold 4×, Silver 2×, Bronze 1×). Unlimited advertisers — placement priority follows tier.
+            </p>
+            <GuidedHelpPanel {...ED_HELP.adManagement} defaultOpen={false} />
+          </div>
+          <AdManagerTab eventId={EVENT_ID} />
+        </div>
+      )}
+
+      {/* ── Survey Results Tab ── */}
+      {activeTab === "survey" && (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="mb-4">
+            <GuidedHelpPanel {...ED_HELP.surveyManagement} defaultOpen={false} />
+          </div>
+          <SurveyControlsCard eventId={EVENT_ID} />
+          <SurveyResultsTab eventId={EVENT_ID} />
         </div>
       )}
 

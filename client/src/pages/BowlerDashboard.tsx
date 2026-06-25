@@ -25,6 +25,9 @@ import { normalizeSquadTime } from "@/lib/squadTime";
 import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import AppFooter from "@/components/AppFooter";
+import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
+import AdRotator from "@/components/AdRotator";
+import SurveyDialog from "@/components/SurveyDialog";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -63,217 +66,6 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value?: 
   );
 }
 
-// ─── Animated "Lane to Banquet" placard ───────────────────────────────────────
-function LaneToBanquetPlacard({ laneToEvent, laneNumber, squadTime, hotelName, confirmationCode, checkinDate, checkoutDate, roomType, banquetTable, banquetLocation, banquetTime }: {
-  laneToEvent?: string | null;
-  laneNumber?: number | null;
-  squadTime?: string | null;
-  hotelName?: string | null;
-  confirmationCode?: string | null;
-  checkinDate?: string | null;
-  checkoutDate?: string | null;
-  roomType?: string | null;
-  banquetTable?: string | null;
-  banquetLocation?: string | null;
-  banquetTime?: string | null;
-}) {
-  const [open, setOpen] = useState(false);
-  const [animating, setAnimating] = useState(false);
-
-  function handleClick() {
-    if (!open) {
-      setAnimating(true);
-      setTimeout(() => setAnimating(false), 600);
-    }
-    setOpen(o => !o);
-  }
-
-  const hasHotel = hotelName || confirmationCode || checkinDate || checkoutDate;
-  const hasBanquet = banquetTable || banquetLocation || banquetTime;
-  const hasInfo = laneToEvent || laneNumber || squadTime || hasHotel || hasBanquet;
-  if (!hasInfo) return null;
-
-  return (
-    <div
-      className={`bowler-card cursor-pointer select-none transition-all duration-300 ${open ? "ring-2 ring-amber-400/60" : "hover:ring-1 hover:ring-amber-400/30"}`}
-      onClick={handleClick}
-      role="button"
-      aria-expanded={open}
-    >
-      {/* Collapsed header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🗺️</span>
-          <div>
-            <p className="text-amber-300 font-bold text-sm tracking-wide">Lane to Banquet</p>
-            <p className="text-white/75 text-xs">Tap to see your event directions</p>
-          </div>
-        </div>
-        <span
-          className={`text-amber-300 text-lg transition-transform duration-300 ${open ? "rotate-90" : "rotate-0"}`}
-          aria-hidden="true"
-        >
-          ▶
-        </span>
-      </div>
-
-      {/* Expanded content with slide-down animation — no max-h cap so all content is visible */}
-      <div
-        className={`overflow-hidden transition-all duration-500 ease-out ${open ? "max-h-[2000px] opacity-100 mt-4" : "max-h-0 opacity-0 mt-0"}`}
-      >
-        {/* Animated shimmer bar when opening */}
-        {animating && (
-          <div className="h-0.5 w-full rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent mb-3 animate-pulse" />
-        )}
-
-        <div className="space-y-3 pt-1 border-t border-white/10">
-
-          {/* ── Reg: Hotel Registration # ── */}
-          {hasHotel && (
-            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <p className="text-blue-300 text-xs font-semibold mb-2">🏨 Reg: Hotel Registration</p>
-              <div className="space-y-1.5">
-                {confirmationCode && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🔑</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Registration #</p>
-                      <p className="text-amber-300 font-mono font-bold text-lg tracking-widest">{confirmationCode}</p>
-                    </div>
-                  </div>
-                )}
-                {hotelName && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🏨</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Hotel</p>
-                      <p className="text-white font-semibold text-sm">{hotelName}</p>
-                    </div>
-                  </div>
-                )}
-                {checkinDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📅</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Check-In</p>
-                      <p className="text-white font-semibold text-sm">{checkinDate}</p>
-                    </div>
-                  </div>
-                )}
-                {checkoutDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📅</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Check-Out</p>
-                      <p className="text-white font-semibold text-sm">{checkoutDate}</p>
-                    </div>
-                  </div>
-                )}
-                {roomType && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🛏️</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Room Type</p>
-                      <p className="text-white font-semibold text-sm">{roomType}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {laneNumber && (
-            <div className="flex items-center gap-3">
-              <span className="text-lg">🎳</span>
-              <div>
-                <p className="text-white/75 text-xs">Your Starting Lane</p>
-                <p className="text-white font-bold text-base">Lane {laneNumber}</p>
-              </div>
-            </div>
-          )}
-          {squadTime && (
-            <div className="flex items-center gap-3">
-              <span className="text-lg">🕐</span>
-              <div>
-                <p className="text-white/75 text-xs">Squad Time</p>
-                <p className="text-white font-semibold text-sm">{normalizeSquadTime(squadTime)}</p>
-              </div>
-            </div>
-          )}
-          {laneToEvent && (
-            <div className="flex items-start gap-3">
-              <span className="text-lg">📍</span>
-              <div>
-                <p className="text-white/75 text-xs">Lane to Banquet Directions</p>
-                <p className="text-amber-200 font-semibold text-sm leading-relaxed">{laneToEvent}</p>
-              </div>
-            </div>
-          )}
-
-          {/* ── Banquet Table Assignment ── */}
-          {hasBanquet && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <p className="text-amber-300 text-xs font-semibold mb-2">🍽️ Banquet Dinner Assignment</p>
-              <div className="space-y-1.5">
-                {banquetLocation && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📍</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Banquet Location</p>
-                      <p className="text-white font-semibold text-sm">{banquetLocation}</p>
-                    </div>
-                  </div>
-                )}
-                {banquetTime && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🕐</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Dinner Time</p>
-                      <p className="text-white font-semibold text-sm">{banquetTime}</p>
-                    </div>
-                  </div>
-                )}
-                {banquetTable && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🪑</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Your Table</p>
-                      <p className="text-amber-300 font-bold text-base">Table {banquetTable}</p>
-                      <p className="text-white/50 text-xs">Choose any available seat at your table</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Static entrance flow info */}
-          <div className="mt-3 space-y-2">
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <p className="text-amber-300 text-xs font-semibold mb-1">⏰ Arrive 30 Minutes Early</p>
-              <p className="text-white/70 text-xs leading-relaxed">
-                Lines can be long at event entry. Please plan to arrive at least 30 minutes before your squad time.
-                Have your QR Passport ready on your phone for quick scanning at the door.
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-              <p className="text-cyan-300 text-xs font-semibold mb-1">🎳 Practice Reminder</p>
-              <p className="text-white/70 text-xs leading-relaxed">
-                Practice begins <span className="text-white font-semibold">10 minutes before</span> your squad time. Don't be late!
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-              <p className="text-purple-300 text-xs font-semibold mb-1">🏆 Side Pots &amp; Brackets</p>
-              <p className="text-white/70 text-xs leading-relaxed">
-                Side pots and brackets are available at the <span className="text-white font-semibold">front desk</span>. See the desk before your squad begins.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Download QR helper ─────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -470,6 +262,18 @@ export default function BowlerDashboard() {
     { enabled: !!token, retry: false }
   );
 
+  const bowlerEventId = (profileQuery.data as any)?.eventId as number | undefined;
+  const eventSettingsQuery = trpc.event.getSettings.useQuery(
+    { id: bowlerEventId ?? 0 },
+    { enabled: !!bowlerEventId }
+  );
+  const bowlerIdForSurvey = (profileQuery.data as any)?.id as number | undefined;
+  const surveyStatusQuery = trpc.survey.status.useQuery(
+    { eventId: bowlerEventId ?? 0, bowlerId: bowlerIdForSurvey ?? 0 },
+    { enabled: !!bowlerEventId && !!bowlerIdForSurvey }
+  );
+  const [surveyOpen, setSurveyOpen] = useState(false);
+
   // Contact info request form state
   const [contactFormOpen, setContactFormOpen] = useState(false);
   const [contactPhone, setContactPhone] = useState("");
@@ -539,6 +343,8 @@ export default function BowlerDashboard() {
   if (!p) return null;
 
   const displayName = p.preferredName || `${p.legalFirstName} ${p.legalLastName}`;
+  const eventSettings = (eventSettingsQuery.data ?? null) as EventTripSettings | null;
+  const surveyAvailable = Boolean(surveyStatusQuery.data?.available) && !surveyStatusQuery.data?.alreadySubmitted;
 
   // Eligibility: token present means eligible (null = disabled by Event Director)
   const banquetEligible = p.banquetToken !== null && p.banquetToken !== undefined;
@@ -676,6 +482,29 @@ export default function BowlerDashboard() {
         {/* ── Add to Home Screen button ── */}
         <PwaInstallPrompt />
 
+        {/* ── Post-event survey invitation ── */}
+        {surveyAvailable && (
+          <button
+            onClick={() => setSurveyOpen(true)}
+            className="w-full text-left rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 to-orange-500/10 px-4 py-3 transition-transform active:scale-[0.99] hover:border-amber-400/70"
+          >
+            <p className="font-semibold text-amber-200">How was your event?</p>
+            <p className="text-sm text-amber-100/70">Tap to share quick feedback — it only takes a minute.</p>
+          </button>
+        )}
+        {bowlerEventId && (
+          <SurveyDialog
+            open={surveyOpen}
+            onOpenChange={setSurveyOpen}
+            eventId={bowlerEventId}
+            bowlerId={p.id}
+            poolPartyEnabled={Boolean(surveyStatusQuery.data?.poolPartyEnabled)}
+          />
+        )}
+
+        {/* ── Sponsor ad (slot A) ── */}
+        <AdRotator eventId={bowlerEventId} slot={0} />
+
         {/* ── 2. Lane to Banquet animated placard ── */}
         <LaneToBanquetPlacard
           laneToEvent={p.laneToEvent}
@@ -689,7 +518,11 @@ export default function BowlerDashboard() {
           banquetTable={(p as any).banquetTable}
           banquetLocation={(p as any).banquetLocation}
           banquetTime={(p as any).banquetTime}
+          ev={eventSettings}
         />
+
+        {/* ── Sponsor ad (slot B) ── */}
+        <AdRotator eventId={bowlerEventId} slot={1} />
 
         {/* ── 3. Event Details ── */}
         <div className="bowler-card">
@@ -859,6 +692,29 @@ export default function BowlerDashboard() {
                 icon="🎟️"
                 subtitle={`Guest Pool Party Entry — Pass ${g.suffix}`}
                 entranceFlow={`This is a guest pool party pass. Present this QR code at the pool party entrance for your guest. One scan per pass — cannot be reused. Pass ID: ${p.scantronId}${g.suffix}`}
+                qrDataUrl={g.used ? null : g.qrDataUrl}
+                tokenUsed={g.used}
+                eligible={!g.disabled}
+              />
+            ))}
+          </>
+        )}
+
+        {/* ── 11. Guest Banquet Passes (A, B, C...) ── */}
+        {Array.isArray((p as any).guestBanquetQRs) && (p as any).guestBanquetQRs.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex-1 h-px bg-white/20" />
+              <span className="text-white/40 text-xs font-semibold tracking-widest uppercase">Guest Banquet Passes</span>
+              <div className="flex-1 h-px bg-white/20" />
+            </div>
+            {(p as any).guestBanquetQRs.map((g: { suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }) => (
+              <PassportBox
+                key={`bq-${g.suffix}`}
+                title={`Guest Banquet Pass ${g.suffix}`}
+                icon="🍽️"
+                subtitle={`Guest Banquet Dinner Entry — Pass ${g.suffix}`}
+                entranceFlow={`This is a guest banquet dinner pass. Present this QR code at the banquet hall entrance for your guest. One scan per pass — cannot be reused. Pass ID: ${p.scantronId}${g.suffix}`}
                 qrDataUrl={g.used ? null : g.qrDataUrl}
                 tokenUsed={g.used}
                 eligible={!g.disabled}
