@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "@shared/const";
 import { bowlerAuthRouter } from "./routers/bowlerAuth";
@@ -1603,103 +1604,40 @@ export const appRouter = router({
   // ─── OFFLINE DOOR SCANNER (single-laptop, banquet + pool) ──────────────────
   offlineDoor: offlineDoorRouter,
 
-  // ─── OFFLINE PACKAGE ──────────────────────────────────────────────────────────────────────────────────
+  // ─── OFFLINE PACKAGE (RETIRED) ────────────────────────────────────────────────────────────────────────
+  // NOTE: This legacy "Venue Offline Package (Windows)" router has been fully retired and replaced by the
+  // single-laptop, fully-offline `offlineDoor` router + the /offline-door page. Both endpoints below now
+  // refuse to run so they can never accidentally write to the canonical token tables in parallel with the
+  // new system.
   offline: router({
-    // Export all active passport tokens + bowler names as a JSON snapshot
+    // RETIRED: replaced by `offlineDoor` + the /offline-door page. Kept as throwing stubs so any old
+    // client (or accidental call) fails loudly instead of writing to the canonical token tables.
     exportSnapshot: publicProcedure
       .input(z.object({ eventId: z.number() }))
-      .query(async ({ input }) => {
-        const rows = await rawQuery(
-          `SELECT b.id, b.legalFirstName, b.legalLastName, b.scantronId,
-                  b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
-                  b.banquetTable,
-                  et.tokenValue AS bowlingToken, et.isUsed AS bowlingUsed
-           FROM bowlers b
-           LEFT JOIN entry_tokens et ON et.bowlerId = b.id AND et.eventId = ? AND et.isUsed = 0 AND et.tokenType != 'test'
-           WHERE b.eventId = ? AND b.registrationStatus != 'pre_registered'`,
-          [input.eventId, input.eventId]
-        ) as Record<string, unknown>[];
-        // Fetch guest pool tokens for all bowlers in this event
-        const guestTokens = await rawQuery(
-          `SELECT g.bowlerId, g.suffix, g.token, g.used, g.disabled
-           FROM guest_pool_party_tokens g
-           INNER JOIN bowlers b ON b.id = g.bowlerId
-           WHERE b.eventId = ? AND g.disabled = 0`,
-          [input.eventId]
-        ) as { bowlerId: number; suffix: string; token: string; used: number; disabled: number }[];
-        // Group guest tokens by bowlerId
-        const guestMap: Record<number, Array<{ suffix: string; token: string; used: boolean }>> = {};
-        for (const gt of guestTokens) {
-          if (!guestMap[gt.bowlerId]) guestMap[gt.bowlerId] = [];
-          guestMap[gt.bowlerId].push({ suffix: gt.suffix, token: gt.token, used: Boolean(gt.used) });
-        }
-        // Attach guest tokens to each bowler row
-        const enrichedRows = rows.map(b => ({
-          ...b,
-          guestPoolTokens: guestMap[b.id as number] ?? [],
-        }));
-        // Use the specific event (not just the active one)
-        const event = await getEventById(input.eventId) as Record<string, unknown> | null;
-        return {
-          exportedAt: Date.now(),
-          eventId: input.eventId,
-          eventName: event?.eventName ?? 'B.O.B. Roll-off',
-          tabletPin: event?.tabletPin ?? null,
-          banquetLocation: event?.banquetLocation ?? null,
-          banquetTime: event?.banquetTime ?? null,
-          bowlers: enrichedRows,
-        };
+      .query(() => {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "The legacy Venue Offline Package has been retired. Use the new offline scanner at /offline-door instead.",
+        });
       }),
 
-    // Cloud sync-back: offline server posts redemptions after connectivity returns
     syncRedemptions: publicProcedure
       .input(z.object({
         deviceId: z.string(),
-          redemptions: z.array(z.object({
+        redemptions: z.array(z.object({
           token: z.string(),
           passportType: z.enum(['pool', 'banquet', 'bowling', 'guest-pool']),
           bowlerId: z.number().optional(),
           scannedAt: z.number(),
         })),
       }))
-      .mutation(async ({ input }) => {
-        let synced = 0;
-        let skipped = 0;
-        for (const r of input.redemptions) {
-          try {
-            if (r.passportType === 'bowling') {
-              const token = await getTokenByValue(r.token) as Record<string, unknown> | null;
-              if (token && !token.isUsed) {
-                await invalidateToken(typeof token.id === 'number' ? token.id : Number(token.id));
-                if (r.bowlerId) await createCheckIn(r.bowlerId, typeof token.eventId === 'number' ? token.eventId : 1, 'QR', undefined, typeof token.id === 'number' ? token.id : undefined);
-                synced++;
-              } else { skipped++; }
-            } else if (r.passportType === 'pool') {
-              const existing = await rawQuery('SELECT poolPartyUsed FROM bowlers WHERE poolPartyToken=?', [r.token]) as Record<string, unknown>[];
-              if (existing[0] && !existing[0].poolPartyUsed) {
-                await rawQuery('UPDATE bowlers SET poolPartyUsed=1 WHERE poolPartyToken=?', [r.token]);
-                synced++;
-              } else { skipped++; }
-            } else if (r.passportType === 'banquet') {
-              const existing = await rawQuery('SELECT banquetUsed FROM bowlers WHERE banquetToken=?', [r.token]) as Record<string, unknown>[];
-              if (existing[0] && !existing[0].banquetUsed) {
-                await rawQuery('UPDATE bowlers SET banquetUsed=1 WHERE banquetToken=?', [r.token]);
-                synced++;
-              } else { skipped++; }
-            } else if (r.passportType === 'guest-pool') {
-              const existing = await rawQuery('SELECT id, used FROM guest_pool_party_tokens WHERE token=?', [r.token]) as Record<string, unknown>[];
-              if (existing[0] && !existing[0].used) {
-                await rawQuery('UPDATE guest_pool_party_tokens SET used=1 WHERE token=?', [r.token]);
-                synced++;
-              } else { skipped++; }
-            }
-            await rawQuery(
-              'INSERT INTO offline_sync_queue (token, passport_type, bowler_id, scanned_at, device_id, synced_to_cloud, synced_at, created_at) VALUES (?,?,?,?,?,1,?,?)',
-              [r.token, r.passportType, r.bowlerId ?? null, r.scannedAt, input.deviceId, Date.now(), Date.now()]
-            );
-          } catch { skipped++; }
-        }
-        return { success: true, synced, skipped, total: input.redemptions.length };
+      .mutation(() => {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "The legacy offline sync-back has been retired. The new /offline-door scanner syncs via offlineDoor.sync instead.",
+        });
       }),
   }),
   // ─── SUPPORT MESSAGES (bowler login-help form → ED inbox) ──────────────────

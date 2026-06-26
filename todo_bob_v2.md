@@ -70,3 +70,9 @@
 - [x] Vitest: validation order, idempotent sync, reentry zone-lock, double-dip
 - [x] references/door-kiosk-setup.md setup guide
 - [ ] Single checkpoint at end
+
+## Retire legacy offline router (replaced by /offline-door)
+- [x] Neuter old `offline.exportSnapshot` + `offline.syncRedemptions` to throw "retired" error (no DB writes)
+- [x] Remove legacy "Venue Offline Package (Windows)" UI block from AdminDashboard, point to /offline-door
+- [x] Run full test suite (no regressions: 62 passed) + typecheck (clean)
+- [x] Save checkpoint

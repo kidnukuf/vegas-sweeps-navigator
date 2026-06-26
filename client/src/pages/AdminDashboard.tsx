@@ -1309,34 +1309,17 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </div>
             </div>
 
-            {/* Offline Package Download */}
-            <div className="bg-[#1a1a1a] rounded-2xl border border-purple-500/30 p-5">
-              <h3 className="text-sm font-semibold text-purple-400 mb-1">💻 Venue Offline Package (Windows)</h3>
-              <p className="text-gray-500 text-xs mb-4">No WiFi or mobile signal at the venue? Download the offline server package. Run it on your Windows laptop, connect doorman tablets to your laptop's hotspot, and scan QR codes with zero internet. All redemptions sync back to the cloud automatically when you reconnect.</p>
+            {/* Offline Door Scanner (replaces the retired Windows package) */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-cyan-500/30 p-5">
+              <h3 className="text-sm font-semibold text-cyan-400 mb-1">📡 Offline Door Scanner (Banquet + Pool Party)</h3>
+              <p className="text-gray-500 text-xs mb-4">No WiFi or mobile signal at the venue? Open the offline scanner on one laptop, load the data once while you still have internet, then scan all night with zero connection. Every scan is saved on the laptop and uploads automatically when the signal returns. This replaces the old Windows offline package — no install, no setup files.</p>
               <div className="flex gap-3 flex-wrap">
-                <a
-                  href="/manus-storage/BOB-Offline-Server-Windows_73181527.zip"
-                  download="BOB-Offline-Server-Windows.zip"
-                  className="px-5 py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2">
-                  ⬇️ Download Offline Package (.zip, 36MB)
+                <a href="/offline-door" target="_blank" rel="noopener noreferrer"
+                  className="px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2">
+                  Open Offline Door Scanner →
                 </a>
-                <button
-                  onClick={async () => {
-                    try {
-                      const snap = await trpcUtils.offline.exportSnapshot.fetch({ eventId: EVENT_ID });
-                      const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url; a.download = 'bob_snapshot.json'; a.click();
-                      URL.revokeObjectURL(url);
-                      toast.success('Snapshot downloaded — copy to the offline server folder');
-                    } catch (e) { toast.error('Failed to export snapshot'); }
-                  }}
-                  className="px-5 py-2 bg-[#111] border border-purple-500/30 hover:border-purple-500/60 text-purple-300 hover:text-white font-semibold rounded-lg text-sm transition-all active:scale-95">
-                  📥 Download Bowler Snapshot (.json)
-                </button>
               </div>
-              <p className="text-gray-600 text-xs mt-3">Setup order: 1) Download package → 2) Extract ZIP → 3) Download snapshot → 4) Copy snapshot into the extracted folder → 5) Double-click START.bat at the venue</p>
+              <p className="text-gray-600 text-xs mt-3">Setup order: 1) Open on the laptop → 2) Load Banquet or Pool Party data (needs internet once) → 3) Open Door A / Door B windows on your TVs → 4) Go offline and scan. Full guide: references/door-kiosk-setup.md</p>
             </div>
 
             {/* Legacy doorman accounts (kept for reference) */}
