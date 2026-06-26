@@ -2,6 +2,7 @@ import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "@shared/const";
 import { bowlerAuthRouter } from "./routers/bowlerAuth";
+import { offlineDoorRouter } from "./routers/offlineDoor";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -1598,6 +1599,9 @@ export const appRouter = router({
 
   // ─── BOWLER / CAPTAIN AUTH ─────────────────────────────────────────────────
   bowlerAuth: bowlerAuthRouter,
+
+  // ─── OFFLINE DOOR SCANNER (single-laptop, banquet + pool) ──────────────────
+  offlineDoor: offlineDoorRouter,
 
   // ─── OFFLINE PACKAGE ──────────────────────────────────────────────────────────────────────────────────
   offline: router({

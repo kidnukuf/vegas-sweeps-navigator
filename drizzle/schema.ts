@@ -566,3 +566,56 @@ export const surveyResponses = mysqlTable("survey_responses", {
 
 export type SurveyResponse = typeof surveyResponses.$inferSelect;
 export type InsertSurveyResponse = typeof surveyResponses.$inferInsert;
+
+// ─── DOOR SCAN LOG (offline-first scanner: persisted scans, overrides, ED flags) ──
+// Every scan made on the offline single-laptop door system is recorded client-side
+// in IndexedDB first, then synced here (idempotently) the moment connectivity returns.
+// One row per scan attempt. Key for idempotency: (token, scannedAtMs).
+export const doorScanLog = mysqlTable("door_scan_log", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId"),
+  // 'banquet' | 'pool' — which door mode produced this scan
+  mode: varchar("mode", { length: 16 }),
+  token: varchar("token", { length: 128 }),
+  // admitted | denied_used | denied_notfound | override_admitted | reentry_admitted | denied_wrongzone
+  result: varchar("result", { length: 32 }),
+  reason: text("reason"),
+  lane: int("lane"),
+  // Epoch ms when the scan happened on the device (source of truth for ordering + idempotency)
+  scannedAtMs: bigint("scannedAtMs", { mode: "number" }),
+  // Label/identity of the PIN holder who authorized an override (nullable)
+  overrideBy: varchar("overrideBy", { length: 100 }),
+  // Wristband number captured during reentry (nullable)
+  wristbandNumber: varchar("wristbandNumber", { length: 40 }),
+  // Flagged for Event Director review (suspicious / contested)
+  edFlagged: boolean("edFlagged").default(false).notNull(),
+  edReviewedAt: bigint("edReviewedAt", { mode: "number" }),
+  // Device that produced the scan (for multi-device future-proofing)
+  deviceId: varchar("deviceId", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DoorScanLog = typeof doorScanLog.$inferSelect;
+export type InsertDoorScanLog = typeof doorScanLog.$inferInsert;
+
+// ─── REENTRY CODES (reusable directional re-entry pool: N/E/S/W × 50 per mode) ──
+// Pre-generated generic, reusable QR codes. Door-locked: a code is only valid at the
+// zone that issued it. The doorman types the guest's wristband number when issuing,
+// linking the reusable code to that wristband until released.
+export const reentryCodes = mysqlTable("reentry_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  // 'banquet' | 'pool'
+  mode: varchar("mode", { length: 16 }).notNull(),
+  // 'N' | 'E' | 'S' | 'W'
+  zone: varchar("zone", { length: 2 }).notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  inUse: boolean("inUse").default(false).notNull(),
+  linkedWristband: varchar("linkedWristband", { length: 40 }),
+  issuedAtMs: bigint("issuedAtMs", { mode: "number" }),
+  releasedAtMs: bigint("releasedAtMs", { mode: "number" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ReentryCode = typeof reentryCodes.$inferSelect;
+export type InsertReentryCode = typeof reentryCodes.$inferInsert;

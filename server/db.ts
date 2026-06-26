@@ -471,3 +471,313 @@ export async function upsertPaymentRecord(bowlerId: number, data: Record<string,
     await rawQuery(`INSERT INTO payment_records (${keys.map(k => `\`${k}\``).join(", ")}) VALUES (${placeholders})`, vals);
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// OFFLINE DOOR SCANNER (single-laptop, banquet + pool party)
+// ════════════════════════════════════════════════════════════════════════════
+
+export type DoorMode = "banquet" | "pool";
+export type ReentryZone = "N" | "E" | "S" | "W";
+
+export type DoorGuestRow = {
+  token: string;
+  displayName: string;
+  teamNumber: string | null;
+  teamName: string | null;
+  entitlementType: "bowler" | "guest";
+  guestSuffix: string | null;
+  alreadyUsedAtLoad: boolean;
+};
+
+/**
+ * Build the complete offline validation dataset for one event + mode.
+ * Banquet mode loads banquet tokens (bowlers + guest banquet tokens).
+ * Pool mode loads pool party tokens (bowlers + guest pool tokens).
+ * Each row carries the current "used" status so the device can pre-mark them.
+ */
+export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<DoorGuestRow[]> {
+  const out: DoorGuestRow[] = [];
+
+  if (mode === "banquet") {
+    // Primary bowlers with a banquet token
+    const bowlerRows = await rawQuery<{
+      token: string; legalFirstName: string; legalLastName: string;
+      teamCode: string | null; teamName: string | null; banquetUsed: number;
+    }>(
+      `SELECT b.banquetToken AS token, b.legalFirstName, b.legalLastName,
+              t.teamCode, t.teamName, b.banquetUsed
+       FROM bowlers b
+       LEFT JOIN teams t ON t.id = b.teamId
+       WHERE b.eventId = ? AND b.banquetToken IS NOT NULL AND b.banquetToken <> ''`,
+      [eventId]
+    );
+    for (const r of bowlerRows) {
+      out.push({
+        token: r.token,
+        displayName: `${r.legalFirstName} ${r.legalLastName}`.trim(),
+        teamNumber: r.teamCode ?? null,
+        teamName: r.teamName ?? null,
+        entitlementType: "bowler",
+        guestSuffix: null,
+        alreadyUsedAtLoad: Boolean(r.banquetUsed),
+      });
+    }
+    // Guest banquet tokens
+    const guestRows = await rawQuery<{
+      token: string; suffix: string; banquetUsed: number; disabled: number;
+      legalFirstName: string; legalLastName: string;
+      teamCode: string | null; teamName: string | null;
+    }>(
+      `SELECT g.banquetToken AS token, g.suffix, g.banquetUsed, g.disabled,
+              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName
+       FROM guest_pool_party_tokens g
+       JOIN bowlers b ON b.id = g.bowlerId
+       LEFT JOIN teams t ON t.id = b.teamId
+       WHERE g.eventId = ? AND g.banquetToken IS NOT NULL AND g.banquetToken <> '' AND g.disabled = 0`,
+      [eventId]
+    );
+    for (const r of guestRows) {
+      out.push({
+        token: r.token,
+        displayName: `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
+        teamNumber: r.teamCode ?? null,
+        teamName: r.teamName ?? null,
+        entitlementType: "guest",
+        guestSuffix: r.suffix,
+        alreadyUsedAtLoad: Boolean(r.banquetUsed),
+      });
+    }
+  } else {
+    // Pool mode — primary bowlers with a pool party token
+    const bowlerRows = await rawQuery<{
+      token: string; legalFirstName: string; legalLastName: string;
+      teamCode: string | null; teamName: string | null; poolPartyUsed: number;
+    }>(
+      `SELECT b.poolPartyToken AS token, b.legalFirstName, b.legalLastName,
+              t.teamCode, t.teamName, b.poolPartyUsed
+       FROM bowlers b
+       LEFT JOIN teams t ON t.id = b.teamId
+       WHERE b.eventId = ? AND b.poolPartyToken IS NOT NULL AND b.poolPartyToken <> ''`,
+      [eventId]
+    );
+    for (const r of bowlerRows) {
+      out.push({
+        token: r.token,
+        displayName: `${r.legalFirstName} ${r.legalLastName}`.trim(),
+        teamNumber: r.teamCode ?? null,
+        teamName: r.teamName ?? null,
+        entitlementType: "bowler",
+        guestSuffix: null,
+        alreadyUsedAtLoad: Boolean(r.poolPartyUsed),
+      });
+    }
+    // Guest pool tokens
+    const guestRows = await rawQuery<{
+      token: string; suffix: string; used: number; disabled: number;
+      legalFirstName: string; legalLastName: string;
+      teamCode: string | null; teamName: string | null;
+    }>(
+      `SELECT g.token AS token, g.suffix, g.used, g.disabled,
+              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName
+       FROM guest_pool_party_tokens g
+       JOIN bowlers b ON b.id = g.bowlerId
+       LEFT JOIN teams t ON t.id = b.teamId
+       WHERE g.eventId = ? AND g.token IS NOT NULL AND g.token <> '' AND g.disabled = 0`,
+      [eventId]
+    );
+    for (const r of guestRows) {
+      out.push({
+        token: r.token,
+        displayName: `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
+        teamNumber: r.teamCode ?? null,
+        teamName: r.teamName ?? null,
+        entitlementType: "guest",
+        guestSuffix: r.suffix,
+        alreadyUsedAtLoad: Boolean(r.used),
+      });
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Ensure the 200-code reentry pool (50 per N/E/S/W zone) exists for an event + mode.
+ * Idempotent: only inserts codes for zones that don't yet have the full count.
+ * Returns all reentry codes for the event + mode.
+ */
+export async function ensureReentryPool(
+  eventId: number,
+  mode: DoorMode,
+  makeToken: (eventId: number, mode: DoorMode, zone: ReentryZone, index: number) => string,
+  perZone = 50
+) {
+  const zones: ReentryZone[] = ["N", "E", "S", "W"];
+  for (const zone of zones) {
+    const existing = await rawQuery<{ c: number }>(
+      "SELECT COUNT(*) AS c FROM reentry_codes WHERE eventId = ? AND mode = ? AND zone = ?",
+      [eventId, mode, zone]
+    );
+    const have = Number(existing[0]?.c ?? 0);
+    for (let i = have; i < perZone; i++) {
+      const token = makeToken(eventId, mode, zone, i + 1);
+      // Token has a UNIQUE constraint; ignore dupes defensively.
+      try {
+        await rawExec(
+          "INSERT INTO reentry_codes (eventId, mode, zone, token, inUse) VALUES (?, ?, ?, ?, 0)",
+          [eventId, mode, zone, token]
+        );
+      } catch {
+        /* duplicate token — skip */
+      }
+    }
+  }
+  return getReentryPool(eventId, mode);
+}
+
+export async function getReentryPool(eventId: number, mode: DoorMode) {
+  return rawQuery<{
+    id: number; eventId: number; mode: string; zone: string; token: string;
+    inUse: number; linkedWristband: string | null; issuedAtMs: number | null; releasedAtMs: number | null;
+  }>(
+    "SELECT id, eventId, mode, zone, token, inUse, linkedWristband, issuedAtMs, releasedAtMs FROM reentry_codes WHERE eventId = ? AND mode = ? ORDER BY zone, id",
+    [eventId, mode]
+  );
+}
+
+/** Issue a reentry code: link it to a wristband at a zone (door-locked). */
+export async function issueReentryCode(token: string, wristbandNumber: string, issuedAtMs: number) {
+  await rawExec(
+    "UPDATE reentry_codes SET inUse = 1, linkedWristband = ?, issuedAtMs = ?, releasedAtMs = NULL WHERE token = ?",
+    [wristbandNumber, issuedAtMs, token]
+  );
+}
+
+/** Release a reentry code back into the available pool. */
+export async function releaseReentryCode(token: string, releasedAtMs: number) {
+  await rawExec(
+    "UPDATE reentry_codes SET inUse = 0, linkedWristband = NULL, releasedAtMs = ? WHERE token = ?",
+    [releasedAtMs, token]
+  );
+}
+
+export async function getReentryCodeByToken(token: string) {
+  const rows = await rawQuery<{
+    id: number; eventId: number; mode: string; zone: string; token: string;
+    inUse: number; linkedWristband: string | null;
+  }>(
+    "SELECT id, eventId, mode, zone, token, inUse, linkedWristband FROM reentry_codes WHERE token = ? LIMIT 1",
+    [token]
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Mark a token as used in the canonical tables when an offline ADMIT/OVERRIDE syncs up.
+ * Mirrors the live scanPassport used-marking. Returns the bowler/guest name + lane
+ * info needed for the Google Sheet write-back (or null if the token isn't found).
+ */
+export async function markTokenUsedForSync(
+  token: string,
+  mode: DoorMode
+): Promise<{ firstName: string; lastName: string; sheetType: "banquet" | "pool" | "guest_pool"; eventId: number | null } | null> {
+  if (mode === "banquet") {
+    // Primary bowler banquet token
+    const b = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; eventId: number | null }>(
+      "SELECT id, legalFirstName, legalLastName, eventId FROM bowlers WHERE banquetToken = ? LIMIT 1",
+      [token]
+    );
+    if (b[0]) {
+      await rawExec("UPDATE bowlers SET banquetUsed = 1 WHERE id = ?", [b[0].id]);
+      return { firstName: b[0].legalFirstName, lastName: b[0].legalLastName, sheetType: "banquet", eventId: b[0].eventId };
+    }
+    // Guest banquet token
+    const g = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; eventId: number | null }>(
+      `SELECT g.id, b.legalFirstName, b.legalLastName, b.eventId
+       FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
+       WHERE g.banquetToken = ? LIMIT 1`,
+      [token]
+    );
+    if (g[0]) {
+      await rawExec("UPDATE guest_pool_party_tokens SET banquetUsed = 1 WHERE id = ?", [g[0].id]);
+      return { firstName: g[0].legalFirstName, lastName: g[0].legalLastName, sheetType: "guest_pool", eventId: g[0].eventId };
+    }
+    return null;
+  } else {
+    // Primary bowler pool token
+    const b = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; eventId: number | null }>(
+      "SELECT id, legalFirstName, legalLastName, eventId FROM bowlers WHERE poolPartyToken = ? LIMIT 1",
+      [token]
+    );
+    if (b[0]) {
+      await rawExec("UPDATE bowlers SET poolPartyUsed = 1 WHERE id = ?", [b[0].id]);
+      return { firstName: b[0].legalFirstName, lastName: b[0].legalLastName, sheetType: "pool", eventId: b[0].eventId };
+    }
+    // Guest pool token
+    const g = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; eventId: number | null }>(
+      `SELECT g.id, b.legalFirstName, b.legalLastName, b.eventId
+       FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
+       WHERE g.token = ? LIMIT 1`,
+      [token]
+    );
+    if (g[0]) {
+      await rawExec("UPDATE guest_pool_party_tokens SET used = 1 WHERE id = ?", [g[0].id]);
+      return { firstName: g[0].legalFirstName, lastName: g[0].legalLastName, sheetType: "guest_pool", eventId: g[0].eventId };
+    }
+    return null;
+  }
+}
+
+/**
+ * Persist one synced offline scan into door_scan_log. Idempotent on (token, scannedAtMs)
+ * via the unique key — duplicate rows are silently ignored (INSERT IGNORE semantics).
+ * Returns true if a NEW row was inserted, false if it was a duplicate.
+ */
+export async function recordSyncedScan(scan: {
+  eventId: number | null;
+  mode: DoorMode;
+  token: string;
+  result: string;
+  reason: string | null;
+  lane: number | null;
+  scannedAtMs: number;
+  overrideBy: string | null;
+  wristbandNumber: string | null;
+  edFlagged: boolean;
+  deviceId: string | null;
+}): Promise<boolean> {
+  const res = await rawExec(
+    `INSERT IGNORE INTO door_scan_log
+       (eventId, mode, token, result, reason, lane, scannedAtMs, overrideBy, wristbandNumber, edFlagged, deviceId)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      scan.eventId, scan.mode, scan.token, scan.result, scan.reason, scan.lane,
+      scan.scannedAtMs, scan.overrideBy, scan.wristbandNumber, scan.edFlagged ? 1 : 0, scan.deviceId,
+    ]
+  );
+  return res.affectedRows > 0;
+}
+
+/** ED review queue: flagged, not-yet-reviewed scans for an event. */
+export async function getEdFlagQueue(eventId: number) {
+  return rawQuery(
+    `SELECT id, mode, token, result, reason, lane, scannedAtMs, overrideBy, wristbandNumber, edReviewedAt
+     FROM door_scan_log
+     WHERE eventId = ? AND edFlagged = 1
+     ORDER BY edReviewedAt IS NOT NULL, scannedAtMs DESC`,
+    [eventId]
+  );
+}
+
+export async function markEdFlagReviewed(id: number, reviewedAtMs: number) {
+  await rawExec("UPDATE door_scan_log SET edReviewedAt = ? WHERE id = ?", [reviewedAtMs, id]);
+}
+
+/** Door scan counts for the Console dashboard. */
+export async function getDoorScanStats(eventId: number, mode: DoorMode) {
+  const rows = await rawQuery<{ result: string; c: number }>(
+    "SELECT result, COUNT(*) AS c FROM door_scan_log WHERE eventId = ? AND mode = ? GROUP BY result",
+    [eventId, mode]
+  );
+  return rows;
+}

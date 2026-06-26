@@ -64,6 +64,7 @@
     "express": "^4.21.2",
     "framer-motion": "^12.23.22",
     "html5-qrcode": "^2.3.8",
+    "idb": "^8.0.3",
     "input-otp": "^1.4.2",
     "jose": "6.1.0",
     "jsonwebtoken": "^9.0.3",

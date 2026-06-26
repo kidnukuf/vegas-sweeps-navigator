@@ -52,3 +52,21 @@
 - [x] Fix ImportData.tsx "Skipped" label (was showing errors count; now shows real skipped + errors separately)
 - [x] Fix Squad Day & Time column alias in server import parser
 - [x] Harden upsertHotelRecord/upsertPaymentRecord to filter undefined values defensively
+
+## Offline Single-Laptop Scanner (Banquet + Pool Party) — v1
+- [x] Add door_scan_log table to drizzle schema
+- [x] Add reentry_codes table to drizzle schema
+- [x] Generate + apply migration via webdev_execute_sql
+- [x] db.ts helpers: loadDoorData query, ensureReentryPool, recordSyncedScan, recordReentryEvent
+- [x] tRPC offlineDoor router: loadData, sync, reentryIssue/release (protected)
+- [x] Client IndexedDB store (idb): guests, scanLog, reentryPool, meta object stores
+- [x] Client validation engine: lookup/used/notfound decision order + debounce + per-scan lock
+- [x] Connectivity + auto-sync service (online/offline + ping, idempotent flush)
+- [x] Scanner window UI (Door A / Door B fullscreen, 1 scanner each), green/red flash + audio
+- [x] Console: mode toggle, online/offline indicator, counts, Load Door Data, Sync Now
+- [x] Step-Aside resolution queue: name/team lookup, reason, PIN override-admit, ED flag
+- [x] Reentry manager UI: N/E/S/W zones, issue with wristband #, zone-locked validation
+- [x] Route wiring in App.tsx for new offline doorman page
+- [x] Vitest: validation order, idempotent sync, reentry zone-lock, double-dip
+- [x] references/door-kiosk-setup.md setup guide
+- [ ] Single checkpoint at end
