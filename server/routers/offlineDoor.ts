@@ -22,6 +22,7 @@ import {
   getDoorScanStats,
   getEventById,
   getEventSheetTarget,
+  getCheckinExportRows,
   type DoorMode,
 } from "../db";
 import { writeScanUsedToSheet } from "../googleSheets";
@@ -217,6 +218,56 @@ export const offlineDoorRouter = router({
     .mutation(async ({ input }) => {
       await markEdFlagReviewed(input.id, Date.now());
       return { success: true };
+    }),
+
+  /**
+   * Sheet-aligned check-in export. Returns every admit (resolved to bowler name +
+   * lane + team) for the event/mode, grouped by the Google Sheet target column
+   * (banquet -> AC, pool -> AE, guest_pool -> AG). Read-only: does NOT touch the DB.
+   * The client builds the downloadable CSV/Excel from this so it works fully offline.
+   */
+  exportCheckins: publicProcedure
+    .input(z.object({ eventId: z.number(), mode: modeSchema }))
+    .query(async ({ input }) => {
+      const rows = await getCheckinExportRows(input.eventId, input.mode);
+      // Map each sheetType to its destination column letter in the master sheet layout.
+      const COLUMN_BY_TYPE: Record<string, string> = {
+        banquet: "AC",
+        pool: "AE",
+        guest_pool: "AG",
+      };
+      const COLUMN_LABEL: Record<string, string> = {
+        banquet: "Banquet Used",
+        pool: "Pool Party Confirmed",
+        guest_pool: "Guest Pool Confirmed",
+      };
+      const matched = rows.filter((r) => r.firstName || r.lastName);
+      const unmatched = rows.filter((r) => !r.firstName && !r.lastName);
+      return {
+        eventId: input.eventId,
+        mode: input.mode,
+        generatedAtMs: Date.now(),
+        totalAdmits: rows.length,
+        rows: matched.map((r) => ({
+          token: r.token,
+          firstName: r.firstName,
+          lastName: r.lastName,
+          laneNumber: r.laneNumber,
+          teamNumber: r.teamNumber,
+          sheetType: r.sheetType,
+          targetColumn: COLUMN_BY_TYPE[r.sheetType] ?? "",
+          targetLabel: COLUMN_LABEL[r.sheetType] ?? r.sheetType,
+          scannedAtMs: r.scannedAtMs,
+          scannedAtISO: new Date(r.scannedAtMs).toISOString(),
+          isReentry: r.isReentry,
+        })),
+        unmatched: unmatched.map((r) => ({
+          token: r.token,
+          scannedAtMs: r.scannedAtMs,
+          scannedAtISO: new Date(r.scannedAtMs).toISOString(),
+          result: r.result,
+        })),
+      };
     }),
 
   /** Door scan counts for the Console dashboard. */

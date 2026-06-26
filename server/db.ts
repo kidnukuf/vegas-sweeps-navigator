@@ -781,3 +781,122 @@ export async function getDoorScanStats(eventId: number, mode: DoorMode) {
   );
   return rows;
 }
+
+
+/**
+ * Build sheet-paste-ready check-in export rows for one event + mode.
+ *
+ * Pulls every ADMIT-type scan from door_scan_log (admitted / override_admitted /
+ * reentry_admitted) and resolves each token to the bowler's name, lane, and team so
+ * the export can be matched to the Google Sheet by name + lane. Read-only: it never
+ * mutates any table. Returns the earliest admit timestamp per token (first entry wins).
+ */
+export type CheckinExportRow = {
+  token: string;
+  firstName: string;
+  lastName: string;
+  laneNumber: number | null;
+  teamNumber: string | null;
+  sheetType: "banquet" | "pool" | "guest_pool";
+  scannedAtMs: number;
+  result: string;
+  isReentry: boolean;
+};
+
+export async function getCheckinExportRows(
+  eventId: number,
+  mode: DoorMode
+): Promise<CheckinExportRow[]> {
+  // All admit-type scans, earliest first so the first real entry wins per token.
+  const scans = await rawQuery<{
+    token: string;
+    result: string;
+    lane: number | null;
+    scannedAtMs: number;
+  }>(
+    `SELECT token, result, lane, scannedAtMs
+       FROM door_scan_log
+      WHERE eventId = ? AND mode = ?
+        AND result IN ('admitted', 'override_admitted', 'reentry_admitted')
+      ORDER BY scannedAtMs ASC`,
+    [eventId, mode]
+  );
+
+  // Keep the first admit per token (dedupe re-scans/reentries onto one row).
+  const firstByToken = new Map<string, { result: string; lane: number | null; scannedAtMs: number }>();
+  for (const s of scans) {
+    if (!firstByToken.has(s.token)) {
+      firstByToken.set(s.token, { result: s.result, lane: s.lane, scannedAtMs: s.scannedAtMs });
+    }
+  }
+
+  const out: CheckinExportRow[] = [];
+
+  for (const [token, info] of Array.from(firstByToken.entries())) {
+    let resolved:
+      | { firstName: string; lastName: string; laneNumber: number | null; teamNumber: string | null; sheetType: "banquet" | "pool" | "guest_pool" }
+      | null = null;
+
+    if (mode === "banquet") {
+      const b = await rawQuery<{ legalFirstName: string; legalLastName: string; laneNumber: number | null; teamCode: string | null }>(
+        `SELECT b.legalFirstName, b.legalLastName, b.laneNumber, t.teamCode
+           FROM bowlers b LEFT JOIN teams t ON t.id = b.teamId
+          WHERE b.banquetToken = ? LIMIT 1`,
+        [token]
+      );
+      if (b[0]) {
+        resolved = { firstName: b[0].legalFirstName, lastName: b[0].legalLastName, laneNumber: b[0].laneNumber, teamNumber: b[0].teamCode, sheetType: "banquet" };
+      } else {
+        const g = await rawQuery<{ legalFirstName: string; legalLastName: string; laneNumber: number | null; teamCode: string | null }>(
+          `SELECT b.legalFirstName, b.legalLastName, b.laneNumber, t.teamCode
+             FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
+             LEFT JOIN teams t ON t.id = b.teamId
+            WHERE g.banquetToken = ? LIMIT 1`,
+          [token]
+        );
+        if (g[0]) {
+          resolved = { firstName: g[0].legalFirstName, lastName: g[0].legalLastName, laneNumber: g[0].laneNumber, teamNumber: g[0].teamCode, sheetType: "guest_pool" };
+        }
+      }
+    } else {
+      const b = await rawQuery<{ legalFirstName: string; legalLastName: string; laneNumber: number | null; teamCode: string | null }>(
+        `SELECT b.legalFirstName, b.legalLastName, b.laneNumber, t.teamCode
+           FROM bowlers b LEFT JOIN teams t ON t.id = b.teamId
+          WHERE b.poolPartyToken = ? LIMIT 1`,
+        [token]
+      );
+      if (b[0]) {
+        resolved = { firstName: b[0].legalFirstName, lastName: b[0].legalLastName, laneNumber: b[0].laneNumber, teamNumber: b[0].teamCode, sheetType: "pool" };
+      } else {
+        const g = await rawQuery<{ legalFirstName: string; legalLastName: string; laneNumber: number | null; teamCode: string | null }>(
+          `SELECT b.legalFirstName, b.legalLastName, b.laneNumber, t.teamCode
+             FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
+             LEFT JOIN teams t ON t.id = b.teamId
+            WHERE g.token = ? LIMIT 1`,
+          [token]
+        );
+        if (g[0]) {
+          resolved = { firstName: g[0].legalFirstName, lastName: g[0].legalLastName, laneNumber: g[0].laneNumber, teamNumber: g[0].teamCode, sheetType: "guest_pool" };
+        }
+      }
+    }
+
+    out.push({
+      token,
+      firstName: resolved?.firstName ?? "",
+      lastName: resolved?.lastName ?? "",
+      laneNumber: resolved?.laneNumber ?? null,
+      teamNumber: resolved?.teamNumber ?? null,
+      sheetType: resolved?.sheetType ?? (mode === "banquet" ? "banquet" : "pool"),
+      scannedAtMs: info.scannedAtMs,
+      result: info.result,
+      isReentry: info.result === "reentry_admitted",
+    });
+  }
+
+  // Sort by name for a predictable, sheet-friendly order.
+  out.sort((a, b) =>
+    (a.lastName + a.firstName).toLowerCase().localeCompare((b.lastName + b.firstName).toLowerCase())
+  );
+  return out;
+}

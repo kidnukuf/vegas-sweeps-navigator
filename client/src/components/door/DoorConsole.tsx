@@ -33,6 +33,7 @@ import {
   type ScanResult,
 } from "@/lib/offlineDoorDb";
 import { overrideAdmit, flagForEd } from "@/lib/offlineDoorEngine";
+import { trpc } from "@/lib/trpc";
 import {
   subscribeConn,
   syncNow,
@@ -198,6 +199,9 @@ export function DoorConsole({ eventId }: { eventId: number }) {
         <Stat label="Wrong Door" value={counts.denied_wrongzone} tone="bad" />
       </Card>
 
+      {/* Export check-ins to the Google Sheet (manual paste) */}
+      <ExportPanel eventId={eventId} mode={mode} />
+
       {/* Resolution */}
       <ResolutionPanel hasPin={hasPin} />
 
@@ -246,6 +250,109 @@ function PinSetup({ hasPin, onChanged }: { hasPin: boolean; onChanged: () => voi
         {hasPin ? "Change PIN" : "Set PIN"}
       </Button>
     </div>
+  );
+}
+
+function csvCell(v: string | number | null): string {
+  const s = v == null ? "" : String(v);
+  // Quote if it contains comma, quote, or newline; escape inner quotes.
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
+  const [busy, setBusy] = useState(false);
+  const utils = trpc.useUtils();
+
+  async function handleExport() {
+    setBusy(true);
+    try {
+      const data = await utils.offlineDoor.exportCheckins.fetch({ eventId, mode });
+      if (!data || data.rows.length === 0) {
+        toast.error("No check-ins to export yet. Sync first if you scanned offline.");
+        return;
+      }
+      // Build a human-friendly CSV. One row per admitted guest, sorted by name.
+      // Columns: Last, First, Lane, Team, what to paste, and which sheet column it goes in.
+      const header = [
+        "Last Name",
+        "First Name",
+        "Lane",
+        "Team",
+        "Sheet Column",
+        "Paste This Value",
+        "Scanned At (local)",
+        "Re-entry?",
+      ];
+      const lines: string[] = [];
+      // Instruction banner rows (Excel/Sheets show them as the first rows).
+      lines.push(csvCell("HOW TO USE: In your Google Sheet, find each person by Last+First name and Lane."));
+      lines.push(csvCell('Paste the "Paste This Value" (the scan time) into the listed Sheet Column for that row ONLY.'));
+      lines.push(csvCell("Banquet -> column AC | Pool Party -> column AE | Guest Pool -> column AG. Do NOT paste into column A."));
+      lines.push("");
+      lines.push(header.map(csvCell).join(","));
+      for (const r of data.rows) {
+        lines.push(
+          [
+            csvCell(r.lastName),
+            csvCell(r.firstName),
+            csvCell(r.laneNumber),
+            csvCell(r.teamNumber),
+            csvCell(r.targetColumn),
+            csvCell(new Date(r.scannedAtMs).toLocaleString()),
+            csvCell(new Date(r.scannedAtMs).toLocaleString()),
+            csvCell(r.isReentry ? "yes" : ""),
+          ].join(",")
+        );
+      }
+      if (data.unmatched.length > 0) {
+        lines.push("");
+        lines.push(csvCell(`UNMATCHED (${data.unmatched.length}) — could not find a name for these tokens; review manually:`));
+        lines.push(["Token", "Scanned At (local)", "Result"].map(csvCell).join(","));
+        for (const u of data.unmatched) {
+          lines.push([csvCell(u.token), csvCell(new Date(u.scannedAtMs).toLocaleString()), csvCell(u.result)].join(","));
+        }
+      }
+      const csv = lines.join("\r\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+      a.href = url;
+      a.download = `checkins-${mode}-${stamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${data.rows.length} check-ins${data.unmatched.length ? ` (+${data.unmatched.length} unmatched)` : ""}.`);
+    } catch {
+      toast.error("Export failed. Make sure you're online and have synced your scans.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const targetCol = mode === "banquet" ? "AC" : "AE";
+  return (
+    <Card className="space-y-3 p-4">
+      <div>
+        <div className="text-lg font-semibold">Export Check-ins (to Google Sheet)</div>
+        <div className="text-sm text-muted-foreground">
+          Download a spreadsheet of everyone who was admitted, matched to your sheet by name + lane. Open it,
+          then paste the scan-time column into column <span className="font-semibold">{targetCol}</span>{" "}
+          (guest pool → AG) next to each person. It only fills the "used/confirmed" column — your existing data
+          is untouched.
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button onClick={handleExport} disabled={busy} className="bg-purple-600 hover:bg-purple-700">
+          {busy ? "Preparing…" : "Export Check-ins (.csv)"}
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          Tip: sync first so offline scans are included. Best opened on the laptop, not a phone.
+        </span>
+      </div>
+    </Card>
   );
 }
 
