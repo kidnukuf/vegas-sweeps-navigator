@@ -81,3 +81,19 @@
 - [x] Add "Copy column to clipboard" buttons to ExportPanel (per target column: AC banquet, AE pool, AG guest pool)
 - [x] Add "End Event -> Final Sync" button that flushes all unsynced scans and confirms 0 remain (warns if any failed)
 - [x] Tests + checkpoint for copy-column + final-sync
+
+## Fall-Season: Claim Codes + Advertise-Here Slots
+- [x] DB: add bowler_claim_codes table (additive)
+- [x] DB: add ad_inquiries table (additive)
+- [x] DB: sync drizzle schema
+- [x] Server: claimCodes.generateForEvent / listForEvent / reissue / lookup
+- [x] Server: modify bowlerAuth.signUp to require + redeem claim code
+- [x] Server: adInquiry.submit (public, notify owner) / list / setStatus (admin)
+- [x] Client: sign-up claim-code field + CaDavis@LSEnt.com mailto on failure
+- [x] Client: ED claim-code panel (generate, lookup, reissue, printable sheet w/ QR)
+- [x] Client: AdRotator/SponsorAdBanner placeholder when empty + inquiry popup
+- [x] Client: ED Advertiser Leads inbox (filter/read/archive/restore + new-lead badge)
+- [x] Tests: claimCodes.test.ts (5) + adInquiry.test.ts (5) — 10 new, all green
+- [x] Bugfix: claimCodes listForEvent/lookup referenced non-existent b.teamName / b.centerName — now LEFT JOIN teams + bowling_centers
+- [x] Verify: full suite 75/75 passing, tsc clean; Advertise-Here image serving 200
+- [x] Checkpoint + deliver

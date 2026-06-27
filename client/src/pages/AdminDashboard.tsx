@@ -365,6 +365,8 @@ function PassportManager({
 }
 
 import AdManagerTab from "@/components/AdManagerTab";
+import ClaimCodesTab from "@/components/ClaimCodesTab";
+import AdvertiserLeadsTab from "@/components/AdvertiserLeadsTab";
 import SurveyResultsTab from "@/components/SurveyResultsTab";
 import SurveyControlsCard from "@/components/SurveyControlsCard";
 import GuidedHelpPanel from "@/components/GuidedHelpPanel";
@@ -373,7 +375,7 @@ import { ED_HELP } from "@/lib/edHelpContent";
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads">("roster");
   // Support Inbox
   const [supportReplyId, setSupportReplyId] = useState<number | null>(null);
   const [supportReplyText, setSupportReplyText] = useState("");
@@ -407,6 +409,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [openHelp, setOpenHelp] = useState<string | null>(null);
   const toggleHelp = (key: string) => setOpenHelp((prev) => prev === key ? null : key);
   const trpcUtils = trpc.useUtils();
+  const { data: adLeadCount } = trpc.adInquiry.newCount.useQuery(undefined, { refetchInterval: 60000 });
   const [collapsedCenters, setCollapsedCenters] = useState<Set<string>>(new Set());
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
@@ -931,8 +934,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-4">
         <div className="max-w-7xl mx-auto flex gap-1">
-          {(["guide", "roster", "passports", "doormen", "scan", "ads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
-            const newCount = tab === "support" ? (supportMessages as any[]).filter((m: any) => m.status === "new").length : 0;
+          {(["guide", "roster", "passports", "doormen", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+            const newCount = tab === "support" ? (supportMessages as any[]).filter((m: any) => m.status === "new").length : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
                 className={`px-4 py-3 text-sm font-semibold capitalize transition-colors border-b-2 ${activeTab === tab ? "border-yellow-500 text-yellow-400" : "border-transparent text-gray-500 hover:text-gray-300"}`}>
@@ -942,6 +945,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   : tab === "scan" ? "📷 Scan"
                   : tab === "support" ? `📨 Support${newCount > 0 ? ` (${newCount})` : ""}`
                   : tab === "ads" ? "📢 Ads"
+                  : tab === "codes" ? "🔐 Claim Codes"
+                  : tab === "leads" ? `📣 Leads${newCount > 0 ? ` (${newCount})` : ""}`
                   : tab === "survey" ? "⭐ Survey"
                   : tab === "guide" ? "🧭 Guide"
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -1976,6 +1981,18 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <GuidedHelpPanel {...ED_HELP.adManagement} defaultOpen={false} />
           </div>
           <AdManagerTab eventId={EVENT_ID} />
+        </div>
+      )}
+      {/* ── Claim Codes Tab ── */}
+      {activeTab === "codes" && (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <ClaimCodesTab eventId={EVENT_ID} />
+        </div>
+      )}
+      {/* ── Advertiser Leads Tab ── */}
+      {activeTab === "leads" && (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <AdvertiserLeadsTab />
         </div>
       )}
 

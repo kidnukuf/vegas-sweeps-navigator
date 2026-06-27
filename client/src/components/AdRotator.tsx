@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { AdInquiryDialog } from "@/components/AdInquiryDialog";
+
+const ADVERTISE_HERE_IMG = "/manus-storage/advertise-here_389a09e4.jpg";
 
 /**
  * AdRotator — sponsor advertisement slot for the Bowler & Captain portals.
@@ -76,6 +79,7 @@ export function AdRotator({
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
   const current = playlist.length > 0 ? playlist[idx % playlist.length] : null;
+  const [inquiryOpen, setInquiryOpen] = useState(false);
 
   // Auto-advance for images (videos advance onEnded).
   useEffect(() => {
@@ -85,7 +89,27 @@ export function AdRotator({
     return () => clearTimeout(t);
   }, [current, idx, playlist.length, reduced]);
 
-  if (!current) return null;
+  // ── Empty state: show the "Advertise Here" placeholder that opens an inquiry form ──
+  if (!current) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setInquiryOpen(true)}
+          className={`group relative block aspect-[16/6] w-full overflow-hidden rounded-2xl border border-amber-500/20 bg-black shadow-md transition-transform active:scale-[0.99] ${className}`}
+          title="Advertise here"
+          aria-label="Advertise here — contact the Event Director"
+        >
+          <img
+            src={ADVERTISE_HERE_IMG}
+            alt="Advertise here"
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+          />
+        </button>
+        <AdInquiryDialog open={inquiryOpen} onOpenChange={setInquiryOpen} eventId={eventId} />
+      </>
+    );
+  }
 
   const advance = () => setIdx((i) => (i + 1) % Math.max(playlist.length, 1));
 

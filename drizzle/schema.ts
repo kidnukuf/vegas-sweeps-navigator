@@ -619,3 +619,42 @@ export const reentryCodes = mysqlTable("reentry_codes", {
 
 export type ReentryCode = typeof reentryCodes.$inferSelect;
 export type InsertReentryCode = typeof reentryCodes.$inferInsert;
+
+// ─── BOWLER CLAIM CODES (fall-season sign-up security) ───────────────────────
+// One unique, one-time code per bowler, distributed on league night. A new
+// sign-up must present the code (typed or scanned QR); it unlocks only that
+// bowler's roster row. Existing accounts are unaffected.
+export const bowlerClaimCodes = mysqlTable("bowler_claim_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  bowlerId: int("bowlerId").notNull(),
+  // Human-friendly, no ambiguous chars (no 0/O/1/I), e.g. BOB-7F3K
+  code: varchar("code", { length: 20 }).notNull().unique(),
+  status: mysqlEnum("status", ["unused", "redeemed", "void"]).default("unused").notNull(),
+  redeemedByAppUserId: int("redeemedByAppUserId"),
+  redeemedAt: bigint("redeemedAt", { mode: "number" }),
+  // Links a reissued code to the one it replaced (audit trail for lost codes)
+  reissuedFromId: int("reissuedFromId"),
+  createdAt: bigint("createdAt", { mode: "number" }).notNull().default(0),
+});
+
+export type BowlerClaimCode = typeof bowlerClaimCodes.$inferSelect;
+export type InsertBowlerClaimCode = typeof bowlerClaimCodes.$inferInsert;
+
+// ─── AD INQUIRIES ("Advertise Here" leads → ED Advertiser Leads inbox) ────────
+// Submitted when someone taps the "Advertise Here" placeholder in a portal ad
+// slot. Kept separate from bowler login-help (support_messages).
+export const adInquiries = mysqlTable("ad_inquiries", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId"),
+  name: varchar("name", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  contact: varchar("contact", { length: 255 }).notNull(), // email or phone
+  message: text("message").notNull(),
+  slotLabel: varchar("slotLabel", { length: 50 }), // which slot the lead came from
+  status: mysqlEnum("status", ["new", "read", "archived"]).default("new").notNull(),
+  createdAt: bigint("createdAt", { mode: "number" }).notNull().default(0),
+});
+
+export type AdInquiry = typeof adInquiries.$inferSelect;
+export type InsertAdInquiry = typeof adInquiries.$inferInsert;

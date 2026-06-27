@@ -265,6 +265,7 @@ export const bowlerAuthRouter = router({
         password: z.string().min(6, "Password must be at least 6 characters"),
         email: z.string().email().optional(),
         phone: z.string().optional(),
+        claimCode: z.string().optional(),
         turnstileToken: z.string().min(1, "Security check is required"),
       })
     )
@@ -296,6 +297,60 @@ export const bowlerAuthRouter = router({
           message:
             "An account already exists for this bowler. Please sign in instead.",
         });
+      }
+
+      // ── CLAIM-CODE SECURITY (fall-season) ───────────────────────────────────
+      // Enforcement is automatic & seamless: if ANY claim codes exist for this
+      // event, a valid unused code matching THIS bowler is required. If no codes
+      // exist for the event yet, sign-up behaves exactly as before (legacy).
+      const codesForEvent = await rawQuery<{ c: number }>(
+        `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
+        [input.eventId]
+      );
+      const claimRequired = (codesForEvent[0]?.c ?? 0) > 0;
+      let redeemedCodeId: number | null = null;
+
+      if (claimRequired) {
+        const entered = (input.claimCode ?? "").trim().toUpperCase();
+        if (!entered) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "A claim code is required to sign up. Enter the code from your league-night paper, or contact your Event Director.",
+          });
+        }
+        const codeRows = await rawQuery<{ id: number; bowlerId: number; status: string }>(
+          `SELECT id, bowlerId, status FROM bowler_claim_codes WHERE eventId = ? AND code = ? LIMIT 1`,
+          [input.eventId, entered]
+        );
+        const codeRow = codeRows[0];
+        if (!codeRow) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message:
+              "That claim code was not recognized. Please re-check it, or contact your Event Director.",
+          });
+        }
+        if (codeRow.status !== "unused") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "That claim code has already been used (or was voided). If you didn't use it, contact your Event Director for a reissue.",
+          });
+        }
+        if (codeRow.bowlerId !== bowler.id) {
+          // Code belongs to a different bowler than the entered name/center
+          notifyOwner({
+            title: "⚠️ Claim Code / Name Mismatch on Sign-Up",
+            content: `A claim code was entered that does not match the name+center provided.\n\nName entered: ${input.firstName} ${input.lastName}\nCode: ${entered}\nCode belongs to bowlerId: ${codeRow.bowlerId}\nMatched bowlerId: ${bowler.id}`,
+          }).catch(() => {});
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "This claim code does not belong to the name and bowling center entered. Please verify your details or contact your Event Director.",
+          });
+        }
+        redeemedCodeId = codeRow.id;
       }
 
       const hash = await bcrypt.hash(input.password, 12);
@@ -350,6 +405,15 @@ export const bowlerAuthRouter = router({
             [bowler.id, SUFFIXES[i], guestToken]
           );
         }
+      }
+
+      // Redeem the claim code (one-time). Guard on status='unused' so a race
+      // can never double-redeem; affectedRows>0 confirms we won the redemption.
+      if (redeemedCodeId !== null) {
+        await rawQuery(
+          `UPDATE bowler_claim_codes SET status = 'redeemed', redeemedByAppUserId = ?, redeemedAt = ? WHERE id = ? AND status = 'unused'`,
+          [(bowler as { appUserId?: number | null }).appUserId ?? null, Date.now(), redeemedCodeId]
+        );
       }
 
       // Notify ED of successful sign-up (differentiate captain vs bowler)

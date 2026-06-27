@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "@shared/const";
 import { bowlerAuthRouter } from "./routers/bowlerAuth";
 import { offlineDoorRouter } from "./routers/offlineDoor";
+import { claimCodesRouter } from "./routers/claimCodes";
+import { adInquiryRouter } from "./routers/adInquiry";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -1603,6 +1605,10 @@ export const appRouter = router({
 
   // ─── OFFLINE DOOR SCANNER (single-laptop, banquet + pool) ──────────────────
   offlineDoor: offlineDoorRouter,
+
+  claimCodes: claimCodesRouter,
+
+  adInquiry: adInquiryRouter,
 
   // ─── OFFLINE PACKAGE (RETIRED) ────────────────────────────────────────────────────────────────────────
   // NOTE: This legacy "Venue Offline Package (Windows)" router has been fully retired and replaced by the

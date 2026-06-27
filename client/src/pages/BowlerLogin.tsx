@@ -82,6 +82,7 @@ export default function BowlerLogin() {
   const [suPass2, setSuPass2] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suToken, setSuToken] = useState("");
+  const [suClaimCode, setSuClaimCode] = useState("");
   const [suCenterId, setSuCenterId] = useState<number | null>(null);
   const [suCenterName, setSuCenterName] = useState<string>("");
   const [showCenterPicker, setShowCenterPicker] = useState(false);
@@ -166,6 +167,7 @@ export default function BowlerLogin() {
       eventId,
       centerId: suCenterId,
       turnstileToken: suToken,
+      claimCode: suClaimCode.trim() ? suClaimCode.trim().toUpperCase() : undefined,
     });
   }
 
@@ -352,6 +354,21 @@ export default function BowlerLogin() {
                   </button>
                 </div>
                 <div>
+                  <Label className="bowler-label">
+                    Claim Code <span className="text-white/40">(from your league night)</span>
+                  </Label>
+                  <Input
+                    className="bowler-input uppercase tracking-widest"
+                    placeholder="e.g. BOB-7F3K"
+                    value={suClaimCode}
+                    onChange={(e) => setSuClaimCode(e.target.value.toUpperCase())}
+                    autoComplete="off"
+                  />
+                  <p className="text-white/40 text-[11px] mt-1">
+                    Your program director hands these out on league night. Required if your league uses claim codes.
+                  </p>
+                </div>
+                <div>
                   <Label className="bowler-label">Email <span className="text-white/40">(optional)</span></Label>
                   <Input
                     className="bowler-input"
@@ -499,6 +516,15 @@ export default function BowlerLogin() {
                     {submitSupport.isPending ? "Sending…" : "📨 Send to Event Director"}
                   </Button>
                 </form>
+                <p className="text-center text-white/50 text-xs">
+                  Or email the Event Director directly:{" "}
+                  <a
+                    href="mailto:CaDavis@LSEnt.com"
+                    className="text-amber-400 underline font-semibold"
+                  >
+                    CaDavis@LSEnt.com
+                  </a>
+                </p>
                 <button
                   onClick={() => setShowEdContact(false)}
                   className="w-full py-2 rounded-xl text-white/40 text-xs font-medium transition-colors hover:text-white/70"
