@@ -76,3 +76,8 @@
 - [x] Remove legacy "Venue Offline Package (Windows)" UI block from AdminDashboard, point to /offline-door
 - [x] Run full test suite (no regressions: 62 passed) + typecheck (clean)
 - [x] Save checkpoint
+
+## Console: Copy-column + Final Sync
+- [x] Add "Copy column to clipboard" buttons to ExportPanel (per target column: AC banquet, AE pool, AG guest pool)
+- [x] Add "End Event -> Final Sync" button that flushes all unsynced scans and confirms 0 remain (warns if any failed)
+- [x] Tests + checkpoint for copy-column + final-sync

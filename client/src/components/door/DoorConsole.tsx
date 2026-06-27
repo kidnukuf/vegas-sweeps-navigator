@@ -37,6 +37,7 @@ import { trpc } from "@/lib/trpc";
 import {
   subscribeConn,
   syncNow,
+  flushSync,
   fetchDataset,
   type ConnStatus,
 } from "@/lib/offlineDoorSync";
@@ -202,6 +203,9 @@ export function DoorConsole({ eventId }: { eventId: number }) {
       {/* Export check-ins to the Google Sheet (manual paste) */}
       <ExportPanel eventId={eventId} mode={mode} />
 
+      {/* End-of-event final sync confirmation */}
+      <FinalSyncPanel connStatus={conn.status} unsynced={conn.unsynced} />
+
       {/* Resolution */}
       <ResolutionPanel hasPin={hasPin} />
 
@@ -253,6 +257,87 @@ function PinSetup({ hasPin, onChanged }: { hasPin: boolean; onChanged: () => voi
   );
 }
 
+function FinalSyncPanel({ connStatus, unsynced }: { connStatus: ConnStatus; unsynced: number }) {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<
+    | { kind: "clear"; inserted: number; duplicates: number }
+    | { kind: "remaining"; remaining: number }
+    | { kind: "offline" }
+    | null
+  >(null);
+
+  async function handleFinalSync() {
+    setRunning(true);
+    setResult(null);
+    try {
+      if (connStatus === "offline") {
+        const remaining = await getUnsyncedCount();
+        setResult(remaining === 0 ? { kind: "clear", inserted: 0, duplicates: 0 } : { kind: "offline" });
+        if (remaining === 0) toast.success("All scans already uploaded — safe to shut down.");
+        else toast.error("Offline: cannot upload yet. Reconnect, then run Final Sync again.");
+        return;
+      }
+      // Online: flush, then re-check what remains.
+      const res = await flushSync();
+      const remaining = await getUnsyncedCount();
+      if (remaining === 0) {
+        setResult({ kind: "clear", inserted: res.inserted, duplicates: res.duplicates });
+        toast.success(`Final sync complete. ${res.inserted} uploaded, 0 left. Safe to shut down.`);
+      } else {
+        setResult({ kind: "remaining", remaining });
+        toast.error(`${remaining} scan(s) still not uploaded. Stay connected and try again.`);
+      }
+    } catch {
+      const remaining = await getUnsyncedCount().catch(() => -1);
+      setResult(remaining === 0 ? { kind: "clear", inserted: 0, duplicates: 0 } : { kind: "remaining", remaining: Math.max(remaining, 0) });
+      toast.error("Final sync hit an error. Check the connection and try again.");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <Card className="space-y-3 border-amber-300/60 p-4">
+      <div>
+        <div className="text-lg font-semibold">End Event — Final Sync</div>
+        <div className="text-sm text-muted-foreground">
+          Run this before you shut the laptop down. It uploads every remaining scan and confirms nothing is left
+          behind, so no check-ins are lost.
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          onClick={handleFinalSync}
+          disabled={running}
+          className="bg-amber-600 hover:bg-amber-700"
+        >
+          {running ? "Finalizing…" : "End Event → Final Sync"}
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          {unsynced > 0 ? `${unsynced} scan(s) waiting to upload` : "nothing waiting"}
+        </span>
+      </div>
+
+      {result?.kind === "clear" && (
+        <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
+          ✓ All scans uploaded. 0 remaining — it is safe to close the app and shut down.
+        </div>
+      )}
+      {result?.kind === "remaining" && (
+        <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          ⚠ {result.remaining} scan(s) still not uploaded. Keep the laptop online and run Final Sync again before
+          shutting down.
+        </div>
+      )}
+      {result?.kind === "offline" && (
+        <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          ⚠ You are offline. Reconnect to the internet, then run Final Sync — do not shut down yet.
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function csvCell(v: string | number | null): string {
   const s = v == null ? "" : String(v);
   // Quote if it contains comma, quote, or newline; escape inner quotes.
@@ -260,9 +345,93 @@ function csvCell(v: string | number | null): string {
   return s;
 }
 
+type ExportRow = {
+  token: string;
+  firstName: string | null;
+  lastName: string | null;
+  laneNumber: number | string | null;
+  teamNumber: number | string | null;
+  targetColumn: string;
+  targetLabel: string;
+  scannedAtMs: number;
+  isReentry: boolean;
+};
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fall through to legacy path */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
   const [busy, setBusy] = useState(false);
+  const [rows, setRows] = useState<ExportRow[]>([]);
+  const [unmatchedCount, setUnmatchedCount] = useState(0);
   const utils = trpc.useUtils();
+
+  // Group matched rows by their destination sheet column (AC / AE / AG).
+  const groups = useMemo(() => {
+    const m: Record<string, { label: string; rows: ExportRow[] }> = {};
+    for (const r of rows) {
+      if (!r.targetColumn) continue;
+      m[r.targetColumn] = m[r.targetColumn] ?? { label: r.targetLabel, rows: [] };
+      m[r.targetColumn].rows.push(r);
+    }
+    return m;
+  }, [rows]);
+
+  async function refreshRows(): Promise<{ rows: ExportRow[]; unmatched: number } | null> {
+    const data = await utils.offlineDoor.exportCheckins.fetch({ eventId, mode });
+    if (!data) return null;
+    setRows(data.rows as ExportRow[]);
+    setUnmatchedCount(data.unmatched.length);
+    return { rows: data.rows as ExportRow[], unmatched: data.unmatched.length };
+  }
+
+  async function handleCopyColumn(col: string) {
+    const g = groups[col];
+    if (!g || g.rows.length === 0) return;
+    // One scan-time value per line, in sheet-row order, ready to paste down the column.
+    const text = g.rows.map((r) => new Date(r.scannedAtMs).toLocaleString()).join("\n");
+    const ok = await copyText(text);
+    if (ok) toast.success(`Copied ${g.rows.length} value(s) for column ${col}. Click cell ${col}<row> in your sheet and paste.`);
+    else toast.error("Copy failed — use the CSV download instead.");
+  }
+
+  async function handleLoadForCopy() {
+    setBusy(true);
+    try {
+      const res = await refreshRows();
+      if (!res || res.rows.length === 0) {
+        toast.error("No check-ins yet. Sync first if you scanned offline.");
+        return;
+      }
+      toast.success(`Loaded ${res.rows.length} check-in(s)${res.unmatched ? ` (+${res.unmatched} unmatched)` : ""}.`);
+    } catch {
+      toast.error("Could not load check-ins. Make sure you're online and synced.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleExport() {
     setBusy(true);
@@ -272,6 +441,8 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
         toast.error("No check-ins to export yet. Sync first if you scanned offline.");
         return;
       }
+      setRows(data.rows as ExportRow[]);
+      setUnmatchedCount(data.unmatched.length);
       // Build a human-friendly CSV. One row per admitted guest, sorted by name.
       // Columns: Last, First, Lane, Team, what to paste, and which sheet column it goes in.
       const header = [
@@ -332,26 +503,59 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
     }
   }
 
-  const targetCol = mode === "banquet" ? "AC" : "AE";
+  const colKeys = Object.keys(groups).sort();
   return (
-    <Card className="space-y-3 p-4">
+    <Card className="space-y-4 p-4">
       <div>
         <div className="text-lg font-semibold">Export Check-ins (to Google Sheet)</div>
         <div className="text-sm text-muted-foreground">
-          Download a spreadsheet of everyone who was admitted, matched to your sheet by name + lane. Open it,
-          then paste the scan-time column into column <span className="font-semibold">{targetCol}</span>{" "}
-          (guest pool → AG) next to each person. It only fills the "used/confirmed" column — your existing data
-          is untouched.
+          Everyone who was admitted, matched to your sheet by name + lane. Two ways to get it into the sheet:
+          copy a single column straight to your clipboard, or download the full CSV. Either way it only fills the
+          "used/confirmed" column — your existing data is untouched.
         </div>
       </div>
+
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={handleExport} disabled={busy} className="bg-purple-600 hover:bg-purple-700">
-          {busy ? "Preparing…" : "Export Check-ins (.csv)"}
+        <Button onClick={handleLoadForCopy} disabled={busy} variant="outline">
+          {busy ? "Loading…" : rows.length > 0 ? "Refresh Check-ins" : "Load Check-ins"}
         </Button>
-        <span className="text-xs text-muted-foreground">
-          Tip: sync first so offline scans are included. Best opened on the laptop, not a phone.
-        </span>
+        <Button onClick={handleExport} disabled={busy} className="bg-purple-600 hover:bg-purple-700">
+          Download Full CSV
+        </Button>
+        {rows.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {rows.length} matched{unmatchedCount > 0 ? ` · ${unmatchedCount} unmatched (in CSV)` : ""}
+          </span>
+        )}
       </div>
+
+      {rows.length > 0 && (
+        <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+          <div className="text-sm font-semibold">Copy a column to paste into your sheet</div>
+          <div className="text-xs text-muted-foreground">
+            The values are in the same row order as your sheet. Click a button, then in Google Sheets click the
+            first cell of that column (e.g. <span className="font-mono">AC2</span>) and paste (Ctrl/Cmd+V).
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {colKeys.map((col) => (
+              <Button
+                key={col}
+                size="sm"
+                variant="secondary"
+                onClick={() => handleCopyColumn(col)}
+                className="font-mono"
+              >
+                Copy column {col} ({groups[col].rows.length}) — {groups[col].label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Tip: tap <span className="font-semibold">Sync Now</span> first so offline scans are included. Copy works
+        best on the laptop browser.
+      </p>
     </Card>
   );
 }

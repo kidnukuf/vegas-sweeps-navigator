@@ -77,4 +77,19 @@ describe("offlineDoor.exportCheckins", () => {
       expect(["AE", "AG"]).toContain(r.targetColumn);
     }
   }, 20000);
+
+  it("matched rows carry a human label and group cleanly by target column (powers copy-column UI)", async () => {
+    const res = await caller.offlineDoor.exportCheckins({ eventId: TEST_EVENT_ID, mode: "banquet" });
+    // Every matched row must have a non-empty target column + label so the UI can group + label buttons.
+    for (const r of res.rows) {
+      expect(r.targetColumn).toBeTruthy();
+      expect(r.targetLabel).toBeTruthy();
+      expect(typeof r.scannedAtMs).toBe("number");
+    }
+    // Grouping by column (the exact logic the client uses) must reproduce the total matched count.
+    const groups: Record<string, number> = {};
+    for (const r of res.rows) groups[r.targetColumn] = (groups[r.targetColumn] ?? 0) + 1;
+    const summed = Object.values(groups).reduce((a, b) => a + b, 0);
+    expect(summed).toBe(res.rows.length);
+  }, 20000);
 });
