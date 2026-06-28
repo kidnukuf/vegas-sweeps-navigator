@@ -775,17 +775,19 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white">
-      <div className="bg-[#1a1a1a] border-b border-yellow-500/30 px-4 py-4 sticky top-0 z-40 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setLocation("/")} className="text-gray-400 hover:text-white text-sm">← Home</button>
-            <button onClick={onSignOut} className="text-red-400/60 hover:text-red-400 text-xs ml-2 transition-colors">Sign Out</button>
-            <span className="text-gray-600">|</span>
-            <h1 className="text-2xl font-black" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 20px rgba(255,215,0,0.5)" }}>
-              🎯 EVENT DIRECTOR
-            </h1>
+      <div className="bg-[#1a1a1a] border-b border-yellow-500/30 px-3 py-3 sticky top-0 z-40 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <button onClick={() => setLocation("/")} className="text-gray-400 hover:text-white text-xs shrink-0">← Home</button>
+              <button onClick={onSignOut} className="text-red-400/60 hover:text-red-400 text-xs shrink-0 transition-colors">Sign Out</button>
+              <span className="text-gray-600">|</span>
+              <h1 className="text-xl font-black truncate" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 20px rgba(255,215,0,0.5)" }}>
+                🎯 EVENT DIRECTOR
+              </h1>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {/* Export dropdown — uses Radix portal for viewport-safe positioning */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -932,13 +934,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         </div>
       </div>
 
-      <div className="bg-[#111] border-b border-white/10 px-4">
-        <div className="max-w-7xl mx-auto flex gap-1">
+      <div className="bg-[#111] border-b border-white/10 px-2">
+        <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
           {(["guide", "roster", "passports", "doormen", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
             const newCount = tab === "support" ? (supportMessages as any[]).filter((m: any) => m.status === "new").length : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
-                className={`px-4 py-3 text-sm font-semibold capitalize transition-colors border-b-2 ${activeTab === tab ? "border-yellow-500 text-yellow-400" : "border-transparent text-gray-500 hover:text-gray-300"}`}>
+                className={`px-3 py-2.5 text-xs font-semibold capitalize transition-colors border-b-2 whitespace-nowrap ${activeTab === tab ? "border-yellow-500 text-yellow-400" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
                 {tab === "qrtest" ? "QR Test"
                   : tab === "unmatched" ? `Unmatched${unmatchedBowlers.length > 0 ? ` (${unmatchedBowlers.length})` : ""}`
                   : tab === "passports" ? "🎫 Passports"
