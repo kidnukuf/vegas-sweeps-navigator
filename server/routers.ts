@@ -1760,6 +1760,70 @@ export const appRouter = router({
     }),
   }),
 
+
+  // ── Google Credentials (in-app service account management) ─────────────────
+  googleCreds: router({
+    // Returns whether credentials are saved (never returns the raw JSON)
+    status: publicProcedure.query(async () => {
+      const { getAppSetting } = await import('./googleSheets');
+      const raw = await getAppSetting('google_service_account_json');
+      if (!raw) return { saved: false, clientEmail: null };
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        return { saved: true, clientEmail: (parsed.client_email as string) ?? null };
+      } catch {
+        return { saved: true, clientEmail: null };
+      }
+    }),
+    // Save the service account JSON (ED pastes the full JSON)
+    save: publicProcedure
+      .input(z.object({ json: z.string().min(10) }))
+      .mutation(async ({ input }) => {
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(input.json);
+        } catch {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid JSON — paste the full contents of the downloaded key file.' });
+        }
+        if (parsed.type !== 'service_account') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'This does not look like a service account key file. Make sure you downloaded a JSON key from Google Cloud Console → IAM → Service Accounts → Keys.' });
+        }
+        const { setAppSetting } = await import('./googleSheets');
+        await setAppSetting('google_service_account_json', input.json);
+        return { success: true, clientEmail: (parsed.client_email as string) ?? null };
+      }),
+    // Delete the stored credentials
+    delete: publicProcedure.mutation(async () => {
+      const { deleteAppSetting } = await import('./googleSheets');
+      await deleteAppSetting('google_service_account_json');
+      return { success: true };
+    }),
+    // Test the credentials against a specific spreadsheet
+    test: publicProcedure
+      .input(z.object({ spreadsheetId: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        const { google } = await import('googleapis');
+        const { getAppSetting } = await import('./googleSheets');
+        let raw = await getAppSetting('google_service_account_json');
+        if (!raw) raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? null;
+        if (!raw) throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'No credentials saved yet.' });
+        let credentials: Record<string, unknown>;
+        try { credentials = JSON.parse(raw); } catch {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Saved credentials are not valid JSON.' });
+        }
+        try {
+          const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+          const sheets = google.sheets({ version: 'v4', auth });
+          const idMatch = input.spreadsheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+          const bareId = idMatch ? idMatch[1] : input.spreadsheetId;
+          const resp = await sheets.spreadsheets.get({ spreadsheetId: bareId, fields: 'spreadsheetId,properties/title' });
+          return { success: true, title: resp.data.properties?.title ?? 'Unknown' };
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Connection failed: ${msg}` });
+        }
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

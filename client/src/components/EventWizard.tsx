@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Check, Trash2, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -71,6 +71,131 @@ const EMPTY: WizardState = {
 const inputCls =
   "w-full bg-black/50 border border-white/15 rounded-lg px-3 py-2.5 text-[15px] text-white focus:outline-none focus:border-yellow-400";
 const labelCls = "block text-sm font-medium text-gray-300 mb-1";
+
+// ─── Google Credentials Panel ────────────────────────────────────────────────
+function GoogleCredsPanel() {
+  const [jsonText, setJsonText] = useState("");
+  const [showPaste, setShowPaste] = useState(false);
+  const [testSheetId, setTestSheetId] = useState("");
+
+  const statusQ = trpc.googleCreds.status.useQuery(undefined, { refetchOnWindowFocus: false });
+  const saveMut = trpc.googleCreds.save.useMutation({
+    onSuccess: (d) => {
+      toast.success(`Credentials saved! Service account: ${d.clientEmail ?? "unknown"}`);
+      setJsonText("");
+      setShowPaste(false);
+      statusQ.refetch();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteMut = trpc.googleCreds.delete.useMutation({
+    onSuccess: () => { toast.success("Credentials removed"); statusQ.refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const testMut = trpc.googleCreds.test.useMutation({
+    onSuccess: (d) => toast.success(`✅ Connection OK — sheet: "${d.title}"`),
+    onError: (e) => toast.error(`❌ ${e.message}`),
+  });
+
+  const status = statusQ.data;
+  const busy = saveMut.isPending || deleteMut.isPending || testMut.isPending;
+
+  return (
+    <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="font-semibold text-yellow-300 text-sm">🔑 Google Service Account Credentials</p>
+        {statusQ.isLoading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+      </div>
+
+      {status?.saved ? (
+        <div className="space-y-3">
+          <div className="flex items-start gap-2 rounded-lg border border-green-500/40 bg-green-500/5 p-3">
+            <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="text-green-400 font-medium">Credentials saved</p>
+              {status.clientEmail && (
+                <p className="text-gray-300 text-xs mt-0.5 break-all">Service account: <span className="text-white">{status.clientEmail}</span></p>
+              )}
+              <p className="text-gray-500 text-xs mt-1">Make sure your Google Sheet is shared with this email (Editor access).</p>
+            </div>
+          </div>
+
+          {/* Test connection */}
+          <div className="space-y-1.5">
+            <label className="block text-xs text-gray-400">Test connection (paste a sheet URL or ID):</label>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 bg-black/50 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400"
+                value={testSheetId}
+                onChange={(e) => setTestSheetId(e.target.value)}
+                placeholder="https://docs.google.com/spreadsheets/d/..."
+              />
+              <button
+                onClick={() => testMut.mutate({ spreadsheetId: testSheetId })}
+                disabled={!testSheetId.trim() || busy}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-40 transition-colors"
+              >
+                {testMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Test"}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowPaste((p) => !p)}
+              className="text-xs text-yellow-400 hover:text-yellow-300 underline"
+            >
+              Replace credentials
+            </button>
+            <span className="text-gray-600">·</span>
+            <button
+              onClick={() => { if (confirm("Remove saved credentials?")) deleteMut.mutate(); }}
+              disabled={busy}
+              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 disabled:opacity-40"
+            >
+              <Trash2 className="h-3 w-3" /> Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2 rounded-lg border border-orange-500/40 bg-orange-500/5 p-3">
+          <AlertCircle className="h-4 w-4 text-orange-400 mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="text-orange-300 font-medium">No credentials saved yet</p>
+            <p className="text-gray-400 text-xs mt-0.5">Google Sheet write-back will not work until credentials are added.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Paste area (shown when not saved, or when replacing) */}
+      {(!status?.saved || showPaste) && (
+        <div className="space-y-2 pt-1">
+          <div className="rounded border border-white/10 bg-black/30 p-3 text-xs text-gray-400 space-y-1">
+            <p className="text-white font-medium text-xs">How to get your service account JSON:</p>
+            <p>1. Go to <span className="text-yellow-300">console.cloud.google.com</span> → IAM &amp; Admin → Service Accounts</p>
+            <p>2. Create a service account (any name), then click it → Keys → Add Key → JSON → Create</p>
+            <p>3. A JSON file downloads automatically — open it, select all, copy everything</p>
+            <p>4. Paste it in the box below and click Save</p>
+            <p>5. Share your Google Sheet with the service account email (Editor access)</p>
+          </div>
+          <textarea
+            className="w-full h-28 bg-black/60 border border-white/20 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-yellow-400 resize-none"
+            value={jsonText}
+            onChange={(e) => setJsonText(e.target.value)}
+            placeholder={'Paste the entire contents of the downloaded JSON key file here...\n{\n  "type": "service_account",\n  "project_id": "...",\n  ...'}
+          />
+          <button
+            onClick={() => saveMut.mutate({ json: jsonText })}
+            disabled={!jsonText.trim() || busy}
+            className="w-full rounded-lg bg-yellow-500 py-2 text-sm font-bold text-black hover:bg-yellow-400 disabled:opacity-40 transition-colors"
+          >
+            {saveMut.isPending ? "Saving..." : "Save Credentials"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProps) {
   const [step, setStep] = useState(0);
@@ -251,7 +376,7 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
               </div>
               <label className="flex items-center gap-2 text-sm text-gray-300">
                 <input type="checkbox" checked={s.showHotelInfoCard} onChange={(e) => set("showHotelInfoCard", e.target.checked)} className="h-4 w-4 accent-yellow-400" />
-                Show The Orleans Hotel fee & policy card in the portals
+                Show The Orleans Hotel fee &amp; policy card in the portals
               </label>
             </div>
           )}
@@ -360,17 +485,12 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
 
           {steps[step].key === "sheet" && (
             <div className="space-y-5">
+              {/* ── In-app Google Credentials (no Manus Secrets needed) ── */}
+              <GoogleCredsPanel />
+
               <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm text-gray-300 space-y-2">
                 <p className="font-semibold text-white">📊 Google Sheet — Import &amp; Write-Back</p>
-                <p>The app reads bowler data from a Google Sheet and writes Bowler IDs, QR codes, and scan timestamps back to it automatically. Each event tracks its own sheet — the link is saved the moment you import from a Google Sheets URL.</p>
-                <div className="rounded border border-yellow-500/30 bg-yellow-500/5 p-3 text-xs text-yellow-200 space-y-1">
-                  <p className="font-semibold">🔑 One-time setup for new operators</p>
-                  <p>1. Go to <span className="text-white">Google Cloud Console</span> → IAM &amp; Admin → Service Accounts → Create a service account.</p>
-                  <p>2. Download a JSON key for that service account.</p>
-                  <p>3. Share your Google Sheet with the service account's email address (give it <span className="text-white">Editor</span> access).</p>
-                  <p>4. Paste the entire JSON key file contents into the app's <span className="text-white">Secrets</span> panel as <code className="bg-black/40 px-1 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code>.</p>
-                  <p className="text-gray-400">After that, every import from a Google Sheets URL automatically links the sheet to this event — no further configuration needed.</p>
-                </div>
+                <p>The app reads bowler data from a Google Sheet and writes Bowler IDs, QR codes, and scan timestamps back automatically. Each event tracks its own sheet — the link is saved the moment you import from a Google Sheets URL.</p>
               </div>
 
               {/* Auto-link status */}
@@ -379,11 +499,11 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
                   <p className="font-semibold text-green-400">✅ Sheet linked for this event</p>
                   <p className="text-gray-300 text-xs mt-1 break-all">{s.sheetSpreadsheetId}</p>
                   {s.sheetTabName && <p className="text-gray-400 text-xs">Tab: <span className="text-white">{s.sheetTabName}</span></p>}
-                  <p className="text-gray-500 text-xs mt-2">This is set automatically when you import from a Google Sheets URL. You can override it below.</p>
+                  <p className="text-gray-500 text-xs mt-2">Set automatically when you import from a Google Sheets URL. Override below if needed.</p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-gray-600/40 bg-gray-800/30 p-3 text-sm">
-                  <p className="text-gray-400">⚠️ No sheet linked yet. Import bowler data from a Google Sheets URL to link automatically, or enter the details manually below.</p>
+                  <p className="text-gray-400">⚠️ No sheet linked yet. Import bowler data from a Google Sheets URL to link automatically, or enter details manually below.</p>
                 </div>
               )}
 
@@ -395,7 +515,7 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
                   onChange={(e) => set("sheetSpreadsheetId", e.target.value)}
                   placeholder="Paste full Google Sheets URL or just the spreadsheet ID"
                 />
-                <p className="mt-1 text-xs text-gray-400">You can paste the full URL (e.g. <span className="text-gray-300">https://docs.google.com/spreadsheets/d/ABC123/edit</span>) — the app extracts the ID automatically.</p>
+                <p className="mt-1 text-xs text-gray-400">You can paste the full URL — the app extracts the ID automatically.</p>
               </div>
               <div>
                 <label className={labelCls}>Tab Name <span className="text-gray-500 font-normal">(optional override)</span></label>

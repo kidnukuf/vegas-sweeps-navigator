@@ -443,3 +443,10 @@
 - [x] Update bowlerAuth.signUp: reuse pre-generated tokens from import; only fallback-generate if somehow missing
 - [x] Update bowlerAuth.signIn: remove redundant guest-token generation; keep safety fallback only
 - [x] Update bowlerAuth.submitContactInfo: remove redundant guest-token generation; keep safety fallback only
+
+## Phase 28: In-App Google Sheets Credentials (no Manus required)
+- [x] Add app_settings table to store service account JSON in DB
+- [x] Update googleSheets.ts to read credentials from DB first, fall back to env var
+- [x] Add tRPC procedures: googleCreds.status/save/delete/test
+- [x] Build Google Sheets Credentials UI in EventWizard Sheet step (paste JSON, save, test, delete)
+- [x] Run tests and save checkpoint

@@ -62,6 +62,33 @@
  */
 
 import { google } from "googleapis";
+import { rawQuery, rawExec } from "./db";
+
+// ── App-Settings helpers ──────────────────────────────────────────────────────
+export async function getAppSetting(key: string): Promise<string | null> {
+  try {
+    const rows = await rawQuery<{ setting_value: string }>(
+      "SELECT setting_value FROM app_settings WHERE setting_key = ? LIMIT 1",
+      [key]
+    );
+    return rows[0]?.setting_value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setAppSetting(key: string, value: string): Promise<void> {
+  await rawExec(
+    `INSERT INTO app_settings (setting_key, setting_value, updated_at)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)`,
+    [key, value, Date.now()]
+  );
+}
+
+export async function deleteAppSetting(key: string): Promise<void> {
+  await rawExec("DELETE FROM app_settings WHERE setting_key = ?", [key]);
+}
 
 // ── Fallback sheet target ─────────────────────────────────────────────────────
 // These are used ONLY when an event has no sheet target saved yet.
@@ -151,23 +178,32 @@ const GUEST_POOL_COLUMNS = ["AF", "AH"];
 
 // ── googleapis auth ───────────────────────────────────────────────────────────
 /**
- * Build an authenticated Google Sheets API client using the service account JSON
- * stored in the GOOGLE_SERVICE_ACCOUNT_JSON environment variable.
- *
- * Returns null (with a warning) if the env var is missing or not valid JSON,
- * so all write-back functions degrade gracefully instead of crashing.
+ * Build an authenticated Google Sheets API client.
+ * Credential resolution order:
+ *   1. app_settings DB row  (set by the ED in-app — preferred for sold deployments)
+ *   2. GOOGLE_SERVICE_ACCOUNT_JSON env var  (fallback for dev / Manus Secrets)
+ * Returns null (with a warning) if neither source is available.
  */
-function getSheetsClient() {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+async function getSheetsClient() {
+  // 1. Try DB-stored credentials first
+  let raw: string | null = null;
+  try {
+    raw = await getAppSetting("google_service_account_json");
+  } catch {
+    // DB unavailable — fall through to env
+  }
+  // 2. Fall back to env var
+  if (!raw) raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? null;
+
   if (!raw) {
-    console.warn("[googleSheets] GOOGLE_SERVICE_ACCOUNT_JSON not set — sheet write-backs disabled");
+    console.warn("[googleSheets] No Google credentials found (DB or env) — sheet write-backs disabled");
     return null;
   }
   let credentials: Record<string, unknown>;
   try {
     credentials = JSON.parse(raw);
   } catch {
-    console.warn("[googleSheets] GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON — sheet write-backs disabled");
+    console.warn("[googleSheets] Google credentials JSON is invalid — sheet write-backs disabled");
     return null;
   }
   try {
@@ -194,7 +230,7 @@ async function findBowlerRow(
   resolved: { spreadsheetId: string; sheetName: string }
 ): Promise<number | null> {
   if (!resolved.spreadsheetId || !resolved.sheetName) return null;
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return null;
   try {
     const resp = await sheets.spreadsheets.values.get({
@@ -238,7 +274,7 @@ export async function writeBowlerIdToSheet(params: {
   const { firstName, lastName, laneNumber, scantronId, target } = params;
   const resolved = resolveSheetTarget(target);
   if (!resolved.spreadsheetId || !resolved.sheetName) return;
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return;
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
@@ -276,7 +312,7 @@ export async function writeQRCodesToSheet(params: {
   const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], appOrigin, target } = params;
   const resolved = resolveSheetTarget(target);
   if (!resolved.spreadsheetId || !resolved.sheetName) return;
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return;
 
   const banquetQRUrl   = banquetToken   ? `${appOrigin}/scan/banquet/${banquetToken}`   : null;
@@ -330,7 +366,7 @@ export async function writeContactInfoToSheet(params: {
   const { firstName, lastName, laneNumber, phone, email, target } = params;
   const resolved = resolveSheetTarget(target);
   if (!resolved.spreadsheetId || !resolved.sheetName) return { rowNum: null };
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return { rowNum: null };
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
@@ -371,7 +407,7 @@ export async function writeScanUsedToSheet(params: {
   const { firstName, lastName, laneNumber, type, timestamp = new Date().toISOString(), target } = params;
   const resolved = resolveSheetTarget(target);
   if (!resolved.spreadsheetId || !resolved.sheetName) return;
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return;
   const colMap: Record<string, string> = {
     banquet:    "AC",
@@ -402,7 +438,7 @@ const _cachedSheetIds = new Map<string, number | null>();
 async function getSheetId(resolved: { spreadsheetId: string; sheetName: string }): Promise<number | null> {
   const cacheKey = `${resolved.spreadsheetId}::${resolved.sheetName}`;
   if (_cachedSheetIds.has(cacheKey)) return _cachedSheetIds.get(cacheKey) ?? null;
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return null;
   try {
     const resp = await sheets.spreadsheets.get({
@@ -433,7 +469,7 @@ export async function markTshirtReceivedInSheet(params: {
   const { firstName, lastName, laneNumber, received = true, target } = params;
   const resolved = resolveSheetTarget(target);
   if (!resolved.spreadsheetId || !resolved.sheetName) return;
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) return;
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
