@@ -27,6 +27,7 @@ import LeagueSelector from "./pages/LeagueSelector";
 import SeatingChart from "./pages/SeatingChart";
 import AdLanding from "./pages/AdLanding";
 import OfflineDoor from "./pages/OfflineDoor";
+import OperatorSetupGuide from "./pages/OperatorSetupGuide";
 import { VideoSplash } from "./components/VideoSplash";
 import { useLocation } from "wouter";
 
@@ -127,6 +128,7 @@ function Router() {
       <Route path="/seating-chart" component={SeatingChart} />
       <Route path="/ad" component={AdLanding} />
       <Route path="/invite" component={AdLanding} />
+      <Route path="/setup-guide" component={OperatorSetupGuide} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

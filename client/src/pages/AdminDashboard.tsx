@@ -781,6 +781,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <div className="flex items-center gap-2 min-w-0">
               <button onClick={() => setLocation("/")} className="text-gray-400 hover:text-white text-xs shrink-0">← Home</button>
               <button onClick={onSignOut} className="text-red-400/60 hover:text-red-400 text-xs shrink-0 transition-colors">Sign Out</button>
+              <button onClick={() => setLocation("/setup-guide")} className="text-blue-400/70 hover:text-blue-300 text-xs shrink-0 transition-colors">📖 Setup Guide</button>
               <span className="text-gray-600">|</span>
               <h1 className="text-xl font-black truncate" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 20px rgba(255,215,0,0.5)" }}>
                 🎯 EVENT DIRECTOR
