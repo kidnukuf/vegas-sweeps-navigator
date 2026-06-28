@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { rawQuery } from "../db";
-import { notifyOwner } from "../_core/notification";
+import { notifyED } from "../notifyED";
 
 export const adInquiryRouter = router({
   // ── Public: someone tapped an "Advertise Here" placeholder and submitted the form ──
@@ -31,7 +31,7 @@ export const adInquiryRouter = router({
         ]
       );
 
-      notifyOwner({
+      notifyED({ category: "ads" as const,
         title: "📣 New Advertiser Lead",
         content: `Someone is interested in advertising on the app.\n\nName: ${input.name}\nCompany: ${input.company || "—"}\nContact: ${input.contact}\nFrom slot: ${input.slotLabel || "—"}\n\nMessage:\n${input.message}\n\nView in ED Portal → Advertiser Leads.`,
       }).catch(() => {});

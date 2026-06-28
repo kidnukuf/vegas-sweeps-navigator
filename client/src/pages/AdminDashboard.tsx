@@ -680,6 +680,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
   // Contact requests: list + confirm
   const { data: supportMessages = [], refetch: refetchSupportMessages } = trpc.support.list.useQuery(undefined, { refetchInterval: 30000 });
+  // ED Notifications feed
+  const { data: edNotifications = [], refetch: refetchEdNotifications } = trpc.edNotifications.list.useQuery(undefined, { refetchInterval: 20000 });
+  const edNotifUnreadCount = (edNotifications as any[]).filter((n: any) => !n.isRead).length;
+  const markNotifRead = trpc.edNotifications.markRead.useMutation({ onSuccess: () => refetchEdNotifications() });
+  const markAllNotifRead = trpc.edNotifications.markAllRead.useMutation({ onSuccess: () => refetchEdNotifications() });
+  const deleteNotif = trpc.edNotifications.delete.useMutation({ onSuccess: () => refetchEdNotifications() });
+  const clearReadNotifs = trpc.edNotifications.clearRead.useMutation({ onSuccess: () => refetchEdNotifications() });
   const markSupportRead = trpc.support.markRead.useMutation({ onSuccess: () => refetchSupportMessages() });
   const replySupportMut = trpc.support.reply.useMutation({
     onSuccess: () => { toast.success("Reply recorded!"); setSupportReplyId(null); setSupportReplyText(""); refetchSupportMessages(); },
@@ -938,7 +945,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       <div className="bg-[#111] border-b border-white/10 px-2">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
           {(["guide", "roster", "passports", "doormen", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
-            const newCount = tab === "support" ? (supportMessages as any[]).filter((m: any) => m.status === "new").length : tab === "leads" ? (adLeadCount ?? 0) : 0;
+            const newCount = tab === "support" ? ((supportMessages as any[]).filter((m: any) => m.status === "new").length + edNotifUnreadCount) : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
                 className={`px-3 py-2.5 text-xs font-semibold capitalize transition-colors border-b-2 whitespace-nowrap ${activeTab === tab ? "border-yellow-500 text-yellow-400" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
@@ -1873,7 +1880,80 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Support Inbox Tab ── */}
       {activeTab === "support" && (
-        <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+
+          {/* ── ED Notifications Feed ── */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-black text-yellow-400">
+                🔔 App Notifications
+                {edNotifUnreadCount > 0 && (
+                  <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black">{edNotifUnreadCount} NEW</span>
+                )}
+              </h2>
+              <div className="flex gap-2">
+                <button onClick={() => refetchEdNotifications()} className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 transition-colors">↻ Refresh</button>
+                {edNotifUnreadCount > 0 && (
+                  <button onClick={() => markAllNotifRead.mutate()} className="text-xs text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-lg bg-blue-500/10 transition-colors">✓ Mark All Read</button>
+                )}
+                {(edNotifications as any[]).some((n: any) => n.isRead) && (
+                  <button onClick={() => clearReadNotifs.mutate()} className="text-xs text-gray-500 hover:text-red-400 px-3 py-1.5 rounded-lg bg-white/5 transition-colors">🗑 Clear Read</button>
+                )}
+              </div>
+            </div>
+            {(edNotifications as any[]).length === 0 ? (
+              <div className="text-center py-10 text-gray-500 rounded-2xl border border-white/5 bg-white/2">
+                <div className="text-4xl mb-2">🔕</div>
+                <p className="text-base font-semibold">No notifications yet</p>
+                <p className="text-sm mt-1">Sign-ups, security alerts, survey flags, and ad leads will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(edNotifications as any[]).map((notif: any) => {
+                  const catColors: Record<string, string> = {
+                    signup: "bg-green-500/20 text-green-300 border-green-500/30",
+                    security: "bg-red-500/20 text-red-300 border-red-500/30",
+                    support: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+                    survey: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+                    ads: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+                    general: "bg-white/5 text-gray-300 border-white/10",
+                  };
+                  const catLabel: Record<string, string> = {
+                    signup: "✅ Sign-Up", security: "⚠️ Security", support: "📞 Support",
+                    survey: "⭐ Survey", ads: "📣 Ad Lead", general: "ℹ️ General",
+                  };
+                  const cat = notif.category ?? "general";
+                  const colorClass = catColors[cat] ?? catColors.general;
+                  return (
+                    <div key={notif.id}
+                      className={`rounded-xl border p-4 transition-all cursor-pointer ${notif.isRead ? "opacity-60 border-white/8 bg-white/2" : "border-yellow-500/30 bg-yellow-500/5"}`}
+                      onClick={() => { if (!notif.isRead) markNotifRead.mutate({ id: notif.id }); }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colorClass}`}>{catLabel[cat] ?? cat}</span>
+                            {!notif.isRead && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black">NEW</span>}
+                            <span className="text-white/30 text-xs">{new Date(notif.createdAt).toLocaleString()}</span>
+                          </div>
+                          <p className="text-white font-semibold text-sm mb-1">{notif.title}</p>
+                          <p className="text-white/60 text-xs whitespace-pre-wrap leading-relaxed">{notif.content}</p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteNotif.mutate({ id: notif.id }); }}
+                          className="text-white/20 hover:text-red-400 text-lg leading-none transition-colors shrink-0"
+                          title="Delete notification"
+                        >×</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── Bowler Support Inbox ── */}
+          <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-black text-yellow-400">📨 Bowler Support Inbox</h2>
             <button onClick={() => refetchSupportMessages()} className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 transition-colors">
@@ -1969,6 +2049,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
 

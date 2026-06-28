@@ -1136,10 +1136,11 @@ export const appRouter = router({
         const ratings = [input.q1Rating, input.q2Rating, input.q3Rating, input.q4Rating, input.q5Rating, input.q6Rating, input.q7Rating].filter((r): r is number => typeof r === "number");
         const low = ratings.filter((r) => r <= 2);
         if (low.length > 0) {
-          import('./_core/notification').then(({ notifyOwner }) =>
-            notifyOwner({
+          import('./notifyED').then(({ notifyED }) =>
+            notifyED({
               title: "New survey: needs attention",
               content: `A bowler left ${low.length} low rating(s). Review the Survey tab for details.`,
+              category: 'survey' as const,
             })
           ).catch(() => {});
         }
@@ -1671,8 +1672,8 @@ export const appRouter = router({
         );
         // Notify Cassie immediately when a bowler submits a login-help request
         try {
-          const { notifyOwner } = await import('./_core/notification');
-          await notifyOwner({
+          const { notifyED } = await import('./notifyED');
+          await notifyED({
             title: `🚨 New Login Help Request from ${input.bowlerName}`,
             content: `Bowler: ${input.bowlerName}\nCenter: ${input.bowlerCenter}\nContact: ${input.contactInfo}\n\nMessage: ${input.message}${input.errorMsg ? `\n\nError they saw: ${input.errorMsg}` : ''}`,
           });
@@ -1699,9 +1700,9 @@ export const appRouter = router({
           [input.reply, 'replied', Date.now(), input.id]
         );
         // Notify owner (Cassie) via built-in notification
-        const { notifyOwner } = await import('./_core/notification');
+        const { notifyED } = await import('./notifyED');
         const row = (await rawQuery('SELECT * FROM support_messages WHERE id=?', [input.id]) as any[])[0];
-        await notifyOwner({
+        await notifyED({
           title: `📬 Reply sent to ${row?.bowlerName ?? 'bowler'}`,
           content: `Your reply was recorded. Bowler: ${row?.bowlerName} | Contact: ${row?.contactInfo}\n\nYour reply: ${input.reply}`,
         });
@@ -1717,6 +1718,46 @@ export const appRouter = router({
         );
         return { success: true };
       }),
+  }),
+
+  // ── ED Notifications feed ────────────────────────────────────────────────
+  edNotifications: router({
+    // List all notifications, newest first (limit 200)
+    list: publicProcedure.query(async () => {
+      const rows = await rawQuery(
+        'SELECT * FROM ed_notifications ORDER BY createdAt DESC LIMIT 200',
+        []
+      ) as any[];
+      return rows;
+    }),
+
+    // Mark a single notification as read
+    markRead: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await rawQuery('UPDATE ed_notifications SET isRead=1 WHERE id=?', [input.id]);
+        return { success: true };
+      }),
+
+    // Mark all notifications as read
+    markAllRead: publicProcedure.mutation(async () => {
+      await rawQuery('UPDATE ed_notifications SET isRead=1 WHERE isRead=0', []);
+      return { success: true };
+    }),
+
+    // Delete a single notification
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await rawQuery('DELETE FROM ed_notifications WHERE id=?', [input.id]);
+        return { success: true };
+      }),
+
+    // Clear all read notifications
+    clearRead: publicProcedure.mutation(async () => {
+      await rawQuery('DELETE FROM ed_notifications WHERE isRead=1', []);
+      return { success: true };
+    }),
   }),
 
 });

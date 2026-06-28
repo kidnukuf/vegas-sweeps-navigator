@@ -13,7 +13,7 @@ import QRCode from "qrcode";
 import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { rawQuery } from "../db";
-import { notifyOwner } from "../_core/notification";
+import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
@@ -280,7 +280,7 @@ export const bowlerAuthRouter = router({
 
       if (!bowler) {
         // Notify ED of failed sign-up attempt
-        notifyOwner({
+        notifyED({ category: "security" as const,
           title: "⚠️ Unknown Bowler Sign-Up Attempt",
           content: `Someone tried to sign up but was NOT found in the roster.\n\nName entered: ${input.firstName} ${input.lastName}\nCenter ID: ${input.centerId}\nIP: ${ip ?? "unknown"}\n\nIf this is a valid bowler, add them to the roster and re-import.`,
         }).catch(() => {});
@@ -340,7 +340,7 @@ export const bowlerAuthRouter = router({
         }
         if (codeRow.bowlerId !== bowler.id) {
           // Code belongs to a different bowler than the entered name/center
-          notifyOwner({
+          notifyED({ category: "security" as const,
             title: "⚠️ Claim Code / Name Mismatch on Sign-Up",
             content: `A claim code was entered that does not match the name+center provided.\n\nName entered: ${input.firstName} ${input.lastName}\nCode: ${entered}\nCode belongs to bowlerId: ${codeRow.bowlerId}\nMatched bowlerId: ${bowler.id}`,
           }).catch(() => {});
@@ -418,7 +418,7 @@ export const bowlerAuthRouter = router({
 
       // Notify ED of successful sign-up (differentiate captain vs bowler)
       const isCapt = Boolean(bowler.isCapitain);
-      notifyOwner({
+      notifyED({ category: "signup" as const,
         title: isCapt
           ? `⭐ Team Captain Signed Up: ${bowler.legalFirstName ?? input.firstName} ${bowler.legalLastName ?? input.lastName}`
           : `✅ Bowler Signed Up: ${bowler.legalFirstName ?? input.firstName} ${bowler.legalLastName ?? input.lastName}`,
@@ -450,7 +450,7 @@ export const bowlerAuthRouter = router({
 
       if (!bowler) {
         // Notify ED of failed sign-in attempt (name not found)
-        notifyOwner({
+        notifyED({ category: "security" as const,
           title: "⚠️ Failed Sign-In: Name Not Found",
           content: `Someone tried to sign in but their name was not found in the roster.\n\nName entered: ${input.firstName} ${input.lastName}\nIP: ${ip ?? "unknown"}`,
         }).catch(() => {});
@@ -942,7 +942,7 @@ export const bowlerAuthRouter = router({
 
       // Notify Event Director
       const name = `${bowler.legalFirstName ?? ""} ${bowler.legalLastName ?? ""}`.trim();
-      notifyOwner({
+      notifyED({ category: "support" as const,
         title: `📱 Contact Info Submitted: ${name}`,
         content: `Bowler ${name} (ID: ${bowler.scantronId ?? bowlerId}) has submitted their contact info:\n\nPhone: ${input.phone}\nEmail: ${input.email}\n\nPlease review and confirm in the Event Director portal → Roster → Contact Requests.`,
       }).catch(() => {});
