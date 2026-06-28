@@ -1205,8 +1205,16 @@ export const appRouter = router({
         leagueCode: z.string().default("1"),
         eventCode: z.string().default("01"),
         importedBy: z.number().optional(),
+        sheetSpreadsheetId: z.string().optional().nullable(),
+        sheetTabName: z.string().optional().nullable(),
       }))
       .mutation(async ({ input }) => {
+        // Auto-save the Google Sheet target for this event whenever the ED imports from a Google Sheet.
+        // This ensures all subsequent write-backs (IDs, QR codes, contact info) go to the correct sheet,
+        // regardless of which sheet was used previously. No hardcoded sheet IDs anywhere.
+        if (input.sourceType === "google_sheets" && input.sheetSpreadsheetId) {
+          await updateEventSheetTarget(input.eventId, input.sheetSpreadsheetId, input.sheetTabName ?? null);
+        }
         const sessionId = await createImportSession({
           eventId: input.eventId,
           importedBy: input.importedBy,

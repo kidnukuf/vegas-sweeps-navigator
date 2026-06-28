@@ -291,7 +291,27 @@ export default function ImportData() {
     if (validRows.length === 0) { toast.error("No valid rows to import."); return; }
     // Send the RAW row data keyed by original headers so the server's header-based lookups work
     const rawRows = validRows.map(r => r.raw);
-    importMutation.mutate({ rows: rawRows as unknown as Record<string, unknown>[], eventId: selectedEventId, sourceType: activeTab === "google" ? "google_sheets" : activeTab === "paste" ? "paste" : "csv", sourceName: activeTab === "file" ? "uploaded file" : activeTab === "google" ? googleUrl : "pasted data", leagueCode, eventCode });
+    // Extract spreadsheet ID and tab name from the Google Sheets URL so the server can
+    // auto-save the sheet target for this event — enabling write-backs to the correct sheet.
+    let sheetSpreadsheetId: string | undefined;
+    let sheetTabName: string | undefined;
+    if (activeTab === "google" && googleUrl) {
+      const idMatch = googleUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (idMatch) sheetSpreadsheetId = idMatch[1];
+      // Extract gid (tab) from URL if present, otherwise leave undefined (server will use first tab)
+      const gidMatch = googleUrl.match(/[#&?]gid=([0-9]+)/);
+      void gidMatch; // tab name resolved server-side from sheetTabName field in event settings
+    }
+    importMutation.mutate({
+      rows: rawRows as unknown as Record<string, unknown>[],
+      eventId: selectedEventId,
+      sourceType: activeTab === "google" ? "google_sheets" : activeTab === "paste" ? "paste" : "csv",
+      sourceName: activeTab === "file" ? "uploaded file" : activeTab === "google" ? googleUrl : "pasted data",
+      leagueCode,
+      eventCode,
+      sheetSpreadsheetId,
+      sheetTabName,
+    });
   };
 
   const errorCount = parsedRows.filter(r => r.errors.length > 0).length;

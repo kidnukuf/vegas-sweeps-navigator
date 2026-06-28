@@ -360,30 +360,52 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
 
           {steps[step].key === "sheet" && (
             <div className="space-y-5">
-              <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm text-gray-300 space-y-1">
-                <p className="font-semibold text-white">📊 Google Sheet — Import & Write-Back</p>
-                <p>The app reads bowler data from a Google Sheet tab and writes Bowler IDs, QR codes, and scan timestamps back to it. Set the sheet and tab for <span className="text-yellow-300 font-medium">this event</span> below.</p>
-                <p className="text-gray-400 text-xs mt-1">Leave blank to use the master default sheet. Each event can point at a different tab (or a different file entirely).</p>
+              <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm text-gray-300 space-y-2">
+                <p className="font-semibold text-white">📊 Google Sheet — Import &amp; Write-Back</p>
+                <p>The app reads bowler data from a Google Sheet and writes Bowler IDs, QR codes, and scan timestamps back to it automatically. Each event tracks its own sheet — the link is saved the moment you import from a Google Sheets URL.</p>
+                <div className="rounded border border-yellow-500/30 bg-yellow-500/5 p-3 text-xs text-yellow-200 space-y-1">
+                  <p className="font-semibold">🔑 One-time setup for new operators</p>
+                  <p>1. Go to <span className="text-white">Google Cloud Console</span> → IAM &amp; Admin → Service Accounts → Create a service account.</p>
+                  <p>2. Download a JSON key for that service account.</p>
+                  <p>3. Share your Google Sheet with the service account's email address (give it <span className="text-white">Editor</span> access).</p>
+                  <p>4. Paste the entire JSON key file contents into the app's <span className="text-white">Secrets</span> panel as <code className="bg-black/40 px-1 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code>.</p>
+                  <p className="text-gray-400">After that, every import from a Google Sheets URL automatically links the sheet to this event — no further configuration needed.</p>
+                </div>
               </div>
+
+              {/* Auto-link status */}
+              {s.sheetSpreadsheetId ? (
+                <div className="rounded-lg border border-green-500/40 bg-green-500/5 p-3 text-sm">
+                  <p className="font-semibold text-green-400">✅ Sheet linked for this event</p>
+                  <p className="text-gray-300 text-xs mt-1 break-all">{s.sheetSpreadsheetId}</p>
+                  {s.sheetTabName && <p className="text-gray-400 text-xs">Tab: <span className="text-white">{s.sheetTabName}</span></p>}
+                  <p className="text-gray-500 text-xs mt-2">This is set automatically when you import from a Google Sheets URL. You can override it below.</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-gray-600/40 bg-gray-800/30 p-3 text-sm">
+                  <p className="text-gray-400">⚠️ No sheet linked yet. Import bowler data from a Google Sheets URL to link automatically, or enter the details manually below.</p>
+                </div>
+              )}
+
               <div>
-                <label className={labelCls}>Spreadsheet ID</label>
+                <label className={labelCls}>Spreadsheet URL or ID <span className="text-gray-500 font-normal">(optional override)</span></label>
                 <input
                   className={inputCls}
                   value={s.sheetSpreadsheetId}
                   onChange={(e) => set("sheetSpreadsheetId", e.target.value)}
-                  placeholder="e.g. 1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg"
+                  placeholder="Paste full Google Sheets URL or just the spreadsheet ID"
                 />
-                <p className="mt-1 text-xs text-gray-400">Copy from the Google Sheet URL: docs.google.com/spreadsheets/d/<span className="text-yellow-300">THIS_PART</span>/edit</p>
+                <p className="mt-1 text-xs text-gray-400">You can paste the full URL (e.g. <span className="text-gray-300">https://docs.google.com/spreadsheets/d/ABC123/edit</span>) — the app extracts the ID automatically.</p>
               </div>
               <div>
-                <label className={labelCls}>Tab Name</label>
+                <label className={labelCls}>Tab Name <span className="text-gray-500 font-normal">(optional override)</span></label>
                 <input
                   className={inputCls}
                   value={s.sheetTabName}
                   onChange={(e) => set("sheetTabName", e.target.value)}
                   placeholder="e.g. June 23 1152pm"
                 />
-                <p className="mt-1 text-xs text-gray-400">Exact name of the sheet tab (bottom of the spreadsheet). Case-sensitive.</p>
+                <p className="mt-1 text-xs text-gray-400">Exact name of the sheet tab (bottom of the spreadsheet). Case-sensitive. Leave blank to use the first tab.</p>
               </div>
             </div>
           )}

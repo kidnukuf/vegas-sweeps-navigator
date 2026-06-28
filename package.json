@@ -63,6 +63,7 @@
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
     "framer-motion": "^12.23.22",
+    "googleapis": "^173.0.0",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.3",
     "input-otp": "^1.4.2",

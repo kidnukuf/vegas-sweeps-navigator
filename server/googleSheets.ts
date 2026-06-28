@@ -1,10 +1,18 @@
 /**
  * Google Sheets integration helper
- * Uses the gws CLI (Google Workspace CLI) which is pre-authenticated via the
- * Google Drive connector in Manus. No API keys or service account JSON needed.
  *
- * Sheet: "June 23 1152pm" (tab name as of 2026-06-23)
- * Spreadsheet ID: 1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg (live master — small-batch test event)
+ * Authentication: Google Service Account via the GOOGLE_SERVICE_ACCOUNT_JSON env var.
+ * The value must be the full JSON content of a Google Cloud service account key file
+ * (the file you download from Cloud Console → IAM → Service Accounts → Keys → Add Key).
+ *
+ * The service account must be granted "Editor" access to any spreadsheet it writes to.
+ * No Manus connectors, no gws CLI, no personal OAuth — fully self-contained.
+ *
+ * Per-event sheet routing:
+ *   Every event stores its own sheetSpreadsheetId + sheetTabName in the DB.
+ *   These are saved automatically when the ED imports from a Google Sheets URL.
+ *   All write-back functions accept an optional SheetTarget; when omitted the
+ *   fallback values below are used (useful for legacy data or manual override).
  *
  * DEFINITIVE COLUMN LAYOUT (A=col 0, 0-indexed):
  *
@@ -18,7 +26,7 @@
  *   AD (29) = Pool Party QR URL                ← written on sign-up
  *   AF (31) = Guest pool qr code               ← written on sign-up (suffix A)
  *   AH (33) = additional guest pool qr code    ← written on sign-up (suffix B)
- *   AI (34) = additional guest pool qr code used ← written on sign-up (suffix B used flag — treated as app-write per color)
+ *   AI (34) = additional guest pool qr code used ← written on sign-up (suffix B used flag)
  *   AJ (35) = guest banquet qr code            ← written on sign-up
  *
  * 🟣 PURPLE — ED supplies; app reads these columns:
@@ -53,26 +61,41 @@
  *   P  (15) = League Member
  */
 
-import { execSync } from "child_process";
+import { google } from "googleapis";
 
-// Default (master) sheet target — used when an event does not specify its own.
-const SPREADSHEET_ID = "1rnzm7lI-lH9MWCEt37n_tTuMVTiCcwkNpptRhCxbbDg";
-const SHEET_NAME = "June 23 1152pm";
+// ── Fallback sheet target ─────────────────────────────────────────────────────
+// These are used ONLY when an event has no sheet target saved yet.
+// New operators should set their own sheet via the Event Settings UI or by
+// importing from a Google Sheets URL — that auto-saves the target.
+// Leave blank so write-backs silently no-op until the ED links a sheet.
+const FALLBACK_SPREADSHEET_ID = "";
+const FALLBACK_SHEET_NAME = "";
 
 /**
  * Per-event sheet target. Each event can point at its own spreadsheet file and tab.
- * When a field is missing, the master default is used so existing flows never break.
+ * When a field is missing the fallback above is used so existing flows never break.
  */
 export type SheetTarget = {
   spreadsheetId?: string | null;
   sheetName?: string | null;
 };
 
+/**
+ * Extract a bare spreadsheet ID from either a full Google Sheets URL or a bare ID string.
+ * e.g. "https://docs.google.com/spreadsheets/d/ABCDEF/edit" → "ABCDEF"
+ *      "ABCDEF" → "ABCDEF"
+ */
+function extractSpreadsheetId(value: string): string {
+  const match = value.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : value;
+}
+
 /** Resolve an event's sheet target to concrete values, falling back to the master default. */
 export function resolveSheetTarget(target?: SheetTarget): { spreadsheetId: string; sheetName: string } {
+  const rawId = (target?.spreadsheetId && target.spreadsheetId.trim()) || FALLBACK_SPREADSHEET_ID;
   return {
-    spreadsheetId: (target?.spreadsheetId && target.spreadsheetId.trim()) || SPREADSHEET_ID,
-    sheetName: (target?.sheetName && target.sheetName.trim()) || SHEET_NAME,
+    spreadsheetId: rawId ? extractSpreadsheetId(rawId) : "",
+    sheetName: (target?.sheetName && target.sheetName.trim()) || FALLBACK_SHEET_NAME,
   };
 }
 
@@ -88,7 +111,6 @@ const COL_POOL_QR          = 29;  // AD — Pool Party QR URL
 const COL_GUEST_POOL_A     = 31;  // AF — Guest pool qr code (suffix A)
 const COL_GUEST_POOL_B     = 33;  // AH — additional guest pool qr code (suffix B)
 const COL_GUEST_BANQUET_QR = 35;  // AJ — guest banquet qr code
-
 // 🟣 App reads
 const COL_SQUAD_TIME       = 3;   // D
 const COL_LANE             = 4;   // E
@@ -107,7 +129,6 @@ const COL_CHECK_OUT        = 19;  // T
 const COL_ROOMMATE_FIRST   = 20;  // U
 const COL_ROOMMATE_LAST    = 21;  // V
 const COL_HOTEL_REG        = 22;  // W — Hotel Registration #
-
 // ⬜ Doorman writes (app reads for status checks)
 const COL_GUEST_POOL_USED  = 24;  // Y  — guest pool qr code used
 const COL_EXTRA_BNQ_USED   = 26;  // AA — extra banquet qr code used
@@ -128,24 +149,43 @@ void COL_GUEST_POOL_B;
 // Column letters for guest pool QR write-back (AF, AH = suffix A, B)
 const GUEST_POOL_COLUMNS = ["AF", "AH"];
 
-// ── gws helper ────────────────────────────────────────────────────────────────
-function gws(params: object, body: object | undefined, spreadsheetId: string): unknown {
-  const args = ["gws", "sheets", "spreadsheets", "values"];
-  if (body) {
-    args.push("batchUpdate");
-    args.push("--params", JSON.stringify({ spreadsheetId }));
-    args.push("--json", JSON.stringify(body));
-  } else {
-    args.push("get");
-    args.push("--params", JSON.stringify({ spreadsheetId, ...params }));
+// ── googleapis auth ───────────────────────────────────────────────────────────
+/**
+ * Build an authenticated Google Sheets API client using the service account JSON
+ * stored in the GOOGLE_SERVICE_ACCOUNT_JSON environment variable.
+ *
+ * Returns null (with a warning) if the env var is missing or not valid JSON,
+ * so all write-back functions degrade gracefully instead of crashing.
+ */
+function getSheetsClient() {
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!raw) {
+    console.warn("[googleSheets] GOOGLE_SERVICE_ACCOUNT_JSON not set — sheet write-backs disabled");
+    return null;
   }
-  const result = execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
-  return JSON.parse(result);
+  let credentials: Record<string, unknown>;
+  try {
+    credentials = JSON.parse(raw);
+  } catch {
+    console.warn("[googleSheets] GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON — sheet write-backs disabled");
+    return null;
+  }
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+    return google.sheets({ version: "v4", auth });
+  } catch (err) {
+    console.warn("[googleSheets] Failed to initialise Google auth:", err);
+    return null;
+  }
 }
 
+// ── Row finder ────────────────────────────────────────────────────────────────
 /**
  * Find the 1-indexed sheet row for a bowler by first name, last name, and lane.
- * Returns null if not found.
+ * Returns null if not found or if the sheet client is unavailable.
  */
 async function findBowlerRow(
   firstName: string,
@@ -153,21 +193,27 @@ async function findBowlerRow(
   laneNumber: number | null,
   resolved: { spreadsheetId: string; sheetName: string }
 ): Promise<number | null> {
+  if (!resolved.spreadsheetId || !resolved.sheetName) return null;
+  const sheets = getSheetsClient();
+  if (!sheets) return null;
   try {
-    const data = gws({ range: `'${resolved.sheetName}'!A1:AJ` }, undefined, resolved.spreadsheetId) as { values?: string[][] };
-    const rows = data.values ?? [];
-
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'!A1:AJ`,
+    });
+    const rows = resp.data.values ?? [];
+    const fn = firstName.toLowerCase().trim();
+    const ln = lastName.toLowerCase().trim();
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const rowFirst = (row[COL_FIRST_NAME] ?? "").trim().toLowerCase();
-      const rowLast  = (row[COL_LAST_NAME]  ?? "").trim().toLowerCase();
-      const rowLane  = parseInt(row[COL_LANE] ?? "0", 10);
-
-      const nameMatch = rowFirst === firstName.trim().toLowerCase()
-                     && rowLast  === lastName.trim().toLowerCase();
-      const laneMatch = laneNumber == null || rowLane === laneNumber;
-
-      if (nameMatch && laneMatch) return i + 1; // 1-indexed
+      const rowFirst = (row[COL_FIRST_NAME] ?? "").toLowerCase().trim();
+      const rowLast  = (row[COL_LAST_NAME]  ?? "").toLowerCase().trim();
+      if (rowFirst !== fn || rowLast !== ln) continue;
+      if (laneNumber !== null) {
+        const rowLane = parseInt(row[COL_LANE] ?? "", 10);
+        if (!isNaN(rowLane) && rowLane !== laneNumber) continue;
+      }
+      return i + 1; // 1-indexed
     }
     return null;
   } catch (err) {
@@ -176,11 +222,11 @@ async function findBowlerRow(
   }
 }
 
-// ── Public write-back functions ───────────────────────────────────────────────
+// ── Exported write-back functions ─────────────────────────────────────────────
 
 /**
- * Write the Bowler ID (scantronId) into column A of the bowler's row.
- * Called immediately after import generates the ID for a new bowler.
+ * Write the generated Bowler ID (scantron ID) into column A of the bowler's row.
+ * Called during import for every bowler that gets a new ID.
  */
 export async function writeBowlerIdToSheet(params: {
   firstName: string;
@@ -190,18 +236,23 @@ export async function writeBowlerIdToSheet(params: {
   target?: SheetTarget;
 }): Promise<void> {
   const { firstName, lastName, laneNumber, scantronId, target } = params;
-  if (!scantronId) return;
   const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) return;
+  const sheets = getSheetsClient();
+  if (!sheets) return;
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) {
       console.warn(`[googleSheets] writeBowlerIdToSheet: not found: ${firstName} ${lastName} lane ${laneNumber}`);
       return;
     }
-    gws({}, {
-      valueInputOption: "RAW",
-      data: [{ range: `'${resolved.sheetName}'!A${rowNum}`, values: [[scantronId]] }],
-    }, resolved.spreadsheetId);
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        valueInputOption: "RAW",
+        data: [{ range: `'${resolved.sheetName}'!A${rowNum}`, values: [[scantronId]] }],
+      },
+    });
     console.log(`[googleSheets] Bowler ID ${scantronId} → row ${rowNum} (${firstName} ${lastName})`);
   } catch (err) {
     console.error("[googleSheets] writeBowlerIdToSheet error (non-fatal):", err);
@@ -224,10 +275,12 @@ export async function writeQRCodesToSheet(params: {
 }): Promise<void> {
   const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], appOrigin, target } = params;
   const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) return;
+  const sheets = getSheetsClient();
+  if (!sheets) return;
 
   const banquetQRUrl   = banquetToken   ? `${appOrigin}/scan/banquet/${banquetToken}`   : null;
   const poolPartyQRUrl = poolPartyToken ? `${appOrigin}/scan/pool/${poolPartyToken}`     : null;
-
   if (!banquetQRUrl && !poolPartyQRUrl && guestPoolTokens.length === 0) return;
 
   try {
@@ -236,34 +289,27 @@ export async function writeQRCodesToSheet(params: {
       console.warn(`[googleSheets] writeQRCodesToSheet: not found: ${firstName} ${lastName} lane ${laneNumber}`);
       return;
     }
-
     const updateData: { range: string; values: string[][] }[] = [];
-
     if (banquetQRUrl) {
-      // AB (col 27) = Banquet QR URL
       updateData.push({ range: `'${resolved.sheetName}'!AB${rowNum}`, values: [[banquetQRUrl]] });
     }
     if (poolPartyQRUrl) {
-      // AD (col 29) = Pool Party QR URL
       updateData.push({ range: `'${resolved.sheetName}'!AD${rowNum}`, values: [[poolPartyQRUrl]] });
     }
-
-    // Guest pool QR URLs → AF (suffix A), AH (suffix B)
     for (let i = 0; i < Math.min(guestPoolTokens.length, GUEST_POOL_COLUMNS.length); i++) {
       const col = GUEST_POOL_COLUMNS[i];
       const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
       updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestUrl]] });
     }
-
-    // Also write Guest Pool Party QR URL to X (col 23) if first guest token exists
     if (guestPoolTokens.length > 0) {
       const guestPoolUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[0].token}`;
       updateData.push({ range: `'${resolved.sheetName}'!X${rowNum}`, values: [[guestPoolUrl]] });
     }
-
     if (updateData.length === 0) return;
-
-    gws({}, { valueInputOption: "RAW", data: updateData }, resolved.spreadsheetId);
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: { valueInputOption: "RAW", data: updateData },
+    });
     console.log(`[googleSheets] QR URLs written for ${firstName} ${lastName} (row ${rowNum}, ${guestPoolTokens.length} guest codes)`);
   } catch (err) {
     console.error("[googleSheets] writeQRCodesToSheet error (non-fatal):", err);
@@ -283,19 +329,25 @@ export async function writeContactInfoToSheet(params: {
 }): Promise<{ rowNum: number | null }> {
   const { firstName, lastName, laneNumber, phone, email, target } = params;
   const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) return { rowNum: null };
+  const sheets = getSheetsClient();
+  if (!sheets) return { rowNum: null };
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) {
       console.warn(`[googleSheets] writeContactInfo: not found: ${firstName} ${lastName}`);
       return { rowNum: null };
     }
-    gws({}, {
-      valueInputOption: "RAW",
-      data: [
-        { range: `'${resolved.sheetName}'!B${rowNum}`, values: [[phone]] },  // B = Phone
-        { range: `'${resolved.sheetName}'!C${rowNum}`, values: [[email]] },  // C = Email
-      ],
-    }, resolved.spreadsheetId);
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        valueInputOption: "RAW",
+        data: [
+          { range: `'${resolved.sheetName}'!B${rowNum}`, values: [[phone]] },
+          { range: `'${resolved.sheetName}'!C${rowNum}`, values: [[email]] },
+        ],
+      },
+    });
     console.log(`[googleSheets] Contact info written for ${firstName} ${lastName} (row ${rowNum})`);
     return { rowNum };
   } catch (err) {
@@ -318,45 +370,49 @@ export async function writeScanUsedToSheet(params: {
 }): Promise<void> {
   const { firstName, lastName, laneNumber, type, timestamp = new Date().toISOString(), target } = params;
   const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) return;
+  const sheets = getSheetsClient();
+  if (!sheets) return;
   const colMap: Record<string, string> = {
-    banquet:    "AC",  // col 28 — banquet qr code used
-    pool:       "AE",  // col 30 — Pool party entry confirmed
-    guest_pool: "AG",  // col 32 — guest pool entry confirmed
+    banquet:    "AC",
+    pool:       "AE",
+    guest_pool: "AG",
   };
   const col = colMap[type];
   if (!col) return;
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) return;
-    gws({}, {
-      valueInputOption: "RAW",
-      data: [{ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[timestamp]] }],
-    }, resolved.spreadsheetId);
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        valueInputOption: "RAW",
+        data: [{ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[timestamp]] }],
+      },
+    });
     console.log(`[googleSheets] Scan used (${type}) written for ${firstName} ${lastName} row ${rowNum}`);
   } catch (err) {
     console.error("[googleSheets] writeScanUsedToSheet error (non-fatal):", err);
   }
 }
 
-/**
- * Resolve the numeric sheetId (gid) of SHEET_NAME. Required for formatting requests.
- * Cached after first lookup.
- */
+// ── Numeric sheet gid cache (for formatting requests) ─────────────────────────
 const _cachedSheetIds = new Map<string, number | null>();
-function getSheetId(resolved: { spreadsheetId: string; sheetName: string }): number | null {
+
+async function getSheetId(resolved: { spreadsheetId: string; sheetName: string }): Promise<number | null> {
   const cacheKey = `${resolved.spreadsheetId}::${resolved.sheetName}`;
   if (_cachedSheetIds.has(cacheKey)) return _cachedSheetIds.get(cacheKey) ?? null;
+  const sheets = getSheetsClient();
+  if (!sheets) return null;
   try {
-    const args = [
-      "gws", "sheets", "spreadsheets", "get",
-      "--params", JSON.stringify({ spreadsheetId: resolved.spreadsheetId, fields: "sheets.properties" }),
-    ];
-    const result = execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
-    const parsed = JSON.parse(result) as { sheets?: Array<{ properties?: { sheetId?: number; title?: string } }> };
-    const match = (parsed.sheets ?? []).find((s) => s.properties?.title === resolved.sheetName);
+    const resp = await sheets.spreadsheets.get({
+      spreadsheetId: resolved.spreadsheetId,
+      fields: "sheets.properties",
+    });
+    const match = (resp.data.sheets ?? []).find((s) => s.properties?.title === resolved.sheetName);
     const sheetId = match?.properties?.sheetId ?? null;
-    _cachedSheetIds.set(cacheKey, sheetId);
-    return sheetId;
+    _cachedSheetIds.set(cacheKey, sheetId ?? null);
+    return sheetId ?? null;
   } catch (err) {
     console.error("[googleSheets] getSheetId error:", err);
     return null;
@@ -376,38 +432,37 @@ export async function markTshirtReceivedInSheet(params: {
 }): Promise<void> {
   const { firstName, lastName, laneNumber, received = true, target } = params;
   const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) return;
+  const sheets = getSheetsClient();
+  if (!sheets) return;
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
     if (!rowNum) return;
-    const sheetId = getSheetId(resolved);
+    const sheetId = await getSheetId(resolved);
     if (sheetId === null) return;
-    // Purple when received, white (reset) when un-received.
     const color = received
-      ? { red: 0.61, green: 0.35, blue: 0.71 }   // purple
-      : { red: 1, green: 1, blue: 1 };           // white
-    const body = {
-      requests: [
-        {
-          repeatCell: {
-            range: {
-              sheetId,
-              startRowIndex: rowNum - 1,
-              endRowIndex: rowNum,
-              startColumnIndex: COL_FIRST_NAME,
-              endColumnIndex: COL_FIRST_NAME + 1,
+      ? { red: 0.61, green: 0.35, blue: 0.71 }
+      : { red: 1, green: 1, blue: 1 };
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            repeatCell: {
+              range: {
+                sheetId,
+                startRowIndex: rowNum - 1,
+                endRowIndex: rowNum,
+                startColumnIndex: COL_FIRST_NAME,
+                endColumnIndex: COL_FIRST_NAME + 1,
+              },
+              cell: { userEnteredFormat: { backgroundColor: color } },
+              fields: "userEnteredFormat.backgroundColor",
             },
-            cell: { userEnteredFormat: { backgroundColor: color } },
-            fields: "userEnteredFormat.backgroundColor",
           },
-        },
-      ],
-    };
-    const args = [
-      "gws", "sheets", "spreadsheets", "batchUpdate",
-      "--params", JSON.stringify({ spreadsheetId: resolved.spreadsheetId }),
-      "--json", JSON.stringify(body),
-    ];
-    execSync(args.join(" "), { encoding: "utf-8", timeout: 15000 });
+        ],
+      },
+    });
     console.log(`[googleSheets] T-shirt ${received ? "received" : "reset"} color for ${firstName} ${lastName} row ${rowNum}`);
   } catch (err) {
     console.error("[googleSheets] markTshirtReceivedInSheet error (non-fatal):", err);
