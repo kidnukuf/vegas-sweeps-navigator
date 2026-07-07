@@ -456,4 +456,4 @@
 - [x] Create /ed login page with email/password form
 - [x] Implement ED login mutation and session handling
 - [x] Test ED login and verify dashboard access
-- [ ] Remove/disable invite system logic (edInvites router)
+- [x] Remove/disable invite system logic (edInvites router)
