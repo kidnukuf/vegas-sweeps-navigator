@@ -28,6 +28,7 @@ import SeatingChart from "./pages/SeatingChart";
 import AdLanding from "./pages/AdLanding";
 import OfflineDoor from "./pages/OfflineDoor";
 import OperatorSetupGuide from "./pages/OperatorSetupGuide";
+import EdLogin from "./pages/EdLogin";
 import { VideoSplash } from "./components/VideoSplash";
 import { useLocation } from "wouter";
 
@@ -113,6 +114,7 @@ function Router() {
       <Route path="/import" component={ImportData} />
       <Route path="/program-director" component={ProgramDirector} />
       <Route path="/league-select" component={LeagueSelector} />
+      <Route path="/ed-login" component={EdLogin} />
       <Route path="/ed" component={AdminDashboard} />
       <Route path="/bowler-login" component={BowlerLogin} />
       <Route path="/bowler" component={BowlerDashboard} />

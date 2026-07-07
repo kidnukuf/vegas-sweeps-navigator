@@ -559,7 +559,7 @@ export const appRouter = router({
   appAuth: router({
     login: publicProcedure
       .input(z.object({ username: z.string(), password: z.string() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const user = await getAppUserByUsername(input.username) as Record<string, unknown> | null;
         if (!user) return { success: false, error: "Invalid credentials" };
         const valid = await bcrypt.compare(input.password, user.passwordHash as string);
@@ -571,6 +571,9 @@ export const appRouter = router({
           details: `${user.designation} logged in`,
         });
         const token = jwt.sign({ userId: user.id, appRole: user.appRole, designation: user.designation }, process.env.JWT_SECRET ?? "dev-secret", { expiresIn: "12h" });
+        // Set session cookie
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
         return { success: true, token, user: { id: user.id, username: user.username, designation: user.designation, appRole: user.appRole, bowlerId: user.bowlerId, teamId: user.teamId, leagueId: user.leagueId, eventId: user.eventId } };
       }),
 

@@ -450,3 +450,10 @@
 - [x] Add tRPC procedures: googleCreds.status/save/delete/test
 - [x] Build Google Sheets Credentials UI in EventWizard Sheet step (paste JSON, save, test, delete)
 - [x] Run tests and save checkpoint
+
+## Phase 41: Single ED Account Setup (Cassie Davis)
+- [x] Create ED account for Cassie Davis (micah45@sbcglobal.net / #1Madre) in app_users table with role 'admin'
+- [x] Create /ed login page with email/password form
+- [x] Implement ED login mutation and session handling
+- [x] Test ED login and verify dashboard access
+- [ ] Remove/disable invite system logic (edInvites router)
