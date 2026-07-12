@@ -17,7 +17,7 @@ const QUESTIONS: Q[] = [
   { key: "q4", label: "How would you rate the pool party?", poolOnly: true },
   { key: "q5", label: "How would you rate the banquet dinner?" },
   { key: "q6", label: "How would you rate this app (the B.O.B. Passport)?" },
-  { key: "q7", label: "How likely are you to recommend this event to other bowlers?" },
+  { key: "q7", label: "Likelihood of using a similar app for your league if it offered information on upcoming opponents, lane assignments, team standings, averages, sub-availability, upcoming bowling events, and more?" },
 ];
 
 function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {

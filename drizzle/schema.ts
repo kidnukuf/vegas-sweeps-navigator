@@ -539,7 +539,7 @@ export const surveyResponses = mysqlTable("survey_responses", {
   bowlerId: int("bowlerId").notNull(),
   submittedAt: bigint("submittedAt", { mode: "number" }).notNull(),
   // Q1 Overall experience, Q2 Bowling venue, Q3 Event organization,
-  // Q4 Pool party (nullable), Q5 Banquet, Q6 This app, Q7 Returning next year
+  // Q4 Pool party (nullable), Q5 Banquet, Q6 This app, Q7 Likelihood of using similar app for league
   q1Rating: int("q1Rating"),
   q1Comment: text("q1Comment"),
   q2Rating: int("q2Rating"),
