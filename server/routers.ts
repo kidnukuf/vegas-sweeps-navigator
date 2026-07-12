@@ -6,6 +6,7 @@ import { bowlerAuthRouter } from "./routers/bowlerAuth";
 import { offlineDoorRouter } from "./routers/offlineDoor";
 import { claimCodesRouter } from "./routers/claimCodes";
 import { adInquiryRouter } from "./routers/adInquiry";
+import { masterSheetRouter } from "./routers/masterSheet";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -39,6 +40,7 @@ export function generateScantronId(cc: string, l: string, ee: string, tt: string
 
 // ─── MAIN ROUTER ─────────────────────────────────────────────────────────────
 export const appRouter = router({
+  masterSheet: masterSheetRouter,
   system: systemRouter,
 
   auth: router({
