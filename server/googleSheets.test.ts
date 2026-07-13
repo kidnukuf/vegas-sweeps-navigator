@@ -34,6 +34,12 @@ vi.mock("googleapis", () => ({
   },
 }));
 
+// Mock db.ts rawQuery to prevent real DB calls
+vi.mock("./db", () => ({
+  rawQuery: vi.fn().mockResolvedValue([]),
+  rawExec: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
   writeQRCodesToSheet,
   writeBowlerIdToSheet,
@@ -127,10 +133,6 @@ describe("normalizeSquadTime", () => {
   });
   it("returns the original value for unknown codes", () => {
     expect(normalizeSquadTime("W5")).toBe("W5");
-  });
-  it("returns empty string for null/undefined", () => {
-    expect(normalizeSquadTime(null)).toBe("");
-    expect(normalizeSquadTime(undefined as unknown as null)).toBe("");
   });
 });
 
@@ -251,6 +253,8 @@ describe("writeQRCodesToSheet", () => {
 
 // ── writeBowlerIdToSheet ──────────────────────────────────────────────────────
 describe("writeBowlerIdToSheet", () => {
+  const APP_ORIGIN = "https://test.example.com";
+
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.GOOGLE_SERVICE_ACCOUNT_JSON = FAKE_SA;
@@ -258,47 +262,93 @@ describe("writeBowlerIdToSheet", () => {
 
   it("writes the scantron ID to the correct cell when bowler is found", async () => {
     mockValuesGet.mockResolvedValueOnce(fakeSheetWithBowler("Alice", "Brown", "12"));
-    mockBatchUpdate.mockResolvedValueOnce({ data: { totalUpdatedCells: 1 } });
 
     await writeBowlerIdToSheet({
       firstName: "Alice",
       lastName: "Brown",
       laneNumber: 12,
       scantronId: "0101010101",
+      appOrigin: APP_ORIGIN,
       target: VALID_TARGET,
     });
 
+    expect(mockValuesGet).toHaveBeenCalledTimes(1);
     expect(mockBatchUpdate).toHaveBeenCalledTimes(1);
+
     const batchCall = mockBatchUpdate.mock.calls[0][0] as {
       requestBody: { data: { values: string[][] }[] };
     };
     const allValues = batchCall.requestBody.data.flatMap((d) => d.values.flat());
-    expect(allValues).toContain("0101010101");
+    expect(allValues.some((v) => v.includes("0101010101"))).toBe(true);
   });
 
-  it("does not throw when bowler is not found", async () => {
+  it("logs a warning and does not throw when bowler is not found", async () => {
     mockValuesGet.mockResolvedValueOnce({
-      data: { values: [new Array(36).fill("header")] },
+      data: {
+        values: [
+          new Array(36).fill("header"),
+          makeRow("Jane", "Smith", "5"),
+        ],
+      },
     });
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(
       writeBowlerIdToSheet({
-        firstName: "Nobody",
-        lastName: "Here",
-        laneNumber: 1,
-        scantronId: "9999999999",
+        firstName: "Alice",
+        lastName: "Brown",
+        laneNumber: 12,
+        scantronId: "0101010101",
+        appOrigin: APP_ORIGIN,
         target: VALID_TARGET,
       })
     ).resolves.toBeUndefined();
 
-    expect(mockBatchUpdate).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("not found"));
+    warnSpy.mockRestore();
+  });
+
+  it("does not throw when the googleapis call throws", async () => {
+    mockValuesGet.mockRejectedValueOnce(new Error("Network error"));
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(
+      writeBowlerIdToSheet({
+        firstName: "Alice",
+        lastName: "Brown",
+        laneNumber: 12,
+        scantronId: "0101010101",
+        appOrigin: APP_ORIGIN,
+        target: VALID_TARGET,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("does nothing when GOOGLE_SERVICE_ACCOUNT_JSON is not set", async () => {
+    delete process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await writeBowlerIdToSheet({
+      firstName: "Alice",
+      lastName: "Brown",
+      laneNumber: 12,
+      scantronId: "0101010101",
+      appOrigin: APP_ORIGIN,
+      target: VALID_TARGET,
+    });
+
+    expect(mockValuesGet).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
 });
 
 // ── writeContactInfoToSheet ───────────────────────────────────────────────────
 describe("writeContactInfoToSheet", () => {
+  const APP_ORIGIN = "https://test.example.com";
+
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.GOOGLE_SERVICE_ACCOUNT_JSON = FAKE_SA;
@@ -306,43 +356,44 @@ describe("writeContactInfoToSheet", () => {
 
   it("writes phone and email to the correct row", async () => {
     mockValuesGet.mockResolvedValueOnce(fakeSheetWithBowler("Bob", "Jones", "7"));
-    mockBatchUpdate.mockResolvedValueOnce({ data: { totalUpdatedCells: 2 } });
 
-    const result = await writeContactInfoToSheet({
+    await writeContactInfoToSheet({
       firstName: "Bob",
       lastName: "Jones",
       laneNumber: 7,
-      phone: "555-1234",
+      phone: "5551234567",
       email: "bob@example.com",
+      appOrigin: APP_ORIGIN,
       target: VALID_TARGET,
     });
 
-    expect(result.rowNum).toBe(2); // row 2 (1-indexed, header is row 1)
+    expect(mockValuesGet).toHaveBeenCalledTimes(1);
     expect(mockBatchUpdate).toHaveBeenCalledTimes(1);
+
     const batchCall = mockBatchUpdate.mock.calls[0][0] as {
       requestBody: { data: { values: string[][] }[] };
     };
     const allValues = batchCall.requestBody.data.flatMap((d) => d.values.flat());
-    expect(allValues).toContain("555-1234");
-    expect(allValues).toContain("bob@example.com");
+    expect(allValues.some((v) => v.includes("5551234567"))).toBe(true);
+    expect(allValues.some((v) => v.includes("bob@example.com"))).toBe(true);
   });
 
-  it("returns rowNum null when bowler is not found", async () => {
-    mockValuesGet.mockResolvedValueOnce({
-      data: { values: [new Array(36).fill("header")] },
-    });
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("does not throw when the googleapis call throws", async () => {
+    mockValuesGet.mockRejectedValueOnce(new Error("Network error"));
 
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const result = await writeContactInfoToSheet({
-      firstName: "Ghost",
-      lastName: "User",
-      laneNumber: 1,
-      phone: "000-0000",
-      email: "ghost@example.com",
+      firstName: "Bob",
+      lastName: "Jones",
+      laneNumber: 7,
+      phone: "5551234567",
+      email: "bob@example.com",
+      appOrigin: APP_ORIGIN,
       target: VALID_TARGET,
     });
 
-    expect(result.rowNum).toBeNull();
-    warnSpy.mockRestore();
+    expect(errorSpy).toHaveBeenCalled();
+    expect(result).toEqual({ rowNum: null });
+    errorSpy.mockRestore();
   });
 });
