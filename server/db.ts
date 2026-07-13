@@ -487,6 +487,14 @@ export type DoorGuestRow = {
   entitlementType: "bowler" | "guest";
   guestSuffix: string | null;
   alreadyUsedAtLoad: boolean;
+  /** 🟠 Orange column letter for this QR code (e.g., 'AB', 'AD', 'AF') */
+  orangeColumn?: string;
+  /** 🟣 Purple column letter directly to the right (e.g., 'AC', 'AE', 'AG') */
+  purpleColumn?: string;
+  /** Bowler ID or guest ID for sheet row lookup */
+  bowlerId?: number;
+  /** Lane number for sheet row lookup */
+  laneNumber?: number | null;
 };
 
 /**
@@ -503,9 +511,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     const bowlerRows = await rawQuery<{
       token: string; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null; banquetUsed: number;
+      bowlerId: number; laneNumber: number | null;
     }>(
       `SELECT b.banquetToken AS token, b.legalFirstName, b.legalLastName,
-              t.teamCode, t.teamName, b.banquetUsed
+              t.teamCode, t.teamName, b.banquetUsed, b.id AS bowlerId, b.laneNumber
        FROM bowlers b
        LEFT JOIN teams t ON t.id = b.teamId
        WHERE b.eventId = ? AND b.banquetToken IS NOT NULL AND b.banquetToken <> ''`,
@@ -520,6 +529,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         entitlementType: "bowler",
         guestSuffix: null,
         alreadyUsedAtLoad: Boolean(r.banquetUsed),
+        orangeColumn: "AB",
+        purpleColumn: "AC",
+        bowlerId: r.bowlerId,
+        laneNumber: r.laneNumber,
       });
     }
     // Guest banquet tokens
@@ -527,9 +540,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
       token: string; suffix: string; banquetUsed: number; disabled: number;
       legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null;
+      bowlerId: number; laneNumber: number | null;
     }>(
       `SELECT g.banquetToken AS token, g.suffix, g.banquetUsed, g.disabled,
-              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName
+              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
@@ -545,6 +559,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         entitlementType: "guest",
         guestSuffix: r.suffix,
         alreadyUsedAtLoad: Boolean(r.banquetUsed),
+        orangeColumn: "X",
+        purpleColumn: "Y",
+        bowlerId: r.bowlerId,
+        laneNumber: r.laneNumber,
       });
     }
   } else {
@@ -552,9 +570,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     const bowlerRows = await rawQuery<{
       token: string; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null; poolPartyUsed: number;
+      bowlerId: number; laneNumber: number | null;
     }>(
       `SELECT b.poolPartyToken AS token, b.legalFirstName, b.legalLastName,
-              t.teamCode, t.teamName, b.poolPartyUsed
+              t.teamCode, t.teamName, b.poolPartyUsed, b.id AS bowlerId, b.laneNumber
        FROM bowlers b
        LEFT JOIN teams t ON t.id = b.teamId
        WHERE b.eventId = ? AND b.poolPartyToken IS NOT NULL AND b.poolPartyToken <> ''`,
@@ -569,6 +588,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         entitlementType: "bowler",
         guestSuffix: null,
         alreadyUsedAtLoad: Boolean(r.poolPartyUsed),
+        orangeColumn: "AD",
+        purpleColumn: "AE",
+        bowlerId: r.bowlerId,
+        laneNumber: r.laneNumber,
       });
     }
     // Guest pool tokens
@@ -576,9 +599,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
       token: string; suffix: string; used: number; disabled: number;
       legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null;
+      bowlerId: number; laneNumber: number | null;
     }>(
       `SELECT g.token AS token, g.suffix, g.used, g.disabled,
-              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName
+              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
@@ -594,6 +618,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         entitlementType: "guest",
         guestSuffix: r.suffix,
         alreadyUsedAtLoad: Boolean(r.used),
+        orangeColumn: "AF",
+        purpleColumn: "AG",
+        bowlerId: r.bowlerId,
+        laneNumber: r.laneNumber,
       });
     }
   }

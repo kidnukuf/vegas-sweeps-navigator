@@ -176,6 +176,20 @@ void COL_GUEST_POOL_B;
 // Column letters for guest pool QR write-back (AF, AH = suffix A, B)
 const GUEST_POOL_COLUMNS = ["AF", "AH"];
 
+// 🔴 RED-PINK — App writes survey answers (AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ)
+// Pattern: AQ=Q1, AR=A1, AS=Q2, AT=A2, AU=Q3, AV=A3, AW=Q4, AX=A4, AY=Q5, AZ=A5,
+//          BA=Q6, BB=A6, BC=Q7, BD=A7, BE=Q8, BF=A8, BG=Q9, BH=A9, BI=Q10, BJ=A10
+const COL_Q1_ANSWER     = 43;  // AR
+const COL_Q2_ANSWER     = 45;  // AT
+const COL_Q3_ANSWER     = 47;  // AV
+const COL_Q4_ANSWER     = 49;  // AX
+const COL_Q5_ANSWER     = 51;  // AZ
+const COL_Q6_ANSWER     = 53;  // BB
+const COL_Q7_ANSWER     = 55;  // BD
+const COL_Q8_ANSWER     = 57;  // BF
+const COL_Q9_ANSWER     = 59;  // BH
+const COL_Q10_ANSWER    = 61;  // BJ
+
 // ── googleapis auth ───────────────────────────────────────────────────────────
 /**
  * Build an authenticated Google Sheets API client.
@@ -502,6 +516,64 @@ export async function markTshirtReceivedInSheet(params: {
     console.log(`[googleSheets] T-shirt ${received ? "received" : "reset"} color for ${firstName} ${lastName} row ${rowNum}`);
   } catch (err) {
     console.error("[googleSheets] markTshirtReceivedInSheet error (non-fatal):", err);
+  }
+}
+
+/**
+ * Write survey responses to the bowler's row in the Google Sheet.
+ * Writes Q1-Q10 responses to red-pink columns (AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ).
+ * Called after a bowler submits their survey in the portal.
+ */
+export async function writeSurveyToSheet(params: {
+  firstName: string;
+  lastName: string;
+  laneNumber: number | null;
+  q1Rating?: number | null;
+  q2Rating?: number | null;
+  q3Rating?: number | null;
+  q4Rating?: number | null;
+  q5Rating?: number | null;
+  q6Rating?: number | null;
+  q7Rating?: number | null;
+  q8Comment?: string | null;
+  q9Rating?: number | null;
+  q10Rating?: number | null;
+  target?: SheetTarget;
+}): Promise<void> {
+  const { firstName, lastName, laneNumber, target } = params;
+  const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) return;
+  const sheets = await getSheetsClient();
+  if (!sheets) return;
+  try {
+    const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
+    if (!rowNum) {
+      console.warn(`[googleSheets] writeSurveyToSheet: not found: ${firstName} ${lastName} lane ${laneNumber}`);
+      return;
+    }
+    // Build the update data: all 10 question answers go into AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ
+    const updates = [
+      { range: `'${resolved.sheetName}'!AR${rowNum}`, values: [[params.q1Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!AT${rowNum}`, values: [[params.q2Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!AV${rowNum}`, values: [[params.q3Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!AX${rowNum}`, values: [[params.q4Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!AZ${rowNum}`, values: [[params.q5Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!BB${rowNum}`, values: [[params.q6Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!BD${rowNum}`, values: [[params.q7Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!BF${rowNum}`, values: [[params.q8Comment ?? ""]] },
+      { range: `'${resolved.sheetName}'!BH${rowNum}`, values: [[params.q9Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!BJ${rowNum}`, values: [[params.q10Rating ?? ""]] },
+    ];
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        valueInputOption: "RAW",
+        data: updates,
+      },
+    });
+    console.log(`[googleSheets] Survey ratings written → row ${rowNum} (${firstName} ${lastName})`);
+  } catch (err) {
+    console.error("[googleSheets] writeSurveyToSheet error (non-fatal):", err);
   }
 }
 

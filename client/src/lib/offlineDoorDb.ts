@@ -74,10 +74,27 @@ export interface MetaRecord {
   deviceId: string;
 }
 
+export interface SheetCacheRecord {
+  /** Unique key: token (matches guest token) */
+  token: string;
+  /** Orange column letter (e.g., 'AB', 'AD', 'AF', 'X') */
+  orangeColumn: string;
+  /** Purple column letter (e.g., 'AC', 'AE', 'AG', 'Y') */
+  purpleColumn: string;
+  /** Whether an 'X' has been written to the purple column locally */
+  purpleMarked: boolean;
+  /** Timestamp when purple mark was written locally */
+  purpleMarkedAtMs: number | null;
+  /** Pending sync action: 'mark' | null */
+  pendingAction: "mark" | null;
+  pendingAtMs: number | null;
+}
+
 interface DoorDB extends DBSchema {
   guests: { key: string; value: GuestRecord; indexes: { byName: string } };
   scanLog: { key: number; value: ScanLogRecord; indexes: { bySynced: number } };
   reentryPool: { key: string; value: ReentryPoolRecord; indexes: { byZone: string } };
+  sheetCache: { key: string; value: SheetCacheRecord };
   meta: { key: string; value: MetaRecord };
 }
 
@@ -102,6 +119,9 @@ export function getDoorDB(): Promise<IDBPDatabase<DoorDB>> {
         if (!db.objectStoreNames.contains("reentryPool")) {
           const s = db.createObjectStore("reentryPool", { keyPath: "token" });
           s.createIndex("byZone", "zone");
+        }
+        if (!db.objectStoreNames.contains("sheetCache")) {
+          db.createObjectStore("sheetCache", { keyPath: "token" });
         }
         if (!db.objectStoreNames.contains("meta")) {
           db.createObjectStore("meta", { keyPath: "key" });
@@ -149,6 +169,8 @@ export interface LoadPayload {
     entitlementType: "bowler" | "guest";
     guestSuffix: string | null;
     alreadyUsedAtLoad: boolean;
+    orangeColumn?: string;
+    purpleColumn?: string;
   }>;
   reentry: Array<{
     token: string;
@@ -173,9 +195,13 @@ export async function loadDataset(payload: LoadPayload): Promise<void> {
       ? prevMeta.pinHash
       : null;
 
-  // Clear guests + reentryPool (full replace). Keep scanLog (unsynced scans must survive).
+  // Clear guests + reentryPool + sheetCache (full replace). Keep scanLog (unsynced scans must survive).
   await db.clear("guests");
   await db.clear("reentryPool");
+  await db.clear("sheetCache");
+
+  // Initialize sheet cache from guest data (orange/purple column info).
+  await initSheetCache(payload.guests);
 
   const gtx = db.transaction("guests", "readwrite");
   for (const g of payload.guests) {
@@ -367,4 +393,84 @@ export async function getLocalCounts(): Promise<Record<ScanResult, number>> {
 
 export async function getUnsyncedCount(): Promise<number> {
   return (await getUnsyncedScans()).length;
+}
+
+// ─── Sheet Cache (orange/purple column tracking for offline QR marking) ──────
+/**
+ * Initialize sheet cache from preloaded guest data.
+ * Called during loadDataset to populate sheetCache with orange/purple column info.
+ */
+export async function initSheetCache(
+  guests: Array<{
+    token: string;
+    orangeColumn?: string;
+    purpleColumn?: string;
+  }>
+): Promise<void> {
+  const db = await getDoorDB();
+  await db.clear("sheetCache");
+
+  const tx = db.transaction("sheetCache", "readwrite");
+  for (const g of guests) {
+    if (g.orangeColumn && g.purpleColumn) {
+      await tx.store.put({
+        token: g.token,
+        orangeColumn: g.orangeColumn,
+        purpleColumn: g.purpleColumn,
+        purpleMarked: false,
+        purpleMarkedAtMs: null,
+        pendingAction: null,
+        pendingAtMs: null,
+      });
+    }
+  }
+  await tx.done;
+}
+
+/**
+ * Get sheet cache entry for a token.
+ * Returns orange/purple column info and current purple-mark status.
+ */
+export async function getSheetCache(token: string): Promise<SheetCacheRecord | undefined> {
+  const db = await getDoorDB();
+  return db.get("sheetCache", token);
+}
+
+/**
+ * Mark purple column as used (write "X" locally).
+ * Called immediately after a successful scan admission.
+ */
+export async function markPurpleColumn(token: string): Promise<void> {
+  const db = await getDoorDB();
+  const rec = await db.get("sheetCache", token);
+  if (rec) {
+    rec.purpleMarked = true;
+    rec.purpleMarkedAtMs = Date.now();
+    rec.pendingAction = "mark";
+    rec.pendingAtMs = Date.now();
+    await db.put("sheetCache", rec);
+  }
+}
+
+/**
+ * Get all pending purple-column marks (not yet synced to Google Sheets).
+ * Used by sync service to upload local marks.
+ */
+export async function getPendingPurpleMarks(): Promise<SheetCacheRecord[]> {
+  const db = await getDoorDB();
+  const all = await db.getAll("sheetCache");
+  return all.filter((r) => r.pendingAction === "mark");
+}
+
+/**
+ * Clear pending action for a token after successful sync.
+ */
+export async function clearPendingPurpleMark(token: string): Promise<void> {
+  const db = await getDoorDB();
+  const rec = await db.get("sheetCache", token);
+  if (rec) {
+    rec.pendingAction = null;
+    rec.pendingAtMs = null;
+    await db.put("sheetCache", rec);
+  }
 }

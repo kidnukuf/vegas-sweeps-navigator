@@ -1103,6 +1103,10 @@ export const appRouter = router({
         q7Rating: z.number().min(1).max(5).optional().nullable(),
         q7Comment: z.string().optional().nullable(),
         q8Comment: z.string().optional().nullable(),
+        q9Rating: z.number().min(1).max(5).optional().nullable(),
+        q9Comment: z.string().optional().nullable(),
+        q10Rating: z.number().min(1).max(5).optional().nullable(),
+        q10Comment: z.string().optional().nullable(),
         attendNextYear: z.string().optional().nullable(),
         attendNextYearComment: z.string().optional().nullable(),
         testimonialPermission: z.boolean().default(false),
@@ -1115,14 +1119,21 @@ export const appRouter = router({
         if (existing.length > 0) {
           return { success: false, error: "You have already submitted your survey. Thank you!" } as const;
         }
+        // Get bowler name and lane for Google Sheets write-back
+        const bowlerData = await rawQuery(
+          `SELECT firstName, lastName, laneNumber FROM app_users WHERE id=?`,
+          [input.bowlerId]
+        ) as Array<{ firstName: string; lastName: string; laneNumber: number | null }>;
+        const bowler = bowlerData[0];
         await rawQuery(
           `INSERT INTO survey_responses
              (eventId, bowlerId, submittedAt,
               q1Rating, q1Comment, q2Rating, q2Comment, q3Rating, q3Comment,
               q4Rating, q4Comment, q5Rating, q5Comment, q6Rating, q6Comment,
               q7Rating, q7Comment, q8Comment,
+              q9Rating, q9Comment, q10Rating, q10Comment,
               attendNextYear, attendNextYearComment, testimonialPermission)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             input.eventId, input.bowlerId, Date.now(),
             input.q1Rating ?? null, input.q1Comment ?? null,
@@ -1133,10 +1144,32 @@ export const appRouter = router({
             input.q6Rating ?? null, input.q6Comment ?? null,
             input.q7Rating ?? null, input.q7Comment ?? null,
             input.q8Comment ?? null,
+            input.q9Rating ?? null, input.q9Comment ?? null,
+            input.q10Rating ?? null, input.q10Comment ?? null,
             input.attendNextYear ?? null, input.attendNextYearComment ?? null,
             input.testimonialPermission ? 1 : 0,
           ]
         );
+        // Write survey ratings to Google Sheet (fire-and-forget)
+        if (bowler) {
+          import('./googleSheets').then(({ writeSurveyToSheet }) =>
+            writeSurveyToSheet({
+              firstName: bowler.firstName,
+              lastName: bowler.lastName,
+              laneNumber: bowler.laneNumber,
+              q1Rating: input.q1Rating,
+              q2Rating: input.q2Rating,
+              q3Rating: input.q3Rating,
+              q4Rating: input.q4Rating,
+              q5Rating: input.q5Rating,
+              q6Rating: input.q6Rating,
+              q7Rating: input.q7Rating,
+              q8Comment: input.q8Comment,
+              q9Rating: input.q9Rating,
+              q10Rating: input.q10Rating,
+            })
+          ).catch(() => {});
+        }
         // Notify the ED when negative feedback (any rating <= 2) arrives so they can act fast.
         const ratings = [input.q1Rating, input.q2Rating, input.q3Rating, input.q4Rating, input.q5Rating, input.q6Rating, input.q7Rating].filter((r): r is number => typeof r === "number");
         const low = ratings.filter((r) => r <= 2);

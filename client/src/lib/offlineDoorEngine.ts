@@ -19,6 +19,7 @@ import {
   markGuestUsed,
   appendScanLog,
   getMeta,
+  markPurpleColumn,
   type DoorMode,
   type ReentryZone,
   type ScanResult,
@@ -185,6 +186,8 @@ export async function processScan(
     // ── 4. Admit + consume ─────────────────────────────────────────────────────
     await markGuestUsed(token);
     await appendScanLog({ ...baseLog, result: "admitted", reason: null });
+    // Mark purple column locally (write "X" to indicate used).
+    await markPurpleColumn(token);
     return {
       result: "admitted",
       admit: true,
@@ -213,7 +216,11 @@ export async function overrideAdmit(opts: {
 }): Promise<void> {
   const meta = await getMeta();
   const guest = await getGuest(opts.token);
-  if (guest) await markGuestUsed(opts.token);
+  if (guest) {
+    await markGuestUsed(opts.token);
+    // Mark purple column locally on override admit.
+    await markPurpleColumn(opts.token);
+  }
   await appendScanLog({
     token: opts.token,
     result: "override_admitted",
