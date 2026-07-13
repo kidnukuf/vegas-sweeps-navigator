@@ -8,12 +8,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { processScan, type ScanDecision } from "@/lib/offlineDoorEngine";
 import type { ReentryZone } from "@/lib/offlineDoorDb";
+import { useDoorSounds } from "@/lib/useDoorSounds";
 import { cn } from "@/lib/utils";
 
 interface ScanLaneProps {
   lane: number;
   label: string;
   zone: ReentryZone | null;
+  /** Station mode: banquet or pool. */
+  station?: "banquet" | "pool";
   /** When true this lane captures global keyboard input (for keyboard-wedge scanners). */
   captureKeyboard: boolean;
   onResult?: (d: ScanDecision) => void;
@@ -47,13 +50,14 @@ function beep(kind: "ok" | "bad") {
   }
 }
 
-export function ScanLane({ lane, label, zone, captureKeyboard, onResult }: ScanLaneProps) {
+export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboard, onResult }: ScanLaneProps) {
   const [flash, setFlash] = useState<FlashState>("idle");
   const [decision, setDecision] = useState<ScanDecision | null>(null);
   const bufferRef = useRef<string>("");
   const lastKeyTimeRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { playDoorSound } = useDoorSounds();
 
   const handleToken = useCallback(
     async (raw: string) => {
@@ -62,12 +66,24 @@ export function ScanLane({ lane, label, zone, captureKeyboard, onResult }: ScanL
       const d = await processScan(token, { lane, zone });
       setDecision(d);
       setFlash(d.admit ? "admit" : "deny");
-      beep(d.admit ? "ok" : "bad");
+
+      // Play appropriate door sound based on result
+      if (d.result === "admitted") {
+        const isUnder21 = d.detail?.toLowerCase().includes("under 21") || d.detail?.toLowerCase().includes("u21");
+        playDoorSound(isUnder21 ? "admit_under21" : "admit_21plus");
+      } else if (d.result === "denied_used") {
+        playDoorSound("already_used");
+      } else if (d.result === "denied_wrongzone") {
+        playDoorSound("wrong_event");
+      } else {
+        playDoorSound("already_used");
+      }
+
       onResult?.(d);
       if (flashTimer.current) clearTimeout(flashTimer.current);
       flashTimer.current = setTimeout(() => setFlash("idle"), d.admit ? 2200 : 4000);
     },
-    [lane, zone, onResult]
+    [lane, zone, station, onResult, playDoorSound]
   );
 
   // Keyboard-wedge capture: accumulate fast keystrokes, submit on Enter.

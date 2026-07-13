@@ -35,6 +35,10 @@ export default function OfflineDoor() {
   const [zoneA, setZoneA] = useState<ReentryZone>("N");
   const [zoneB, setZoneB] = useState<ReentryZone>("E");
 
+  // Per-window station mode (banquet or pool).
+  const [stationA, setStationA] = useState<"banquet" | "pool">("banquet");
+  const [stationB, setStationB] = useState<"banquet" | "pool">("pool");
+
   useEffect(() => {
     startSyncService();
   }, []);
@@ -95,7 +99,13 @@ export default function OfflineDoor() {
         ) : (
           <div className="flex-1">
             {/* One capturing lane fills the TV. */}
-            <ScanLane lane={view === "A" ? 1 : 2} label={label} zone={zone} captureKeyboard />
+            <ScanLane
+              lane={view === "A" ? 1 : 2}
+              label={label}
+              zone={zone}
+              station={view === "A" ? stationA : stationB}
+              captureKeyboard
+            />
           </div>
         )}
       </div>
