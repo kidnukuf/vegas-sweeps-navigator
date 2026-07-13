@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { processScan, type ScanDecision } from "@/lib/offlineDoorEngine";
 import type { ReentryZone } from "@/lib/offlineDoorDb";
 import { useDoorSounds } from "@/lib/useDoorSounds";
+import { ScanResult, type ScanResultState } from "./ScanResult";
 import { cn } from "@/lib/utils";
 
 interface ScanLaneProps {
@@ -53,6 +54,9 @@ function beep(kind: "ok" | "bad") {
 export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboard, onResult }: ScanLaneProps) {
   const [flash, setFlash] = useState<FlashState>("idle");
   const [decision, setDecision] = useState<ScanDecision | null>(null);
+  const [scanResultState, setScanResultState] = useState<ScanResultState | null>(null);
+  const [scanResultAge, setScanResultAge] = useState<"21" | "00">("21");
+  const [scanResultMsg, setScanResultMsg] = useState<string>("");
   const bufferRef = useRef<string>("");
   const lastKeyTimeRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -67,15 +71,24 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
       setDecision(d);
       setFlash(d.admit ? "admit" : "deny");
 
-      // Play appropriate door sound based on result
-      if (d.result === "admitted") {
-        const isUnder21 = d.detail?.toLowerCase().includes("under 21") || d.detail?.toLowerCase().includes("u21");
-        playDoorSound(isUnder21 ? "admit_under21" : "admit_21plus");
-      } else if (d.result === "denied_used") {
+      // Determine ScanResult overlay state
+      const isUnder21 = d.detail?.toLowerCase().includes("under 21") || d.detail?.toLowerCase().includes("u21");
+      const ageCode = isUnder21 ? "00" : "21";
+
+      if (d.result === "denied_used") {
+        setScanResultState("used");
         playDoorSound("already_used");
+      } else if (d.result === "admitted") {
+        setScanResultState(station);
+        setScanResultAge(ageCode);
+        playDoorSound(isUnder21 ? "admit_under21" : "admit_21plus");
       } else if (d.result === "denied_wrongzone") {
+        setScanResultState("mismatch");
+        setScanResultMsg("This QR does not match this station");
         playDoorSound("wrong_event");
       } else {
+        setScanResultState("mismatch");
+        setScanResultMsg(d.detail || "QR not recognized");
         playDoorSound("already_used");
       }
 
@@ -171,6 +184,17 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
           </>
         )}
       </div>
+
+      {/* ScanResult overlay */}
+      {scanResultState && (
+        <ScanResult
+          state={scanResultState}
+          ageCode={scanResultAge}
+          message={scanResultMsg}
+          duration={2500}
+          onDismiss={() => setScanResultState(null)}
+        />
+      )}
     </div>
   );
 }
