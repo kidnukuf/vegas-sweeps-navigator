@@ -19,6 +19,15 @@
 import nodemailer from "nodemailer";
 import { rawQuery, rawExec } from "./db";
 import { getSheetsClient, resolveSheetTarget, type SheetTarget } from "./googleSheets";
+import {
+  generateHtmlTemplate,
+  generatePlainTextTemplate,
+  checkDuplicateSend,
+  isOptedOut,
+  logInvitationSend,
+  isValidEmail,
+  generateUnsubscribeUrl,
+} from "./emailTemplates";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface InvitationParams {
@@ -32,6 +41,10 @@ export interface InvitationParams {
   customMessage?: string;
   /** Optional: sheet target for reading email from Google Sheets */
   sheetTarget?: SheetTarget;
+  /** Optional: dry-run mode (log but don't send) */
+  dryRun?: boolean;
+  /** Optional: base URL for unsubscribe link */
+  baseUrl?: string;
 }
 
 interface RateLimitRecord {
@@ -206,66 +219,7 @@ async function findBowlerRowInSheet(
 }
 
 // ── Email Template ────────────────────────────────────────────────────────────
-/**
- * Generate a clean HTML email template for the invitation.
- */
-function generateEmailHtml(params: InvitationParams): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
-    .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-    .event-details { background: white; padding: 15px; border-left: 4px solid #667eea; margin: 15px 0; }
-    .event-details p { margin: 8px 0; }
-    .label { font-weight: bold; color: #667eea; }
-    .cta-button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 15px 0; }
-    .footer { font-size: 12px; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>You're Invited! 🎳</h1>
-    </div>
-    <div class="content">
-      <p>Hi <strong>${params.firstName}</strong>,</p>
-      
-      <p>You're invited to join us for an exciting event!</p>
-      
-      <div class="event-details">
-        <p><span class="label">Event:</span> ${params.eventName}</p>
-        <p><span class="label">Date:</span> ${params.eventDate}</p>
-        <p><span class="label">Location:</span> ${params.eventLocation}</p>
-      </div>
-      
-      ${params.customMessage ? `<p>${params.customMessage}</p>` : ""}
-      
-      <p>To confirm your attendance, please use the link below:</p>
-      
-      <div style="text-align: center;">
-        <a href="${params.rsrvpUrl}" class="cta-button">Confirm Your RSVP</a>
-      </div>
-      
-      <p>If you have any questions, please don't hesitate to reach out.</p>
-      
-      <p>Looking forward to seeing you there!</p>
-      
-      <p>Best regards,<br>The Event Team</p>
-      
-      <div class="footer">
-        <p>This is an automated email. Please do not reply directly to this message.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
-}
+// Moved to emailTemplates.ts for better organization and reusability
 
 // ── Main Invitation Function ──────────────────────────────────────────────────
 /**
@@ -283,7 +237,7 @@ function generateEmailHtml(params: InvitationParams): string {
  */
 export async function sendInvitationEmail(
   params: InvitationParams
-): Promise<{ success: boolean; email?: string; error?: string }> {
+): Promise<{ success: boolean; email?: string; error?: string; messageId?: string; isDryRun?: boolean }> {
   try {
     // 1. Resolve sheet target
     const resolved = resolveSheetTarget(params.sheetTarget);
@@ -334,12 +288,68 @@ export async function sendInvitationEmail(
       };
     }
 
-    const htmlContent = generateEmailHtml(params);
+    // Check for opt-outs
+    if (await isOptedOut(email)) {
+      console.log(`[emailInvitation] Skipped ${email} (opted out)`);
+      return {
+        success: false,
+        error: `${params.firstName} ${params.lastName} has opted out of invitations`,
+      };
+    }
+
+    // Check for duplicate sends in last 24 hours
+    const dupCheck = await checkDuplicateSend(email, params.eventName);
+    if (dupCheck.isDuplicate) {
+      const hoursSince = Math.floor((Date.now() - (dupCheck.lastSentAt || 0)) / (60 * 60 * 1000));
+      console.log(`[emailInvitation] Duplicate send blocked for ${email} (sent ${hoursSince}h ago)`);
+      return {
+        success: false,
+        error: `Invitation already sent to ${email} for this event (${hoursSince} hours ago)`,
+      };
+    }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      return {
+        success: false,
+        error: `Invalid email format: ${email}`,
+      };
+    }
+
+    // Generate templates
+    const unsubscribeUrl = params.baseUrl ? generateUnsubscribeUrl(params.baseUrl, email) : undefined;
+    const htmlContent = generateHtmlTemplate({
+      ...params,
+      email,
+      unsubscribeUrl,
+    });
+    const plainTextContent = generatePlainTextTemplate({
+      ...params,
+      email,
+      unsubscribeUrl,
+    });
+
+    // Dry-run mode: log but don't send
+    if (params.dryRun) {
+      console.log(`[emailInvitation] DRY-RUN: Would send to ${email} (${params.firstName} ${params.lastName})`);
+      await logInvitationSend(
+        `${params.firstName} ${params.lastName}`,
+        email,
+        params.eventName,
+        null,
+        true
+      );
+      return { success: true, email, isDryRun: true };
+    }
+
+    // Send email with both HTML and plain text
     const info = await transporter.sendMail({
       from: SMTP_FROM,
       to: email,
       subject: `You're Invited to ${params.eventName}!`,
       html: htmlContent,
+      text: plainTextContent,
+      replyTo: SMTP_FROM,
     });
 
     console.log(
@@ -347,24 +357,15 @@ export async function sendInvitationEmail(
     );
 
     // 6. Log to database
-    try {
-      await rawExec(
-        `INSERT INTO email_invitations (bowler_name, email, event_name, sent_at, status)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          `${params.firstName} ${params.lastName}`,
-          email,
-          params.eventName,
-          Date.now(),
-          "sent",
-        ]
-      );
-    } catch (dbErr) {
-      console.warn("[emailInvitation] Failed to log email to database:", dbErr);
-      // Don't fail the entire operation if logging fails
-    }
+    await logInvitationSend(
+      `${params.firstName} ${params.lastName}`,
+      email,
+      params.eventName,
+      info.messageId,
+      false
+    );
 
-    return { success: true, email };
+    return { success: true, email, messageId: info.messageId };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error("[emailInvitation] Error sending invitation:", errorMsg);
