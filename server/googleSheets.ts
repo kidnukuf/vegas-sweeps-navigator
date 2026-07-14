@@ -20,7 +20,6 @@
  *   A  (0)  = Bowler ID                       ← written on import
  *   B  (1)  = Phone                            ← written when ED confirms contact request
  *   C  (2)  = Email                            ← written when ED confirms contact request
- *   X  (23) = Guest Pool Party (QR URL)        ← written on sign-up
  *   Z  (25) = extra Guest banquet qr code      ← written on sign-up
  *   AB (27) = Banquet QR URL                   ← written on sign-up
  *   AD (29) = Pool Party QR URL                ← written on sign-up
@@ -41,7 +40,6 @@
  *   N  (13) = Best Avg
  *   O  (14) = Team Name
  *   Q  (16) = T-Shirt Size
- *   R  (17) = Hotel Confirmation
  *   S  (18) = Check In
  *   T  (19) = Check Out
  *   U  (20) = Roommate First Name
@@ -131,7 +129,6 @@ export function resolveSheetTarget(target?: SheetTarget): { spreadsheetId: strin
 const COL_BOWLER_ID        = 0;   // A
 const COL_PHONE            = 1;   // B
 const COL_EMAIL            = 2;   // C
-const COL_GUEST_POOL_QR    = 23;  // X  — Guest Pool Party QR URL
 const COL_EXTRA_BANQUET_QR = 25;  // Z  — extra Guest banquet qr code
 const COL_BANQUET_QR       = 27;  // AB — Banquet QR URL
 const COL_POOL_QR          = 29;  // AD — Pool Party QR URL
@@ -150,7 +147,6 @@ const COL_UNDER_21         = 10;  // K
 const COL_BEST_AVG         = 13;  // N
 const COL_TEAM_NAME        = 14;  // O
 const COL_SHIRT_SIZE       = 16;  // Q
-const COL_HOTEL_CONF       = 17;  // R
 const COL_CHECK_IN         = 18;  // S
 const COL_CHECK_OUT        = 19;  // T
 const COL_ROOMMATE_FIRST   = 20;  // U
@@ -166,7 +162,7 @@ const COL_GUEST_POOL_CONF  = 32;  // AG — guest pool entry confirmed
 // Suppress unused-variable warnings for read-only constants used by other modules
 void COL_SQUAD_TIME; void COL_CENTER; void COL_TEAM_CODE; void COL_CAPTAIN;
 void COL_UNDER_21; void COL_BEST_AVG; void COL_TEAM_NAME; void COL_SHIRT_SIZE;
-void COL_HOTEL_CONF; void COL_CHECK_IN; void COL_CHECK_OUT;
+void COL_CHECK_IN; void COL_CHECK_OUT;
 void COL_ROOMMATE_FIRST; void COL_ROOMMATE_LAST; void COL_HOTEL_REG;
 void COL_GUEST_POOL_USED; void COL_EXTRA_BNQ_USED; void COL_BANQUET_USED;
 void COL_POOL_CONFIRMED; void COL_GUEST_POOL_CONF;
@@ -606,13 +602,11 @@ export const SHEET_COLS = {
   BEST_AVG:         COL_BEST_AVG,
   TEAM_NAME:        COL_TEAM_NAME,
   SHIRT_SIZE:       COL_SHIRT_SIZE,
-  HOTEL_CONF:       COL_HOTEL_CONF,
   CHECK_IN:         COL_CHECK_IN,
   CHECK_OUT:        COL_CHECK_OUT,
   ROOMMATE_FIRST:   COL_ROOMMATE_FIRST,
   ROOMMATE_LAST:    COL_ROOMMATE_LAST,
   HOTEL_REG:        COL_HOTEL_REG,
-  GUEST_POOL_QR:    COL_GUEST_POOL_QR,
   EXTRA_BANQUET_QR: COL_EXTRA_BANQUET_QR,
   BANQUET_QR:       COL_BANQUET_QR,
   POOL_QR:          COL_POOL_QR,
