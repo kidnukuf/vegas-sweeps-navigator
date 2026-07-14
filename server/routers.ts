@@ -7,6 +7,7 @@ import { offlineDoorRouter } from "./routers/offlineDoor";
 import { claimCodesRouter } from "./routers/claimCodes";
 import { adInquiryRouter } from "./routers/adInquiry";
 import { masterSheetRouter } from "./routers/masterSheet";
+import { emailInvitationRouter } from "./routers/emailInvitation";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -42,6 +43,7 @@ export function generateScantronId(cc: string, l: string, ee: string, tt: string
 export const appRouter = router({
   masterSheet: masterSheetRouter,
   system: systemRouter,
+  emailInvitation: emailInvitationRouter,
 
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),

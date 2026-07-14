@@ -198,7 +198,7 @@ const COL_Q10_ANSWER    = 61;  // BJ
  *   2. GOOGLE_SERVICE_ACCOUNT_JSON env var  (fallback for dev / Manus Secrets)
  * Returns null (with a warning) if neither source is available.
  */
-async function getSheetsClient() {
+export async function getSheetsClient() {
   // 1. Try DB-stored credentials first
   let raw: string | null = null;
   try {
