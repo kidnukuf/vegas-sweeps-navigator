@@ -347,10 +347,7 @@ export async function writeQRCodesToSheet(params: {
       const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
       updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestUrl]] });
     }
-    if (guestPoolTokens.length > 0) {
-      const guestPoolUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[0].token}`;
-      updateData.push({ range: `'${resolved.sheetName}'!X${rowNum}`, values: [[guestPoolUrl]] });
-    }
+
     if (updateData.length === 0) return;
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: resolved.spreadsheetId,
