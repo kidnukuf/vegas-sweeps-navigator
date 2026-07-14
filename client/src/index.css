@@ -239,6 +239,62 @@
   animation: lane-sweep 2s linear infinite;
 }
 
+/* ─── Full-Screen Scan Outcome Flashes ─────────────────────────────── */
+/* 21+ Entry: Bright green flash (bowling strike sound) */
+@keyframes scan-flash-admit-21plus {
+  0% { background-color: #00FF00; opacity: 0.8; }
+  50% { background-color: #00DD00; opacity: 0.6; }
+  100% { background-color: transparent; opacity: 0; }
+}
+.scan-flash-admit-21plus {
+  animation: scan-flash-admit-21plus 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+}
+
+/* Under-21 Entry: Orange/amber flash (infant crying sound) */
+@keyframes scan-flash-admit-under21 {
+  0% { background-color: #FFA500; opacity: 0.8; }
+  50% { background-color: #FF8C00; opacity: 0.6; }
+  100% { background-color: transparent; opacity: 0; }
+}
+.scan-flash-admit-under21 {
+  animation: scan-flash-admit-under21 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+}
+
+/* Wrong Event: Red flash (sad trombone sound) */
+@keyframes scan-flash-wrong-event {
+  0% { background-color: #FF0000; opacity: 0.8; }
+  50% { background-color: #DD0000; opacity: 0.6; }
+  100% { background-color: transparent; opacity: 0; }
+}
+.scan-flash-wrong-event {
+  animation: scan-flash-wrong-event 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+}
+
+/* Already Used: Purple/magenta flash (piano sting sound) */
+@keyframes scan-flash-already-used {
+  0% { background-color: #FF00FF; opacity: 0.8; }
+  50% { background-color: #DD00DD; opacity: 0.6; }
+  100% { background-color: transparent; opacity: 0; }
+}
+.scan-flash-already-used {
+  animation: scan-flash-already-used 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+}
+
+/* Mismatch: Yellow flash (generic error) */
+@keyframes scan-flash-mismatch {
+  0% { background-color: #FFFF00; opacity: 0.8; }
+  50% { background-color: #FFDD00; opacity: 0.6; }
+  100% { background-color: transparent; opacity: 0; }
+}
+.scan-flash-mismatch {
+  animation: scan-flash-mismatch 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+}
+
 @keyframes neon-flicker {
   0%, 95%, 100% { opacity: 1; }
   96% { opacity: 0.8; }

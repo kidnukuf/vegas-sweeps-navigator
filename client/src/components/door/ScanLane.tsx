@@ -57,6 +57,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
   const [scanResultState, setScanResultState] = useState<ScanResultState | null>(null);
   const [scanResultAge, setScanResultAge] = useState<"21" | "00">("21");
   const [scanResultMsg, setScanResultMsg] = useState<string>("");
+  const [scanFlashClass, setScanFlashClass] = useState<string>("");
   const bufferRef = useRef<string>("");
   const lastKeyTimeRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,18 +78,23 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
 
       if (d.result === "denied_used") {
         setScanResultState("used");
+        setScanFlashClass("scan-flash-already-used");
         playDoorSound("already_used");
       } else if (d.result === "admitted") {
         setScanResultState(station);
         setScanResultAge(ageCode);
+        const flashClass = isUnder21 ? "scan-flash-admit-under21" : "scan-flash-admit-21plus";
+        setScanFlashClass(flashClass);
         playDoorSound(isUnder21 ? "admit_under21" : "admit_21plus");
       } else if (d.result === "denied_wrongzone") {
         setScanResultState("mismatch");
         setScanResultMsg("This QR does not match this station");
+        setScanFlashClass("scan-flash-wrong-event");
         playDoorSound("wrong_event");
       } else {
         setScanResultState("mismatch");
         setScanResultMsg(d.detail || "QR not recognized");
+        setScanFlashClass("scan-flash-mismatch");
         playDoorSound("already_used");
       }
 
@@ -192,7 +198,11 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
           ageCode={scanResultAge}
           message={scanResultMsg}
           duration={2500}
-          onDismiss={() => setScanResultState(null)}
+          onDismiss={() => {
+            setScanResultState(null);
+            setScanFlashClass("");
+          }}
+          flashClass={scanFlashClass}
         />
       )}
     </div>
