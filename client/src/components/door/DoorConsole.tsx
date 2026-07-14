@@ -34,6 +34,7 @@ import {
 } from "@/lib/offlineDoorDb";
 import { overrideAdmit, flagForEd } from "@/lib/offlineDoorEngine";
 import { trpc } from "@/lib/trpc";
+import { EmailInvitationPanel } from "./EmailInvitationPanel";
 import {
   subscribeConn,
   syncNow,
@@ -208,6 +209,9 @@ export function DoorConsole({ eventId }: { eventId: number }) {
 
       {/* Resolution */}
       <ResolutionPanel hasPin={hasPin} />
+
+      {/* Email invitations */}
+      <EmailInvitationPanel eventId={eventId} eventName={eventName} mode={mode} />
 
       {/* Reentry manager */}
       <ReentryManager />
