@@ -47,6 +47,24 @@ const COLS = {
   LANE_2: 37,             // Column AL
   POOL_USED_2: 38,        // Column AM
   BANQUET_USED_2: 39,     // Column AN
+  BANQUET_QR_A: 35,       // Column AJ (alias)
+  BANQUET_QR_B: 35,       // Column AJ (placeholder)
+  SECOND_CENTER: 40,      // Column AO (placeholder)
+  SECOND_TEAM: 41,        // Column AP (placeholder)
+  SECOND_SQUAD: 42,       // Column AQ (placeholder)
+  GUEST_POOL_USED: 32,    // Column AG (alias)
+  GUEST_POOL_QR: 31,      // Column AF (alias)
+  POOL_ENTRY_A_USED: 32,  // Column AG (alias)
+  POOL_QR_A: 31,          // Column AF (alias)
+  POOL_ENTRY_B_USED: 34,  // Column AI (alias)
+  POOL_QR_B: 33,          // Column AH (alias)
+  LEAGUE: 15,             // Column P (alias for LEAGUE_MEMBER)
+  BANQUET_TABLE: 25,      // Column Z (placeholder)
+  EXTRA_BANQUET: 25,      // Column Z (alias)
+  BANQUET_QR_USED: 28,    // Column AC (alias for BANQUET_USED)
+  CODE: 0,                // Column A (placeholder)
+  DATE_1: 0,              // Column A (placeholder)
+  DATE_2: 0,              // Column A (placeholder)
   Q1_QUESTION: 42,        // Column AQ
   Q1_ANSWER: 43,          // Column AR
   Q2_QUESTION: 44,        // Column AS
