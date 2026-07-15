@@ -141,12 +141,6 @@ export function resolveSheetTarget(target?: SheetTarget): { spreadsheetId: strin
 const COL_BOWLER_ID        = 0;   // A
 const COL_PHONE            = 1;   // B
 const COL_EMAIL            = 2;   // C
-const COL_EXTRA_BANQUET_QR = 25;  // Z  — extra Guest banquet qr code
-const COL_BANQUET_QR       = 27;  // AB — Banquet QR URL
-const COL_POOL_QR          = 29;  // AD — Pool Party QR URL
-const COL_GUEST_POOL_A     = 31;  // AF — Guest pool qr code (suffix A)
-const COL_GUEST_POOL_B     = 33;  // AH — additional guest pool qr code (suffix B)
-const COL_GUEST_BANQUET_QR = 35;  // AJ — guest banquet qr code
 // 🟣 App reads
 const COL_SQUAD_TIME       = 3;   // D
 const COL_LANE             = 4;   // E
@@ -156,30 +150,48 @@ const COL_CAPTAIN          = 7;   // H
 const COL_FIRST_NAME       = 8;   // I
 const COL_LAST_NAME        = 9;   // J
 const COL_UNDER_21         = 10;  // K
+const COL_SANCTION_NUM     = 11;  // L — Sanction #
+const COL_NUM_GAMES        = 12;  // M — # Games
 const COL_BEST_AVG         = 13;  // N
 const COL_TEAM_NAME        = 14;  // O
+const COL_LEAGUE_MEMBER    = 15;  // P — League Member
 const COL_SHIRT_SIZE       = 16;  // Q
+const COL_HOTEL_CONF       = 17;  // R — Hotel Confirmation
 const COL_CHECK_IN         = 18;  // S
 const COL_CHECK_OUT        = 19;  // T
 const COL_ROOMMATE_FIRST   = 20;  // U
 const COL_ROOMMATE_LAST    = 21;  // V
 const COL_HOTEL_REG        = 22;  // W — Hotel Registration #
+const COL_COORDINATOR      = 23;  // X — Coordinator
 // ⬜ Doorman writes (app reads for status checks)
-const COL_GUEST_POOL_USED  = 24;  // Y  — guest pool qr code used
-const COL_EXTRA_BNQ_USED   = 26;  // AA — extra banquet qr code used
-const COL_BANQUET_USED     = 28;  // AC — banquet qr code used
+const COL_POOL_USED        = 24;  // Y  — Pool Used
+const COL_EXTRA_BANQUET_QR = 25;  // Z  — 2nd Banquet QR
+const COL_EXTRA_BNQ_USED   = 26;  // AA — 2nd Banquet Used
+const COL_BANQUET_QR       = 27;  // AB — Banquet QR
+const COL_BANQUET_USED     = 28;  // AC — Banquet Used
+const COL_POOL_QR          = 29;  // AD — Pool QR
 const COL_POOL_CONFIRMED   = 30;  // AE — Pool party entry confirmed
-const COL_GUEST_POOL_CONF  = 32;  // AG — guest pool entry confirmed
+const COL_GUEST_POOL_A     = 31;  // AF — #A Pool QR
+const COL_GUEST_POOL_A_USED = 32; // AG — #A Pool Used
+const COL_GUEST_POOL_B     = 33;  // AH — #B Pool QR
+const COL_GUEST_POOL_B_USED = 34; // AI — #B Pool Used
+const COL_GUEST_BANQUET_QR = 35;  // AJ — #A Banquet QR
+const COL_SQUAD_TIME_2     = 36;  // AK — 2nd Squad Time
+const COL_LANE_2           = 37;  // AL — 2nd Lane #
+const COL_POOL_USED_2      = 38;  // AM — 2nd Pool Used
+const COL_BANQUET_USED_2   = 39;  // AN — 2nd Banquet Used
 
 // Suppress unused-variable warnings for read-only constants used by other modules
 void COL_SQUAD_TIME; void COL_CENTER; void COL_TEAM_CODE; void COL_CAPTAIN;
 void COL_UNDER_21; void COL_BEST_AVG; void COL_TEAM_NAME; void COL_SHIRT_SIZE;
 void COL_CHECK_IN; void COL_CHECK_OUT;
-void COL_ROOMMATE_FIRST; void COL_ROOMMATE_LAST; void COL_HOTEL_REG;
-void COL_GUEST_POOL_USED; void COL_EXTRA_BNQ_USED; void COL_BANQUET_USED;
-void COL_POOL_CONFIRMED; void COL_GUEST_POOL_CONF;
-void COL_EXTRA_BANQUET_QR; void COL_GUEST_BANQUET_QR;
-void COL_GUEST_POOL_B;
+void COL_ROOMMATE_FIRST; void COL_ROOMMATE_LAST; void COL_HOTEL_REG; void COL_COORDINATOR;
+void COL_SANCTION_NUM; void COL_NUM_GAMES; void COL_LEAGUE_MEMBER; void COL_HOTEL_CONF;
+void COL_POOL_USED; void COL_EXTRA_BANQUET_QR; void COL_EXTRA_BNQ_USED;
+void COL_BANQUET_QR; void COL_BANQUET_USED; void COL_POOL_QR; void COL_POOL_CONFIRMED;
+void COL_GUEST_POOL_A; void COL_GUEST_POOL_A_USED; void COL_GUEST_POOL_B; void COL_GUEST_POOL_B_USED;
+void COL_GUEST_BANQUET_QR; void COL_SQUAD_TIME_2; void COL_LANE_2;
+void COL_POOL_USED_2; void COL_BANQUET_USED_2;
 
 // Column letters for guest pool QR write-back (AF, AH = suffix A, B)
 const GUEST_POOL_COLUMNS = ["AF", "AH"];
@@ -634,11 +646,12 @@ export const SHEET_COLS = {
   GUEST_POOL_A:     COL_GUEST_POOL_A,
   GUEST_POOL_B:     COL_GUEST_POOL_B,
   GUEST_BANQUET_QR: COL_GUEST_BANQUET_QR,
-  GUEST_POOL_USED:  COL_GUEST_POOL_USED,
+  POOL_USED:        COL_POOL_USED,
   EXTRA_BNQ_USED:   COL_EXTRA_BNQ_USED,
   BANQUET_USED:     COL_BANQUET_USED,
   POOL_CONFIRMED:   COL_POOL_CONFIRMED,
-  GUEST_POOL_CONF:  COL_GUEST_POOL_CONF,
+  GUEST_POOL_A_USED: COL_GUEST_POOL_A_USED,
+  GUEST_POOL_B_USED: COL_GUEST_POOL_B_USED,
   Q1_QUESTION:      COL_Q1_QUESTION,
   Q2_QUESTION:      COL_Q2_QUESTION,
   Q3_QUESTION:      COL_Q3_QUESTION,
