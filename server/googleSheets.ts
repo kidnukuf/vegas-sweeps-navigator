@@ -53,6 +53,18 @@
  *   AE (30) = Pool party entry confirmed
  *   AG (32) = guest pool entry confirmed
  *
+ * 🔴 RED-PINK — Survey Questions (informational, not written by app):
+ *   AQ (42) = Q1 Question
+ *   AS (44) = Q2 Question
+ *   AU (46) = Q3 Question
+ *   AW (48) = Q4 Question
+ *   AY (50) = Q5 Question
+ *   BA (52) = Q6 Question
+ *   BC (54) = Q7 Question
+ *   BE (56) = Q8 Question
+ *   BG (58) = Q9 Question
+ *   BI (60) = Q10 Question
+ *
  * ⬜ WHITE — Informational (no color, not parsed):
  *   L  (11) = Sanction #
  *   M  (12) = # Games
@@ -175,6 +187,18 @@ const GUEST_POOL_COLUMNS = ["AF", "AH"];
 // 🔴 RED-PINK — App writes survey answers (AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ)
 // Pattern: AQ=Q1, AR=A1, AS=Q2, AT=A2, AU=Q3, AV=A3, AW=Q4, AX=A4, AY=Q5, AZ=A5,
 //          BA=Q6, BB=A6, BC=Q7, BD=A7, BE=Q8, BF=A8, BG=Q9, BH=A9, BI=Q10, BJ=A10
+// Survey Questions (informational, not written by app)
+const COL_Q1_QUESTION   = 42;  // AQ
+const COL_Q2_QUESTION   = 44;  // AS
+const COL_Q3_QUESTION   = 46;  // AU
+const COL_Q4_QUESTION   = 48;  // AW
+const COL_Q5_QUESTION   = 50;  // AY
+const COL_Q6_QUESTION   = 52;  // BA
+const COL_Q7_QUESTION   = 54;  // BC
+const COL_Q8_QUESTION   = 56;  // BE
+const COL_Q9_QUESTION   = 58;  // BG
+const COL_Q10_QUESTION  = 60;  // BI
+// Survey Answers (app writes these)
 const COL_Q1_ANSWER     = 43;  // AR
 const COL_Q2_ANSWER     = 45;  // AT
 const COL_Q3_ANSWER     = 47;  // AV
@@ -615,4 +639,24 @@ export const SHEET_COLS = {
   BANQUET_USED:     COL_BANQUET_USED,
   POOL_CONFIRMED:   COL_POOL_CONFIRMED,
   GUEST_POOL_CONF:  COL_GUEST_POOL_CONF,
+  Q1_QUESTION:      COL_Q1_QUESTION,
+  Q2_QUESTION:      COL_Q2_QUESTION,
+  Q3_QUESTION:      COL_Q3_QUESTION,
+  Q4_QUESTION:      COL_Q4_QUESTION,
+  Q5_QUESTION:      COL_Q5_QUESTION,
+  Q6_QUESTION:      COL_Q6_QUESTION,
+  Q7_QUESTION:      COL_Q7_QUESTION,
+  Q8_QUESTION:      COL_Q8_QUESTION,
+  Q9_QUESTION:      COL_Q9_QUESTION,
+  Q10_QUESTION:     COL_Q10_QUESTION,
+  Q1_ANSWER:        COL_Q1_ANSWER,
+  Q2_ANSWER:        COL_Q2_ANSWER,
+  Q3_ANSWER:        COL_Q3_ANSWER,
+  Q4_ANSWER:        COL_Q4_ANSWER,
+  Q5_ANSWER:        COL_Q5_ANSWER,
+  Q6_ANSWER:        COL_Q6_ANSWER,
+  Q7_ANSWER:        COL_Q7_ANSWER,
+  Q8_ANSWER:        COL_Q8_ANSWER,
+  Q9_ANSWER:        COL_Q9_ANSWER,
+  Q10_ANSWER:       COL_Q10_ANSWER,
 };
