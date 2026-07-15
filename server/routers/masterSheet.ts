@@ -8,46 +8,65 @@ import { rawQuery } from "../db";
 // Based on actual Google Sheet structure: https://docs.google.com/spreadsheets/d/1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
 const COLS = {
   BOWLER_ID: 0,           // Column A
-  TEAM_NAME: 1,           // Column B
-  TSHIRT_SIZE: 2,         // Column C
-  CODE: 3,                // Column D (identifier/code)
-  DATE_1: 4,              // Column E (event date)
-  DATE_2: 5,              // Column F (event date)
-  FIRST_NAME: 6,          // Column G
-  LAST_NAME: 7,           // Column H
-  PHONE: 8,               // Column I
-  EMAIL: 9,               // Column J
-  LEAGUE: 10,             // Column K
-  TEAM_CODE: 11,          // Column L
-  CENTER: 12,             // Column M
-  SQUAD_TIME: 13,         // Column N
-  LANE: 14,               // Column O
-  UNDER_21: 15,           // Column P
-  SANCTION: 16,           // Column Q
-  GAMES: 17,              // Column R
-  BEST_AVG: 18,           // Column S
-  LEAGUE_MEMBER: 19,      // Column T
-  HOTEL_CONFIRMATION: 20, // Column U
-  CHECK_IN: 21,           // Column V
-  CHECK_OUT: 22,          // Column W
-  ROOMMATE_FIRST: 23,     // Column X
-  ROOMMATE_LAST: 24,      // Column Y
-  BANQUET_TABLE: 25,      // Column Z
-  EXTRA_BANQUET: 26,      // Column AA
-  BANQUET_QR_USED: 27,    // Column AB
-  BANQUET_QR: 28,         // Column AC
-  POOL_ENTRY_A_USED: 29,  // Column AD
-  POOL_QR_A: 30,          // Column AE
-  POOL_ENTRY_B_USED: 31,  // Column AF
-  POOL_QR_B: 32,          // Column AG
-  BANQUET_QR_A: 33,       // Column AH
-  BANQUET_QR_B: 34,       // Column AI
-  SECOND_CENTER: 35,      // Column AJ
-  SECOND_TEAM: 36,        // Column AK
-  SECOND_SQUAD: 37,       // Column AL
-  POOL_QR: 38,            // Column AM
-  GUEST_POOL_USED: 39,    // Column AN
-  GUEST_POOL_QR: 40,      // Column AO
+  PHONE: 1,               // Column B
+  EMAIL: 2,               // Column C
+  SQUAD_TIME: 3,          // Column D
+  LANE: 4,                // Column E
+  CENTER: 5,              // Column F
+  TEAM_CODE: 6,           // Column G
+  CAPTAIN: 7,             // Column H
+  FIRST_NAME: 8,          // Column I
+  LAST_NAME: 9,           // Column J
+  UNDER_21: 10,           // Column K
+  SANCTION: 11,           // Column L
+  GAMES: 12,              // Column M
+  BEST_AVG: 13,           // Column N
+  TEAM_NAME: 14,          // Column O
+  LEAGUE_MEMBER: 15,      // Column P
+  HOTEL_CONFIRMATION: 16, // Column Q
+  TSHIRT_SIZE: 17,        // Column R (was 2, now 17)
+  CHECK_IN: 18,           // Column S
+  CHECK_OUT: 19,          // Column T
+  ROOMMATE_FIRST: 20,     // Column U
+  ROOMMATE_LAST: 21,      // Column V
+  HOTEL_REG: 22,          // Column W
+  COORDINATOR: 23,        // Column X
+  POOL_USED: 24,          // Column Y
+  EXTRA_BANQUET_QR: 25,   // Column Z
+  EXTRA_BNQ_USED: 26,     // Column AA
+  BANQUET_QR: 27,         // Column AB
+  BANQUET_USED: 28,       // Column AC
+  POOL_QR: 29,            // Column AD
+  POOL_CONFIRMED: 30,     // Column AE
+  GUEST_POOL_A: 31,       // Column AF
+  GUEST_POOL_A_USED: 32,  // Column AG
+  GUEST_POOL_B: 33,       // Column AH
+  GUEST_POOL_B_USED: 34,  // Column AI
+  GUEST_BANQUET_QR: 35,   // Column AJ
+  SQUAD_TIME_2: 36,       // Column AK
+  LANE_2: 37,             // Column AL
+  POOL_USED_2: 38,        // Column AM
+  BANQUET_USED_2: 39,     // Column AN
+  Q1_QUESTION: 42,        // Column AQ
+  Q1_ANSWER: 43,          // Column AR
+  Q2_QUESTION: 44,        // Column AS
+  Q2_ANSWER: 45,          // Column AT
+  Q3_QUESTION: 46,        // Column AU
+  Q3_ANSWER: 47,          // Column AV
+  Q4_QUESTION: 48,        // Column AW
+  Q4_ANSWER: 49,          // Column AX
+  Q5_QUESTION: 50,        // Column AY
+  Q5_ANSWER: 51,          // Column AZ
+  Q6_QUESTION: 52,        // Column BA
+  Q6_ANSWER: 53,          // Column BB
+  Q7_QUESTION: 54,        // Column BC
+  Q7_ANSWER: 55,          // Column BD
+  Q8_QUESTION: 56,        // Column BE
+  Q8_ANSWER: 57,          // Column BF
+  Q9_QUESTION: 58,        // Column BG
+  Q9_ANSWER: 59,          // Column BH
+  Q10_QUESTION: 60,       // Column BI
+  Q10_ANSWER: 61,         // Column BJ
 };
 
 interface SheetRow {
@@ -224,47 +243,68 @@ export const masterSheetRouter = router({
 
       // Headers match the actual Google Sheet structure
       const headers = [
-        "Bowler ID",
-        "Team Name",
-        "T-Shirt Size",
-        "Code",
-        "Date 1",
-        "Date 2",
-        "First Name",
-        "Last Name",
-        "Phone",
-        "Email",
-        "League",
-        "Team Code",
-        "Center",
-        "Squad Time",
-        "Lane",
-        "Under 21",
-        "Sanction",
-        "Games",
-        "Best Avg",
-        "League Member",
-        "Hotel Confirmation",
-        "Check In",
-        "Check Out",
-        "Roommate First",
-        "Roommate Last",
-        "Banquet Table",
-        "Extra Banquet",
-        "Banquet QR Used",
-        "Banquet QR",
-        "Pool Entry A Used",
-        "Pool QR A",
-        "Pool Entry B Used",
-        "Pool QR B",
-        "Banquet QR A",
-        "Banquet QR B",
-        "Second Center",
-        "Second Team",
-        "Second Squad",
-        "Pool QR",
-        "Guest Pool Used",
-        "Guest Pool QR",
+        "Bowler ID",           // A
+        "Phone",               // B
+        "Email",               // C
+        "Squad Day & Time",    // D
+        "Lane #",              // E
+        "Center",              // F
+        "Team #",              // G
+        "Captain",             // H
+        "First Name",          // I
+        "Last Name",           // J
+        "Under 21?",           // K
+        "Sanction #",          // L
+        "# Games",             // M
+        "Best Avg",            // N
+        "Team Name",           // O
+        "League Member",       // P
+        "Hotel Confirmation",  // Q
+        "T-Shirt Size",        // R
+        "Check In",            // S
+        "Check Out",           // T
+        "Roommate First Name", // U
+        "Roommate Last Name",  // V
+        "Hotel Registration #",// W
+        "Coordinator",         // X
+        "Pool Used",           // Y
+        "2nd Banquet QR",      // Z
+        "2nd Banquet Used",    // AA
+        "Banquet QR",          // AB
+        "Banquet Used",        // AC
+        "Pool QR",             // AD
+        "Pool party entry confirmed", // AE
+        "#A Pool QR",          // AF
+        "#A Pool Used",        // AG
+        "#B Pool QR",          // AH
+        "#B Pool Used",        // AI
+        "#A Banquet QR",       // AJ
+        "2nd Squad Time",      // AK
+        "2nd Lane #",          // AL
+        "2nd Pool Used",       // AM
+        "2nd Banquet Used",    // AN
+        "",                    // AO
+        "",                    // AP
+        "Q1 Overall Experience?",  // AQ
+        "Q1 Answer",           // AR
+        "Q2 Bowling Venue?",   // AS
+        "Q2 Answer",           // AT
+        "Q3 Event Organization?",  // AU
+        "Q3 Answer",           // AV
+        "Q4 Pool Party? (If applicable)",  // AW
+        "Q4 Answer",           // AX
+        "Q5 Banquet Experience?",  // AY
+        "Q5 Answer",           // AZ
+        "Q6 This App?",        // BA
+        "Q6 Answer",           // BB
+        "Q7 League App Interest?",  // BC
+        "Q7 Answer",           // BD
+        "Q8 Additional Comments or Concerns",  // BE
+        "Q8 Answer",           // BF
+        "Q9 Testimonial Permission?",  // BG
+        "Q9 Answer",           // BH
+        "Q10 Attend Next Year?",  // BI
+        "Q10 Answer",          // BJ
       ];
 
       const rows = bowlers.map((b: any) => [
