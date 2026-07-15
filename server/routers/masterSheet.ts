@@ -257,121 +257,42 @@ export const masterSheetRouter = router({
 
       const { eventId } = input;
 
-      const bowlers = await rawQuery(`SELECT * FROM bowlers WHERE eventId = ? ORDER BY squadTime, laneNumber`, [eventId]);
+      // Get event to find Google Sheet
+      const event = await rawQuery(`SELECT sheetSpreadsheetId, sheetTabName FROM events WHERE id = ?`, [eventId]);
+      if (!event || !event[0]?.sheetSpreadsheetId) {
+        throw new Error("Event not configured with Google Sheet");
+      }
 
-      // Headers match the actual Google Sheet structure
-      const headers = [
-        "Bowler ID",           // A
-        "Phone",               // B
-        "Email",               // C
-        "Squad Day & Time",    // D
-        "Lane #",              // E
-        "Center",              // F
-        "Team #",              // G
-        "Captain",             // H
-        "First Name",          // I
-        "Last Name",           // J
-        "Under 21?",           // K
-        "Sanction #",          // L
-        "# Games",             // M
-        "Best Avg",            // N
-        "Team Name",           // O
-        "League Member",       // P
-        "Hotel Confirmation",  // Q
-        "T-Shirt Size",        // R
-        "Check In",            // S
-        "Check Out",           // T
-        "Roommate First Name", // U
-        "Roommate Last Name",  // V
-        "Hotel Registration #",// W
-        "Coordinator",         // X
-        "Pool Used",           // Y
-        "2nd Banquet QR",      // Z
-        "2nd Banquet Used",    // AA
-        "Banquet QR",          // AB
-        "Banquet Used",        // AC
-        "Pool QR",             // AD
-        "Pool party entry confirmed", // AE
-        "#A Pool QR",          // AF
-        "#A Pool Used",        // AG
-        "#B Pool QR",          // AH
-        "#B Pool Used",        // AI
-        "#A Banquet QR",       // AJ
-        "2nd Squad Time",      // AK
-        "2nd Lane #",          // AL
-        "2nd Pool Used",       // AM
-        "2nd Banquet Used",    // AN
-        "",                    // AO
-        "",                    // AP
-        "Q1 Overall Experience?",  // AQ
-        "Q1 Answer",           // AR
-        "Q2 Bowling Venue?",   // AS
-        "Q2 Answer",           // AT
-        "Q3 Event Organization?",  // AU
-        "Q3 Answer",           // AV
-        "Q4 Pool Party? (If applicable)",  // AW
-        "Q4 Answer",           // AX
-        "Q5 Banquet Experience?",  // AY
-        "Q5 Answer",           // AZ
-        "Q6 This App?",        // BA
-        "Q6 Answer",           // BB
-        "Q7 League App Interest?",  // BC
-        "Q7 Answer",           // BD
-        "Q8 Additional Comments or Concerns",  // BE
-        "Q8 Answer",           // BF
-        "Q9 Testimonial Permission?",  // BG
-        "Q9 Answer",           // BH
-        "Q10 Attend Next Year?",  // BI
-        "Q10 Answer",          // BJ
-      ];
+      const { sheetSpreadsheetId, sheetTabName } = event[0];
 
-      const rows = bowlers.map((b: any) => [
-        String(b.scantronId || ""),
-        String(b.teamName || ""),
-        String(b.tshirtSize || ""),
-        String(b.code || ""),
-        String(b.date1 || ""),
-        String(b.date2 || ""),
-        String(b.firstName || ""),
-        String(b.lastName || ""),
-        String(b.phone || ""),
-        String(b.email || ""),
-        String(b.league || ""),
-        String(b.teamCode || ""),
-        String(b.centerName || ""),
-        String(b.squadTime || ""),
-        String(b.laneNumber || ""),
-        b.under21 ? "Y" : "",
-        String(b.sanction || ""),
-        String(b.games || ""),
-        String(b.bestAvg || ""),
-        String(b.leagueMember || ""),
-        String(b.hotelConfirmation || ""),
-        String(b.hotelCheckin || ""),
-        String(b.hotelCheckout || ""),
-        String(b.roommateFirst || ""),
-        String(b.roommateLast || ""),
-        String(b.banquetTable || ""),
-        String(b.extraBanquet || ""),
-        String(b.banquetQrUsed || ""),
-        String(b.banquetQr || ""),
-        String(b.poolEntryAUsed || ""),
-        String(b.poolQrA || ""),
-        String(b.poolEntryBUsed || ""),
-        String(b.poolQrB || ""),
-        String(b.banquetQrA || ""),
-        String(b.banquetQrB || ""),
-        String(b.secondCenter || ""),
-        String(b.secondTeam || ""),
-        String(b.secondSquad || ""),
-        String(b.poolQr || ""),
-        String(b.guestPoolUsed || ""),
-        String(b.guestPoolQr || ""),
-      ]);
+      // Fetch all data from Google Sheet (columns A-BI)
+      const sheetsClient = await getSheetsClient();
+      const sheetData = await sheetsClient.spreadsheets.values.get({
+        spreadsheetId: sheetSpreadsheetId,
+        range: `${sheetTabName}!A:BI`,
+      });
 
-      const csvContent = [headers.join("\t"), ...rows.map((row) => row.join("\t"))].join("\n");
+      const allRows = sheetData.data.values || [];
+      if (allRows.length === 0) {
+        throw new Error("No data found in Google Sheet");
+      }
 
-      return { csv: csvContent, rowCount: rows.length };
+      // First row is headers, return everything as-is
+      const headers = allRows[0];
+      const dataRows = allRows.slice(1);
+
+      // Ensure each row has all columns (pad with empty strings)
+      const normalizedRows = dataRows.map((row: string[]) => {
+        const normalized = [...row];
+        while (normalized.length < headers.length) {
+          normalized.push("");
+        }
+        return normalized.slice(0, headers.length);
+      });
+
+      const csvContent = [headers.join("\t"), ...normalizedRows.map((row: string[]) => row.join("\t"))].join("\n");
+
+      return { csv: csvContent, rowCount: normalizedRows.length };
     }),
 
   exportForRaspberryPi: protectedProcedure
