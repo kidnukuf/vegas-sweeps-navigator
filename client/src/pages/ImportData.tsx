@@ -65,6 +65,12 @@ const COLUMN_ALIASES: Record<string, string> = {
   // Hotel
   "hotel confirmation": "hotelConfirmation", "hotel conf": "hotelConfirmation", "conf #": "hotelConfirmation",
   "hotel registration #": "hotelRegistration", "hotel registration": "hotelRegistration", "registration #": "hotelRegistration", "reg #": "hotelRegistration",
+  "coordinator": "coordinator",
+  // Secondary squad
+  "2nd squad time": "squadTime2", "second squad time": "squadTime2",
+  "2nd lane #": "laneNumber2", "second lane #": "laneNumber2",
+  "2nd pool used": "poolUsed2", "second pool used": "poolUsed2",
+  "2nd banquet used": "banquetUsed2", "second banquet used": "banquetUsed2",
   // Banquet / pool
   "banquet $80": "banquetAmount",
   "extra banquet": "extraBanquet", "extra banquet qr code": "extraBanquet",
@@ -101,7 +107,35 @@ const COLUMN_ALIASES: Record<string, string> = {
   "guest pool qr code used": "_ignore",
   "guest pool entry confirmed": "_ignore",
   "pool party entry confirmed": "_ignore",
+  "pool entry confirmed": "_ignore",
   "banquet used": "_ignore",
+  // Pool/Banquet status columns (doorman writes)
+  "pool used": "_ignore",
+  "2nd banquet qr": "_ignore",
+  "#a pool used": "_ignore",
+  "#b pool used": "_ignore",
+  "#a banquet qr": "_ignore",
+  "#b banquet qr": "_ignore",
+  // Survey questions (read-only, not imported)
+  "q1 overall experience?": "_ignore", "q1 answer": "_ignore",
+  "q2 bowling venue?": "_ignore", "q2 answer": "_ignore",
+  "q3 event organization?": "_ignore", "q3 answer": "_ignore",
+  "q4 pool party? (if applicable)": "_ignore", "q4 answer": "_ignore",
+  "q5 banquet experience?": "_ignore", "q5 answer": "_ignore",
+  "q6 this app?": "_ignore", "q6 answer": "_ignore",
+  "q7 league app interest?": "_ignore", "q7 answer": "_ignore",
+  "q8 additional comments or concerns": "_ignore", "q8 answer": "_ignore",
+  "q9 testimonial permission?": "_ignore", "q9 answer": "_ignore",
+  "q10 attend next year?": "_ignore", "q10 answer": "_ignore",
+  // Additional status columns
+  "pool qr (app-managed)": "_ignore",
+  "banquet qr (app-managed)": "_ignore",
+  "#a pool qr (app-managed)": "_ignore",
+  "#a banquet qr (app-managed)": "_ignore",
+  "#b pool qr (app-managed)": "_ignore",
+  "#b banquet qr (app-managed)": "_ignore",
+  "2nd banquet qr (app-managed)": "_ignore",
+  "2nd pool qr (app-managed)": "_ignore",
 };
 
 function parseCSV(text: string): string[][] {
