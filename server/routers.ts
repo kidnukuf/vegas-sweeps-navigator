@@ -1282,7 +1282,7 @@ export const appRouter = router({
 
         for (const row of input.rows) {
           try {
-            let centerName = String(row["Center"] ?? row["center"] ?? "").trim();
+            let centerName = String(row["centerName"] ?? row["Center"] ?? row["center"] ?? "").trim();
             // Normalize known spreadsheet center-name variants to seeded DB names
             const CENTER_NAME_ALIASES: Record<string, string> = {
               "bowlero river grove sat": "Bowlero River Grove (Saturday)",
