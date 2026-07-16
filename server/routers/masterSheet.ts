@@ -361,4 +361,33 @@ export const masterSheetRouter = router({
 
       return { csv: csvContent, rowCount: rows.length };
     }),
+
+  getAllBowlersWithQRCodes: protectedProcedure
+    .input(z.object({ eventId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+
+      const bowlers = await rawQuery(
+        `SELECT 
+          b.id, b.scantronId, b.firstName, b.lastName, b.centerName, b.teamCode,
+          b.poolPartyToken, b.banquetToken, b.poolPartyUsed, b.banquetUsed
+        FROM bowlers b
+        WHERE b.eventId = ?
+        ORDER BY b.lastName, b.firstName`,
+        [input.eventId]
+      ) as Array<{
+        id: number;
+        scantronId: string | null;
+        firstName: string;
+        lastName: string;
+        centerName: string | null;
+        teamCode: string | null;
+        poolPartyToken: string | null;
+        banquetToken: string | null;
+        poolPartyUsed: boolean;
+        banquetUsed: boolean;
+      }>;
+
+      return bowlers;
+    }),
 });
