@@ -1318,7 +1318,11 @@ export const appRouter = router({
             }
             if (!center) {
               errors++;
-              errorDetails.push({ row: firstName + " " + lastName, error: `Center not found: "${centerName}" — use an official center name from the Bowlero Vegas Funtime League list` });
+              const availableCenters = Array.from(centerMap.keys()).join(", ");
+              errorDetails.push({ 
+                row: firstName + " " + lastName, 
+                error: `Center not found: "${centerName}" (key: "${centerName.toLowerCase()}"). Available: [${availableCenters}]` 
+              });
               continue;
             }
 
