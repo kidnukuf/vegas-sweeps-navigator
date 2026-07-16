@@ -3,6 +3,7 @@ import { z } from "zod";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
 import { rawQuery } from "../db";
+import { getSheetsClient } from "../googleSheets";
 
 // Column indices for Master Sheet (0-indexed)
 // Based on actual Google Sheet structure: https://docs.google.com/spreadsheets/d/1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
@@ -267,12 +268,16 @@ export const masterSheetRouter = router({
 
       // Fetch all data from Google Sheet (columns A-BI)
       const sheetsClient = await getSheetsClient();
-      const sheetData = await sheetsClient.spreadsheets.values.get({
+      if (!sheetsClient) {
+        throw new Error("Google Sheets client not available");
+      }
+
+      const resp = await sheetsClient.spreadsheets.values.get({
         spreadsheetId: sheetSpreadsheetId,
-        range: `${sheetTabName}!A:BI`,
+        range: `'${sheetTabName}'!A:BI`,
       });
 
-      const allRows = sheetData.data.values || [];
+      const allRows = (resp.data?.values as string[][]) || [];
       if (allRows.length === 0) {
         throw new Error("No data found in Google Sheet");
       }
