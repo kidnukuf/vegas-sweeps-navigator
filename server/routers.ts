@@ -1267,8 +1267,13 @@ export const appRouter = router({
         const errorDetails: unknown[] = [];
         const generatedIds: string[] = [];
 
-        // Resolve this event's Google Sheet target once (falls back to master default).
-        const eventSheetTarget = await getEventSheetTarget(input.eventId);
+        // Use the sheet provided in THIS import request, not the stored default
+        // This allows importing from different sheets without being locked to the previous one
+        let eventSheetTarget = { sheetSpreadsheetId: input.sheetSpreadsheetId, sheetTabName: input.sheetTabName };
+        if (!eventSheetTarget.sheetSpreadsheetId) {
+          // Only fall back to stored target if no sheet was provided in this request
+          eventSheetTarget = await getEventSheetTarget(input.eventId);
+        }
 
         // Get all centers for lookup
         const centers = await getAllCenters() as Record<string, unknown>[];
