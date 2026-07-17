@@ -204,9 +204,6 @@ export function DoorConsole({ eventId }: { eventId: number }) {
       {/* Export check-ins to the Google Sheet (manual paste) */}
       <ExportPanel eventId={eventId} mode={mode} />
 
-      {/* Export QR codes if write-back failed */}
-      <QRCodesExportPanel eventId={eventId} />
-
       {/* End-of-event final sync confirmation */}
       <FinalSyncPanel connStatus={conn.status} unsynced={conn.unsynced} />
 
@@ -562,90 +559,6 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
       <p className="text-xs text-muted-foreground">
         Tip: tap <span className="font-semibold">Sync Now</span> first so offline scans are included. Copy works
         best on the laptop browser.
-      </p>
-    </Card>
-  );
-}
-
-function QRCodesExportPanel({ eventId }: { eventId: number }) {
-  const [busy, setBusy] = useState(false);
-  const utils = trpc.useUtils();
-
-  async function handleExportQRCodes() {
-    setBusy(true);
-    try {
-      const data = await utils.masterSheet.getAllBowlersWithQRCodes.fetch({ eventId });
-      if (!data || data.length === 0) {
-        toast.error("No bowlers found for this event.");
-        return;
-      }
-
-      const header = [
-        "Scantron ID",
-        "First Name",
-        "Last Name",
-        "Center",
-        "Team",
-        "Pool Party Token",
-        "Banquet Token",
-        "Pool Party Used",
-        "Banquet Used",
-      ];
-      const lines: string[] = [];
-      lines.push(header.map(csvCell).join(","));
-
-      for (const bowler of data) {
-        lines.push(
-          [
-            csvCell(bowler.scantronId || ""),
-            csvCell(bowler.firstName),
-            csvCell(bowler.lastName),
-            csvCell(bowler.centerName || ""),
-            csvCell(bowler.teamCode || ""),
-            csvCell(bowler.poolPartyToken || ""),
-            csvCell(bowler.banquetToken || ""),
-            csvCell(bowler.poolPartyUsed ? "Yes" : "No"),
-            csvCell(bowler.banquetUsed ? "Yes" : "No"),
-          ].join(",")
-        );
-      }
-
-      const csv = lines.join("\r\n");
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
-      a.href = url;
-      a.download = `qr-codes-${stamp}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success(`Exported ${data.length} QR codes to CSV.`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to export QR codes. Make sure you're online.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card className="space-y-4 p-4">
-      <div>
-        <div className="text-lg font-semibold">Export QR Codes (Recovery)</div>
-        <div className="text-sm text-muted-foreground">
-          If the automatic write-back to Google Sheets failed, use this to download all QR codes as CSV.
-          You can then manually paste them into your sheet.
-        </div>
-      </div>
-
-      <Button onClick={handleExportQRCodes} disabled={busy} className="bg-blue-600 hover:bg-blue-700">
-        {busy ? "Exporting…" : "Download QR Codes CSV"}
-      </Button>
-
-      <p className="text-xs text-muted-foreground">
-        The CSV includes: Scantron ID, Name, Center, Pool Party Token, Banquet Token, and usage status.
       </p>
     </Card>
   );

@@ -1267,13 +1267,8 @@ export const appRouter = router({
         const errorDetails: unknown[] = [];
         const generatedIds: string[] = [];
 
-        // Use the sheet provided in THIS import request, not the stored default
-        // This allows importing from different sheets without being locked to the previous one
-        let eventSheetTarget = { sheetSpreadsheetId: input.sheetSpreadsheetId, sheetTabName: input.sheetTabName };
-        if (!eventSheetTarget.sheetSpreadsheetId) {
-          // Only fall back to stored target if no sheet was provided in this request
-          eventSheetTarget = await getEventSheetTarget(input.eventId);
-        }
+        // Resolve this event's Google Sheet target once (falls back to master default).
+        const eventSheetTarget = await getEventSheetTarget(input.eventId);
 
         // Get all centers for lookup
         const centers = await getAllCenters() as Record<string, unknown>[];
@@ -1287,7 +1282,7 @@ export const appRouter = router({
 
         for (const row of input.rows) {
           try {
-            let centerName = String(row["centerName"] ?? row["Center"] ?? row["center"] ?? "").trim();
+            let centerName = String(row["Center"] ?? row["center"] ?? "").trim();
             // Normalize known spreadsheet center-name variants to seeded DB names
             const CENTER_NAME_ALIASES: Record<string, string> = {
               "bowlero river grove sat": "Bowlero River Grove (Saturday)",
@@ -1323,11 +1318,7 @@ export const appRouter = router({
             }
             if (!center) {
               errors++;
-              const availableCenters = Array.from(centerMap.keys()).join(", ");
-              errorDetails.push({ 
-                row: firstName + " " + lastName, 
-                error: `Center not found: "${centerName}" (key: "${centerName.toLowerCase()}"). Available: [${availableCenters}]` 
-              });
+              errorDetails.push({ row: firstName + " " + lastName, error: `Center not found: "${centerName}" — use an official center name from the Bowlero Vegas Funtime League list` });
               continue;
             }
 

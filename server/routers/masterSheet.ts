@@ -196,32 +196,9 @@ export const masterSheetRouter = router({
 
           if (!sheetRow.firstName || !sheetRow.lastName) continue;
 
-          // Look up centerId from centerName
-          let centerId: number | null = null;
-          if (sheetRow.centerName) {
-            console.log("[DEBUG] Center name from sheet (raw):", JSON.stringify(sheetRow.centerName));
-            console.log("[DEBUG] Center name trimmed:", JSON.stringify(sheetRow.centerName?.trim()));
-            
-            // Try case-insensitive lookup with trimming
-            const centerResult = await rawQuery(
-              `SELECT id, centerName FROM bowling_centers WHERE LOWER(TRIM(centerName)) = LOWER(TRIM(?))`,
-              [sheetRow.centerName]
-            );
-            console.log("[DEBUG] Lookup result:", centerResult);
-            
-            if (centerResult.length > 0) {
-              centerId = centerResult[0].id;
-              console.log("[DEBUG] Match found! centerId:", centerId);
-            } else {
-              // Log all available centers for comparison
-              const allCenters = await rawQuery(`SELECT id, centerName FROM bowling_centers`);
-              console.log("[DEBUG] No match found. Available centers:", allCenters);
-            }
-          }
-
           await rawQuery(
-            `INSERT INTO bowlers (eventId, firstName, lastName, phone, email, squadTime, laneNumber, centerId, league, teamCode, teamName, under21, sanction, games, bestAvg, leagueMember, tshirtSize, hotelConfirmation, hotelCheckin, hotelCheckout, roommateFirst, roommateLast, banquetTable, extraBanquet, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email), squadTime = VALUES(squadTime), laneNumber = VALUES(laneNumber), centerId = VALUES(centerId), league = VALUES(league), teamCode = VALUES(teamCode), teamName = VALUES(teamName), under21 = VALUES(under21), sanction = VALUES(sanction), games = VALUES(games), bestAvg = VALUES(bestAvg), leagueMember = VALUES(leagueMember), tshirtSize = VALUES(tshirtSize), hotelConfirmation = VALUES(hotelConfirmation), hotelCheckin = VALUES(hotelCheckin), hotelCheckout = VALUES(hotelCheckout), roommateFirst = VALUES(roommateFirst), roommateLast = VALUES(roommateLast), banquetTable = VALUES(banquetTable), extraBanquet = VALUES(extraBanquet), updatedAt = NOW()`,
-            [eventId, sheetRow.firstName, sheetRow.lastName, sheetRow.phone, sheetRow.email, sheetRow.squadTime, sheetRow.laneNumber, centerId, sheetRow.league, sheetRow.teamCode, sheetRow.teamName, sheetRow.under21 ? 1 : 0, sheetRow.sanction, sheetRow.games, sheetRow.bestAvg, sheetRow.leagueMember, sheetRow.tshirtSize, sheetRow.hotelConfirmation, sheetRow.hotelCheckin, sheetRow.hotelCheckout, sheetRow.roommateFirst, sheetRow.roommateLast, sheetRow.banquetTable, sheetRow.extraBanquet]
+            `INSERT INTO bowlers (eventId, firstName, lastName, phone, email, squadTime, laneNumber, centerName, league, teamCode, teamName, under21, sanction, games, bestAvg, leagueMember, tshirtSize, hotelConfirmation, hotelCheckin, hotelCheckout, roommateFirst, roommateLast, banquetTable, extraBanquet, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email), squadTime = VALUES(squadTime), laneNumber = VALUES(laneNumber), centerName = VALUES(centerName), league = VALUES(league), teamCode = VALUES(teamCode), teamName = VALUES(teamName), under21 = VALUES(under21), sanction = VALUES(sanction), games = VALUES(games), bestAvg = VALUES(bestAvg), leagueMember = VALUES(leagueMember), tshirtSize = VALUES(tshirtSize), hotelConfirmation = VALUES(hotelConfirmation), hotelCheckin = VALUES(hotelCheckin), hotelCheckout = VALUES(hotelCheckout), roommateFirst = VALUES(roommateFirst), roommateLast = VALUES(roommateLast), banquetTable = VALUES(banquetTable), extraBanquet = VALUES(extraBanquet), updatedAt = NOW()`,
+            [eventId, sheetRow.firstName, sheetRow.lastName, sheetRow.phone, sheetRow.email, sheetRow.squadTime, sheetRow.laneNumber, sheetRow.centerName, sheetRow.league, sheetRow.teamCode, sheetRow.teamName, sheetRow.under21 ? 1 : 0, sheetRow.sanction, sheetRow.games, sheetRow.bestAvg, sheetRow.leagueMember, sheetRow.tshirtSize, sheetRow.hotelConfirmation, sheetRow.hotelCheckin, sheetRow.hotelCheckout, sheetRow.roommateFirst, sheetRow.roommateLast, sheetRow.banquetTable, sheetRow.extraBanquet]
           );
 
           imported++;
@@ -371,34 +348,5 @@ export const masterSheetRouter = router({
       const csvContent = [headers.join("\t"), ...rows.map((row) => row.join("\t"))].join("\n");
 
       return { csv: csvContent, rowCount: rows.length };
-    }),
-
-  getAllBowlersWithQRCodes: protectedProcedure
-    .input(z.object({ eventId: z.number() }))
-    .query(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
-
-      const bowlers = await rawQuery(
-        `SELECT 
-          b.id, b.scantronId, b.firstName, b.lastName, b.centerName, b.teamCode,
-          b.poolPartyToken, b.banquetToken, b.poolPartyUsed, b.banquetUsed
-        FROM bowlers b
-        WHERE b.eventId = ?
-        ORDER BY b.lastName, b.firstName`,
-        [input.eventId]
-      ) as Array<{
-        id: number;
-        scantronId: string | null;
-        firstName: string;
-        lastName: string;
-        centerName: string | null;
-        teamCode: string | null;
-        poolPartyToken: string | null;
-        banquetToken: string | null;
-        poolPartyUsed: boolean;
-        banquetUsed: boolean;
-      }>;
-
-      return bowlers;
     }),
 });
