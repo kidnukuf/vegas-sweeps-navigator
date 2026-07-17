@@ -199,12 +199,23 @@ export const masterSheetRouter = router({
           // Look up centerId from centerName
           let centerId: number | null = null;
           if (sheetRow.centerName) {
+            console.log("[DEBUG] Center name from sheet (raw):", JSON.stringify(sheetRow.centerName));
+            console.log("[DEBUG] Center name trimmed:", JSON.stringify(sheetRow.centerName?.trim()));
+            
+            // Try case-insensitive lookup with trimming
             const centerResult = await rawQuery(
-              `SELECT id FROM bowling_centers WHERE centerName = ?`,
+              `SELECT id, centerName FROM bowling_centers WHERE LOWER(TRIM(centerName)) = LOWER(TRIM(?))`,
               [sheetRow.centerName]
             );
+            console.log("[DEBUG] Lookup result:", centerResult);
+            
             if (centerResult.length > 0) {
               centerId = centerResult[0].id;
+              console.log("[DEBUG] Match found! centerId:", centerId);
+            } else {
+              // Log all available centers for comparison
+              const allCenters = await rawQuery(`SELECT id, centerName FROM bowling_centers`);
+              console.log("[DEBUG] No match found. Available centers:", allCenters);
             }
           }
 
