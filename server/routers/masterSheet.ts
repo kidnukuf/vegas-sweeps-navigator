@@ -6,86 +6,94 @@ import { rawQuery } from "../db";
 import { getSheetsClient } from "../googleSheets";
 
 // Column indices for Master Sheet (0-indexed)
-// Based on actual Google Sheet structure: https://docs.google.com/spreadsheets/d/1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
+// Exact layout from permanent sheet: 1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
 const COLS = {
-  BOWLER_ID: 0,           // Column A
-  PHONE: 1,               // Column B
-  EMAIL: 2,               // Column C
-  SQUAD_TIME: 3,          // Column D
-  LANE: 4,                // Column E
-  CENTER: 5,              // Column F
-  TEAM_CODE: 6,           // Column G
-  CAPTAIN: 7,             // Column H
-  FIRST_NAME: 8,          // Column I
-  LAST_NAME: 9,           // Column J
-  UNDER_21: 10,           // Column K
-  SANCTION: 11,           // Column L
-  GAMES: 12,              // Column M
-  BEST_AVG: 13,           // Column N
-  TEAM_NAME: 14,          // Column O
-  LEAGUE_MEMBER: 15,      // Column P
-  HOTEL_CONFIRMATION: 16, // Column Q
-  TSHIRT_SIZE: 17,        // Column R (was 2, now 17)
-  CHECK_IN: 18,           // Column S
-  CHECK_OUT: 19,          // Column T
-  ROOMMATE_FIRST: 20,     // Column U
-  ROOMMATE_LAST: 21,      // Column V
-  HOTEL_REG: 22,          // Column W
-  COORDINATOR: 23,        // Column X
-  POOL_USED: 24,          // Column Y
-  EXTRA_BANQUET_QR: 25,   // Column Z
-  EXTRA_BNQ_USED: 26,     // Column AA
-  BANQUET_QR: 27,         // Column AB
-  BANQUET_USED: 28,       // Column AC
-  POOL_QR: 29,            // Column AD
-  POOL_CONFIRMED: 30,     // Column AE
-  GUEST_POOL_A: 31,       // Column AF
-  GUEST_POOL_A_USED: 32,  // Column AG
-  GUEST_POOL_B: 33,       // Column AH
-  GUEST_POOL_B_USED: 34,  // Column AI
-  GUEST_BANQUET_QR: 35,   // Column AJ
-  SQUAD_TIME_2: 36,       // Column AK
-  LANE_2: 37,             // Column AL
-  POOL_USED_2: 38,        // Column AM
-  BANQUET_USED_2: 39,     // Column AN
-  BANQUET_QR_A: 35,       // Column AJ (alias)
-  BANQUET_QR_B: 35,       // Column AJ (placeholder)
-  SECOND_CENTER: 40,      // Column AO (placeholder)
-  SECOND_TEAM: 41,        // Column AP (placeholder)
-  SECOND_SQUAD: 42,       // Column AQ (placeholder)
-  GUEST_POOL_USED: 32,    // Column AG (alias)
-  GUEST_POOL_QR: 31,      // Column AF (alias)
-  POOL_ENTRY_A_USED: 32,  // Column AG (alias)
-  POOL_QR_A: 31,          // Column AF (alias)
-  POOL_ENTRY_B_USED: 34,  // Column AI (alias)
-  POOL_QR_B: 33,          // Column AH (alias)
-  LEAGUE: 15,             // Column P (alias for LEAGUE_MEMBER)
-  BANQUET_TABLE: 25,      // Column Z (placeholder)
-  EXTRA_BANQUET: 25,      // Column Z (alias)
-  BANQUET_QR_USED: 28,    // Column AC (alias for BANQUET_USED)
-  CODE: 0,                // Column A (placeholder)
-  DATE_1: 0,              // Column A (placeholder)
-  DATE_2: 0,              // Column A (placeholder)
-  Q1_QUESTION: 42,        // Column AQ
-  Q1_ANSWER: 43,          // Column AR
-  Q2_QUESTION: 44,        // Column AS
-  Q2_ANSWER: 45,          // Column AT
-  Q3_QUESTION: 46,        // Column AU
-  Q3_ANSWER: 47,          // Column AV
-  Q4_QUESTION: 48,        // Column AW
-  Q4_ANSWER: 49,          // Column AX
-  Q5_QUESTION: 50,        // Column AY
-  Q5_ANSWER: 51,          // Column AZ
-  Q6_QUESTION: 52,        // Column BA
-  Q6_ANSWER: 53,          // Column BB
-  Q7_QUESTION: 54,        // Column BC
-  Q7_ANSWER: 55,          // Column BD
-  Q8_QUESTION: 56,        // Column BE
-  Q8_ANSWER: 57,          // Column BF
-  Q9_QUESTION: 58,        // Column BG
-  Q9_ANSWER: 59,          // Column BH
-  Q10_QUESTION: 60,       // Column BI
-  Q10_ANSWER: 61,         // Column BJ
+  BOWLER_ID: 0,            // A  — Bowler ID
+  PHONE: 1,                // B  — Phone
+  EMAIL: 2,                // C  — Email
+  SQUAD_TIME: 3,           // D  — Squad Day & Time
+  LANE: 4,                 // E  — Lane #
+  CENTER: 5,               // F  — Center
+  COORDINATOR: 6,          // G  — Coordinator
+  TEAM_CODE: 7,            // H  — Team #
+  CAPTAIN: 8,              // I  — Captain
+  FIRST_NAME: 9,           // J  — First Name
+  LAST_NAME: 10,           // K  — Last Name
+  UNDER_21: 11,            // L  — Under 21?
+  SANCTION: 12,            // M  — Sanction #
+  GAMES: 13,               // N  — # Games
+  BEST_AVG: 14,            // O  — Best Avg
+  TEAM_NAME: 15,           // P  — Team Name
+  LEAGUE_MEMBER: 16,       // Q  — League Member
+  TSHIRT_SIZE: 17,         // R  — T-Shirt Size
+  HOTEL_CONFIRMATION: 18,  // S  — Hotel Confirmation
+  CHECK_IN: 19,            // T  — Check In
+  CHECK_OUT: 20,           // U  — Check Out
+  ROOMMATE_FIRST: 21,      // V  — Roommate First Name
+  ROOMMATE_LAST: 22,       // W  — Roommate Last Name
+  SQUAD_TIME_2: 23,        // X  — 2nd Squad Time
+  LANE_2: 24,              // Y  — Lane # (2nd)
+  POOL_QR: 25,             // Z  — Pool QR
+  POOL_USED: 26,           // AA — Pool Used
+  BANQUET_QR: 27,          // AB — Banquet QR
+  BANQUET_USED: 28,        // AC — Banquet Used
+  GUEST_POOL_A: 29,        // AD — #A Pool QR
+  GUEST_POOL_A_USED: 30,   // AE — #A Pool Used
+  GUEST_BANQUET_A: 31,     // AF — #A Banquet QR
+  GUEST_BANQUET_A_USED: 32,// AG — #A Banquet Used
+  GUEST_POOL_B: 33,        // AH — #B Pool QR
+  GUEST_POOL_B_USED: 34,   // AI — #B Pool Used
+  GUEST_BANQUET_B: 35,     // AJ — #B Banquet QR
+  GUEST_BANQUET_B_USED: 36,// AK — #B Banquet Used
+  EXTRA_BANQUET_QR: 37,    // AL — 2nd Banquet QR
+  EXTRA_BNQ_USED: 38,      // AM — 2nd Banquet Used
+  EXTRA_POOL_QR: 39,       // AN — 2nd Pool QR
+  EXTRA_POOL_USED: 40,     // AO — 2nd Pool Used
+  // Aliases for backwards compatibility with existing code
+  HOTEL_REG: 22,           // W  — (no separate hotel reg col; maps to Roommate Last Name col)
+  POOL_CONFIRMED: 30,      // AE — #A Pool Used (alias)
+  GUEST_BANQUET_QR: 31,    // AF — #A Banquet QR (alias)
+  POOL_USED_2: 40,         // AO — 2nd Pool Used (alias)
+  BANQUET_USED_2: 38,      // AM — 2nd Banquet Used (alias)
+  BANQUET_QR_A: 31,        // AF — #A Banquet QR (alias)
+  BANQUET_QR_B: 35,        // AJ — #B Banquet QR (alias)
+  GUEST_POOL_USED: 30,     // AE — #A Pool Used (alias)
+  GUEST_POOL_QR: 29,       // AD — #A Pool QR (alias)
+  POOL_ENTRY_A_USED: 30,   // AE — #A Pool Used (alias)
+  POOL_QR_A: 29,           // AD — #A Pool QR (alias)
+  POOL_ENTRY_B_USED: 34,   // AI — #B Pool Used (alias)
+  POOL_QR_B: 33,           // AH — #B Pool QR (alias)
+  LEAGUE: 16,              // Q  — League Member (alias)
+  BANQUET_TABLE: 27,       // AB — Banquet QR (placeholder)
+  EXTRA_BANQUET: 37,       // AL — 2nd Banquet QR (alias)
+  BANQUET_QR_USED: 28,     // AC — Banquet Used (alias)
+  CODE: 0,                 // A  — Bowler ID (placeholder)
+  DATE_1: 0,               // A  — placeholder
+  DATE_2: 0,               // A  — placeholder
+  SECOND_CENTER: 5,        // F  — Center (placeholder)
+  SECOND_TEAM: 7,          // H  — Team # (placeholder)
+  SECOND_SQUAD: 23,        // X  — 2nd Squad Time (placeholder)
+  // Survey columns
+  Q1_QUESTION: 41,         // AP — Q1 Overall Experience?
+  Q1_ANSWER: 42,           // AQ — Q1 answer
+  Q2_QUESTION: 43,         // AR — Q2 Bowling Venue?
+  Q2_ANSWER: 44,           // AS — Q2 Answer
+  Q3_QUESTION: 45,         // AT — Q3 Event Organization?
+  Q3_ANSWER: 46,           // AU — Q3 Answer
+  Q4_QUESTION: 47,         // AV — Q4 Pool Party?
+  Q4_ANSWER: 48,           // AW — Q4 Answer
+  Q5_QUESTION: 49,         // AX — Q5 Banquet Experience?
+  Q5_ANSWER: 50,           // AY — Q5 Answer
+  Q6_QUESTION: 51,         // AZ — Q6 This App?
+  Q6_ANSWER: 52,           // BA — Q6 Answer
+  Q7_QUESTION: 53,         // BB — Q7 League App Interest?
+  Q7_ANSWER: 54,           // BC — Q7 Answer
+  Q8_QUESTION: 55,         // BD — Q8 Additional Comments
+  Q8_ANSWER: 56,           // BE — Q8 Answer
+  Q9_QUESTION: 57,         // BF — Q9 Testimonial Permission?
+  Q9_ANSWER: 58,           // BG — Q9 Answer
+  Q10_QUESTION: 59,        // BH — Q10 Attend Next Year?
+  Q10_ANSWER: 60,          // BI — Q10 Answer
 };
 
 interface SheetRow {

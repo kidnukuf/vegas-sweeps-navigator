@@ -14,61 +14,79 @@
  *   All write-back functions accept an optional SheetTarget; when omitted the
  *   fallback values below are used (useful for legacy data or manual override).
  *
- * DEFINITIVE COLUMN LAYOUT (A=col 0, 0-indexed):
+ * DEFINITIVE COLUMN LAYOUT — matches permanent sheet 1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
+ * (A=col 0, 0-indexed)
  *
  * 🟠 ORANGE — App writes these columns:
- *   A  (0)  = Bowler ID                       ← written on import
- *   B  (1)  = Phone                            ← written when ED confirms contact request
- *   C  (2)  = Email                            ← written when ED confirms contact request
- *   Z  (25) = extra Guest banquet qr code      ← written on sign-up
- *   AB (27) = Banquet QR URL                   ← written on sign-up
- *   AD (29) = Pool Party QR URL                ← written on sign-up
- *   AF (31) = Guest pool qr code               ← written on sign-up (suffix A)
- *   AH (33) = additional guest pool qr code    ← written on sign-up (suffix B)
- *   AI (34) = additional guest pool qr code used ← written on sign-up (suffix B used flag)
- *   AJ (35) = guest banquet qr code            ← written on sign-up
+ *   A  (0)  = Bowler ID                         ← written on import
+ *   B  (1)  = Phone                              ← written when ED confirms contact request
+ *   C  (2)  = Email                              ← written when ED confirms contact request
+ *   Z  (25) = Pool QR URL                        ← written on sign-up
+ *   AB (27) = Banquet QR URL                     ← written on sign-up
+ *   AD (29) = #A Pool QR (guest suffix A)        ← written on sign-up
+ *   AF (31) = #A Banquet QR (guest suffix A)     ← written on sign-up
+ *   AH (33) = #B Pool QR (guest suffix B)        ← written on sign-up
+ *   AJ (35) = #B Banquet QR (guest suffix B)     ← written on sign-up
+ *   AL (37) = 2nd Banquet QR                     ← written on sign-up (2nd event)
+ *   AN (39) = 2nd Pool QR                        ← written on sign-up (2nd event)
  *
  * 🟣 PURPLE — ED supplies; app reads these columns:
  *   D  (3)  = Squad Day & Time
  *   E  (4)  = Lane #
  *   F  (5)  = Center
- *   G  (6)  = Team #
- *   H  (7)  = Captain
- *   I  (8)  = First Name
- *   J  (9)  = Last Name
- *   K  (10) = Under 21?
- *   N  (13) = Best Avg
- *   O  (14) = Team Name
- *   Q  (16) = T-Shirt Size
- *   S  (18) = Check In
- *   T  (19) = Check Out
- *   U  (20) = Roommate First Name
- *   V  (21) = Roommate Last Name
- *   W  (22) = Hotel Registration #
+ *   G  (6)  = Coordinator
+ *   H  (7)  = Team #
+ *   I  (8)  = Captain
+ *   J  (9)  = First Name
+ *   K  (10) = Last Name
+ *   L  (11) = Under 21?
+ *   O  (14) = Best Avg
+ *   P  (15) = Team Name
+ *   R  (17) = T-Shirt Size
+ *   S  (18) = Hotel Confirmation
+ *   T  (19) = Check In
+ *   U  (20) = Check Out
+ *   V  (21) = Roommate First Name
+ *   W  (22) = Roommate Last Name
+ *   X  (23) = 2nd Squad Time
+ *   Y  (24) = Lane # (2nd)
  *
  * ⬜ WHITE — Doorman inserts when QR is used (app reads to check status):
- *   Y  (24) = guest pool qr code used
- *   AA (26) = extra banquet qr code used
- *   AC (28) = banquet qr code used
- *   AE (30) = Pool party entry confirmed
- *   AG (32) = guest pool entry confirmed
+ *   AA (26) = Pool Used
+ *   AC (28) = Banquet Used
+ *   AE (30) = #A Pool Used
+ *   AG (32) = #A Banquet Used
+ *   AI (34) = #B Pool Used
+ *   AK (36) = #B Banquet Used
+ *   AM (38) = 2nd Banquet Used
+ *   AO (40) = 2nd Pool Used
  *
- * 🔴 RED-PINK — Survey Questions (informational, not written by app):
- *   AQ (42) = Q1 Question
- *   AS (44) = Q2 Question
- *   AU (46) = Q3 Question
- *   AW (48) = Q4 Question
- *   AY (50) = Q5 Question
- *   BA (52) = Q6 Question
- *   BC (54) = Q7 Question
- *   BE (56) = Q8 Question
- *   BG (58) = Q9 Question
- *   BI (60) = Q10 Question
+ * 🔴 RED-PINK — Survey (app writes answers; ED pre-fills questions):
+ *   AP (41) = Q1 Overall Experience? (question)
+ *   AQ (42) = Q1 answer              (app writes)
+ *   AR (43) = Q2 Bowling Venue?      (question)
+ *   AS (44) = Q2 Answer              (app writes)
+ *   AT (45) = Q3 Event Organization? (question)
+ *   AU (46) = Q3 Answer              (app writes)
+ *   AV (47) = Q4 Pool Party?         (question)
+ *   AW (48) = Q4 Answer              (app writes)
+ *   AX (49) = Q5 Banquet Experience? (question)
+ *   AY (50) = Q5 Answer              (app writes)
+ *   AZ (51) = Q6 This App?           (question)
+ *   BA (52) = Q6 Answer              (app writes)
+ *   BB (53) = Q7 League App Interest?(question)
+ *   BC (54) = Q7 Answer              (app writes)
+ *   BD (55) = Q8 Additional Comments (question)
+ *   BE (56) = Q8 Answer              (app writes)
+ *   BF (57) = Q9 Testimonial Perm?   (question)
+ *   BG (58) = Q9 Answer              (app writes)
+ *   BH (59) = Q10 Attend Next Year?  (question)
+ *   BI (60) = Q10 Answer             (app writes)
  *
  * ⬜ WHITE — Informational (no color, not parsed):
- *   L  (11) = Sanction #
- *   M  (12) = # Games
- *   P  (15) = League Member
+ *   M  (12) = Sanction #
+ *   N  (13) = # Games
+ *   Q  (16) = League Member
  */
 
 import { google } from "googleapis";
@@ -137,90 +155,113 @@ export function resolveSheetTarget(target?: SheetTarget): { spreadsheetId: strin
 }
 
 // ── Column indices (0-based) ──────────────────────────────────────────────────
+// Exact column layout from the permanent Google Sheet (1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM)
+// Row 1 headers (A=0 through BI=60):
+//  A(0)  Bowler ID          B(1)  Phone              C(2)  Email
+//  D(3)  Squad Day & Time   E(4)  Lane #             F(5)  Center
+//  G(6)  Coordinator        H(7)  Team #             I(8)  Captain
+//  J(9)  First Name         K(10) Last Name          L(11) Under 21?
+//  M(12) Sanction #         N(13) # Games            O(14) Best Avg
+//  P(15) Team Name          Q(16) League Member      R(17) T-Shirt Size
+//  S(18) Hotel Confirmation T(19) Check In           U(20) Check Out
+//  V(21) Roommate First Name W(22) Roommate Last Name X(23) 2nd Squad Time
+//  Y(24) Lane # (2nd)       Z(25) Pool QR            AA(26) Pool Used
+//  AB(27) Banquet QR        AC(28) Banquet Used       AD(29) #A Pool QR
+//  AE(30) #A Pool Used      AF(31) #A Banquet QR      AG(32) #A Banquet Used
+//  AH(33) #B Pool QR        AI(34) #B Pool Used       AJ(35) #B Banquet QR
+//  AK(36) #B Banquet Used   AL(37) 2nd Banquet QR     AM(38) 2nd Banquet Used
+//  AN(39) 2nd Pool QR       AO(40) 2nd Pool Used      AP(41) Q1 Overall Experience?
+//  AQ(42) Q1 answer         AR(43) Q2 Bowling Venue?  AS(44) Q2 Answer
+//  AT(45) Q3 Event Organization? AU(46) Q3 Answer     AV(47) Q4 Pool Party?
+//  AW(48) Q4 Answer         AX(49) Q5 Banquet Experience? AY(50) Q5 Answer
+//  AZ(51) Q6 This App?      BA(52) Q6 Answer          BB(53) Q7 League App Interest?
+//  BC(54) Q7 Answer         BD(55) Q8 Additional Comments BE(56) Q8 Answer
+//  BF(57) Q9 Testimonial Permission? BG(58) Q9 Answer BH(59) Q10 Attend Next Year?
+//  BI(60) Q10 Answer
+
 // 🟠 App writes
-const COL_BOWLER_ID        = 0;   // A
-const COL_PHONE            = 1;   // B
-const COL_EMAIL            = 2;   // C
-// 🟣 App reads
-const COL_SQUAD_TIME       = 3;   // D
-const COL_LANE             = 4;   // E
-const COL_CENTER           = 5;   // F
-const COL_TEAM_CODE        = 6;   // G
-const COL_CAPTAIN          = 7;   // H
-const COL_FIRST_NAME       = 8;   // I
-const COL_LAST_NAME        = 9;   // J
-const COL_UNDER_21         = 10;  // K
-const COL_SANCTION_NUM     = 11;  // L — Sanction #
-const COL_NUM_GAMES        = 12;  // M — # Games
-const COL_BEST_AVG         = 13;  // N
-const COL_TEAM_NAME        = 14;  // O
-const COL_LEAGUE_MEMBER    = 15;  // P — League Member
-const COL_SHIRT_SIZE       = 16;  // Q
-const COL_HOTEL_CONF       = 17;  // R — Hotel Confirmation
-const COL_CHECK_IN         = 18;  // S
-const COL_CHECK_OUT        = 19;  // T
-const COL_ROOMMATE_FIRST   = 20;  // U
-const COL_ROOMMATE_LAST    = 21;  // V
-const COL_HOTEL_REG        = 22;  // W — Hotel Registration #
-const COL_COORDINATOR      = 23;  // X — Coordinator
-// ⬜ Doorman writes (app reads for status checks)
-const COL_POOL_USED        = 24;  // Y  — Pool Used
-const COL_EXTRA_BANQUET_QR = 25;  // Z  — 2nd Banquet QR
-const COL_EXTRA_BNQ_USED   = 26;  // AA — 2nd Banquet Used
+const COL_BOWLER_ID        = 0;   // A  — Bowler ID
+const COL_PHONE            = 1;   // B  — Phone
+const COL_EMAIL            = 2;   // C  — Email
+// 🟣 App reads (ED-supplied)
+const COL_SQUAD_TIME       = 3;   // D  — Squad Day & Time
+const COL_LANE             = 4;   // E  — Lane #
+const COL_CENTER           = 5;   // F  — Center
+const COL_COORDINATOR      = 6;   // G  — Coordinator
+const COL_TEAM_CODE        = 7;   // H  — Team #
+const COL_CAPTAIN          = 8;   // I  — Captain
+const COL_FIRST_NAME       = 9;   // J  — First Name
+const COL_LAST_NAME        = 10;  // K  — Last Name
+const COL_UNDER_21         = 11;  // L  — Under 21?
+const COL_SANCTION_NUM     = 12;  // M  — Sanction #
+const COL_NUM_GAMES        = 13;  // N  — # Games
+const COL_BEST_AVG         = 14;  // O  — Best Avg
+const COL_TEAM_NAME        = 15;  // P  — Team Name
+const COL_LEAGUE_MEMBER    = 16;  // Q  — League Member
+const COL_SHIRT_SIZE       = 17;  // R  — T-Shirt Size
+const COL_HOTEL_CONF       = 18;  // S  — Hotel Confirmation
+const COL_CHECK_IN         = 19;  // T  — Check In
+const COL_CHECK_OUT        = 20;  // U  — Check Out
+const COL_ROOMMATE_FIRST   = 21;  // V  — Roommate First Name
+const COL_ROOMMATE_LAST    = 22;  // W  — Roommate Last Name
+const COL_SQUAD_TIME_2     = 23;  // X  — 2nd Squad Time
+const COL_LANE_2           = 24;  // Y  — Lane # (2nd)
+// 🟠 App writes — QR codes
+const COL_POOL_QR          = 25;  // Z  — Pool QR
+const COL_POOL_USED        = 26;  // AA — Pool Used  (doorman writes; app reads)
 const COL_BANQUET_QR       = 27;  // AB — Banquet QR
-const COL_BANQUET_USED     = 28;  // AC — Banquet Used
-const COL_POOL_QR          = 29;  // AD — Pool QR
-const COL_POOL_CONFIRMED   = 30;  // AE — Pool party entry confirmed
-const COL_GUEST_POOL_A     = 31;  // AF — #A Pool QR
-const COL_GUEST_POOL_A_USED = 32; // AG — #A Pool Used
+const COL_BANQUET_USED     = 28;  // AC — Banquet Used  (doorman writes; app reads)
+const COL_GUEST_POOL_A     = 29;  // AD — #A Pool QR
+const COL_GUEST_POOL_A_USED = 30; // AE — #A Pool Used  (doorman writes; app reads)
+const COL_GUEST_BANQUET_A  = 31;  // AF — #A Banquet QR
+const COL_GUEST_BANQUET_A_USED = 32; // AG — #A Banquet Used  (doorman writes; app reads)
 const COL_GUEST_POOL_B     = 33;  // AH — #B Pool QR
-const COL_GUEST_POOL_B_USED = 34; // AI — #B Pool Used
-const COL_GUEST_BANQUET_QR = 35;  // AJ — #A Banquet QR
-const COL_SQUAD_TIME_2     = 36;  // AK — 2nd Squad Time
-const COL_LANE_2           = 37;  // AL — 2nd Lane #
-const COL_POOL_USED_2      = 38;  // AM — 2nd Pool Used
-const COL_BANQUET_USED_2   = 39;  // AN — 2nd Banquet Used
+const COL_GUEST_POOL_B_USED = 34; // AI — #B Pool Used  (doorman writes; app reads)
+const COL_GUEST_BANQUET_B  = 35;  // AJ — #B Banquet QR
+const COL_GUEST_BANQUET_B_USED = 36; // AK — #B Banquet Used  (doorman writes; app reads)
+const COL_EXTRA_BANQUET_QR = 37;  // AL — 2nd Banquet QR
+const COL_EXTRA_BNQ_USED   = 38;  // AM — 2nd Banquet Used  (doorman writes; app reads)
+const COL_EXTRA_POOL_QR    = 39;  // AN — 2nd Pool QR
+const COL_EXTRA_POOL_USED  = 40;  // AO — 2nd Pool Used  (doorman writes; app reads)
+// Survey columns (app reads question text; app writes answer)
+const COL_Q1_QUESTION   = 41;  // AP — Q1 Overall Experience?
+const COL_Q1_ANSWER     = 42;  // AQ — Q1 answer
+const COL_Q2_QUESTION   = 43;  // AR — Q2 Bowling Venue?
+const COL_Q2_ANSWER     = 44;  // AS — Q2 Answer
+const COL_Q3_QUESTION   = 45;  // AT — Q3 Event Organization?
+const COL_Q3_ANSWER     = 46;  // AU — Q3 Answer
+const COL_Q4_QUESTION   = 47;  // AV — Q4 Pool Party?
+const COL_Q4_ANSWER     = 48;  // AW — Q4 Answer
+const COL_Q5_QUESTION   = 49;  // AX — Q5 Banquet Experience?
+const COL_Q5_ANSWER     = 50;  // AY — Q5 Answer
+const COL_Q6_QUESTION   = 51;  // AZ — Q6 This App?
+const COL_Q6_ANSWER     = 52;  // BA — Q6 Answer
+const COL_Q7_QUESTION   = 53;  // BB — Q7 League App Interest?
+const COL_Q7_ANSWER     = 54;  // BC — Q7 Answer
+const COL_Q8_QUESTION   = 55;  // BD — Q8 Additional Comments
+const COL_Q8_ANSWER     = 56;  // BE — Q8 Answer
+const COL_Q9_QUESTION   = 57;  // BF — Q9 Testimonial Permission?
+const COL_Q9_ANSWER     = 58;  // BG — Q9 Answer
+const COL_Q10_QUESTION  = 59;  // BH — Q10 Attend Next Year?
+const COL_Q10_ANSWER    = 60;  // BI — Q10 Answer
 
 // Suppress unused-variable warnings for read-only constants used by other modules
-void COL_SQUAD_TIME; void COL_CENTER; void COL_TEAM_CODE; void COL_CAPTAIN;
+void COL_SQUAD_TIME; void COL_CENTER; void COL_COORDINATOR; void COL_TEAM_CODE; void COL_CAPTAIN;
 void COL_UNDER_21; void COL_BEST_AVG; void COL_TEAM_NAME; void COL_SHIRT_SIZE;
 void COL_CHECK_IN; void COL_CHECK_OUT;
-void COL_ROOMMATE_FIRST; void COL_ROOMMATE_LAST; void COL_HOTEL_REG; void COL_COORDINATOR;
-void COL_SANCTION_NUM; void COL_NUM_GAMES; void COL_LEAGUE_MEMBER; void COL_HOTEL_CONF;
+void COL_ROOMMATE_FIRST; void COL_ROOMMATE_LAST; void COL_HOTEL_CONF;
+void COL_SANCTION_NUM; void COL_NUM_GAMES; void COL_LEAGUE_MEMBER;
+void COL_SQUAD_TIME_2; void COL_LANE_2;
 void COL_POOL_USED; void COL_EXTRA_BANQUET_QR; void COL_EXTRA_BNQ_USED;
-void COL_BANQUET_QR; void COL_BANQUET_USED; void COL_POOL_QR; void COL_POOL_CONFIRMED;
-void COL_GUEST_POOL_A; void COL_GUEST_POOL_A_USED; void COL_GUEST_POOL_B; void COL_GUEST_POOL_B_USED;
-void COL_GUEST_BANQUET_QR; void COL_SQUAD_TIME_2; void COL_LANE_2;
-void COL_POOL_USED_2; void COL_BANQUET_USED_2;
+void COL_BANQUET_USED; void COL_GUEST_POOL_A_USED; void COL_GUEST_POOL_B_USED;
+void COL_GUEST_BANQUET_A_USED; void COL_GUEST_BANQUET_B_USED;
+void COL_EXTRA_POOL_QR; void COL_EXTRA_POOL_USED;
+void COL_Q1_QUESTION; void COL_Q2_QUESTION; void COL_Q3_QUESTION; void COL_Q4_QUESTION;
+void COL_Q5_QUESTION; void COL_Q6_QUESTION; void COL_Q7_QUESTION; void COL_Q8_QUESTION;
+void COL_Q9_QUESTION; void COL_Q10_QUESTION;
 
-// Column letters for guest pool QR write-back (AF, AH = suffix A, B)
-const GUEST_POOL_COLUMNS = ["AF", "AH"];
-
-// 🔴 RED-PINK — App writes survey answers (AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ)
-// Pattern: AQ=Q1, AR=A1, AS=Q2, AT=A2, AU=Q3, AV=A3, AW=Q4, AX=A4, AY=Q5, AZ=A5,
-//          BA=Q6, BB=A6, BC=Q7, BD=A7, BE=Q8, BF=A8, BG=Q9, BH=A9, BI=Q10, BJ=A10
-// Survey Questions (informational, not written by app)
-const COL_Q1_QUESTION   = 42;  // AQ
-const COL_Q2_QUESTION   = 44;  // AS
-const COL_Q3_QUESTION   = 46;  // AU
-const COL_Q4_QUESTION   = 48;  // AW
-const COL_Q5_QUESTION   = 50;  // AY
-const COL_Q6_QUESTION   = 52;  // BA
-const COL_Q7_QUESTION   = 54;  // BC
-const COL_Q8_QUESTION   = 56;  // BE
-const COL_Q9_QUESTION   = 58;  // BG
-const COL_Q10_QUESTION  = 60;  // BI
-// Survey Answers (app writes these)
-const COL_Q1_ANSWER     = 43;  // AR
-const COL_Q2_ANSWER     = 45;  // AT
-const COL_Q3_ANSWER     = 47;  // AV
-const COL_Q4_ANSWER     = 49;  // AX
-const COL_Q5_ANSWER     = 51;  // AZ
-const COL_Q6_ANSWER     = 53;  // BB
-const COL_Q7_ANSWER     = 55;  // BD
-const COL_Q8_ANSWER     = 57;  // BF
-const COL_Q9_ANSWER     = 59;  // BH
-const COL_Q10_ANSWER    = 61;  // BJ
+// Column letters for guest pool QR write-back (AD, AH = suffix A, B)
+const GUEST_POOL_COLUMNS = ["AD", "AH"];
 
 // ── googleapis auth ───────────────────────────────────────────────────────────
 /**
@@ -373,13 +414,15 @@ export async function writeQRCodesToSheet(params: {
     }
     const updateData: { range: string; values: string[][] }[] = [];
     if (banquetQRUrl) {
+      // AB (index 27) = Banquet QR
       updateData.push({ range: `'${resolved.sheetName}'!AB${rowNum}`, values: [[banquetQRUrl]] });
     }
     if (poolPartyQRUrl) {
-      updateData.push({ range: `'${resolved.sheetName}'!AD${rowNum}`, values: [[poolPartyQRUrl]] });
+      // Z (index 25) = Pool QR
+      updateData.push({ range: `'${resolved.sheetName}'!Z${rowNum}`, values: [[poolPartyQRUrl]] });
     }
     for (let i = 0; i < Math.min(guestPoolTokens.length, GUEST_POOL_COLUMNS.length); i++) {
-      const col = GUEST_POOL_COLUMNS[i];
+      const col = GUEST_POOL_COLUMNS[i]; // AD=#A Pool QR, AH=#B Pool QR
       const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
       updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestUrl]] });
     }
@@ -453,9 +496,9 @@ export async function writeScanUsedToSheet(params: {
   const sheets = await getSheetsClient();
   if (!sheets) return;
   const colMap: Record<string, string> = {
-    banquet:    "AC",
-    pool:       "AE",
-    guest_pool: "AG",
+    banquet:    "AC",  // AC (index 28) = Banquet Used
+    pool:       "AA",  // AA (index 26) = Pool Used
+    guest_pool: "AE",  // AE (index 30) = #A Pool Used
   };
   const col = colMap[type];
   if (!col) return;
@@ -580,18 +623,19 @@ export async function writeSurveyToSheet(params: {
       console.warn(`[googleSheets] writeSurveyToSheet: not found: ${firstName} ${lastName} lane ${laneNumber}`);
       return;
     }
-    // Build the update data: all 10 question answers go into AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ
+    // Build the update data: answers go into AQ, AS, AU, AW, AY, BA, BC, BE, BG, BI
+    // (each answer column is immediately after its question column)
     const updates = [
-      { range: `'${resolved.sheetName}'!AR${rowNum}`, values: [[params.q1Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!AT${rowNum}`, values: [[params.q2Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!AV${rowNum}`, values: [[params.q3Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!AX${rowNum}`, values: [[params.q4Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!AZ${rowNum}`, values: [[params.q5Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!BB${rowNum}`, values: [[params.q6Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!BD${rowNum}`, values: [[params.q7Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!BF${rowNum}`, values: [[params.q8Comment ?? ""]] },
-      { range: `'${resolved.sheetName}'!BH${rowNum}`, values: [[params.q9Rating ?? ""]] },
-      { range: `'${resolved.sheetName}'!BJ${rowNum}`, values: [[params.q10Rating ?? ""]] },
+      { range: `'${resolved.sheetName}'!AQ${rowNum}`, values: [[params.q1Rating ?? ""]] },  // AQ = Q1 answer
+      { range: `'${resolved.sheetName}'!AS${rowNum}`, values: [[params.q2Rating ?? ""]] },  // AS = Q2 Answer
+      { range: `'${resolved.sheetName}'!AU${rowNum}`, values: [[params.q3Rating ?? ""]] },  // AU = Q3 Answer
+      { range: `'${resolved.sheetName}'!AW${rowNum}`, values: [[params.q4Rating ?? ""]] },  // AW = Q4 Answer
+      { range: `'${resolved.sheetName}'!AY${rowNum}`, values: [[params.q5Rating ?? ""]] },  // AY = Q5 Answer
+      { range: `'${resolved.sheetName}'!BA${rowNum}`, values: [[params.q6Rating ?? ""]] },  // BA = Q6 Answer
+      { range: `'${resolved.sheetName}'!BC${rowNum}`, values: [[params.q7Rating ?? ""]] },  // BC = Q7 Answer
+      { range: `'${resolved.sheetName}'!BE${rowNum}`, values: [[params.q8Comment ?? ""]] }, // BE = Q8 Answer
+      { range: `'${resolved.sheetName}'!BG${rowNum}`, values: [[params.q9Rating ?? ""]] },  // BG = Q9 Answer
+      { range: `'${resolved.sheetName}'!BI${rowNum}`, values: [[params.q10Rating ?? ""]] }, // BI = Q10 Answer
     ];
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: resolved.spreadsheetId,
@@ -639,7 +683,6 @@ export const SHEET_COLS = {
   CHECK_OUT:        COL_CHECK_OUT,
   ROOMMATE_FIRST:   COL_ROOMMATE_FIRST,
   ROOMMATE_LAST:    COL_ROOMMATE_LAST,
-  HOTEL_REG:        COL_HOTEL_REG,
   COORDINATOR:      COL_COORDINATOR,
   SANCTION_NUM:     COL_SANCTION_NUM,
   NUM_GAMES:        COL_NUM_GAMES,
@@ -652,15 +695,17 @@ export const SHEET_COLS = {
   POOL_QR:          COL_POOL_QR,
   GUEST_POOL_A:     COL_GUEST_POOL_A,
   GUEST_POOL_B:     COL_GUEST_POOL_B,
-  GUEST_BANQUET_QR: COL_GUEST_BANQUET_QR,
+  GUEST_BANQUET_A:   COL_GUEST_BANQUET_A,
+  GUEST_BANQUET_B:   COL_GUEST_BANQUET_B,
   POOL_USED:        COL_POOL_USED,
   EXTRA_BNQ_USED:   COL_EXTRA_BNQ_USED,
   BANQUET_USED:     COL_BANQUET_USED,
-  POOL_CONFIRMED:   COL_POOL_CONFIRMED,
-  GUEST_POOL_A_USED: COL_GUEST_POOL_A_USED,
-  GUEST_POOL_B_USED: COL_GUEST_POOL_B_USED,
-  POOL_USED_2:      COL_POOL_USED_2,
-  BANQUET_USED_2:   COL_BANQUET_USED_2,
+  GUEST_POOL_A_USED:     COL_GUEST_POOL_A_USED,
+  GUEST_BANQUET_A_USED:  COL_GUEST_BANQUET_A_USED,
+  GUEST_POOL_B_USED:     COL_GUEST_POOL_B_USED,
+  GUEST_BANQUET_B_USED:  COL_GUEST_BANQUET_B_USED,
+  EXTRA_POOL_QR:         COL_EXTRA_POOL_QR,
+  EXTRA_POOL_USED:       COL_EXTRA_POOL_USED,
   Q1_QUESTION:      COL_Q1_QUESTION,
   Q2_QUESTION:      COL_Q2_QUESTION,
   Q3_QUESTION:      COL_Q3_QUESTION,

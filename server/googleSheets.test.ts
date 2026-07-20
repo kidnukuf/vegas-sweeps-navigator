@@ -51,10 +51,10 @@ import {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeRow(first: string, last: string, lane: string): string[] {
-  const row = new Array(36).fill("");
-  row[4] = lane;   // E = Lane #
-  row[8] = first;  // I = First Name
-  row[9] = last;   // J = Last Name
+  const row = new Array(61).fill("");
+  row[4]  = lane;   // E (4)  = Lane #
+  row[9]  = first;  // J (9)  = First Name
+  row[10] = last;   // K (10) = Last Name
   return row;
 }
 
@@ -62,7 +62,7 @@ function fakeSheetWithBowler(first: string, last: string, lane: string) {
   return {
     data: {
       values: [
-        new Array(36).fill("header"), // row 0 = headers
+        new Array(61).fill("header"), // row 0 = headers
         makeRow(first, last, lane),   // row 1 = bowler (sheet row 2)
       ],
     },
@@ -189,7 +189,7 @@ describe("writeQRCodesToSheet", () => {
     mockValuesGet.mockResolvedValueOnce({
       data: {
         values: [
-          new Array(36).fill("header"),
+          new Array(61).fill("header"),
           makeRow("Jane", "Smith", "5"),
         ],
       },
@@ -286,7 +286,7 @@ describe("writeBowlerIdToSheet", () => {
     mockValuesGet.mockResolvedValueOnce({
       data: {
         values: [
-          new Array(36).fill("header"),
+          new Array(61).fill("header"),
           makeRow("Jane", "Smith", "5"),
         ],
       },
