@@ -2,8 +2,10 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import mysql from "mysql2/promise";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: mysql.Pool | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -16,6 +18,37 @@ export async function getDb() {
     }
   }
   return _db;
+}
+
+export async function getPool(): Promise<mysql.Pool | null> {
+  if (!_pool && process.env.DATABASE_URL) {
+    try {
+      _pool = mysql.createPool(process.env.DATABASE_URL);
+    } catch (error) {
+      console.warn("[Database] Failed to connect to pool:", error);
+      _pool = null;
+    }
+  }
+  return _pool;
+}
+
+export async function rawQuery<T>(sql: string, values?: any[]): Promise<T[]> {
+  const pool = await getPool();
+  if (!pool) {
+    console.warn("[Database] Cannot execute raw query: database pool not available");
+    return [];
+  }
+  const [rows] = await pool.execute(sql, values);
+  return rows as T[];
+}
+
+export async function rawExec(sql: string, values?: any[]): Promise<void> {
+  const pool = await getPool();
+  if (!pool) {
+    console.warn("[Database] Cannot execute raw exec: database pool not available");
+    return;
+  }
+  await pool.execute(sql, values);
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
