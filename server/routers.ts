@@ -234,7 +234,7 @@ export const appRouter = router({
              tshirtsProvided, tshirtPickupLocation, tshirtPickupTime,
              poolPartyEnabled, poolPartyTime, banquetDay, banquetTime, banquetLocation,
              hotelCheckoutDay, hotelCheckoutTime, surveyEnabled, surveyOpen, showHotelInfoCard,
-             sheetSpreadsheetId, sheetTabName
+             sheetSpreadsheetId, sheetTabName, sheetTabNickname
            FROM events WHERE id=?`,
           [input.id]
         ) as Record<string, unknown>[];
@@ -264,6 +264,7 @@ export const appRouter = router({
         showHotelInfoCard: z.boolean().optional(),
         sheetSpreadsheetId: z.string().optional().nullable(),
         sheetTabName: z.string().optional().nullable(),
+        sheetTabNickname: z.string().optional().nullable(),
         actorId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -291,6 +292,7 @@ export const appRouter = router({
           showHotelInfoCard: input.showHotelInfoCard,
           sheetSpreadsheetId: input.sheetSpreadsheetId,
           sheetTabName: input.sheetTabName,
+          sheetTabNickname: input.sheetTabNickname,
         };
         for (const [key, val] of Object.entries(map)) {
           if (val !== undefined) {
@@ -311,6 +313,28 @@ export const appRouter = router({
           details: `Updated ${fields.length} settings`,
         });
         return { success: true };
+      }),
+
+    getSheetTabs: publicProcedure
+      .input(z.object({ spreadsheetId: z.string() }))
+      .query(async ({ input }) => {
+        // Fetch live tab names from the Google Sheet
+        const { getSheetsClient, resolveSheetTarget } = await import('./googleSheets');
+        const target = resolveSheetTarget({ spreadsheetId: input.spreadsheetId, sheetName: null });
+        if (!target.spreadsheetId) return { tabs: [] };
+        try {
+          const sheets = await getSheetsClient();
+          if (!sheets) return { tabs: [] };
+          const res = await sheets.spreadsheets.get({
+            spreadsheetId: target.spreadsheetId,
+            fields: 'sheets.properties.title',
+          });
+          const tabs = (res.data.sheets ?? []).map((s) => s.properties?.title ?? '').filter((t): t is string => Boolean(t));
+          return { tabs };
+        } catch (err) {
+          console.error('[getSheetTabs] Failed to fetch tabs:', err);
+          return { tabs: [] };
+        }
       }),
   }),
 

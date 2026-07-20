@@ -43,6 +43,7 @@ interface WizardState {
   showHotelInfoCard: boolean;
   sheetSpreadsheetId: string;
   sheetTabName: string;
+  sheetTabNickname: string;
 }
 
 const EMPTY: WizardState = {
@@ -66,6 +67,7 @@ const EMPTY: WizardState = {
   showHotelInfoCard: true,
   sheetSpreadsheetId: "",
   sheetTabName: "",
+  sheetTabNickname: "",
 };
 
 const inputCls =
@@ -197,6 +199,89 @@ function GoogleCredsPanel() {
   );
 }
 
+// ─── Sheet Tab Picker ───────────────────────────────────────────────────────────────────────────────
+interface SheetTabPickerProps {
+  spreadsheetId: string;
+  selectedTab: string;
+  nickname: string;
+  onTabChange: (tab: string) => void;
+  onNicknameChange: (nick: string) => void;
+}
+
+function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onNicknameChange }: SheetTabPickerProps) {
+  // Extract bare spreadsheet ID from a full URL if needed
+  const bareId = spreadsheetId.includes('/d/')
+    ? (spreadsheetId.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ?? spreadsheetId)
+    : spreadsheetId.trim();
+
+  const tabsQuery = trpc.event.getSheetTabs.useQuery(
+    { spreadsheetId: bareId },
+    { enabled: bareId.length > 10, staleTime: 30_000 }
+  );
+
+  const tabs = tabsQuery.data?.tabs ?? [];
+  const loading = tabsQuery.isFetching;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className={labelCls}>Sheet Tab</label>
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+          {!loading && tabs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => tabsQuery.refetch()}
+              className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+            >
+              Refresh
+            </button>
+          )}
+        </div>
+
+        {tabs.length > 0 ? (
+          <select
+            className={inputCls + " cursor-pointer"}
+            value={selectedTab}
+            onChange={(e) => onTabChange(e.target.value)}
+          >
+            <option value="">— Select a tab —</option>
+            {tabs.map((tab) => (
+              <option key={tab} value={tab}>{tab}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            className={inputCls}
+            value={selectedTab}
+            onChange={(e) => onTabChange(e.target.value)}
+            placeholder={bareId.length > 10 && !loading ? "Could not load tabs — type name manually" : "Enter spreadsheet ID above to load tabs"}
+          />
+        )}
+
+        {selectedTab && (
+          <p className="mt-1 text-xs text-gray-400">
+            Selected: <span className="text-white font-medium">{selectedTab}</span>
+            {nickname && <span className="text-yellow-400 ml-1">({nickname})</span>}
+          </p>
+        )}
+        {!selectedTab && <p className="mt-1 text-xs text-gray-400">Leave blank to use the first tab. Tab names are case-sensitive.</p>}
+      </div>
+
+      <div>
+        <label className={labelCls}>Tab Nickname <span className="text-gray-500 font-normal">(optional)</span></label>
+        <input
+          className={inputCls}
+          value={nickname}
+          onChange={(e) => onNicknameChange(e.target.value)}
+          placeholder={selectedTab ? `e.g. "${selectedTab} — Funtime 1"` : "e.g. Summer 2025 Funtime"}
+        />
+        <p className="mt-1 text-xs text-gray-400">A friendly label shown alongside the tab name in the ED portal so you can tell events apart at a glance.</p>
+      </div>
+    </div>
+  );
+}
+
 export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProps) {
   const [step, setStep] = useState(0);
   const [s, setS] = useState<WizardState>(EMPTY);
@@ -231,6 +316,7 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
         showHotelInfoCard: d.showHotelInfoCard === undefined ? true : !!d.showHotelInfoCard,
         sheetSpreadsheetId: String(d.sheetSpreadsheetId ?? ""),
         sheetTabName: String(d.sheetTabName ?? ""),
+        sheetTabNickname: String(d.sheetTabNickname ?? ""),
       });
     }
   }, [mode, settingsQuery.data]);
@@ -262,6 +348,7 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
       showHotelInfoCard: s.showHotelInfoCard,
       sheetSpreadsheetId: s.sheetSpreadsheetId.trim() || null,
       sheetTabName: s.sheetTabName.trim() || null,
+      sheetTabNickname: s.sheetTabNickname.trim() || null,
     }),
     [s]
   );
@@ -498,7 +585,12 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
                 <div className="rounded-lg border border-green-500/40 bg-green-500/5 p-3 text-sm">
                   <p className="font-semibold text-green-400">✅ Sheet linked for this event</p>
                   <p className="text-gray-300 text-xs mt-1 break-all">{s.sheetSpreadsheetId}</p>
-                  {s.sheetTabName && <p className="text-gray-400 text-xs">Tab: <span className="text-white">{s.sheetTabName}</span></p>}
+                  {s.sheetTabName && (
+                    <p className="text-gray-400 text-xs">
+                      Tab: <span className="text-white">{s.sheetTabName}</span>
+                      {s.sheetTabNickname && <span className="text-yellow-400 ml-1">— {s.sheetTabNickname}</span>}
+                    </p>
+                  )}
                   <p className="text-gray-500 text-xs mt-2">Set automatically when you import from a Google Sheets URL. Override below if needed.</p>
                 </div>
               ) : (
@@ -517,16 +609,14 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
                 />
                 <p className="mt-1 text-xs text-gray-400">You can paste the full URL — the app extracts the ID automatically.</p>
               </div>
-              <div>
-                <label className={labelCls}>Tab Name <span className="text-gray-500 font-normal">(optional override)</span></label>
-                <input
-                  className={inputCls}
-                  value={s.sheetTabName}
-                  onChange={(e) => set("sheetTabName", e.target.value)}
-                  placeholder="e.g. June 23 1152pm"
-                />
-                <p className="mt-1 text-xs text-gray-400">Exact name of the sheet tab (bottom of the spreadsheet). Case-sensitive. Leave blank to use the first tab.</p>
-              </div>
+              {/* ── Tab Picker ── */}
+              <SheetTabPicker
+                spreadsheetId={s.sheetSpreadsheetId}
+                selectedTab={s.sheetTabName}
+                nickname={s.sheetTabNickname}
+                onTabChange={(tab) => set("sheetTabName", tab)}
+                onNicknameChange={(nick) => set("sheetTabNickname", nick)}
+              />
             </div>
           )}
 

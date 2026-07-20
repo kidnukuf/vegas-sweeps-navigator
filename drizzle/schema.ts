@@ -94,6 +94,8 @@ export const events = mysqlTable("events", {
   sheetSpreadsheetId: varchar("sheetSpreadsheetId", { length: 255 }),
   // The tab/page name inside that spreadsheet for this event.
   sheetTabName: varchar("sheetTabName", { length: 255 }),
+  // A human-readable nickname for the tab, shown alongside the actual tab name in the ED portal.
+  sheetTabNickname: varchar("sheetTabNickname", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
