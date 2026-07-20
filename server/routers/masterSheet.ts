@@ -1,12 +1,9 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
-import * as QRCode from 'qrcode';
-import { v4 as uuidv4 } from 'uuid';
+import QRCode from "qrcode";
+import { v4 as uuidv4 } from "uuid";
 import { rawQuery } from "../db";
 import { getSheetsClient } from "../googleSheets";
-import { GaxiosResponse } from "gaxios";
-import { sheets_v4 } from "googleapis";
-type Schema$ValueRange = sheets_v4.Schema$ValueRange;
 
 // Column indices for Master Sheet (0-indexed)
 // Based on actual Google Sheet structure: https://docs.google.com/spreadsheets/d/1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
@@ -199,9 +196,32 @@ export const masterSheetRouter = router({
 
           if (!sheetRow.firstName || !sheetRow.lastName) continue;
 
+          // Look up centerId from centerName
+          let centerId: number | null = null;
+          if (sheetRow.centerName) {
+            console.log("[DEBUG] Center name from sheet (raw):", JSON.stringify(sheetRow.centerName));
+            console.log("[DEBUG] Center name trimmed:", JSON.stringify(sheetRow.centerName?.trim()));
+            
+            // Try case-insensitive lookup with trimming
+            const centerResult = await rawQuery(
+              `SELECT id, centerName FROM bowling_centers WHERE LOWER(TRIM(centerName)) = LOWER(TRIM(?))`,
+              [sheetRow.centerName]
+            );
+            console.log("[DEBUG] Lookup result:", centerResult);
+            
+            if (centerResult.length > 0) {
+              centerId = (centerResult[0] as any).id as number | null;
+              console.log("[DEBUG] Match found! centerId:", centerId);
+            } else {
+              // Log all available centers for comparison
+              const allCenters = await rawQuery(`SELECT id, centerName FROM bowling_centers`);
+              console.log("[DEBUG] No match found. Available centers:", allCenters);
+            }
+          }
+
           await rawQuery(
-            `INSERT INTO bowlers (eventId, firstName, lastName, phone, email, squadTime, laneNumber, centerName, league, teamCode, teamName, under21, sanction, games, bestAvg, leagueMember, tshirtSize, hotelConfirmation, hotelCheckin, hotelCheckout, roommateFirst, roommateLast, banquetTable, extraBanquet, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email), squadTime = VALUES(squadTime), laneNumber = VALUES(laneNumber), centerName = VALUES(centerName), league = VALUES(league), teamCode = VALUES(teamCode), teamName = VALUES(teamName), under21 = VALUES(under21), sanction = VALUES(sanction), games = VALUES(games), bestAvg = VALUES(bestAvg), leagueMember = VALUES(leagueMember), tshirtSize = VALUES(tshirtSize), hotelConfirmation = VALUES(hotelConfirmation), hotelCheckin = VALUES(hotelCheckin), hotelCheckout = VALUES(hotelCheckout), roommateFirst = VALUES(roommateFirst), roommateLast = VALUES(roommateLast), banquetTable = VALUES(banquetTable), extraBanquet = VALUES(extraBanquet), updatedAt = NOW()`,
-            [eventId, sheetRow.firstName, sheetRow.lastName, sheetRow.phone, sheetRow.email, sheetRow.squadTime, sheetRow.laneNumber, sheetRow.centerName, sheetRow.league, sheetRow.teamCode, sheetRow.teamName, sheetRow.under21 ? 1 : 0, sheetRow.sanction, sheetRow.games, sheetRow.bestAvg, sheetRow.leagueMember, sheetRow.tshirtSize, sheetRow.hotelConfirmation, sheetRow.hotelCheckin, sheetRow.hotelCheckout, sheetRow.roommateFirst, sheetRow.roommateLast, sheetRow.banquetTable, sheetRow.extraBanquet]
+            `INSERT INTO bowlers (eventId, firstName, lastName, phone, email, squadTime, laneNumber, centerId, league, teamCode, teamName, under21, sanction, games, bestAvg, leagueMember, tshirtSize, hotelConfirmation, hotelCheckin, hotelCheckout, roommateFirst, roommateLast, banquetTable, extraBanquet, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email), squadTime = VALUES(squadTime), laneNumber = VALUES(laneNumber), centerId = VALUES(centerId), league = VALUES(league), teamCode = VALUES(teamCode), teamName = VALUES(teamName), under21 = VALUES(under21), sanction = VALUES(sanction), games = VALUES(games), bestAvg = VALUES(bestAvg), leagueMember = VALUES(leagueMember), tshirtSize = VALUES(tshirtSize), hotelConfirmation = VALUES(hotelConfirmation), hotelCheckin = VALUES(hotelCheckin), hotelCheckout = VALUES(hotelCheckout), roommateFirst = VALUES(roommateFirst), roommateLast = VALUES(roommateLast), banquetTable = VALUES(banquetTable), extraBanquet = VALUES(extraBanquet), updatedAt = NOW()`,
+            [eventId, sheetRow.firstName, sheetRow.lastName, sheetRow.phone, sheetRow.email, sheetRow.squadTime, sheetRow.laneNumber, centerId, sheetRow.league, sheetRow.teamCode, sheetRow.teamName, sheetRow.under21 ? 1 : 0, sheetRow.sanction, sheetRow.games, sheetRow.bestAvg, sheetRow.leagueMember, sheetRow.tshirtSize, sheetRow.hotelConfirmation, sheetRow.hotelCheckin, sheetRow.hotelCheckout, sheetRow.roommateFirst, sheetRow.roommateLast, sheetRow.banquetTable, sheetRow.extraBanquet]
           );
 
           imported++;
@@ -229,13 +249,13 @@ export const masterSheetRouter = router({
 
         if (!sheetRow.firstName || !sheetRow.lastName) continue;
 
-        const existing = await rawQuery<any[]>(`SELECT * FROM bowlers WHERE eventId = ? AND firstName = ? AND lastName = ?`, [eventId, sheetRow.firstName, sheetRow.lastName]);
+        const existing = await rawQuery(`SELECT * FROM bowlers WHERE eventId = ? AND firstName = ? AND lastName = ?`, [eventId, sheetRow.firstName, sheetRow.lastName]);
 
         if (existing.length === 0) {
           newBowlers++;
           changes.push({ firstName: sheetRow.firstName, lastName: sheetRow.lastName, type: "new" });
         } else {
-          const bowler: any = existing[0];
+          const bowler = existing[0];
           const changedFields: Record<string, { old: string; new: string }> = {};
 
           if (bowler.phone !== sheetRow.phone) changedFields.phone = { old: String(bowler.phone || ""), new: sheetRow.phone };
@@ -262,14 +282,12 @@ export const masterSheetRouter = router({
       const { eventId } = input;
 
       // Get event to find Google Sheet
-      const eventResult = await rawQuery<{ sheetSpreadsheetId: string | null; sheetTabName: string | null }[]>(`SELECT sheetSpreadsheetId, sheetTabName FROM events WHERE id = ?`, [eventId]);
-      const eventDetails = eventResult[0] as unknown as { sheetSpreadsheetId: string | null; sheetTabName: string | null };
-      if (!eventDetails || !eventDetails.sheetSpreadsheetId) {
+      const event = await rawQuery(`SELECT sheetSpreadsheetId, sheetTabName FROM events WHERE id = ?`, [eventId]);
+      if (!event || !event[0]?.sheetSpreadsheetId) {
         throw new Error("Event not configured with Google Sheet");
       }
 
-      const sheetSpreadsheetId = eventDetails.sheetSpreadsheetId;
-      const sheetTabName = eventDetails.sheetTabName;
+      const { sheetSpreadsheetId, sheetTabName } = event[0];
 
       // Fetch all data from Google Sheet (columns A-BI)
       const sheetsClient = await getSheetsClient();
@@ -277,12 +295,12 @@ export const masterSheetRouter = router({
         throw new Error("Google Sheets client not available");
       }
 
-      const resp = await sheetsClient.spreadsheets.values.get({
-        spreadsheetId: sheetSpreadsheetId as string,
-        range: `\''${sheetTabName}'\'!A:BI`,
+      const resp = await (sheetsClient.spreadsheets.values.get as any)({
+        spreadsheetId: sheetSpreadsheetId,
+        range: `'${sheetTabName}'!A:BI`,
       });
 
-      const allRows = (resp.data?.values as string[][]) || [];
+      const allRows = ((resp as any).data?.values as string[][]) || [];
       if (allRows.length === 0) {
         throw new Error("No data found in Google Sheet");
       }
@@ -312,7 +330,7 @@ export const masterSheetRouter = router({
 
       const { eventId } = input;
 
-      const bowlers = await rawQuery<any[]>(`SELECT b.id, b.scantronId, b.firstName, b.lastName, b.laneNumber, b.centerName, b.teamName, b.squadTime FROM bowlers b WHERE b.eventId = ? ORDER BY b.squadTime, b.laneNumber`, [eventId]);
+      const bowlers = await rawQuery(`SELECT b.id, b.scantronId, b.firstName, b.lastName, b.laneNumber, b.centerName, b.teamName, b.squadTime FROM bowlers b WHERE b.eventId = ? ORDER BY b.squadTime, b.laneNumber`, [eventId]);
 
       const headers = ["Bowler ID", "First Name", "Last Name", "Lane", "Center", "Team", "Squad Time"];
       const rows = bowlers.map((b: any) => [String(b.scantronId || ""), String(b.firstName || ""), String(b.lastName || ""), String(b.laneNumber || ""), String(b.centerName || ""), String(b.teamName || ""), String(b.squadTime || "")]);
@@ -329,12 +347,12 @@ export const masterSheetRouter = router({
 
       const { eventId } = input;
 
-      const bowlers = await rawQuery<any[]>(`SELECT * FROM bowlers WHERE eventId = ? ORDER BY squadTime, laneNumber`, [eventId]);
+      const bowlers = await rawQuery(`SELECT * FROM bowlers WHERE eventId = ? ORDER BY squadTime, laneNumber`, [eventId]);
 
       const headers = ["Bowler ID", "First Name", "Last Name", "Phone", "Email", "Lane", "Center", "Team", "Squad Time", "T-Shirt Size", "Banquet Table", "Check In", "Check Out", "Event Completed"];
 
       const rows = bowlers.map((b: any) => [
-        String(b.id || ""),
+        String(b.scantronId || ""),
         String(b.firstName || ""),
         String(b.lastName || ""),
         String(b.phone || ""),
@@ -347,11 +365,40 @@ export const masterSheetRouter = router({
         String(b.banquetTable || ""),
         String(b.hotelCheckin || ""),
         String(b.hotelCheckout || ""),
-        String(b.eventCompleted ? "Yes" : "No"),
+        "✓",
       ]);
 
       const csvContent = [headers.join("\t"), ...rows.map((row) => row.join("\t"))].join("\n");
 
       return { csv: csvContent, rowCount: rows.length };
+    }),
+
+  getAllBowlersWithQRCodes: protectedProcedure
+    .input(z.object({ eventId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+
+      const bowlers = await rawQuery(
+        `SELECT 
+          b.id, b.scantronId, b.firstName, b.lastName, b.centerName, b.teamCode,
+          b.poolPartyToken, b.banquetToken, b.poolPartyUsed, b.banquetUsed
+        FROM bowlers b
+        WHERE b.eventId = ?
+        ORDER BY b.lastName, b.firstName`,
+        [input.eventId]
+      ) as Array<{
+        id: number;
+        scantronId: string | null;
+        firstName: string;
+        lastName: string;
+        centerName: string | null;
+        teamCode: string | null;
+        poolPartyToken: string | null;
+        banquetToken: string | null;
+        poolPartyUsed: boolean;
+        banquetUsed: boolean;
+      }>;
+
+      return bowlers;
     }),
 });
