@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -84,12 +84,43 @@ export default function MasterSheetImport() {
   });
   const [step, setStep] = useState<"input" | "review" | "changes" | "complete">("input");
   const [changesSummary, setChangesSummary] = useState<any>(null);
+  const [verifyState, setVerifyState] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [verifyResult, setVerifyResult] = useState<{ ok: boolean; error: string | null; mismatches: { col: number; expected: string; actual: string }[]; totalExpected: number; totalFound: number } | null>(null);
 
   const { data: events = [] } = trpc.event.list.useQuery();
   const activeEvent = useMemo(
     () => (events as EventRecord[]).find((e) => Number(e.id) === eventId) ?? null,
     [events, eventId]
   );
+
+  const verifyTabHeadersQuery = trpc.event.verifyTabHeaders.useQuery(
+    { spreadsheetId: String(activeEvent?.sheetSpreadsheetId ?? ""), tabName: String(activeEvent?.sheetTabName ?? "") },
+    { enabled: false }
+  );
+
+  const handleVerifyHeaders = useCallback(async () => {
+    if (!activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName) {
+      toast.error("No sheet tab configured for this event. Set it in Event Settings first.");
+      return;
+    }
+    setVerifyState("loading");
+    setVerifyResult(null);
+    try {
+      const result = await verifyTabHeadersQuery.refetch();
+      const data = result.data;
+      if (!data) throw new Error("No response from server");
+      setVerifyResult(data);
+      setVerifyState(data.ok ? "ok" : "error");
+      if (data.ok) {
+        toast.success(`✅ All ${data.totalExpected} column headers verified — sheet is ready!`);
+      } else {
+        toast.error(`⚠️ ${data.mismatches.length} header mismatch${data.mismatches.length !== 1 ? "es" : ""} found`);
+      }
+    } catch (e: any) {
+      setVerifyState("error");
+      toast.error(e.message ?? "Verification failed");
+    }
+  }, [activeEvent, verifyTabHeadersQuery]);
 
   const fetchGoogleSheet = trpc.import.fetchGoogleSheet.useMutation({
     onSuccess: (data: any) => {
@@ -256,6 +287,47 @@ export default function MasterSheetImport() {
                   );
                 })}
               </select>
+            </div>
+
+            {/* Verify Tab Headers */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Button
+                  onClick={handleVerifyHeaders}
+                  disabled={verifyState === "loading" || !activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName}
+                  className={`text-sm font-semibold ${
+                    verifyState === "ok"
+                      ? "bg-green-700 hover:bg-green-600"
+                      : verifyState === "error"
+                      ? "bg-red-700 hover:bg-red-600"
+                      : "bg-indigo-700 hover:bg-indigo-600"
+                  }`}
+                >
+                  {verifyState === "loading" ? "🔍 Checking headers..." : verifyState === "ok" ? "✅ Headers verified" : verifyState === "error" ? "⚠️ Header issues found" : "🔍 Verify Tab Headers"}
+                </Button>
+                {verifyResult && (
+                  <span className="text-xs text-gray-400">
+                    {verifyResult.ok
+                      ? `${verifyResult.totalExpected} of ${verifyResult.totalExpected} headers match`
+                      : `${verifyResult.mismatches.length} mismatch${verifyResult.mismatches.length !== 1 ? "es" : ""} in ${verifyResult.totalFound} found / ${verifyResult.totalExpected} expected`}
+                  </span>
+                )}
+              </div>
+              {verifyResult && !verifyResult.ok && (
+                <div className="bg-red-950/40 border border-red-500/40 rounded-lg p-4 text-xs">
+                  <p className="text-red-400 font-bold mb-2">Column header mismatches — do not import until resolved:</p>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {verifyResult.mismatches.map((m) => (
+                      <div key={m.col} className="flex gap-2">
+                        <span className="text-gray-500 w-6 text-right shrink-0">#{m.col + 1}</span>
+                        <span className="text-red-300 font-mono truncate">Expected: <span className="text-white">{m.expected}</span></span>
+                        <span className="text-gray-500">→</span>
+                        <span className="text-red-400 font-mono truncate">Got: <span className="text-yellow-300">{m.actual}</span></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">

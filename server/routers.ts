@@ -336,6 +336,47 @@ export const appRouter = router({
           return { tabs: [] };
         }
       }),
+
+    verifyTabHeaders: publicProcedure
+      .input(z.object({ spreadsheetId: z.string(), tabName: z.string() }))
+      .query(async ({ input }) => {
+        const EXPECTED_HEADERS = [
+          "Bowler ID", "Phone", "Email", "Squad Day & Time", "Lane #", "Center",
+          "Coordinator", "Team #", "Captain", "First Name", "Last Name", "Under 21?",
+          "Sanction #", "# Games", "Best Avg", "Team Name", "League Member", "T-Shirt Size",
+          "Hotel Confirmation", "Check In", "Check Out", "Roommate First Name", "Roommate Last Name",
+          "2nd Squad Time", "Lane #", "Pool QR", "Pool Used", "Banquet QR", "Banquet Used",
+          "#A Pool QR", "#A Pool Used", "#A Banquet QR", "#A Banquet Used",
+          "#B Pool QR", "#B Pool Used", "#B Banquet QR", "#B Banquet Used",
+          "2nd Banquet QR", "2nd Banquet Used", "2nd Pool QR", "2nd Pool Used",
+          "Q1 Overall Experience?", "Q1 answer ", "Q2 Bowling Venue?", "Q2 Answer ",
+          "Q3 Event Organization?", "Q3 Answer ", "Q4 Pool Party? (If applicable)", "Q4 Answer ",
+          "Q5 Banquet Experience?", "Q5 Answer ", "Q6 This App?", "Q6 Answer ",
+          "Q7 League App Interest?", "Q7 Answer ",
+          "Q8 Additional Comments or Concerns", "Q8 Answer",
+          "Q9 Testimonial Permission?", "Q9 Answer ", "Q10 Attend Next Year?", "Q10 Answer ",
+        ];
+        const { getSheetsClient } = await import('./googleSheets');
+        try {
+          const sheets = await getSheetsClient();
+          if (!sheets) return { ok: false, error: 'Could not connect to Google Sheets', mismatches: [], totalExpected: EXPECTED_HEADERS.length, totalFound: 0 };
+          const res = await sheets.spreadsheets.values.get({
+            spreadsheetId: input.spreadsheetId,
+            range: `${input.tabName}!1:1`,
+          });
+          const actual: string[] = (res.data.values?.[0] ?? []).map((v: unknown) => String(v ?? ''));
+          const mismatches: { col: number; expected: string; actual: string }[] = [];
+          for (let i = 0; i < EXPECTED_HEADERS.length; i++) {
+            const found = actual[i] ?? '';
+            if (found !== EXPECTED_HEADERS[i]) {
+              mismatches.push({ col: i, expected: EXPECTED_HEADERS[i], actual: found || '(missing)' });
+            }
+          }
+          return { ok: mismatches.length === 0, error: null, mismatches, totalExpected: EXPECTED_HEADERS.length, totalFound: actual.length };
+        } catch (err: any) {
+          return { ok: false, error: err?.message ?? 'Unknown error', mismatches: [], totalExpected: EXPECTED_HEADERS.length, totalFound: 0 };
+        }
+      }),
   }),
 
   // ─── BOWLERS ──────────────────────────────────────────────────────────────

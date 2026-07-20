@@ -613,6 +613,25 @@ export default function ImportData() {
               )}
             </div>
 
+            {/* Sheet target confirmation before import */}
+            {selectedEvent && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-green-500/40 bg-green-950/30 text-sm">
+                <span className="text-green-400 text-lg">🎯</span>
+                <div>
+                  <span className="text-gray-400">Writing to Google Sheet tab: </span>
+                  <span className="text-green-300 font-bold">
+                    {selectedEvent.sheetTabNickname ? String(selectedEvent.sheetTabNickname) : selectedEvent.sheetTabName ? String(selectedEvent.sheetTabName) : "(no tab set)"}
+                  </span>
+                  {Boolean(selectedEvent.sheetTabNickname) && Boolean(selectedEvent.sheetTabName) && (
+                    <span className="text-gray-500 ml-1 text-xs">({String(selectedEvent.sheetTabName)})</span>
+                  )}
+                  {!selectedEvent.sheetTabName && (
+                    <span className="text-yellow-400 ml-2 text-xs">⚠️ No tab configured — set it in Event Settings first</span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3">
               <button onClick={() => setStep("upload")} className="neon-btn-cyan flex-1 py-3">
