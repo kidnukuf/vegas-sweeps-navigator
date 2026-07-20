@@ -15,6 +15,8 @@ function SheetTargetBanner({ event }: { event: EventRecord | null }) {
   const tabName = String(event.sheetTabName ?? "");
   const nickname = String(event.sheetTabNickname ?? "");
   const hasSheet = spreadsheetId && tabName;
+  const lastSyncedMs = event.sheetLastSyncedAt ? Number(event.sheetLastSyncedAt) : null;
+  const lastSyncedStr = lastSyncedMs ? new Date(lastSyncedMs).toLocaleString() : null;
 
   return (
     <div
@@ -42,6 +44,13 @@ function SheetTargetBanner({ event }: { event: EventRecord | null }) {
             </p>
             <p className="text-xs text-gray-500 mt-0.5 font-mono truncate">
               ID: {spreadsheetId}
+            </p>
+            <p className="text-xs mt-1">
+              {lastSyncedStr ? (
+                <span className="text-gray-400">Last synced: <span className="text-green-300">{lastSyncedStr}</span></span>
+              ) : (
+                <span className="text-gray-500 italic">Not yet synced to this sheet</span>
+              )}
             </p>
           </>
         ) : (

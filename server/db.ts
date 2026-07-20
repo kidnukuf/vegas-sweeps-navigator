@@ -928,3 +928,12 @@ export async function getCheckinExportRows(
   );
   return out;
 }
+
+// ─── SHEET SYNC TIMESTAMP ────────────────────────────────────────────────────
+/** Record the current time as the last successful Google Sheet write-back for an event. */
+export async function recordSheetSync(eventId: number): Promise<void> {
+  await rawExec(
+    `UPDATE events SET sheetLastSyncedAt = ? WHERE id = ?`,
+    [Date.now(), eventId]
+  );
+}

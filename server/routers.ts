@@ -21,7 +21,7 @@ import {
   getBowlerActiveToken, createCheckIn, issueWristband, getWristbandByBowler,
   denyWristband, writeAuditLog, getAuditLog, createImportSession,
   updateImportSession, getImportHistory, upsertHotelRecord, upsertPaymentRecord,
-  rawQuery, updateTeamStatus, getTeamById,
+  rawQuery, updateTeamStatus, getTeamById, recordSheetSync,
 } from "./db";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -234,7 +234,7 @@ export const appRouter = router({
              tshirtsProvided, tshirtPickupLocation, tshirtPickupTime,
              poolPartyEnabled, poolPartyTime, banquetDay, banquetTime, banquetLocation,
              hotelCheckoutDay, hotelCheckoutTime, surveyEnabled, surveyOpen, showHotelInfoCard,
-             sheetSpreadsheetId, sheetTabName, sheetTabNickname
+             sheetSpreadsheetId, sheetTabName, sheetTabNickname, sheetLastSyncedAt
            FROM events WHERE id=?`,
           [input.id]
         ) as Record<string, unknown>[];
@@ -912,7 +912,8 @@ export const appRouter = router({
           laneNumber: b.laneNumber,
           received: input.received,
           target: tshirtSheetTarget,
-        }).catch((err) => console.error("[tshirts] sheet color write-back failed:", err));
+        }).then(() => b.eventId ? recordSheetSync(b.eventId) : undefined)
+          .catch((err) => console.error("[tshirts] sheet color write-back failed:", err));
         return { ok: true, received: input.received, receivedAt: now };
       }),
     // Read current status for a bowler (captain).
@@ -1234,7 +1235,7 @@ export const appRouter = router({
               q8Comment: input.q8Comment,
               q9Rating: input.q9Rating,
               q10Rating: input.q10Rating,
-            })
+            }).then(() => recordSheetSync(input.eventId))
           ).catch(() => {});
         }
         // Notify the ED when negative feedback (any rating <= 2) arrives so they can act fast.
@@ -1640,6 +1641,7 @@ export const appRouter = router({
                       appOrigin: APP_ORIGIN,
                       target: eventSheetTarget,
                     });
+                    await recordSheetSync(input.eventId);
                   } catch (e) {
                     console.warn("[import] sheet write-back failed:", e);
                   }

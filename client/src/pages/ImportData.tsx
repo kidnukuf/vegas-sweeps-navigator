@@ -615,20 +615,35 @@ export default function ImportData() {
 
             {/* Sheet target confirmation before import */}
             {selectedEvent && (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-green-500/40 bg-green-950/30 text-sm">
-                <span className="text-green-400 text-lg">🎯</span>
-                <div>
-                  <span className="text-gray-400">Writing to Google Sheet tab: </span>
-                  <span className="text-green-300 font-bold">
-                    {selectedEvent.sheetTabNickname ? String(selectedEvent.sheetTabNickname) : selectedEvent.sheetTabName ? String(selectedEvent.sheetTabName) : "(no tab set)"}
-                  </span>
-                  {Boolean(selectedEvent.sheetTabNickname) && Boolean(selectedEvent.sheetTabName) && (
-                    <span className="text-gray-500 ml-1 text-xs">({String(selectedEvent.sheetTabName)})</span>
-                  )}
-                  {!selectedEvent.sheetTabName && (
-                    <span className="text-yellow-400 ml-2 text-xs">⚠️ No tab configured — set it in Event Settings first</span>
-                  )}
+              <div className={`px-4 py-3 rounded-xl border text-sm ${
+                selectedEvent.sheetTabName
+                  ? "border-green-500/40 bg-green-950/30"
+                  : "border-yellow-500/40 bg-yellow-950/30"
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{selectedEvent.sheetTabName ? "🎯" : "⚠️"}</span>
+                  <div>
+                    <span className="text-gray-400">Writing to Google Sheet tab: </span>
+                    <span className={`font-bold ${selectedEvent.sheetTabName ? "text-green-300" : "text-yellow-400"}`}>
+                      {selectedEvent.sheetTabNickname ? String(selectedEvent.sheetTabNickname) : selectedEvent.sheetTabName ? String(selectedEvent.sheetTabName) : "(no tab set)"}
+                    </span>
+                    {Boolean(selectedEvent.sheetTabNickname) && Boolean(selectedEvent.sheetTabName) && (
+                      <span className="text-gray-500 ml-1 text-xs">({String(selectedEvent.sheetTabName)})</span>
+                    )}
+                    {!selectedEvent.sheetTabName && (
+                      <span className="text-yellow-300 ml-2 text-xs">Go to Event Settings → Sheet tab to configure before importing.</span>
+                    )}
+                  </div>
                 </div>
+                {Boolean(selectedEvent.sheetTabName) && (
+                  <p className="text-xs mt-1 ml-8">
+                    {selectedEvent.sheetLastSyncedAt ? (
+                      <span className="text-gray-400">Last synced: <span className="text-green-300">{new Date(Number(selectedEvent.sheetLastSyncedAt as number)).toLocaleString()}</span></span>
+                    ) : (
+                      <span className="text-gray-500 italic">Not yet synced to this sheet</span>
+                    )}
+                  </p>
+                )}
               </div>
             )}
 
@@ -638,7 +653,13 @@ export default function ImportData() {
                 ← Back
               </button>
               <button
-                onClick={handleImport}
+                onClick={() => {
+                  if (!selectedEvent?.sheetTabName) {
+                    toast.error("No Google Sheet tab configured. Go to Event Settings → Sheet tab to set one before importing.");
+                    return;
+                  }
+                  handleImport();
+                }}
                 disabled={validCount === 0 || importMutation.isPending}
                 className="neon-btn-gold flex-[2] py-3 disabled:opacity-50 disabled:cursor-not-allowed">
                 {importMutation.isPending ? "⏳ Importing..." : `🚀 Import ${validCount} Bowlers`}
