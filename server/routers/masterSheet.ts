@@ -2,8 +2,10 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
-import { rawQuery } from "../db";
-import { getSheetsClient } from "../googleSheets";
+import { rawQuery, getEventSheetTarget, recordSheetSync } from "../db";
+import { getSheetsClient, writeQRCodesToSheet, writeBowlerIdToSheet } from "../googleSheets";
+
+const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
 // Column indices for Master Sheet (0-indexed)
 // Exact layout from permanent sheet: 1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM
@@ -408,5 +410,112 @@ export const masterSheetRouter = router({
       }>;
 
       return bowlers;
+    }),
+
+  /**
+   * Bulk-sync all QR codes for an event to the Google Sheet.
+   * Iterates every bowler that has at least one token (pool, banquet, or guest)
+   * and writes all QR URLs in a single fire-and-forget batch per bowler.
+   * Returns counts of bowlers synced, skipped (no tokens), and failed.
+   */
+  bulkSyncQRCodes: protectedProcedure
+    .input(z.object({ eventId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+
+      const sheetTarget = await getEventSheetTarget(input.eventId);
+      if (!sheetTarget.spreadsheetId || !sheetTarget.sheetName) {
+        throw new Error("No Google Sheet configured for this event. Set the Sheet ID and Tab Name in Event Settings first.");
+      }
+
+      // Fetch all bowlers with any token
+      const bowlers = await rawQuery<{
+        id: number;
+        legalFirstName: string;
+        legalLastName: string;
+        laneNumber: number | null;
+        scantronId: string | null;
+        poolPartyToken: string | null;
+        banquetToken: string | null;
+      }>(
+        `SELECT id, legalFirstName, legalLastName, laneNumber, scantronId, poolPartyToken, banquetToken
+         FROM bowlers
+         WHERE eventId = ?
+         ORDER BY legalLastName, legalFirstName`,
+        [input.eventId]
+      );
+
+      // Fetch all guest tokens for this event grouped by bowlerId
+      const guestRows = await rawQuery<{
+        bowlerId: number;
+        suffix: string;
+        token: string;
+        banquetToken: string | null;
+        disabled: number;
+      }>(
+        `SELECT bowlerId, suffix, token, banquetToken, disabled
+         FROM guest_pool_party_tokens
+         WHERE eventId = ?
+         ORDER BY bowlerId, suffix`,
+        [input.eventId]
+      );
+
+      // Group guest tokens by bowlerId
+      const guestsByBowler = new Map<number, typeof guestRows>();
+      for (const g of guestRows) {
+        if (!guestsByBowler.has(g.bowlerId)) guestsByBowler.set(g.bowlerId, []);
+        guestsByBowler.get(g.bowlerId)!.push(g);
+      }
+
+      let synced = 0;
+      let skipped = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const bowler of bowlers) {
+        const guests = (guestsByBowler.get(bowler.id) ?? []).filter(g => !g.disabled);
+        const hasAnyToken =
+          bowler.poolPartyToken ||
+          bowler.banquetToken ||
+          guests.some(g => g.token || g.banquetToken);
+
+        if (!hasAnyToken) { skipped++; continue; }
+
+        try {
+          // Also write Bowler ID if we have a scantronId
+          if (bowler.scantronId) {
+            await writeBowlerIdToSheet({
+              firstName: bowler.legalFirstName,
+              lastName: bowler.legalLastName,
+              laneNumber: bowler.laneNumber,
+              scantronId: bowler.scantronId,
+              target: sheetTarget,
+            });
+          }
+          await writeQRCodesToSheet({
+            firstName: bowler.legalFirstName,
+            lastName: bowler.legalLastName,
+            laneNumber: bowler.laneNumber,
+            poolPartyToken: bowler.poolPartyToken ?? null,
+            banquetToken: bowler.banquetToken ?? null,
+            guestPoolTokens: guests
+              .filter(g => g.token && !g.token.endsWith("-BQ"))
+              .map(g => ({ suffix: g.suffix, token: g.token })),
+            guestBanquetTokens: guests
+              .filter(g => g.banquetToken)
+              .map(g => ({ suffix: g.suffix, banquetToken: g.banquetToken! })),
+            appOrigin: APP_ORIGIN,
+            target: sheetTarget,
+          });
+          synced++;
+        } catch (err) {
+          failed++;
+          errors.push(`${bowler.legalFirstName} ${bowler.legalLastName}: ${String(err)}`);
+        }
+      }
+
+      if (synced > 0) await recordSheetSync(input.eventId);
+
+      return { synced, skipped, failed, errors };
     }),
 });

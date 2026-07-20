@@ -1608,6 +1608,7 @@ export const appRouter = router({
                   : Math.floor(extraBanquet / 80);
                 const totalGuestCount = Math.min(Math.max(poolGuestCount, banquetGuestCount), SUFFIXES.length);
                 const importGuestTokens: Array<{ suffix: string; token: string }> = [];
+                const importGuestBanquetTokens: Array<{ suffix: string; banquetToken: string }> = [];
                 if (totalGuestCount > 0) {
                   await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowlerId]);
                   for (let gi = 0; gi < totalGuestCount; gi++) {
@@ -1624,6 +1625,7 @@ export const appRouter = router({
                       [bowlerId, input.eventId, guestId, suffix, primaryToken, banquetTok]
                     );
                     if (poolTok) importGuestTokens.push({ suffix, token: poolTok });
+                    if (banquetTok) importGuestBanquetTokens.push({ suffix, banquetToken: banquetTok });
                   }
                 }
 
@@ -1638,6 +1640,7 @@ export const appRouter = router({
                       banquetToken: importBanquetToken,
                       poolPartyToken: importPoolToken,
                       guestPoolTokens: importGuestTokens,
+                      guestBanquetTokens: importGuestBanquetTokens,
                       appOrigin: APP_ORIGIN,
                       target: eventSheetTarget,
                     });

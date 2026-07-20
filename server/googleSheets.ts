@@ -262,6 +262,8 @@ void COL_Q9_QUESTION; void COL_Q10_QUESTION;
 
 // Column letters for guest pool QR write-back (AD, AH = suffix A, B)
 const GUEST_POOL_COLUMNS = ["AD", "AH"];
+// Column letters for guest banquet QR write-back (AF, AJ = suffix A, B)
+const GUEST_BANQUET_COLUMNS = ["AF", "AJ"];
 
 // ── googleapis auth ───────────────────────────────────────────────────────────
 /**
@@ -393,10 +395,11 @@ export async function writeQRCodesToSheet(params: {
   banquetToken: string | null;
   poolPartyToken: string | null;
   guestPoolTokens?: Array<{ suffix: string; token: string }>;
+  guestBanquetTokens?: Array<{ suffix: string; banquetToken: string }>;
   appOrigin: string;
   target?: SheetTarget;
 }): Promise<void> {
-  const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], appOrigin, target } = params;
+  const { firstName, lastName, laneNumber, banquetToken, poolPartyToken, guestPoolTokens = [], guestBanquetTokens = [], appOrigin, target } = params;
   const resolved = resolveSheetTarget(target);
   if (!resolved.spreadsheetId || !resolved.sheetName) return;
   const sheets = await getSheetsClient();
@@ -404,7 +407,7 @@ export async function writeQRCodesToSheet(params: {
 
   const banquetQRUrl   = banquetToken   ? `${appOrigin}/scan/banquet/${banquetToken}`   : null;
   const poolPartyQRUrl = poolPartyToken ? `${appOrigin}/scan/pool/${poolPartyToken}`     : null;
-  if (!banquetQRUrl && !poolPartyQRUrl && guestPoolTokens.length === 0) return;
+  if (!banquetQRUrl && !poolPartyQRUrl && guestPoolTokens.length === 0 && guestBanquetTokens.length === 0) return;
 
   try {
     const rowNum = await findBowlerRow(firstName, lastName, laneNumber, resolved);
@@ -425,6 +428,11 @@ export async function writeQRCodesToSheet(params: {
       const col = GUEST_POOL_COLUMNS[i]; // AD=#A Pool QR, AH=#B Pool QR
       const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
       updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestUrl]] });
+    }
+    for (let i = 0; i < Math.min(guestBanquetTokens.length, GUEST_BANQUET_COLUMNS.length); i++) {
+      const col = GUEST_BANQUET_COLUMNS[i]; // AF=#A Banquet QR, AJ=#B Banquet QR
+      const guestBanquetUrl = `${appOrigin}/scan/guest-banquet/${guestBanquetTokens[i].banquetToken}`;
+      updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestBanquetUrl]] });
     }
 
     if (updateData.length === 0) return;

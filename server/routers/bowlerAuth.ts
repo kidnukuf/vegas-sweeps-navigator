@@ -500,8 +500,8 @@ export const bowlerAuthRouter = router({
                 );
               }
               // Also write the newly-created QR URLs to the sheet
-              const newGuests = await rawQuery<{ suffix: string; token: string }>(
-                `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+              const newGuests = await rawQuery<{ suffix: string; token: string; banquetToken: string | null }>(
+                `SELECT suffix, token, banquetToken FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
                 [bowler.id]
               );
               await writeQRCodesToSheet({
@@ -510,7 +510,8 @@ export const bowlerAuthRouter = router({
                 laneNumber: profile.laneNumber ?? null,
                 banquetToken: profile.banquetToken ?? null,
                 poolPartyToken: profile.poolPartyToken ?? null,
-                guestPoolTokens: newGuests.map(g => ({ suffix: g.suffix, token: g.token })),
+                guestPoolTokens: newGuests.filter(g => g.token && !g.token.endsWith("-BQ")).map(g => ({ suffix: g.suffix, token: g.token })),
+                guestBanquetTokens: newGuests.filter(g => g.banquetToken).map(g => ({ suffix: g.suffix, banquetToken: g.banquetToken! })),
                 appOrigin,
                 target: profile.eventId ? await getEventSheetTarget(profile.eventId) : undefined,
               });
@@ -641,8 +642,8 @@ export const bowlerAuthRouter = router({
       }
 
       // Fetch guest pool tokens for this bowler
-      const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number }>(
-        `SELECT suffix, token, used, disabled FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+      const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number; banquetToken: string | null }>(
+        `SELECT suffix, token, used, disabled, banquetToken FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
         [bowlerId]
       );
       const guestPoolQRs: Array<{ suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
@@ -656,13 +657,15 @@ export const bowlerAuthRouter = router({
       // Write QR URLs back to Google Sheet (fire-and-forget, never blocks user)
       (async () => {
         const sheetTarget = profile.eventId ? await getEventSheetTarget(profile.eventId) : undefined;
+        const activeGuests = guestTokenRows.filter(g => !g.disabled);
         return writeQRCodesToSheet({
           firstName: profile.legalFirstName,
           lastName: profile.legalLastName,
           laneNumber: profile.laneNumber ?? null,
           banquetToken: profile.banquetToken ?? null,
           poolPartyToken: profile.poolPartyToken ?? null,
-          guestPoolTokens: guestTokenRows.filter(g => !g.disabled).map(g => ({ suffix: g.suffix, token: g.token })),
+          guestPoolTokens: activeGuests.filter(g => g.token && !g.token.endsWith("-BQ")).map(g => ({ suffix: g.suffix, token: g.token })),
+          guestBanquetTokens: activeGuests.filter(g => g.banquetToken).map(g => ({ suffix: g.suffix, banquetToken: g.banquetToken! })),
           appOrigin,
           target: sheetTarget,
         });

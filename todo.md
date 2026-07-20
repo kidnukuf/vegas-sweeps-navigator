@@ -457,3 +457,10 @@
 - [x] Implement ED login mutation and session handling
 - [x] Test ED login and verify dashboard access
 - [x] Remove/disable invite system logic (edInvites router)
+
+## Bulk QR Sync + Guest Banquet QR Fix
+- [x] Fix writeQRCodesToSheet to also write guest banquet QR URLs (AF/AJ columns) alongside guest pool QRs
+- [x] Fix bowlerAuth.ts profile/load path to include banquetToken in guestPoolTokens write-back
+- [x] Add bulkSyncQRCodes tRPC procedure in masterSheet router (writes all bowler + guest tokens for an event)
+- [x] Add "Bulk Sync QR Codes" button to MasterSheetImport page (input step)
+- [x] Update tests for writeQRCodesToSheet to cover guest banquet URL write-back

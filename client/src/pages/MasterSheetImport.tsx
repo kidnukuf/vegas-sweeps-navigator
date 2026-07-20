@@ -160,6 +160,20 @@ export default function MasterSheetImport() {
     }
   };
 
+  const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number; failed: number; errors: string[] } | null>(null);
+
+  const bulkSyncMutation = trpc.masterSheet.bulkSyncQRCodes.useMutation({
+    onSuccess: (data) => {
+      setSyncResult(data);
+      if (data.failed > 0) {
+        toast.error(`Sync complete — ${data.synced} synced, ${data.failed} failed`);
+      } else {
+        toast.success(`✅ Synced QR codes for ${data.synced} bowler${data.synced !== 1 ? "s" : ""} to the sheet (${data.skipped} had no tokens)`);
+      }
+    },
+    onError: (e: any) => toast.error(e.message ?? "Bulk sync failed"),
+  });
+
   const importMutation = trpc.masterSheet.importMasterSheet.useMutation({
     onSuccess: (data: any) => {
       toast.success(`Imported ${data.imported} bowlers!`);
@@ -298,8 +312,45 @@ export default function MasterSheetImport() {
               </select>
             </div>
 
-            {/* Verify Tab Headers */}
-            <div className="mb-6">
+          {/* Bulk Sync QR Codes */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                onClick={() => {
+                  if (!activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName) {
+                    toast.error("No sheet tab configured for this event. Set it in Event Settings first.");
+                    return;
+                  }
+                  setSyncResult(null);
+                  bulkSyncMutation.mutate({ eventId });
+                }}
+                disabled={bulkSyncMutation.isPending || !activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName}
+                className="bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold"
+              >
+                {bulkSyncMutation.isPending ? "⏳ Syncing QR codes..." : "📤 Bulk Sync QR Codes to Sheet"}
+              </Button>
+              {syncResult && (
+                <span className="text-xs text-gray-400">
+                  {syncResult.synced} synced · {syncResult.skipped} skipped · {syncResult.failed} failed
+                </span>
+              )}
+            </div>
+            {syncResult && syncResult.errors.length > 0 && (
+              <div className="mt-2 p-3 bg-red-950/40 border border-red-500/30 rounded-lg">
+                <p className="text-xs font-semibold text-red-400 mb-1">Failed rows:</p>
+                <ul className="text-xs text-red-300 space-y-0.5">
+                  {syncResult.errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}
+                  {syncResult.errors.length > 10 && <li className="text-gray-500">…and {syncResult.errors.length - 10} more</li>}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Writes Pool QR, Banquet QR, and all Guest QR URLs for every bowler in this event to the configured sheet tab.
+            </p>
+          </div>
+
+          {/* Verify Tab Headers */}
+          <div className="mb-6">
               <div className="flex items-center gap-3 mb-3">
                 <Button
                   onClick={handleVerifyHeaders}
