@@ -1,10 +1,76 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 type ImportRow = Record<string, unknown>;
+type EventRecord = Record<string, unknown>;
+
+/** Persistent banner shown on every step so the ED always knows which tab they are writing to. */
+function SheetTargetBanner({ event }: { event: EventRecord | null }) {
+  if (!event) return null;
+
+  const spreadsheetId = String(event.sheetSpreadsheetId ?? "");
+  const tabName = String(event.sheetTabName ?? "");
+  const nickname = String(event.sheetTabNickname ?? "");
+  const hasSheet = spreadsheetId && tabName;
+
+  return (
+    <div
+      className={`rounded-lg px-4 py-3 mb-6 flex items-start gap-3 border ${
+        hasSheet
+          ? "bg-green-950/40 border-green-500/40"
+          : "bg-yellow-950/40 border-yellow-500/40"
+      }`}
+    >
+      <span className="text-xl mt-0.5">{hasSheet ? "🎯" : "⚠️"}</span>
+      <div className="flex-1 min-w-0">
+        {hasSheet ? (
+          <>
+            <p className="text-sm font-bold text-green-400 mb-0.5">Write-back target confirmed</p>
+            <p className="text-xs text-gray-300">
+              <span className="text-white font-semibold">Event:</span>{" "}
+              {String(event.eventName)} · {String(event.eventYear)}
+            </p>
+            <p className="text-xs text-gray-300">
+              <span className="text-white font-semibold">Sheet tab:</span>{" "}
+              <span className="text-green-300 font-mono">{tabName}</span>
+              {nickname && nickname !== tabName && (
+                <span className="text-yellow-400/80 ml-2">({nickname})</span>
+              )}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5 font-mono truncate">
+              ID: {spreadsheetId}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-bold text-yellow-400 mb-0.5">No sheet tab configured</p>
+            <p className="text-xs text-gray-400">
+              Open Event Settings → Sheet tab to connect a Google Sheet tab before writing back.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CompletionTabNote({ event }: { event: EventRecord | null }) {
+  if (!event || !event.sheetTabName) return null;
+  const tabName = String(event.sheetTabName);
+  const nickname = String(event.sheetTabNickname ?? "");
+  return (
+    <p className="text-xs text-gray-400 mb-6">
+      Data written to tab{" "}
+      <span className="text-green-300 font-mono">{tabName}</span>
+      {nickname && nickname !== tabName && (
+        <span className="text-yellow-400/70 ml-1">({nickname})</span>
+      )}
+    </p>
+  );
+}
 
 export default function MasterSheetImport() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -12,9 +78,18 @@ export default function MasterSheetImport() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
   const [googleUrl, setGoogleUrl] = useState("");
-  const [eventId, setEventId] = useState(1);
+  const [eventId, setEventId] = useState<number>(() => {
+    const saved = Number(localStorage.getItem("vsn_selected_event_id"));
+    return Number.isFinite(saved) && saved > 0 ? saved : 1;
+  });
   const [step, setStep] = useState<"input" | "review" | "changes" | "complete">("input");
   const [changesSummary, setChangesSummary] = useState<any>(null);
+
+  const { data: events = [] } = trpc.event.list.useQuery();
+  const activeEvent = useMemo(
+    () => (events as EventRecord[]).find((e) => Number(e.id) === eventId) ?? null,
+    [events, eventId]
+  );
 
   const fetchGoogleSheet = trpc.import.fetchGoogleSheet.useMutation({
     onSuccess: (data: any) => {
@@ -154,15 +229,33 @@ export default function MasterSheetImport() {
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-black text-cyan-400 mb-8">📥 Master Sheet Import</h1>
 
+          {/* Sheet target confirmation banner */}
+          <SheetTargetBanner event={activeEvent} />
+
           <Card className="bg-[#1a1a1a] border-cyan-500/30 p-6 mb-6">
+            {/* Event selector */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-300 mb-2">Event ID</label>
-              <input
-                type="number"
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Event</label>
+              <select
                 value={eventId}
-                onChange={(e) => setEventId(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const id = parseInt(e.target.value);
+                  setEventId(id);
+                  localStorage.setItem("vsn_selected_event_id", String(id));
+                }}
                 className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-500"
-              />
+              >
+                {(events as EventRecord[]).map((ev) => {
+                  const nickname = String(ev.sheetTabNickname ?? "");
+                  const tabName = String(ev.sheetTabName ?? "");
+                  const label = `${String(ev.eventName)} · ${String(ev.eventYear)}${nickname ? ` (${nickname})` : tabName ? ` — tab: ${tabName}` : ""}`;
+                  return (
+                    <option key={String(ev.id)} value={String(ev.id)}>
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
             </div>
 
             <div className="mb-6">
@@ -213,6 +306,10 @@ export default function MasterSheetImport() {
       <div className="min-h-screen bg-[#0d0d0d] text-white p-6">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-black text-cyan-400 mb-4">📋 Review Data</h1>
+
+          {/* Sheet target confirmation banner */}
+          <SheetTargetBanner event={activeEvent} />
+
           <p className="text-gray-400 mb-6">{rows.length} rows ready to check for changes</p>
 
           <div className="flex gap-3 mb-6">
@@ -275,6 +372,9 @@ export default function MasterSheetImport() {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-black text-cyan-400 mb-6">📊 Change Summary</h1>
 
+          {/* Sheet target confirmation banner */}
+          <SheetTargetBanner event={activeEvent} />
+
           <div className="grid grid-cols-2 gap-4 mb-6">
             <Card className="bg-[#1a1a1a] border-green-500/30 p-4">
               <div className="text-3xl font-black text-green-400">{changesSummary.newBowlers}</div>
@@ -335,7 +435,10 @@ export default function MasterSheetImport() {
       <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
         <Card className="bg-[#1a1a1a] border-green-500/30 p-8 max-w-md w-full text-center">
           <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-2xl font-black text-green-400 mb-6">Import Complete!</h2>
+          <h2 className="text-2xl font-black text-green-400 mb-2">Import Complete!</h2>
+
+          {/* Compact sheet target reminder on completion */}
+          <CompletionTabNote event={activeEvent} />
 
           <div className="space-y-3 mb-6">
             <Button onClick={handleDownloadExport} className="w-full bg-cyan-600 hover:bg-cyan-500">
