@@ -254,6 +254,7 @@ export default function ImportData() {
     const saved = Number(localStorage.getItem("vsn_selected_event_id"));
     return Number.isFinite(saved) && saved > 0 ? saved : 1;
   });
+  const utils = trpc.useUtils();
   const { data: events = [] } = trpc.event.list.useQuery();
   const selectedEvent = (events as Record<string, unknown>[]).find((e) => Number(e.id) === selectedEventId) ?? null;
 
@@ -294,6 +295,8 @@ export default function ImportData() {
       setStep("done");
       const total = (d.imported ?? 0) + (d.updated ?? 0);
       toast.success(`\u2705 Imported ${d.imported ?? 0} new, updated ${d.updated ?? 0} (${total} total)!`);
+      // Refresh event list so the last-synced timestamp updates immediately
+      void utils.event.list.invalidate();
     },
     onError: (e: { message: string }) => toast.error(`Import failed: ${e.message}`),
   });
@@ -778,12 +781,17 @@ export default function ImportData() {
             )}
 
             {/* Navigation */}
-            <div className="flex gap-3">
-              <button onClick={() => { setStep("upload"); setImportResult(null); setParsedRows([]); setIdRosterRows([]); }} className="neon-btn-cyan flex-1 py-3">
+            <div className="flex gap-3 flex-wrap">
+              <button onClick={() => { setStep("upload"); setImportResult(null); setParsedRows([]); setIdRosterRows([]); }} className="neon-btn-cyan flex-1 py-3 min-w-[140px]">
                 Import More
               </button>
-              <button onClick={() => navigate("/admin")} className="neon-btn-gold flex-[2] py-3">
-                → View Admin Dashboard
+              <button
+                onClick={() => navigate("/admin/master-sheet")}
+                className="neon-btn-gold flex-1 py-3 min-w-[180px]">
+                📊 Sync to Google Sheet
+              </button>
+              <button onClick={() => navigate("/admin")} className="neon-btn-gold flex-1 py-3 min-w-[160px] opacity-80">
+                → Admin Dashboard
               </button>
             </div>
           </div>
