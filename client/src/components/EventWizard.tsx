@@ -65,7 +65,9 @@ const EMPTY: WizardState = {
   hotelCheckoutTime: "",
   surveyEnabled: false,
   showHotelInfoCard: true,
-  sheetSpreadsheetId: "",
+  // Pre-fill the permanent Google Sheet ID — the same sheet is used for all events;
+  // only the tab name changes per event.
+  sheetSpreadsheetId: "1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM",
   sheetTabName: "",
   sheetTabNickname: "",
 };

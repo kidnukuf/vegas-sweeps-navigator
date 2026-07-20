@@ -854,7 +854,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                             isActive ? "bg-yellow-500/15 text-yellow-300 focus:bg-yellow-500/20 focus:text-yellow-300" : "text-gray-200 focus:bg-white/5 focus:text-gray-200"
                           }`}
                         >
-                          <span className="truncate">{String(e.eventName)} <span className="text-gray-500">· {String(e.eventYear)}</span></span>
+                          <span className="truncate">
+                            {String(e.eventName)} <span className="text-gray-500">· {String(e.eventYear)}</span>
+                            {e.sheetTabNickname ? <span className="text-[11px] text-yellow-500/70 ml-1">({String(e.sheetTabNickname)})</span> : null}
+                          </span>
                           {isActive && <span className="text-[10px] shrink-0" style={{ color }}>● selected</span>}
                         </DropdownMenuItem>
                       );
@@ -871,7 +874,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                         isActive ? "bg-yellow-500/15 text-yellow-300 focus:bg-yellow-500/20 focus:text-yellow-300" : "text-gray-200 focus:bg-white/5 focus:text-gray-200"
                       }`}
                     >
-                      <span className="truncate">{String(e.eventName)} <span className="text-gray-500">· {String(e.eventYear)}</span></span>
+                      <span className="truncate">
+                        {String(e.eventName)} <span className="text-gray-500">· {String(e.eventYear)}</span>
+                        {e.sheetTabNickname ? <span className="text-[11px] text-yellow-500/70 ml-1">({String(e.sheetTabNickname)})</span> : null}
+                      </span>
                       {isActive && <span className="text-[10px] text-yellow-400 shrink-0">● active</span>}
                     </DropdownMenuItem>
                   );
@@ -915,7 +921,14 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         <div className="max-w-7xl mx-auto flex items-center gap-3 flex-wrap">
           <span className="text-[10px] uppercase tracking-widest text-gray-500">Active Event</span>
           <span className="text-lg font-bold text-yellow-300" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-            {activeEvent ? `${activeEvent.eventName} · ${activeEvent.eventYear}` : `Event #${EVENT_ID}`}
+            {activeEvent ? (
+              <>
+                {String(activeEvent.eventName)} · {String(activeEvent.eventYear)}
+                {activeEvent.sheetTabNickname && (
+                  <span className="text-yellow-400/70 text-base font-normal ml-2">({String(activeEvent.sheetTabNickname)})</span>
+                )}
+              </>
+            ) : `Event #${EVENT_ID}`}
           </span>
           <span className="text-xs text-gray-500">All data below is scoped to this event</span>
         </div>
