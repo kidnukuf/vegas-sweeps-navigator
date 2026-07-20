@@ -385,7 +385,14 @@ export default function ImportData() {
         <span className="ml-auto text-xs text-gray-400">
           Importing into:{" "}
           <span className="text-yellow-300 font-semibold">
-            {selectedEvent ? `${selectedEvent.eventName} · ${selectedEvent.eventYear}` : `Event #${selectedEventId}`}
+            {selectedEvent ? (
+              <>
+                {String(selectedEvent.eventName)} · {String(selectedEvent.eventYear)}
+                {selectedEvent.sheetTabNickname ? (
+                  <span className="text-yellow-400/70 font-normal ml-1">({String(selectedEvent.sheetTabNickname)})</span>
+                ) : null}
+              </>
+            ) : `Event #${selectedEventId}`}
           </span>
         </span>
       </div>
