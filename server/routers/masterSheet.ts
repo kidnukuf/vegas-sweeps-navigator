@@ -518,4 +518,120 @@ export const masterSheetRouter = router({
 
       return { synced, skipped, failed, errors };
     }),
+
+  /**
+   * Regenerate missing poolPartyToken / banquetToken for bowlers that were
+   * imported before token generation was wired up (token columns are null).
+   * Generates fresh UUIDs, persists them, then writes all QR URLs to the sheet.
+   * Returns counts of bowlers updated, already-had-tokens (skipped), and failed.
+   */
+  regenerateMissingTokens: protectedProcedure
+    .input(z.object({ eventId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+
+      const sheetTarget = await getEventSheetTarget(input.eventId);
+      // Sheet target is optional — we still generate tokens even if no sheet is configured,
+      // but we only attempt the write-back when a target exists.
+      const hasSheet = !!(sheetTarget.spreadsheetId && sheetTarget.sheetName);
+
+      // Find bowlers missing either token
+      const bowlers = await rawQuery<{
+        id: number;
+        legalFirstName: string;
+        legalLastName: string;
+        laneNumber: number | null;
+        scantronId: string | null;
+        poolPartyToken: string | null;
+        banquetToken: string | null;
+      }>(
+        `SELECT id, legalFirstName, legalLastName, laneNumber, scantronId, poolPartyToken, banquetToken
+         FROM bowlers
+         WHERE eventId = ? AND (poolPartyToken IS NULL OR banquetToken IS NULL)
+         ORDER BY legalLastName, legalFirstName`,
+        [input.eventId]
+      );
+
+      // Also count how many already have both tokens (for the summary)
+      const totalRows = await rawQuery<{ total: number }>(
+        `SELECT COUNT(*) as total FROM bowlers WHERE eventId = ?`,
+        [input.eventId]
+      );
+      const totalBowlers = totalRows[0]?.total ?? 0;
+      const alreadyComplete = totalBowlers - bowlers.length;
+
+      let updated = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const bowler of bowlers) {
+        try {
+          const newPoolToken  = bowler.poolPartyToken  ?? (uuidv4().replace(/-/g, ""));
+          const newBanquetToken = bowler.banquetToken ?? (uuidv4().replace(/-/g, ""));
+
+          // Only update the columns that are actually null
+          if (!bowler.poolPartyToken && !bowler.banquetToken) {
+            await rawQuery(
+              `UPDATE bowlers SET poolPartyToken = ?, banquetToken = ? WHERE id = ?`,
+              [newPoolToken, newBanquetToken, bowler.id]
+            );
+          } else if (!bowler.poolPartyToken) {
+            await rawQuery(
+              `UPDATE bowlers SET poolPartyToken = ? WHERE id = ?`,
+              [newPoolToken, bowler.id]
+            );
+          } else {
+            await rawQuery(
+              `UPDATE bowlers SET banquetToken = ? WHERE id = ?`,
+              [newBanquetToken, bowler.id]
+            );
+          }
+
+          // Fetch guest tokens for this bowler
+          const guestRows = await rawQuery<{
+            suffix: string; token: string; banquetToken: string | null; disabled: number;
+          }>(
+            `SELECT suffix, token, banquetToken, disabled FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+            [bowler.id]
+          );
+          const activeGuests = guestRows.filter(g => !g.disabled);
+
+          if (hasSheet) {
+            if (bowler.scantronId) {
+              await writeBowlerIdToSheet({
+                firstName: bowler.legalFirstName,
+                lastName: bowler.legalLastName,
+                laneNumber: bowler.laneNumber,
+                scantronId: bowler.scantronId,
+                target: sheetTarget,
+              });
+            }
+            await writeQRCodesToSheet({
+              firstName: bowler.legalFirstName,
+              lastName: bowler.legalLastName,
+              laneNumber: bowler.laneNumber,
+              poolPartyToken: newPoolToken,
+              banquetToken: newBanquetToken,
+              guestPoolTokens: activeGuests
+                .filter(g => g.token && !g.token.endsWith("-BQ"))
+                .map(g => ({ suffix: g.suffix, token: g.token })),
+              guestBanquetTokens: activeGuests
+                .filter(g => g.banquetToken)
+                .map(g => ({ suffix: g.suffix, banquetToken: g.banquetToken! })),
+              appOrigin: APP_ORIGIN,
+              target: sheetTarget,
+            });
+          }
+
+          updated++;
+        } catch (err) {
+          failed++;
+          errors.push(`${bowler.legalFirstName} ${bowler.legalLastName}: ${String(err)}`);
+        }
+      }
+
+      if (updated > 0 && hasSheet) await recordSheetSync(input.eventId);
+
+      return { updated, alreadyComplete, failed, errors, hasSheet };
+    }),
 });

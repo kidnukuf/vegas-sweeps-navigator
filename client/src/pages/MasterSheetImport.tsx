@@ -161,6 +161,22 @@ export default function MasterSheetImport() {
   };
 
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number; failed: number; errors: string[] } | null>(null);
+  const [regenResult, setRegenResult] = useState<{ updated: number; alreadyComplete: number; failed: number; errors: string[]; hasSheet: boolean } | null>(null);
+
+  const regenMutation = trpc.masterSheet.regenerateMissingTokens.useMutation({
+    onSuccess: (data) => {
+      setRegenResult(data);
+      if (data.updated === 0) {
+        toast.success(`✅ All ${data.alreadyComplete} bowlers already have tokens — nothing to do!`);
+      } else if (data.failed > 0) {
+        toast.error(`Generated tokens for ${data.updated}, but ${data.failed} failed`);
+      } else {
+        const sheetNote = data.hasSheet ? " and written to sheet" : " (no sheet configured — tokens saved to DB only)";
+        toast.success(`✅ Generated tokens for ${data.updated} bowler${data.updated !== 1 ? "s" : ""}${sheetNote}`);
+      }
+    },
+    onError: (e: any) => toast.error(e.message ?? "Regeneration failed"),
+  });
 
   const bulkSyncMutation = trpc.masterSheet.bulkSyncQRCodes.useMutation({
     onSuccess: (data) => {
@@ -346,6 +362,39 @@ export default function MasterSheetImport() {
             )}
             <p className="text-xs text-gray-500 mt-1">
               Writes Pool QR, Banquet QR, and all Guest QR URLs for every bowler in this event to the configured sheet tab.
+            </p>
+          </div>
+
+          {/* Regenerate Missing Tokens */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                onClick={() => {
+                  setRegenResult(null);
+                  regenMutation.mutate({ eventId });
+                }}
+                disabled={regenMutation.isPending}
+                className="bg-amber-700 hover:bg-amber-600 text-sm font-semibold"
+              >
+                {regenMutation.isPending ? "⏳ Generating tokens..." : "🔑 Regenerate Missing Tokens"}
+              </Button>
+              {regenResult && (
+                <span className="text-xs text-gray-400">
+                  {regenResult.updated} generated · {regenResult.alreadyComplete} already complete · {regenResult.failed} failed
+                </span>
+              )}
+            </div>
+            {regenResult && regenResult.errors.length > 0 && (
+              <div className="mt-2 p-3 bg-red-950/40 border border-red-500/30 rounded-lg">
+                <p className="text-xs font-semibold text-red-400 mb-1">Failed rows:</p>
+                <ul className="text-xs text-red-300 space-y-0.5">
+                  {regenResult.errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}
+                  {regenResult.errors.length > 10 && <li className="text-gray-500">…and {regenResult.errors.length - 10} more</li>}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Generates Pool QR and Banquet QR tokens for any bowler that was imported before token generation was wired up. Safe to run multiple times — existing tokens are never overwritten.
             </p>
           </div>
 

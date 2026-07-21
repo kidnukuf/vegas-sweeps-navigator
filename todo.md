@@ -464,3 +464,7 @@
 - [x] Add bulkSyncQRCodes tRPC procedure in masterSheet router (writes all bowler + guest tokens for an event)
 - [x] Add "Bulk Sync QR Codes" button to MasterSheetImport page (input step)
 - [x] Update tests for writeQRCodesToSheet to cover guest banquet URL write-back
+
+## Regenerate Missing Tokens
+- [x] Add regenerateMissingTokens tRPC mutation in masterSheet router: finds bowlers with null poolPartyToken or banquetToken, generates UUIDs, updates DB, writes QR URLs to sheet
+- [x] Add "Regenerate Missing Tokens" button to MasterSheetImport input step with count preview and result summary
