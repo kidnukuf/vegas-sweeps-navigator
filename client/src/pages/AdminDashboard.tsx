@@ -24,7 +24,8 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const login = trpc.appAuth.login.useMutation({
+  // Legacy appAuth login (EventDirector app_user)
+  const legacyLogin = trpc.appAuth.login.useMutation({
     onSuccess: (data) => {
       if (data.user?.appRole !== "EventDirector") {
         toast.error("Access denied. Event Director credentials required.");
@@ -33,13 +34,29 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
       localStorage.setItem(ED_TOKEN_KEY, data.token ?? "");
       onAuth();
     },
-    onError: (e) => toast.error(e.message),
+    onError: () => {
+      // Legacy failed — try edStaff
+      staffLogin.mutate({ username: username.trim(), password });
+    },
   });
+
+  // New edStaff login (cookie-based, no Manus account needed)
+  const staffLogin = trpc.edStaff.login.useMutation({
+    onSuccess: () => {
+      // Cookie is set server-side; mark as authed
+      localStorage.setItem(ED_TOKEN_KEY, "staff_session");
+      onAuth();
+    },
+    onError: (e) => toast.error(e.message ?? "Invalid username or password."),
+  });
+
+  const isPending = legacyLogin.isPending || staffLogin.isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!username || !password) return toast.error("Enter username and password");
-    login.mutate({ username, password });
+    // Try legacy first; on failure edStaff is tried in onError
+    legacyLogin.mutate({ username: username.trim(), password });
   }
 
   return (
@@ -117,11 +134,11 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
           </div>
           <button
             type="submit"
-            disabled={login.isPending}
+            disabled={isPending}
             className="w-full py-2.5 rounded-lg font-bold text-black transition-all duration-150 active:scale-[0.97]"
             style={{ background: "linear-gradient(135deg, #ffd700, #ff8c00)", boxShadow: "0 4px 20px rgba(255,215,0,0.3)" }}
           >
-            {login.isPending ? "Authenticating…" : "Access Dashboard →"}
+            {isPending ? "Authenticating…" : "Access Dashboard →"}
           </button>
         </form>
 
@@ -375,7 +392,18 @@ import { ED_HELP } from "@/lib/edHelpContent";
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff">("roster");
+  // ED Staff management
+  const [newStaff, setNewStaff] = useState({ username: "", password: "", name: "" });
+  const { data: edStaffList = [], refetch: refetchStaff } = trpc.edStaff.listStaff.useQuery();
+  const createStaffMut = trpc.edStaff.createStaff.useMutation({
+    onSuccess: () => { toast.success("Staff account created"); refetchStaff(); setNewStaff({ username: "", password: "", name: "" }); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteStaffMut = trpc.edStaff.deleteStaff.useMutation({
+    onSuccess: () => { toast.success("Staff account removed"); refetchStaff(); },
+    onError: (e) => toast.error(e.message),
+  });
   // Support Inbox
   const [supportReplyId, setSupportReplyId] = useState<number | null>(null);
   const [supportReplyText, setSupportReplyText] = useState("");
@@ -958,7 +986,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-2">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
-          {(["guide", "roster", "passports", "doormen", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+          {(["guide", "roster", "passports", "doormen", "staff", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
             const newCount = tab === "support" ? ((supportMessages as any[]).filter((m: any) => m.status === "new").length + edNotifUnreadCount) : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
@@ -973,6 +1001,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   : tab === "leads" ? `📣 Leads${newCount > 0 ? ` (${newCount})` : ""}`
                   : tab === "survey" ? "⭐ Survey"
                   : tab === "guide" ? "🧭 Guide"
+                  : tab === "staff" ? "👥 Staff Accounts"
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             );
@@ -1376,6 +1405,87 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 ))}
                 {(doormen as unknown[]).length === 0 && <p className="text-gray-500 text-sm">No legacy accounts created.</p>}
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "staff" && (
+          <div className="max-w-2xl space-y-6">
+            <h2 className="text-xl font-bold text-yellow-400">👥 ED Staff Accounts</h2>
+            <p className="text-gray-400 text-sm">Create username/password accounts for staff who need access to this portal without a Manus account. Staff can log in at the same ED login screen using their username and password.</p>
+
+            {/* Create new staff account */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-yellow-500/30 p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-yellow-400">Create New Staff Account</h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Jane Smith"
+                    value={newStaff.name}
+                    onChange={(e) => setNewStaff((s) => ({ ...s, name: e.target.value }))}
+                    className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Username</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. jsmith"
+                    value={newStaff.username}
+                    onChange={(e) => setNewStaff((s) => ({ ...s, username: e.target.value.replace(/[^a-zA-Z0-9._-]/g, "") }))}
+                    autoComplete="off"
+                    className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Password (min 8 chars)</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={newStaff.password}
+                    onChange={(e) => setNewStaff((s) => ({ ...s, password: e.target.value }))}
+                    autoComplete="new-password"
+                    className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!newStaff.name.trim()) return toast.error("Enter a name");
+                  if (!newStaff.username.trim()) return toast.error("Enter a username");
+                  if (newStaff.password.length < 8) return toast.error("Password must be at least 8 characters");
+                  createStaffMut.mutate({ name: newStaff.name.trim(), username: newStaff.username.trim(), password: newStaff.password });
+                }}
+                disabled={createStaffMut.isPending}
+                className="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-bold rounded-lg text-sm transition-all active:scale-95">
+                {createStaffMut.isPending ? "Creating..." : "Create Account"}
+              </button>
+            </div>
+
+            {/* Existing staff list */}
+            <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5">
+              <h3 className="text-sm font-semibold text-gray-300 mb-3">Current Staff Accounts</h3>
+              {(edStaffList as any[]).length === 0 ? (
+                <p className="text-gray-500 text-sm">No staff accounts yet. Create one above.</p>
+              ) : (
+                <div className="space-y-2">
+                  {(edStaffList as any[]).map((s: any) => (
+                    <div key={s.id} className="flex items-center justify-between bg-[#111] rounded-xl px-4 py-3 border border-white/10">
+                      <div>
+                        <p className="text-white font-semibold text-sm">{s.name}</p>
+                        <p className="text-gray-500 text-xs font-mono">@{s.username}</p>
+                      </div>
+                      <button
+                        onClick={() => { if (confirm(`Remove staff account for ${s.name}?`)) deleteStaffMut.mutate({ staffId: s.id }); }}
+                        className="px-3 py-1.5 bg-red-900/50 hover:bg-red-700 text-red-300 hover:text-white rounded-lg text-xs font-semibold transition-all">
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

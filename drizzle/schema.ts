@@ -27,6 +27,19 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// ─── ED STAFF (username/password accounts for non-Manus ED access) ───────────
+export const edStaff = mysqlTable("ed_staff", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 64 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: int("createdBy"), // references users.id of the admin who created them
+});
+
+export type EdStaff = typeof edStaff.$inferSelect;
+export type InsertEdStaff = typeof edStaff.$inferInsert;
+
 // ─── EVENTS ─────────────────────────────────────────────────────────────────
 // --- EVENT GROUPS (brands: BOB, Valentine Funtime, June Funtime Roll-Off)
 export const eventGroups = mysqlTable("event_groups", {

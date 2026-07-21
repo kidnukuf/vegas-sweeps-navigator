@@ -7,6 +7,7 @@ import { offlineDoorRouter } from "./routers/offlineDoor";
 import { claimCodesRouter } from "./routers/claimCodes";
 import { adInquiryRouter } from "./routers/adInquiry";
 import { masterSheetRouter } from "./routers/masterSheet";
+import { edStaffRouter } from "./routers/edStaff";
 import { emailInvitationRouter } from "./routers/emailInvitation";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1732,6 +1733,7 @@ export const appRouter = router({
 
   // ─── BOWLER / CAPTAIN AUTH ─────────────────────────────────────────────────
   bowlerAuth: bowlerAuthRouter,
+  edStaff: edStaffRouter,
 
   // ─── OFFLINE DOOR SCANNER (single-laptop, banquet + pool) ──────────────────
   offlineDoor: offlineDoorRouter,

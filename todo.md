@@ -468,3 +468,11 @@
 ## Regenerate Missing Tokens
 - [x] Add regenerateMissingTokens tRPC mutation in masterSheet router: finds bowlers with null poolPartyToken or banquetToken, generates UUIDs, updates DB, writes QR URLs to sheet
 - [x] Add "Regenerate Missing Tokens" button to MasterSheetImport input step with count preview and result summary
+
+## ED Staff Login (no Manus account required)
+- [x] Add ed_staff table to schema (id, username, passwordHash, name, createdAt, createdBy)
+- [x] Generate migration SQL and apply via webdev_execute_sql
+- [x] Add edStaff tRPC router with login, logout, me, createStaff, deleteStaff procedures
+- [x] Add /admin/staff-login page with username+password form
+- [x] Wire ED staff cookie into AdminDashboard auth check (accept either legacy appAuth or new edStaff)
+- [x] Add Staff Accounts management section to Admin Dashboard (create/delete staff accounts)
