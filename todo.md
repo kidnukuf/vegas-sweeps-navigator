@@ -518,3 +518,7 @@
 - [x] Update edStaff management procedures to use edStaffProcedure
 - [x] Fix passport mutations to accept edStaff cookie (not just legacy EventDirector JWT)
 - [x] Fix frontend edToken to store real staff JWT from edStaff.login response (cookie-based, no frontend change needed)
+
+## QR False-Scan Fix
+- [x] Add read-only validatePassportToken query (no DB write)
+- [x] Rewrite ScanPassport.tsx to use read-only query — never calls scanPassport mutation

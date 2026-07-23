@@ -675,7 +675,62 @@ export const bowlerAuthRouter = router({
       return { ...profile, poolPartyQR, banquetQR, guestPoolQRs };
     }),
 
-  // ── SCAN PASSPORT (doorman scans QR) ────────────────────────────────────────
+  // ── READ-ONLY token status check (NEVER marks as used) ────────────────────────
+  // Used by the /scan/:type/:token URL page so that Google Sheets link-preview
+  // bots, email prefetchers, and accidental clicks NEVER mark a token used.
+  // Only the in-app doorman scanner calls scanPassport (the mutation below).
+  validatePassportToken: publicProcedure
+    .input(z.object({
+      tokenValue: z.string().min(1),
+      passportType: z.enum(["pool", "banquet", "guest-pool", "guest-banquet"]),
+    }))
+    .query(async ({ input }) => {
+      if (input.passportType === "guest-banquet") {
+        const rows = await rawQuery<{ id: number; suffix: string; banquetUsed: number; disabled: number; legalFirstName: string; legalLastName: string }>(
+          `SELECT g.id, g.suffix, g.banquetUsed, g.disabled, b.legalFirstName, b.legalLastName
+           FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
+           WHERE g.banquetToken = ? LIMIT 1`,
+          [input.tokenValue]
+        );
+        if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
+        const g = rows[0];
+        const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        if (g.disabled) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
+        if (g.banquetUsed) return { result: "used" as const, message: "Already Redeemed", bowlerName };
+        return { result: "valid" as const, message: `Guest Banquet Pass ${g.suffix}`, bowlerName };
+      }
+      if (input.passportType === "guest-pool") {
+        const rows = await rawQuery<{ id: number; suffix: string; used: number; disabled: number; legalFirstName: string; legalLastName: string }>(
+          `SELECT g.id, g.suffix, g.used, g.disabled, b.legalFirstName, b.legalLastName
+           FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
+           WHERE g.token = ? LIMIT 1`,
+          [input.tokenValue]
+        );
+        if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
+        const g = rows[0];
+        const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        if (g.disabled) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
+        if (g.used) return { result: "used" as const, message: "Already Redeemed", bowlerName };
+        return { result: "valid" as const, message: `Guest Pool Pass ${g.suffix}`, bowlerName };
+      }
+      // Main pool / banquet
+      const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
+      const rows = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; poolPartyToken: string | null; poolPartyUsed: number; banquetToken: string | null; banquetUsed: number }>(
+        `SELECT id, legalFirstName, legalLastName, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed
+         FROM bowlers WHERE ${col} = ? LIMIT 1`,
+        [input.tokenValue]
+      );
+      if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
+      const b = rows[0];
+      const bowlerName = `${b.legalFirstName} ${b.legalLastName}`;
+      const tokenValue = input.passportType === "pool" ? b.poolPartyToken : b.banquetToken;
+      if (tokenValue === null) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
+      const isUsed = input.passportType === "pool" ? Boolean(b.poolPartyUsed) : Boolean(b.banquetUsed);
+      if (isUsed) return { result: "used" as const, message: "Already Redeemed", bowlerName };
+      return { result: "valid" as const, message: "Valid passport — ready to scan", bowlerName };
+    }),
+
+  // ── SCAN PASSPORT (doorman scans QR — marks token used) ─────────────────────
   scanPassport: publicProcedure
     .input(z.object({
       tokenValue: z.string().min(1),
