@@ -505,3 +505,7 @@
 - [x] Adjustment flag: amber badge when amount rounded up, blue badge when rounded down, green when exact
 - [x] Grand Total section: sum of all saved team denomination counts + total cash needed
 - [x] TypeScript: no errors; all 14 denomination tests pass
+
+## Print Payout Sheet (Team Payouts tab)
+- [x] Build PrintPayoutSheet modal/overlay — printer-friendly, no nav chrome
+- [x] Wire "Print" button into TeamPayoutsTab (only enabled when ≥1 team saved)

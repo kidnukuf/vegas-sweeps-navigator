@@ -19,6 +19,7 @@ import {
   BILL_DENOMINATIONS,
   type DenominationBreakdown,
 } from "../../../shared/denominations";
+import PrintPayoutSheet, { type PrintTeamRow } from "./PrintPayoutSheet";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -141,6 +142,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
   const [paytableText, setPaytableText] = useState("");
   const [isSavingPool, setIsSavingPool] = useState(false);
   const [isWritingSheet, setIsWritingSheet] = useState(false);
+  const [showPrint, setShowPrint] = useState(false);
 
   // ── Team results draft state ──
   const [drafts, setDrafts] = useState<Record<number, ResultDraft>>({});
@@ -361,6 +363,29 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     const grandTotalDenom = sumDenominations(breakdowns);
     const grandTotalAmount = BILL_DENOMINATIONS.reduce((s, b) => s + grandTotalDenom[b] * b, 0);
     return { grandTotalDenom, grandTotalAmount, savedTeamCount, totalCommitted };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts, teams, bowlerCountMap, validEntries, mode, totalAmountNum]);
+
+  // ── Build print rows ──
+  const printRows: PrintTeamRow[] = useMemo(() => {
+    return teams
+      .map((team) => {
+        const draft = getDraft(team.id);
+        if (!draft.savedAt || draft.dirty) return null;
+        const payout = effectivePayout(team.id);
+        if (!payout || payout <= 0) return null;
+        return {
+          teamId: team.id,
+          teamCode: team.teamCode,
+          teamName: team.teamName,
+          centerName: team.centerName,
+          finishingPlace: parseInt(draft.place, 10) || null,
+          score: draft.score,
+          payoutAmount: payout,
+          bowlerCount: (bowlerCountMap as Record<number, number>)[team.id] ?? 1,
+        } satisfies PrintTeamRow;
+      })
+      .filter(Boolean) as PrintTeamRow[];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drafts, teams, bowlerCountMap, validEntries, mode, totalAmountNum]);
 
@@ -739,7 +764,34 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
         </div>
       )}
 
-      {/* ═══ SECTION 5 — Write to Google Sheet ══════════════════════════════════ */}
+      {/* ═══ SECTION 5 — Print Payout Sheet ════════════════════════════════════ */}
+      {savedTeamCount > 0 && (
+        <div className="border-t border-white/10 pt-8">
+          <h3 className="text-base font-bold text-white mb-2">🖨 Print Payout Sheet</h3>
+          <p className="text-gray-400 text-sm mb-4">
+            Opens a clean, printer-friendly view of all saved team payouts — place, team name, center, score,
+            adjusted payout, per-bowler bill breakdown, and grand total bill counts. No navigation chrome.
+          </p>
+          <button
+            onClick={() => setShowPrint(true)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-100 text-black font-bold rounded-lg text-sm transition-all active:scale-95"
+          >
+            🖨 Print {savedTeamCount} Team{savedTeamCount !== 1 ? "s" : ""} Payout Sheet
+          </button>
+        </div>
+      )}
+
+      {/* Print overlay */}
+      {showPrint && (
+        <PrintPayoutSheet
+          rows={printRows}
+          eventName={poolData?.pool ? `Event ${eventId}` : undefined}
+          totalPrizePool={totalAmountNum > 0 ? totalAmountNum : undefined}
+          onClose={() => setShowPrint(false)}
+        />
+      )}
+
+      {/* ═══ SECTION 6 — Write to Google Sheet ══════════════════════════════════ */}
       <div className="border-t border-white/10 pt-8">
         <h3 className="text-base font-bold text-white mb-2">📤 Write Payouts to Google Sheet</h3>
         <p className="text-gray-400 text-sm mb-4">
