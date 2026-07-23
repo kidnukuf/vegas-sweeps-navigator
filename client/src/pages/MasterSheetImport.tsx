@@ -98,6 +98,16 @@ export default function MasterSheetImport() {
 
   const { data: events = [] } = trpc.event.list.useQuery();
 
+  const [clearQRUsedInDBResult, setClearQRUsedInDBResult] = useState<{ bowlersCleared: number; guestTokensCleared: number; guestBowlersCleared: number; reentryTokensCleared: number } | null>(null);
+
+  const clearQRUsedInDBMutation = trpc.masterSheet.clearQRUsedInDB.useMutation({
+    onSuccess: (data) => {
+      setClearQRUsedInDBResult(data);
+      toast.success(`✅ DB cleared: ${data.bowlersCleared} bowler${data.bowlersCleared !== 1 ? "s" : ""}, ${data.guestTokensCleared} guest token${data.guestTokensCleared !== 1 ? "s" : ""}, ${data.reentryTokensCleared} reentry token${data.reentryTokensCleared !== 1 ? "s" : ""} reset.`);
+    },
+    onError: (err: any) => toast.error(`DB clear failed: ${err.message}`),
+  });
+
   const clearQRUsedMutation = trpc.masterSheet.clearQRUsedColumns.useMutation({
     onSuccess: (data) => {
       if (data.error) {
@@ -486,6 +496,36 @@ export default function MasterSheetImport() {
                 </div>
               </div>
             </div>
+          {/* Danger Zone */}
+          <div className="border border-red-800/50 rounded-lg p-4 bg-red-950/20 space-y-3 mt-6">
+            <p className="text-sm font-semibold text-red-400">⚠️ Danger Zone</p>
+            <p className="text-xs text-gray-400">Only use these if QR codes were falsely marked as used (e.g. by link-preview bots) and no real scans have occurred.</p>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={() => {
+                  if (!window.confirm("Clear all QR used data from the Google Sheet? Only do this if no real scans have occurred.")) return;
+                  clearQRUsedMutation.mutate({ eventId });
+                }}
+                disabled={clearQRUsedMutation.isPending}
+                className="w-full bg-red-700 hover:bg-red-600 text-white text-sm"
+              >
+                {clearQRUsedMutation.isPending ? "Clearing Sheet..." : "🗑️ Clear QR Used Data from Google Sheet"}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!window.confirm("Clear all QR used flags from the database? This resets pool party and banquet used status for all bowlers in this event. Only do this if no real scans have occurred.")) return;
+                  clearQRUsedInDBMutation.mutate({ eventId });
+                }}
+                disabled={clearQRUsedInDBMutation.isPending}
+                className="w-full bg-red-900 hover:bg-red-800 text-white text-sm"
+              >
+                {clearQRUsedInDBMutation.isPending ? "Clearing DB..." : "🗑️ Clear QR Used Flags from Database"}
+              </Button>
+            </div>
+            {clearQRUsedInDBResult && (
+              <p className="text-xs text-green-400">✅ DB cleared: {clearQRUsedInDBResult.bowlersCleared} bowler{clearQRUsedInDBResult.bowlersCleared !== 1 ? "s" : ""}, {clearQRUsedInDBResult.guestTokensCleared} guest token{clearQRUsedInDBResult.guestTokensCleared !== 1 ? "s" : ""}, {clearQRUsedInDBResult.reentryTokensCleared} reentry token{clearQRUsedInDBResult.reentryTokensCleared !== 1 ? "s" : ""} reset.</p>
+            )}
+          </div>
           </Card>
         </div>
       </div>

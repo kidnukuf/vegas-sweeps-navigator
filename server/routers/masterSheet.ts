@@ -3,7 +3,7 @@ import { requireEdSession } from "../_core/edAuth";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
-import { rawQuery, getEventSheetTarget, recordSheetSync } from "../db";
+import { rawQuery, rawExec, getEventSheetTarget, recordSheetSync } from "../db";
 import { getSheetsClient, writeQRCodesToSheet, writeBowlerIdToSheet, clearQRUsedColumns } from "../googleSheets";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
@@ -649,5 +649,50 @@ export const masterSheetRouter = router({
         target: { spreadsheetId: sheetTarget.spreadsheetId, sheetName: sheetTarget.sheetName },
       });
       return result;
+    }),
+
+  // ─── Clear all QR "used" flags in the database ────────────────────────────
+  clearQRUsedInDB: publicProcedure
+    .input(z.object({ eventId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
+      const { eventId } = input;
+
+      // 1. Clear bowlers.poolPartyUsed and bowlers.banquetUsed
+      const bowlerResult = await rawExec(
+        `UPDATE bowlers SET poolPartyUsed = FALSE, banquetUsed = FALSE WHERE eventId = ?`,
+        [eventId]
+      );
+
+      // 2. Clear guest_pool_party_tokens used flags (join to bowlers for eventId scope)
+      const guestTokenResult = await rawExec(
+        `UPDATE guest_pool_party_tokens gpt
+         JOIN bowlers b ON gpt.bowlerId = b.id
+         SET gpt.used = FALSE, gpt.usedAt = NULL, gpt.banquetUsed = FALSE, gpt.banquetUsedAt = NULL
+         WHERE b.eventId = ?`,
+        [eventId]
+      );
+
+      // 3. Clear guest_bowlers used flags
+      const guestBowlerResult = await rawExec(
+        `UPDATE guest_bowlers gb
+         JOIN bowlers b ON gb.bowlerId = b.id
+         SET gb.poolUsed = FALSE, gb.poolUsedAt = NULL, gb.banquetUsed = FALSE, gb.banquetUsedAt = NULL
+         WHERE gb.eventId = ?`,
+        [eventId]
+      );
+
+      // 4. Clear reentry_tokens used flags
+      const reentryResult = await rawExec(
+        `UPDATE reentry_tokens SET used = FALSE, usedAt = NULL WHERE eventId = ?`,
+        [eventId]
+      );
+
+      return {
+        bowlersCleared: bowlerResult.affectedRows,
+        guestTokensCleared: guestTokenResult.affectedRows,
+        guestBowlersCleared: guestBowlerResult.affectedRows,
+        reentryTokensCleared: reentryResult.affectedRows,
+      };
     }),
 });
