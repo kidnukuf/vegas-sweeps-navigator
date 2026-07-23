@@ -482,3 +482,16 @@
 - [x] Build TeamPayoutsTab.tsx with mode toggle, prize pool input, paytable paste/parse, dollar calculation, team count verification, and save
 - [x] Add "Team Payouts" tab/button to Admin Dashboard
 - [x] Wire TeamPayouts as inline tab in AdminDashboard (no separate route needed)
+
+## Team Results Entry (ED Portal — Team Payouts tab)
+- [x] Extend getTeamPayouts to JOIN bowling_centers so centerName is returned
+- [x] Add upsertTeamResult procedure (INSERT or UPDATE team_payouts row with place, score, payoutAmount)
+- [x] Add clearTeamResult procedure (DELETE row when all fields cleared)
+- [x] Rewrite TeamPayoutsTab.tsx: Section 2 — team results table with Team Name, Team #, Center Name columns
+- [x] Sort teams by Center Name → Team # (ascending)
+- [x] Place input per team → auto-calculates payout from live paytable (lookupPayout helper)
+- [x] Score input (optional, free text)
+- [x] Payout override input: pre-filled with calculated amount, amber highlight when manually overridden
+- [x] Auto-save on blur (onBlur → saveTeamResult); explicit Save button shown when dirty
+- [x] Left border: amber = unsaved changes, green = saved, transparent = untouched
+- [x] Footer: saved count + total paid out running sum

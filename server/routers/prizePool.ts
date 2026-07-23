@@ -133,7 +133,7 @@ export const prizePoolRouter = router({
       return { inserted: entries.length };
     }),
 
-  // ─── Get team payouts for an event ─────────────────────────────────────────
+  // ─── Get team payouts for an event (joined with team + center info) ──────────────────
   getTeamPayouts: protectedProcedure
     .input(z.object({ eventId: z.number().int().positive() }))
     .query(async ({ input }) => {
@@ -144,26 +144,76 @@ export const prizePoolRouter = router({
         eventId: number;
         teamId: number;
         teamName: string | null;
+        teamCode: string | null;
+        centerName: string | null;
         finishingPlace: number | null;
         score: string | null;
         payoutAmount: string;
-        denominationBreakdown: unknown;
         paid: boolean;
-        paidAt: number | null;
         notes: string | null;
-        createdAt: Date;
         updatedAt: Date;
       }>(
-        `SELECT tp.id, tp.eventId, tp.teamId, t.teamName, tp.finishingPlace,
-                tp.score, tp.payoutAmount, tp.denominationBreakdown,
-                tp.paid, tp.paidAt, tp.notes, tp.createdAt, tp.updatedAt
+        `SELECT tp.id, tp.eventId, tp.teamId, t.teamName, t.teamCode,
+                bc.centerName, tp.finishingPlace,
+                tp.score, tp.payoutAmount, tp.paid, tp.notes, tp.updatedAt
          FROM team_payouts tp
          LEFT JOIN teams t ON t.id = tp.teamId
+         LEFT JOIN bowling_centers bc ON bc.id = t.centerId
          WHERE tp.eventId = ?
-         ORDER BY tp.finishingPlace ASC`,
+         ORDER BY tp.finishingPlace ASC, bc.centerName ASC, t.teamCode ASC`,
         [eventId]
       );
 
       return payouts;
+    }),
+
+  // ─── Upsert a single team result (place, score, payout) ────────────────────────────
+  upsertTeamResult: protectedProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        teamId: z.number().int().positive(),
+        prizePoolId: z.number().int().positive().nullable().optional(),
+        finishingPlace: z.number().int().min(1).nullable().optional(),
+        score: z.string().nullable().optional(),
+        payoutAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).or(z.literal("0")),
+        notes: z.string().max(500).nullable().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, notes } = input;
+
+      const existing = await rawQuery<{ id: number }>(
+        `SELECT id FROM team_payouts WHERE eventId = ? AND teamId = ? LIMIT 1`,
+        [eventId, teamId]
+      );
+
+      if (existing.length > 0) {
+        await rawQuery(
+          `UPDATE team_payouts
+           SET prizePoolId = ?, finishingPlace = ?, score = ?, payoutAmount = ?, notes = ?, updatedAt = NOW()
+           WHERE id = ?`,
+          [prizePoolId ?? null, finishingPlace ?? null, score ?? null, payoutAmount, notes ?? null, existing[0].id]
+        );
+        return { id: existing[0].id, created: false };
+      } else {
+        const result = await rawExec(
+          `INSERT INTO team_payouts (eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, notes, paid, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())`,
+          [eventId, teamId, prizePoolId ?? null, finishingPlace ?? null, score ?? null, payoutAmount, notes ?? null]
+        );
+        return { id: result.insertId, created: true };
+      }
+    }),
+
+  // ─── Clear a team result row ──────────────────────────────────────────────────────────────────
+  clearTeamResult: protectedProcedure
+    .input(z.object({ eventId: z.number().int().positive(), teamId: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      await rawQuery(
+        `DELETE FROM team_payouts WHERE eventId = ? AND teamId = ?`,
+        [input.eventId, input.teamId]
+      );
+      return { ok: true };
     }),
 });
