@@ -837,7 +837,37 @@ export const bowlerAuthRouter = router({
       return { success: true };
     }),
 
-  // ── DISABLE / ENABLE INDIVIDUAL GUEST POOL PASS ──────────────────────────────
+  // ── ED: ADD A GUEST PASS MANUALLY ─────────────────────────────────────────
+  addGuestPass: publicProcedure
+    .input(z.object({ token: z.string(), bowlerId: z.number() }))
+    .mutation(async ({ input }) => {
+      const payload = verifyToken(input.token);
+      if (!payload || payload.role !== "EventDirector") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
+      }
+      const existing = await rawQuery<{ suffix: string }>(
+        `SELECT suffix FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+        [input.bowlerId]
+      );
+      const usedSuffixes = new Set(existing.map((r) => r.suffix));
+      const SUFFIXES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      const nextSuffix = SUFFIXES.find((s) => !usedSuffixes.has(s));
+      if (!nextSuffix) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum guest passes reached for this bowler (26)." });
+      }
+      const newToken = uuidv4();
+      const [bowler] = await rawQuery<{ scantronId: string | null; eventId: number | null }>(
+        `SELECT scantronId, eventId FROM bowlers WHERE id = ? LIMIT 1`,
+        [input.bowlerId]
+      );
+      const guestId = bowler?.scantronId ? `${bowler.scantronId}${nextSuffix}` : null;
+      await rawQuery(
+        `INSERT INTO guest_pool_party_tokens (bowlerId, guestId, eventId, suffix, token, used, disabled) VALUES (?, ?, ?, ?, ?, 0, 0)`,
+        [input.bowlerId, guestId, bowler?.eventId ?? null, nextSuffix, newToken]
+      );
+      return { success: true, suffix: nextSuffix, token: newToken };
+    }),
+
   disableGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), suffix: z.string() }))
     .mutation(async ({ input }) => {

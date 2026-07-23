@@ -211,6 +211,10 @@ function PassportManager({
     onSuccess: () => { toast.success("Guest pass re-enabled"); refetch(); },
     onError: (e) => toast.error(e.message),
   });
+  const addGuestPass = trpc.bowlerAuth.addGuestPass.useMutation({
+    onSuccess: (data) => { toast.success(`✅ Guest Pass ${data.suffix} created and activated`); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
 
   // Only show signed-up bowlers (those who have tokens)
   const signedUp = bowlers.filter((b) => b.poolPartyToken !== undefined || b.banquetToken !== undefined ||
@@ -316,14 +320,25 @@ function PassportManager({
                     </td>
                     <td className="px-4 py-3 text-center">
                       {!hasTokens ? <span className="text-gray-600 text-xs">—</span> :
-                        !(b as any).guestPoolTokens?.length ? <span className="text-gray-600 text-xs">None</span> :
+                        !(b as any).guestPoolTokens?.length ? (
+                          <div className="flex flex-col items-center gap-1.5">
+                            <span className="text-gray-500 text-xs">None</span>
+                            <button
+                              onClick={() => addGuestPass.mutate({ token: edToken, bowlerId })}
+                              disabled={addGuestPass.isPending}
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-700 hover:bg-teal-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {addGuestPass.isPending ? "⏳" : "+ Add Guest Pass"}
+                            </button>
+                          </div>
+                        ) :
                         <div className="flex flex-col gap-1 items-center">
                           {((b as any).guestPoolTokens as Array<{ suffix: string; used: boolean; disabled: boolean }>).map((g) => (
                             <div key={g.suffix} className="flex items-center gap-1.5">
                               <span className={`text-xs font-bold ${
                                 g.used ? "text-green-400" : g.disabled ? "text-orange-400" : "text-teal-400"
                               }`}>
-                                {g.used ? "✅" : g.disabled ? "⛔" : "🎟️"} Pass {g.suffix}
+                                {g.used ? "✅" : g.disabled ? "⛔" : "🏟️"} Pass {g.suffix}
                               </span>
                               {!g.used && (
                                 <button
@@ -338,6 +353,14 @@ function PassportManager({
                               )}
                             </div>
                           ))}
+                          {/* Always allow adding another guest pass */}
+                          <button
+                            onClick={() => addGuestPass.mutate({ token: edToken, bowlerId })}
+                            disabled={addGuestPass.isPending}
+                            className="mt-1 px-2 py-0.5 rounded text-xs font-bold bg-teal-800 hover:bg-teal-700 text-teal-200 transition-colors disabled:opacity-50"
+                          >
+                            {addGuestPass.isPending ? "⏳" : "+ Add Guest Pass"}
+                          </button>
                         </div>
                       }
                     </td>
