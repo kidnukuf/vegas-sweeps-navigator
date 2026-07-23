@@ -1,4 +1,5 @@
-import { router, protectedProcedure } from "../_core/trpc";
+import { router, publicProcedure } from "../_core/trpc";
+import { requireEdSession } from "../_core/edAuth";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
@@ -189,10 +190,10 @@ function parseSheetRow(row: string[]): SheetRow {
 }
 
 export const masterSheetRouter = router({
-  importMasterSheet: protectedProcedure
+  importMasterSheet: publicProcedure
     .input(z.object({ eventId: z.number(), rows: z.array(z.record(z.string(), z.unknown())) }))
     .mutation(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const { eventId, rows } = input;
       let imported = 0;
@@ -244,10 +245,10 @@ export const masterSheetRouter = router({
       return { imported, errors, errorDetails };
     }),
 
-  detectChanges: protectedProcedure
+  detectChanges: publicProcedure
     .input(z.object({ eventId: z.number(), rows: z.array(z.record(z.string(), z.unknown())) }))
     .query(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const { eventId, rows } = input;
       let newBowlers = 0;
@@ -284,10 +285,10 @@ export const masterSheetRouter = router({
       return { newBowlers, updatedBowlers, changes };
     }),
 
-  exportToGoogleSheetFormat: protectedProcedure
+  exportToGoogleSheetFormat: publicProcedure
     .input(z.object({ eventId: z.number() }))
     .query(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const { eventId } = input;
 
@@ -333,10 +334,10 @@ export const masterSheetRouter = router({
       return { csv: csvContent, rowCount: normalizedRows.length };
     }),
 
-  exportForRaspberryPi: protectedProcedure
+  exportForRaspberryPi: publicProcedure
     .input(z.object({ eventId: z.number() }))
     .query(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const { eventId } = input;
 
@@ -350,10 +351,10 @@ export const masterSheetRouter = router({
       return { csv: csvContent, rowCount: rows.length };
     }),
 
-  exportFinalResults: protectedProcedure
+  exportFinalResults: publicProcedure
     .input(z.object({ eventId: z.number() }))
     .query(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const { eventId } = input;
 
@@ -383,10 +384,10 @@ export const masterSheetRouter = router({
       return { csv: csvContent, rowCount: rows.length };
     }),
 
-  getAllBowlersWithQRCodes: protectedProcedure
+  getAllBowlersWithQRCodes: publicProcedure
     .input(z.object({ eventId: z.number() }))
     .query(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const bowlers = await rawQuery(
         `SELECT 
@@ -418,10 +419,10 @@ export const masterSheetRouter = router({
    * and writes all QR URLs in a single fire-and-forget batch per bowler.
    * Returns counts of bowlers synced, skipped (no tokens), and failed.
    */
-  bulkSyncQRCodes: protectedProcedure
+  bulkSyncQRCodes: publicProcedure
     .input(z.object({ eventId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const sheetTarget = await getEventSheetTarget(input.eventId);
       if (!sheetTarget.spreadsheetId || !sheetTarget.sheetName) {
@@ -525,10 +526,10 @@ export const masterSheetRouter = router({
    * Generates fresh UUIDs, persists them, then writes all QR URLs to the sheet.
    * Returns counts of bowlers updated, already-had-tokens (skipped), and failed.
    */
-  regenerateMissingTokens: protectedProcedure
+  regenerateMissingTokens: publicProcedure
     .input(z.object({ eventId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new Error("Admin only");
+      await requireEdSession(ctx);
 
       const sheetTarget = await getEventSheetTarget(input.eventId);
       // Sheet target is optional — we still generate tokens even if no sheet is configured,

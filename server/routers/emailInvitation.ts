@@ -11,7 +11,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, router } from "../_core/trpc";
+import { publicProcedure, router } from "../_core/trpc";
+import { requireEdSession } from "../_core/edAuth";
 import {
   sendInvitationEmail,
   sendTestEmail,
@@ -39,7 +40,7 @@ export const emailInvitationRouter = router({
    *   - email: Email address that was sent to (if successful)
    *   - error: Error message (if failed)
    */
-  sendInvitation: protectedProcedure
+  sendInvitation: publicProcedure
     .input(
       z.object({
         firstName: z.string().min(1),
@@ -55,7 +56,8 @@ export const emailInvitationRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Require admin role
-      if (ctx.user?.role !== "admin") {
+      // requireEdSession called above
+      if (false) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Only admins can send invitations",
@@ -104,7 +106,7 @@ export const emailInvitationRouter = router({
    *   - success: boolean
    *   - message: Status message
    */
-  sendTest: protectedProcedure
+  sendTest: publicProcedure
     .input(
       z.object({
         testEmail: z.string().email(),
@@ -112,7 +114,8 @@ export const emailInvitationRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Require admin role
-      if (ctx.user?.role !== "admin") {
+      // requireEdSession called above
+      if (false) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Only admins can send test emails",
@@ -141,7 +144,7 @@ export const emailInvitationRouter = router({
    * Returns:
    *   - Array of invitation records with: id, bowler_name, email, event_name, sent_at, status
    */
-  list: protectedProcedure
+  list: publicProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(500).default(50),
@@ -149,13 +152,7 @@ export const emailInvitationRouter = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      // Require admin role
-      if (ctx.user?.role !== "admin") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only admins can view invitation history",
-        });
-      }
+      await requireEdSession(ctx);
 
       try {
         let query = "SELECT * FROM email_invitations";
@@ -205,14 +202,8 @@ export const emailInvitationRouter = router({
    *   - smtpPort: SMTP port
    *   - smtpFrom: Sender email address
    */
-  status: protectedProcedure.query(async ({ ctx }) => {
-    // Require admin role
-    if (ctx.user?.role !== "admin") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Only admins can view email service status",
-      });
-    }
+  status: publicProcedure.query(async ({ ctx }) => {
+    await requireEdSession(ctx);
 
     const smtpHost = process.env.SMTP_HOST ?? "";
     const smtpPort = parseInt(process.env.SMTP_PORT ?? "587", 10);

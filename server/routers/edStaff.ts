@@ -7,7 +7,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { rawQuery } from "../db";
-import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { publicProcedure, router } from "../_core/trpc";
+import { requireEdSession } from "../_core/edAuth";
 import { TRPCError } from "@trpc/server";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "fallback-secret";
@@ -96,9 +97,9 @@ export const edStaffRouter = router({
     }),
 
   /** List all staff accounts. Owner-only. */
-  listStaff: protectedProcedure
+  listStaff: publicProcedure
     .query(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await requireEdSession(ctx);
       const rows = await rawQuery<{ id: number; username: string; name: string; createdAt: Date }>(
         `SELECT id, username, name, createdAt FROM ed_staff ORDER BY name`
       );
@@ -106,14 +107,14 @@ export const edStaffRouter = router({
     }),
 
   /** Create a new staff account. Owner-only. */
-  createStaff: protectedProcedure
+  createStaff: publicProcedure
     .input(z.object({
       username: z.string().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/, "Username may only contain letters, numbers, dots, hyphens, underscores"),
       password: z.string().min(8, "Password must be at least 8 characters"),
       name: z.string().min(1).max(128),
     }))
     .mutation(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await requireEdSession(ctx);
       // Check for duplicate username
       const existing = await rawQuery<{ id: number }>(
         `SELECT id FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`,
@@ -125,28 +126,28 @@ export const edStaffRouter = router({
       const hash = await bcrypt.hash(input.password, SALT_ROUNDS);
       await rawQuery(
         `INSERT INTO ed_staff (username, passwordHash, name, createdBy) VALUES (?, ?, ?, ?)`,
-        [input.username, hash, input.name, ctx.user.id]
+        [input.username, hash, input.name, ctx.user?.id ?? null]
       );
       return { ok: true };
     }),
 
   /** Delete a staff account. Owner-only. */
-  deleteStaff: protectedProcedure
+  deleteStaff: publicProcedure
     .input(z.object({ staffId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await requireEdSession(ctx);
       await rawQuery(`DELETE FROM ed_staff WHERE id = ?`, [input.staffId]);
       return { ok: true };
     }),
 
   /** Change a staff member's password. Owner-only. */
-  resetStaffPassword: protectedProcedure
+  resetStaffPassword: publicProcedure
     .input(z.object({
       staffId: z.number(),
       newPassword: z.string().min(8, "Password must be at least 8 characters"),
     }))
     .mutation(async ({ input, ctx }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await requireEdSession(ctx);
       const hash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
       await rawQuery(`UPDATE ed_staff SET passwordHash = ? WHERE id = ?`, [hash, input.staffId]);
       return { ok: true };

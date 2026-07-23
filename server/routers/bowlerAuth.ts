@@ -16,6 +16,7 @@ import { rawQuery } from "../db";
 import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
+import { verifyStaffCookie } from "../_core/edAuth";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -813,9 +814,10 @@ export const bowlerAuthRouter = router({
   // ── DISABLE / ENABLE PASSPORT (Event Director) ──────────────────────────────
   disablePassport: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), passportType: z.enum(["pool", "banquet"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
@@ -825,9 +827,10 @@ export const bowlerAuthRouter = router({
 
   enablePassport: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), passportType: z.enum(["pool", "banquet"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
@@ -840,9 +843,10 @@ export const bowlerAuthRouter = router({
   // ── ED: ADD A GUEST PASS MANUALLY ─────────────────────────────────────────
   addGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       const existing = await rawQuery<{ suffix: string }>(
@@ -870,9 +874,10 @@ export const bowlerAuthRouter = router({
 
   disableGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), suffix: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       await rawQuery(
@@ -884,9 +889,10 @@ export const bowlerAuthRouter = router({
 
   enableGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), suffix: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       await rawQuery(
@@ -899,9 +905,10 @@ export const bowlerAuthRouter = router({
   // ── GET PASSPORT STATUS (Event Director list) ────────────────────────────────
   getPassportStatus: publicProcedure
     .input(z.object({ token: z.string(), eventId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       const rows = await rawQuery<{
@@ -986,9 +993,10 @@ export const bowlerAuthRouter = router({
   // ── LIST CONTACT REQUESTS (Event Director) ──────────────────────────────────
   listContactRequests: publicProcedure
     .input(z.object({ token: z.string(), eventId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       const rows = await rawQuery<{
@@ -1015,9 +1023,10 @@ export const bowlerAuthRouter = router({
   // ── CONFIRM CONTACT REQUEST (ED confirms → updates DB + writes to Google Sheet) ──
   confirmContactRequest: publicProcedure
     .input(z.object({ token: z.string(), requestId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const payload = verifyToken(input.token);
-      if (!payload || payload.role !== "EventDirector") {
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
       const [req] = await rawQuery<{

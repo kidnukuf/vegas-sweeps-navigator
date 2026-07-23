@@ -509,3 +509,12 @@
 ## Print Payout Sheet (Team Payouts tab)
 - [x] Build PrintPayoutSheet modal/overlay — printer-friendly, no nav chrome
 - [x] Wire "Print" button into TeamPayoutsTab (only enabled when ≥1 team saved)
+
+## Multi-Admin Auth Fix
+- [x] Create edStaffProcedure middleware that accepts Manus admin OR edStaff cookie
+- [x] Update prizePool router to use edStaffProcedure
+- [x] Update masterSheet router to use edStaffProcedure
+- [x] Update emailInvitation router to use edStaffProcedure
+- [x] Update edStaff management procedures to use edStaffProcedure
+- [x] Fix passport mutations to accept edStaff cookie (not just legacy EventDirector JWT)
+- [x] Fix frontend edToken to store real staff JWT from edStaff.login response (cookie-based, no frontend change needed)

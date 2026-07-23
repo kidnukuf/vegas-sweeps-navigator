@@ -1,4 +1,5 @@
-import { router, protectedProcedure } from "../_core/trpc";
+import { router, publicProcedure } from "../_core/trpc";
+import { requireEdSession } from "../_core/edAuth";
 import { z } from "zod";
 import { rawQuery, rawExec } from "../db";
 import { getEventSheetTarget } from "../db";
@@ -14,9 +15,10 @@ import {
 
 export const prizePoolRouter = router({
   // ─── Get prize pool + paytable entries for an event ────────────────────────
-  getEventPrizePool: protectedProcedure
+  getEventPrizePool: publicProcedure
     .input(z.object({ eventId: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const { eventId } = input;
 
       // Fetch prize pool record
@@ -65,9 +67,10 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Create or update the prize pool for an event ──────────────────────────
-  upsertPrizePool: protectedProcedure
+  upsertPrizePool: publicProcedure
     .input(UpsertPrizePoolSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const { eventId, totalAmount, paytableMode, notes } = input;
 
       // Check if a prize pool already exists for this event
@@ -97,9 +100,10 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Replace all paytable entries for a prize pool ─────────────────────────
-  setPaytable: protectedProcedure
+  setPaytable: publicProcedure
     .input(SetPaytableSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const { eventId, prizePoolId, entries } = input;
 
       // Delete all existing entries for this prize pool
@@ -136,9 +140,10 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Get team payouts for an event (joined with team + center info) ──────────────────
-  getTeamPayouts: protectedProcedure
+  getTeamPayouts: publicProcedure
     .input(z.object({ eventId: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const { eventId } = input;
 
       const payouts = await rawQuery<{
@@ -170,9 +175,10 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Get bowler counts per team for an event ──────────────────────────────────────────
-  getTeamBowlerCounts: protectedProcedure
+  getTeamBowlerCounts: publicProcedure
     .input(z.object({ eventId: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const rows = await rawQuery<{ teamId: number; bowlerCount: number }>(
         `SELECT teamId, COUNT(*) AS bowlerCount
          FROM bowlers
@@ -189,7 +195,7 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Upsert a single team result (place, score, payout, denomination breakdown) ────
-  upsertTeamResult: protectedProcedure
+  upsertTeamResult: publicProcedure
     .input(
       z.object({
         eventId: z.number().int().positive(),
@@ -202,7 +208,8 @@ export const prizePoolRouter = router({
         notes: z.string().max(500).nullable().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const { eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, denominationBreakdown, notes } = input;
       const denomJson = denominationBreakdown ? JSON.stringify(denominationBreakdown) : null;
 
@@ -233,9 +240,10 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Clear a team result row ──────────────────────────────────────────────────────────────────
-  clearTeamResult: protectedProcedure
+  clearTeamResult: publicProcedure
     .input(z.object({ eventId: z.number().int().positive(), teamId: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       await rawQuery(
         `DELETE FROM team_payouts WHERE eventId = ? AND teamId = ?`,
         [input.eventId, input.teamId]
@@ -244,7 +252,7 @@ export const prizePoolRouter = router({
     }),
 
   // ─── Write payout results to Google Sheet (BJ=Place, BK=Amount, BL=Bills) ──────────────────
-  writePayoutsToSheet: protectedProcedure
+  writePayoutsToSheet: publicProcedure
     .input(
       z.object({
         eventId: z.number().int().positive(),
@@ -258,7 +266,8 @@ export const prizePoolRouter = router({
         ),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
       const { eventId, payouts } = input;
       // Resolve the sheet target for this event
       const sheetTarget = await getEventSheetTarget(eventId);
