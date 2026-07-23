@@ -366,6 +366,24 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drafts, teams, bowlerCountMap, validEntries, mode, totalAmountNum]);
 
+  // ── Detect duplicate finishing places ──
+  const duplicatePlaces = useMemo(() => {
+    const placeCounts: Record<number, number[]> = {};
+    for (const team of teams) {
+      const draft = getDraft(team.id);
+      const place = parseInt(draft.place, 10);
+      if (place > 0) {
+        if (!placeCounts[place]) placeCounts[place] = [];
+        placeCounts[place].push(team.id);
+      }
+    }
+    // Return only places that appear more than once
+    return Object.entries(placeCounts)
+      .filter(([, ids]) => ids.length > 1)
+      .map(([place, ids]) => ({ place: parseInt(place, 10), teamIds: ids }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts, teams]);
+
   // ── Build print rows ──
   const printRows: PrintTeamRow[] = useMemo(() => {
     return teams
@@ -539,6 +557,24 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
           {!paytableReady && (
             <div className="mt-2 px-3 py-2 bg-amber-900/30 border border-amber-500/40 rounded-lg text-amber-300 text-xs">
               ⚠ Save a valid paytable above so payouts and denominations can be calculated automatically.
+            </div>
+          )}
+          {duplicatePlaces.length > 0 && (
+            <div className="mt-2 px-3 py-2.5 bg-amber-900/40 border border-amber-400/60 rounded-lg">
+              <p className="text-amber-300 text-xs font-bold mb-1">⚠️ Duplicate Finishing Places Detected</p>
+              <ul className="space-y-0.5">
+                {duplicatePlaces.map(({ place, teamIds }) => {
+                  const names = teamIds
+                    .map((id) => teams.find((t) => t.id === id)?.teamName ?? `Team ${id}`)
+                    .join(" • ");
+                  return (
+                    <li key={place} className="text-amber-200 text-xs">
+                      <strong>Place {place}:</strong> {names}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-amber-400/70 text-[11px] mt-1.5">Correct the places above before writing to the Google Sheet.</p>
             </div>
           )}
         </div>
@@ -817,10 +853,28 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
             </div>
           </div>
 
+          {duplicatePlaces.length > 0 && (
+            <div className="px-3 py-2.5 bg-amber-900/40 border border-amber-400/60 rounded-lg mb-3">
+              <p className="text-amber-300 text-xs font-bold mb-1">⚠️ Cannot write to sheet — duplicate places detected</p>
+              <ul className="space-y-0.5">
+                {duplicatePlaces.map(({ place, teamIds }) => {
+                  const names = teamIds
+                    .map((id) => teams.find((t) => t.id === id)?.teamName ?? `Team ${id}`)
+                    .join(" • ");
+                  return (
+                    <li key={place} className="text-amber-200 text-xs">
+                      <strong>Place {place}:</strong> {names}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-amber-400/70 text-[11px] mt-1">Fix the duplicate places in the Team Results section above, then try again.</p>
+            </div>
+          )}
           <div className="flex items-center gap-4">
             <button
               onClick={handleWriteToSheet}
-              disabled={isWritingSheet || savedTeamCount === 0}
+              disabled={isWritingSheet || savedTeamCount === 0 || duplicatePlaces.length > 0}
               className="flex items-center gap-2 px-6 py-2.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm transition-all active:scale-95"
             >
               {isWritingSheet ? (
@@ -833,7 +887,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
                 </>
               )}
             </button>
-            {savedTeamCount === 0 && (
+            {savedTeamCount === 0 && duplicatePlaces.length === 0 && (
               <p className="text-amber-400 text-xs">Save at least one team result first.</p>
             )}
           </div>
