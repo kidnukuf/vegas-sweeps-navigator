@@ -241,6 +241,45 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     return calcDenominations(payout, bowlerCount);
   }
 
+  // ── Rank teams by score (highest = 1st) ──
+  function rankByScore() {
+    // Collect teams that have a numeric score entered
+    const scored = teams
+      .map((team) => {
+        const draft = getDraft(team.id);
+        const score = parseFloat(draft.score.replace(/,/g, ""));
+        return { teamId: team.id, score: isNaN(score) ? null : score };
+      })
+      .filter((t): t is { teamId: number; score: number } => t.score !== null);
+
+    if (scored.length === 0) {
+      toast.error("Enter at least one team score before ranking.");
+      return;
+    }
+
+    // Sort descending (highest score = 1st place)
+    scored.sort((a, b) => b.score - a.score);
+
+    // Assign places, handling ties (same score → same place, next place skips)
+    let currentPlace = 1;
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (let i = 0; i < scored.length; i++) {
+        if (i > 0 && scored[i].score === scored[i - 1].score) {
+          // Tie — same place as previous
+        } else {
+          currentPlace = i + 1;
+        }
+        const teamId = scored[i].teamId;
+        const existing = next[teamId] ?? { place: "", score: "", payoutOverride: "", dirty: false, saving: false, savedAt: null, savedDenom: null };
+        next[teamId] = { ...existing, place: String(currentPlace), payoutOverride: "", dirty: true };
+      }
+      return next;
+    });
+
+    toast.success(`Ranked ${scored.length} team${scored.length !== 1 ? "s" : ""} by score. Review places then click Save on each row (or tab through to auto-save).`);
+  }
+
   // ── Prize pool save ──
   async function handleSavePool() {
     if (!totalAmount || totalAmountNum <= 0) { toast.error("Enter a valid prize pool total."); return; }
@@ -549,11 +588,22 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
       {/* ═══ SECTION 2 — Team Results ════════════════════════════════════════════ */}
       <div className="border-t border-white/10 pt-8">
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-white">📋 Team Results</h3>
-          <p className="text-gray-400 text-sm mt-1">
-            Enter each team's finishing place and/or score. The payout and bill breakdown are calculated automatically.
-            Override the dollar amount if needed. Changes save on blur (Tab away) or click Save.
-          </p>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="text-lg font-bold text-white">📋 Team Results</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Enter each team’s score, then click <strong className="text-white">Rank by Score</strong> to auto-fill finishing places.
+                Payouts and bill breakdowns calculate automatically. Save on blur (Tab away) or click Save.
+              </p>
+            </div>
+            <button
+              onClick={rankByScore}
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white text-sm font-bold rounded-lg transition-all active:scale-95"
+              title="Sort teams by score (highest = 1st) and auto-fill Place fields"
+            >
+              🏆 Rank by Score
+            </button>
+          </div>
           {!paytableReady && (
             <div className="mt-2 px-3 py-2 bg-amber-900/30 border border-amber-500/40 rounded-lg text-amber-300 text-xs">
               ⚠ Save a valid paytable above so payouts and denominations can be calculated automatically.
