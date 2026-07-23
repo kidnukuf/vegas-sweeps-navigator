@@ -735,3 +735,120 @@ export const SHEET_COLS = {
   Q9_ANSWER:        COL_Q9_ANSWER,
   Q10_ANSWER:       COL_Q10_ANSWER,
 };
+
+// ── Payout write-back ─────────────────────────────────────────────────────────
+// New columns appended after the last survey column (BI = col 60):
+//   BJ (61) = Finishing Place
+//   BK (62) = Payout Amount ($)
+//   BL (63) = Bill Breakdown (per-team summary string)
+const COL_FINISHING_PLACE  = 61; // BJ
+const COL_PAYOUT_AMOUNT_COL = 62; // BK
+const COL_BILL_BREAKDOWN   = 63; // BL
+
+/** Convert a 0-based column index to an A1-notation letter (A=0, Z=25, AA=26, …). */
+function colIndexToLetter(idx: number): string {
+  let s = "";
+  let n = idx + 1;
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+export interface PayoutSheetRow {
+  /** Team # (2-digit code, e.g. "03") */
+  teamCode: string;
+  /** Finishing place (1-based) */
+  finishingPlace: number | null;
+  /** Payout amount in dollars */
+  payoutAmount: number;
+  /** Human-readable bill breakdown, e.g. "3×$100 + 2×$20 (per bowler)" */
+  billBreakdown: string;
+}
+
+/**
+ * Write payout results (finishing place, dollar amount, bill breakdown) for every
+ * team in the event back to columns BJ–BL of the Google Sheet.
+ *
+ * Strategy: read the entire sheet once, find all rows whose Team # (col H) matches
+ * a team in the payouts list, then batch-write BJ/BK/BL for each matching row.
+ * Multiple bowlers on the same team all get the same payout values written.
+ *
+ * Returns { written: number, skipped: number, error?: string }.
+ */
+export async function writePayoutsToSheet(params: {
+  payouts: PayoutSheetRow[];
+  target?: SheetTarget;
+}): Promise<{ written: number; skipped: number; error?: string }> {
+  const { payouts, target } = params;
+  const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) {
+    return { written: 0, skipped: payouts.length, error: "No Google Sheet configured for this event." };
+  }
+  const sheets = await getSheetsClient();
+  if (!sheets) {
+    return { written: 0, skipped: payouts.length, error: "Google Sheets credentials not available." };
+  }
+
+  // Build a map: teamCode (zero-padded to 2 digits) → payout info
+  const payoutMap = new Map<string, PayoutSheetRow>();
+  for (const p of payouts) {
+    payoutMap.set(String(p.teamCode).trim().padStart(2, "0"), p);
+  }
+
+  // Read the full sheet (columns A through BL = 0..63)
+  let rows: string[][];
+  try {
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'!A1:BL`,
+    });
+    rows = (resp.data.values ?? []) as string[][];
+  } catch (err) {
+    return { written: 0, skipped: payouts.length, error: `Sheet read failed: ${String(err)}` };
+  }
+
+  const updateData: { range: string; values: string[][] }[] = [];
+  const writtenTeams = new Set<string>();
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const rawCode = String(row[COL_TEAM_CODE] ?? "").trim().padStart(2, "0");
+    const payout = payoutMap.get(rawCode);
+    if (!payout) continue;
+
+    const rowNum = i + 1; // 1-indexed
+    const placeStr = payout.finishingPlace != null ? String(payout.finishingPlace) : "";
+    const amountStr = payout.payoutAmount > 0 ? `$${payout.payoutAmount.toFixed(2)}` : "";
+    const breakdownStr = payout.billBreakdown;
+
+    const bjCol = colIndexToLetter(COL_FINISHING_PLACE);
+    const bkCol = colIndexToLetter(COL_PAYOUT_AMOUNT_COL);
+    const blCol = colIndexToLetter(COL_BILL_BREAKDOWN);
+
+    updateData.push({ range: `'${resolved.sheetName}'!${bjCol}${rowNum}`, values: [[placeStr]] });
+    updateData.push({ range: `'${resolved.sheetName}'!${bkCol}${rowNum}`, values: [[amountStr]] });
+    updateData.push({ range: `'${resolved.sheetName}'!${blCol}${rowNum}`, values: [[breakdownStr]] });
+    writtenTeams.add(rawCode);
+  }
+
+  if (updateData.length === 0) {
+    return { written: 0, skipped: payouts.length, error: "No matching rows found in the sheet for the given team codes." };
+  }
+
+  try {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: { valueInputOption: "RAW", data: updateData },
+    });
+  } catch (err) {
+    return { written: writtenTeams.size, skipped: payouts.length - writtenTeams.size, error: `Sheet write failed: ${String(err)}` };
+  }
+
+  return {
+    written: writtenTeams.size,
+    skipped: payouts.length - writtenTeams.size,
+  };
+}

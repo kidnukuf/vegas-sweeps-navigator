@@ -1,6 +1,8 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { rawQuery, rawExec } from "../db";
+import { getEventSheetTarget } from "../db";
+import { writePayoutsToSheet } from "../googleSheets";
 import {
   UpsertPrizePoolSchema,
   SetPaytableSchema,
@@ -239,5 +241,31 @@ export const prizePoolRouter = router({
         [input.eventId, input.teamId]
       );
       return { ok: true };
+    }),
+
+  // ─── Write payout results to Google Sheet (BJ=Place, BK=Amount, BL=Bills) ──────────────────
+  writePayoutsToSheet: protectedProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        payouts: z.array(
+          z.object({
+            teamCode: z.string(),
+            finishingPlace: z.number().int().min(1).nullable(),
+            payoutAmount: z.number().min(0),
+            billBreakdown: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { eventId, payouts } = input;
+      // Resolve the sheet target for this event
+      const sheetTarget = await getEventSheetTarget(eventId);
+      const result = await writePayoutsToSheet({
+        payouts,
+        target: { spreadsheetId: sheetTarget.spreadsheetId, sheetName: sheetTarget.sheetName },
+      });
+      return result;
     }),
 });
