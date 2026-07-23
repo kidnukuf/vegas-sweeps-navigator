@@ -382,6 +382,7 @@ function PassportManager({
 }
 
 import AdManagerTab from "@/components/AdManagerTab";
+import TeamPayoutsTab from "@/components/TeamPayoutsTab";
 import ClaimCodesTab from "@/components/ClaimCodesTab";
 import AdvertiserLeadsTab from "@/components/AdvertiserLeadsTab";
 import SurveyResultsTab from "@/components/SurveyResultsTab";
@@ -392,7 +393,7 @@ import { ED_HELP } from "@/lib/edHelpContent";
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "payouts">("roster");
   // ED Staff management
   const [newStaff, setNewStaff] = useState({ username: "", password: "", name: "" });
   const { data: edStaffList = [], refetch: refetchStaff } = trpc.edStaff.listStaff.useQuery();
@@ -986,7 +987,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-2">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
-          {(["guide", "roster", "passports", "doormen", "staff", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+          {(["guide", "roster", "passports", "doormen", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
             const newCount = tab === "support" ? ((supportMessages as any[]).filter((m: any) => m.status === "new").length + edNotifUnreadCount) : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
@@ -1002,6 +1003,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   : tab === "survey" ? "⭐ Survey"
                   : tab === "guide" ? "🧭 Guide"
                   : tab === "staff" ? "👥 Staff Accounts"
+                  : tab === "payouts" ? "🏆 Team Payouts"
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             );
@@ -2201,6 +2203,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       {activeTab === "leads" && (
         <div className="max-w-7xl mx-auto px-4 py-6">
           <AdvertiserLeadsTab />
+        </div>
+      )}
+
+      {/* ── Team Payouts Tab ── */}
+      {activeTab === "payouts" && (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <TeamPayoutsTab eventId={EVENT_ID} />
         </div>
       )}
 

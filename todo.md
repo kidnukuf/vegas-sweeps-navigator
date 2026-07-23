@@ -476,3 +476,9 @@
 - [x] Add /admin/staff-login page with username+password form
 - [x] Wire ED staff cookie into AdminDashboard auth check (accept either legacy appAuth or new edStaff)
 - [x] Add Staff Accounts management section to Admin Dashboard (create/delete staff accounts)
+
+## Team Payouts UI (ED Portal)
+- [x] Add prizePool tRPC procedures: upsertPrizePool, setPaytable, getEventPrizePool
+- [x] Build TeamPayoutsTab.tsx with mode toggle, prize pool input, paytable paste/parse, dollar calculation, team count verification, and save
+- [x] Add "Team Payouts" tab/button to Admin Dashboard
+- [x] Wire TeamPayouts as inline tab in AdminDashboard (no separate route needed)
