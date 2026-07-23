@@ -458,14 +458,16 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
         const denom = calcDenominations(payout, bowlerCount);
         const perBowlerStr = formatBreakdown(denom.perBowler);
         const place = parseInt(draft.place, 10);
+        const scoreNum = draft.score ? parseFloat(draft.score.replace(/,/g, "")) : null;
         return {
           teamCode: team.teamCode,
           finishingPlace: place > 0 ? place : null,
+          score: scoreNum != null && !isNaN(scoreNum) ? scoreNum : null,
           payoutAmount: denom.adjustedTotal,
           billBreakdown: `${perBowlerStr} × ${bowlerCount} bowler${bowlerCount !== 1 ? "s" : ""} = ${fmt$(denom.adjustedTotal)}`,
         };
       })
-      .filter(Boolean) as { teamCode: string; finishingPlace: number | null; payoutAmount: number; billBreakdown: string }[];
+      .filter(Boolean) as { teamCode: string; finishingPlace: number | null; score: number | null; payoutAmount: number; billBreakdown: string }[];
 
     if (payouts.length === 0) {
       toast.error("No saved team results to write. Save at least one team result first.");

@@ -738,12 +738,14 @@ export const SHEET_COLS = {
 
 // ── Payout write-back ─────────────────────────────────────────────────────────
 // New columns appended after the last survey column (BI = col 60):
-//   BJ (61) = Finishing Place
+//   BJ (61) = Event Ranking (Finishing Place)
 //   BK (62) = Payout Amount ($)
 //   BL (63) = Bill Breakdown (per-team summary string)
-const COL_FINISHING_PLACE  = 61; // BJ
+//   BM (64) = Team Score
+const COL_FINISHING_PLACE   = 61; // BJ
 const COL_PAYOUT_AMOUNT_COL = 62; // BK
-const COL_BILL_BREAKDOWN   = 63; // BL
+const COL_BILL_BREAKDOWN    = 63; // BL
+const COL_TEAM_SCORE        = 64; // BM
 
 /** Convert a 0-based column index to an A1-notation letter (A=0, Z=25, AA=26, …). */
 function colIndexToLetter(idx: number): string {
@@ -760,8 +762,10 @@ function colIndexToLetter(idx: number): string {
 export interface PayoutSheetRow {
   /** Team # (2-digit code, e.g. "03") */
   teamCode: string;
-  /** Finishing place (1-based) */
+  /** Finishing place / event ranking (1-based) */
   finishingPlace: number | null;
+  /** Team total score (pins or handicap total) */
+  score: number | null;
   /** Payout amount in dollars */
   payoutAmount: number;
   /** Human-readable bill breakdown, e.g. "3×$100 + 2×$20 (per bowler)" */
@@ -769,12 +773,14 @@ export interface PayoutSheetRow {
 }
 
 /**
- * Write payout results (finishing place, dollar amount, bill breakdown) for every
- * team in the event back to columns BJ–BL of the Google Sheet.
+ * Write payout results (event ranking, payout amount, bill breakdown, team score)
+ * for every team back to columns BJ–BM of the Google Sheet.
  *
- * Strategy: read the entire sheet once, find all rows whose Team # (col H) matches
- * a team in the payouts list, then batch-write BJ/BK/BL for each matching row.
- * Multiple bowlers on the same team all get the same payout values written.
+ * Step 1: Stamp column headers into row 1 (BJ=Event Ranking, BK=Payout Amount,
+ *         BL=Bill Breakdown, BM=Team Score) so the sheet is self-documenting.
+ * Step 2: Read the full sheet once, find all rows whose Team # (col H) matches
+ *         a team in the payouts list, then batch-write BJ/BK/BL/BM for each row.
+ * Multiple bowlers on the same team all receive the same values.
  *
  * Returns { written: number, skipped: number, error?: string }.
  */
@@ -792,18 +798,42 @@ export async function writePayoutsToSheet(params: {
     return { written: 0, skipped: payouts.length, error: "Google Sheets credentials not available." };
   }
 
+  // Pre-compute column letters once
+  const bjCol = colIndexToLetter(COL_FINISHING_PLACE);
+  const bkCol = colIndexToLetter(COL_PAYOUT_AMOUNT_COL);
+  const blCol = colIndexToLetter(COL_BILL_BREAKDOWN);
+  const bmCol = colIndexToLetter(COL_TEAM_SCORE);
+
+  // Step 1: Stamp column headers into row 1 (best-effort, non-fatal)
+  try {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        valueInputOption: "RAW",
+        data: [
+          { range: `'${resolved.sheetName}'!${bjCol}1`, values: [["Event Ranking"]] },
+          { range: `'${resolved.sheetName}'!${bkCol}1`, values: [["Payout Amount"]] },
+          { range: `'${resolved.sheetName}'!${blCol}1`, values: [["Bill Breakdown"]] },
+          { range: `'${resolved.sheetName}'!${bmCol}1`, values: [["Team Score"]] },
+        ],
+      },
+    });
+  } catch {
+    // Header stamping is best-effort — continue even if it fails
+  }
+
   // Build a map: teamCode (zero-padded to 2 digits) → payout info
   const payoutMap = new Map<string, PayoutSheetRow>();
   for (const p of payouts) {
     payoutMap.set(String(p.teamCode).trim().padStart(2, "0"), p);
   }
 
-  // Read the full sheet (columns A through BL = 0..63)
+  // Step 2: Read the full sheet (columns A through BM = 0..64)
   let rows: string[][];
   try {
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId: resolved.spreadsheetId,
-      range: `'${resolved.sheetName}'!A1:BL`,
+      range: `'${resolved.sheetName}'!A1:BM`,
     });
     rows = (resp.data.values ?? []) as string[][];
   } catch (err) {
@@ -819,18 +849,16 @@ export async function writePayoutsToSheet(params: {
     const payout = payoutMap.get(rawCode);
     if (!payout) continue;
 
-    const rowNum = i + 1; // 1-indexed
-    const placeStr = payout.finishingPlace != null ? String(payout.finishingPlace) : "";
-    const amountStr = payout.payoutAmount > 0 ? `$${payout.payoutAmount.toFixed(2)}` : "";
+    const rowNum      = i + 1; // 1-indexed
+    const placeStr     = payout.finishingPlace != null ? String(payout.finishingPlace) : "";
+    const amountStr    = payout.payoutAmount > 0 ? `$${payout.payoutAmount.toFixed(2)}` : "";
     const breakdownStr = payout.billBreakdown;
-
-    const bjCol = colIndexToLetter(COL_FINISHING_PLACE);
-    const bkCol = colIndexToLetter(COL_PAYOUT_AMOUNT_COL);
-    const blCol = colIndexToLetter(COL_BILL_BREAKDOWN);
+    const scoreStr     = payout.score != null ? String(payout.score) : "";
 
     updateData.push({ range: `'${resolved.sheetName}'!${bjCol}${rowNum}`, values: [[placeStr]] });
     updateData.push({ range: `'${resolved.sheetName}'!${bkCol}${rowNum}`, values: [[amountStr]] });
     updateData.push({ range: `'${resolved.sheetName}'!${blCol}${rowNum}`, values: [[breakdownStr]] });
+    updateData.push({ range: `'${resolved.sheetName}'!${bmCol}${rowNum}`, values: [[scoreStr]] });
     writtenTeams.add(rawCode);
   }
 

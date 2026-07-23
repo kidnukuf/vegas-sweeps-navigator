@@ -260,6 +260,7 @@ export const prizePoolRouter = router({
           z.object({
             teamCode: z.string(),
             finishingPlace: z.number().int().min(1).nullable(),
+            score: z.number().nullable().optional(),
             payoutAmount: z.number().min(0),
             billBreakdown: z.string(),
           })
@@ -272,7 +273,7 @@ export const prizePoolRouter = router({
       // Resolve the sheet target for this event
       const sheetTarget = await getEventSheetTarget(eventId);
       const result = await writePayoutsToSheet({
-        payouts,
+        payouts: payouts.map((p) => ({ ...p, score: p.score ?? null })),
         target: { spreadsheetId: sheetTarget.spreadsheetId, sheetName: sheetTarget.sheetName },
       });
       return result;
