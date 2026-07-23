@@ -880,3 +880,71 @@ export async function writePayoutsToSheet(params: {
     skipped: payouts.length - writtenTeams.size,
   };
 }
+
+// ─── Clear all QR "used" columns for an event ────────────────────────────────
+// Wipes the doorman-written timestamps from AA, AC, AE, AG, AI, AK, AM, AO
+// (pool used, banquet used, guest A/B used, extra used) for every data row.
+// Call this when no actual scans have occurred and the columns contain false data.
+export async function clearQRUsedColumns({
+  target,
+}: {
+  target: SheetTarget;
+}): Promise<{ cleared: number; error?: string }> {
+  const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId) return { cleared: 0, error: "No spreadsheet linked to this event." };
+
+  const sheets = await getSheetsClient();
+  if (!sheets) return { cleared: 0, error: "Google Sheets credentials not configured." };
+
+  // Read column A to determine how many rows exist
+  let rowCount = 0;
+  try {
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'!A:A`,
+    });
+    rowCount = (resp.data.values ?? []).length;
+  } catch (err) {
+    return { cleared: 0, error: `Could not read sheet: ${String(err)}` };
+  }
+
+  if (rowCount <= 1) return { cleared: 0 }; // only header or empty
+
+  // The "used" columns (0-indexed): AA=26, AC=28, AE=30, AG=32, AI=34, AK=36, AM=38, AO=40
+  const usedColIndices = [26, 28, 30, 32, 34, 36, 38, 40];
+  const dataRowCount = rowCount - 1; // exclude header row
+
+  // Build batch update — set every used cell to empty string
+  const updateData: { range: string; values: string[][] }[] = [];
+  for (const colIdx of usedColIndices) {
+    const colLetter = _colIdxToLetter(colIdx);
+    const emptyValues: string[][] = Array.from({ length: dataRowCount }, () => [""]);
+    updateData.push({
+      range: `'${resolved.sheetName}'!${colLetter}2:${colLetter}${rowCount}`,
+      values: emptyValues,
+    });
+  }
+
+  try {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: { valueInputOption: "RAW", data: updateData },
+    });
+  } catch (err) {
+    return { cleared: 0, error: `Sheet clear failed: ${String(err)}` };
+  }
+
+  return { cleared: dataRowCount };
+}
+
+/** Convert 0-based column index to A1 letter notation (0→A, 25→Z, 26→AA, etc.) */
+function _colIdxToLetter(index: number): string {
+  let letter = "";
+  let n = index + 1;
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    letter = String.fromCharCode(65 + rem) + letter;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letter;
+}

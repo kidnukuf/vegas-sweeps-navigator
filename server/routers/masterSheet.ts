@@ -4,7 +4,7 @@ import { z } from "zod";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
 import { rawQuery, getEventSheetTarget, recordSheetSync } from "../db";
-import { getSheetsClient, writeQRCodesToSheet, writeBowlerIdToSheet } from "../googleSheets";
+import { getSheetsClient, writeQRCodesToSheet, writeBowlerIdToSheet, clearQRUsedColumns } from "../googleSheets";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -634,5 +634,20 @@ export const masterSheetRouter = router({
       if (updated > 0 && hasSheet) await recordSheetSync(input.eventId);
 
       return { updated, alreadyComplete, failed, errors, hasSheet };
+    }),
+
+  // ─── Clear all QR "used" columns in the Google Sheet ──────────────────────
+  clearQRUsedColumns: publicProcedure
+    .input(z.object({ eventId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
+      const sheetTarget = await getEventSheetTarget(input.eventId);
+      if (!sheetTarget.spreadsheetId) {
+        return { cleared: 0, error: "No Google Sheet linked to this event. Import from a sheet URL first." };
+      }
+      const result = await clearQRUsedColumns({
+        target: { spreadsheetId: sheetTarget.spreadsheetId, sheetName: sheetTarget.sheetName },
+      });
+      return result;
     }),
 });

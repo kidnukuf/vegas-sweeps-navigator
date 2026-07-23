@@ -97,6 +97,17 @@ export default function MasterSheetImport() {
   const [verifyResult, setVerifyResult] = useState<{ ok: boolean; error: string | null; mismatches: { col: number; expected: string; actual: string }[]; totalExpected: number; totalFound: number } | null>(null);
 
   const { data: events = [] } = trpc.event.list.useQuery();
+
+  const clearQRUsedMutation = trpc.masterSheet.clearQRUsedColumns.useMutation({
+    onSuccess: (data) => {
+      if (data.error) {
+        toast.error(`Clear failed: ${data.error}`);
+      } else {
+        toast.success(`✅ Cleared QR used data for ${data.cleared} rows in the Google Sheet.`);
+      }
+    },
+    onError: (err: any) => toast.error(`Clear failed: ${err.message}`),
+  });
   const activeEvent = useMemo(
     () => (events as EventRecord[]).find((e) => Number(e.id) === eventId) ?? null,
     [events, eventId]
@@ -633,6 +644,20 @@ export default function MasterSheetImport() {
             </Button>
           </div>
 
+          <div className="border border-red-800/50 rounded-lg p-4 bg-red-950/20 space-y-2 mb-4">
+            <p className="text-sm font-semibold text-red-400">⚠️ Danger Zone</p>
+            <p className="text-xs text-gray-400">Only use this if QR codes were falsely marked as used (e.g. by link-preview bots) and no real scans have occurred. Clears all QR used timestamps from the Google Sheet.</p>
+            <Button
+              onClick={() => {
+                if (!window.confirm("Are you sure? This clears all QR used data from the Google Sheet. Only do this if no real scans have occurred.")) return;
+                clearQRUsedMutation.mutate({ eventId });
+              }}
+              disabled={clearQRUsedMutation.isPending}
+              className="w-full bg-red-700 hover:bg-red-600 text-white"
+            >
+              {clearQRUsedMutation.isPending ? "Clearing..." : "🗑️ Clear All QR Used Data from Sheet"}
+            </Button>
+          </div>
           <Button
             onClick={() => {
               setStep("input");
