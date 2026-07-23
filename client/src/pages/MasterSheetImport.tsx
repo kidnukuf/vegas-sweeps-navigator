@@ -108,6 +108,17 @@ export default function MasterSheetImport() {
     onError: (err: any) => toast.error(`DB clear failed: ${err.message}`),
   });
 
+  const sortSheetRowsMutation = trpc.masterSheet.sortSheetRows.useMutation({
+    onSuccess: (data) => {
+      if (data.error) {
+        toast.error(`Sort failed: ${data.error}`);
+      } else {
+        toast.success(`✅ Sheet sorted: ${data.sorted} rows reordered by center → team # → name.`);
+      }
+    },
+    onError: (err: any) => toast.error(`Sort failed: ${err.message}`),
+  });
+
   const clearQRUsedMutation = trpc.masterSheet.clearQRUsedColumns.useMutation({
     onSuccess: (data) => {
       if (data.error) {
@@ -416,6 +427,22 @@ export default function MasterSheetImport() {
             )}
             <p className="text-xs text-gray-500 mt-1">
               Generates Pool QR and Banquet QR tokens for any bowler that was imported before token generation was wired up. Safe to run multiple times — existing tokens are never overwritten.
+            </p>
+          </div>
+
+          {/* Sort Sheet Rows */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                onClick={() => sortSheetRowsMutation.mutate({ eventId })}
+                disabled={sortSheetRowsMutation.isPending}
+                className="bg-violet-700 hover:bg-violet-600 text-sm font-semibold"
+              >
+                {sortSheetRowsMutation.isPending ? "⏳ Sorting rows..." : "🔄 Sort Rows by Center & Team #"}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Reorders all rows in the Google Sheet tab: grouped by center (A–Z), then by team number (ascending), then by last/first name. Header row is never moved.
             </p>
           </div>
 

@@ -948,3 +948,83 @@ function _colIdxToLetter(index: number): string {
   }
   return letter;
 }
+
+/**
+ * Sort all data rows in the sheet by:
+ *   1. Center (col F = index 5) — alphabetical ascending
+ *   2. Team # (col H = index 7) — numeric ascending
+ *   3. Last Name (col K = index 10) — alphabetical ascending
+ *   4. First Name (col J = index 9) — alphabetical ascending
+ * Reads all rows, sorts in memory, writes back in one update.
+ * The header row (row 1) is never moved.
+ */
+export async function sortSheetRows({
+  target,
+}: {
+  target: SheetTarget;
+}): Promise<{ sorted: number; error?: string }> {
+  const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId) return { sorted: 0, error: "No spreadsheet linked to this event." };
+  const sheets = await getSheetsClient();
+  if (!sheets) return { sorted: 0, error: "Google Sheets credentials not configured." };
+
+  let allRows: string[][];
+  try {
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'`,
+    });
+    allRows = (resp.data.values ?? []) as string[][];
+  } catch (err) {
+    return { sorted: 0, error: `Could not read sheet: ${String(err)}` };
+  }
+
+  if (allRows.length <= 1) return { sorted: 0 };
+
+  const headerRow = allRows[0];
+  const dataRows = allRows.slice(1);
+  const totalCols = headerRow.length;
+
+  const padRow = (row: string[]) => {
+    const r = [...row];
+    while (r.length < totalCols) r.push("");
+    return r.slice(0, totalCols);
+  };
+
+  const sorted = [...dataRows].sort((a, b) => {
+    const centerA = (a[5] ?? "").trim().toLowerCase();
+    const centerB = (b[5] ?? "").trim().toLowerCase();
+    if (centerA < centerB) return -1;
+    if (centerA > centerB) return 1;
+
+    const tA = parseInt((a[7] ?? "").trim(), 10);
+    const tB = parseInt((b[7] ?? "").trim(), 10);
+    const teamA = isNaN(tA) ? 9999 : tA;
+    const teamB = isNaN(tB) ? 9999 : tB;
+    if (teamA !== teamB) return teamA - teamB;
+
+    const lastA = (a[10] ?? "").trim().toLowerCase();
+    const lastB = (b[10] ?? "").trim().toLowerCase();
+    if (lastA < lastB) return -1;
+    if (lastA > lastB) return 1;
+
+    const firstA = (a[9] ?? "").trim().toLowerCase();
+    const firstB = (b[9] ?? "").trim().toLowerCase();
+    if (firstA < firstB) return -1;
+    if (firstA > firstB) return 1;
+    return 0;
+  });
+
+  try {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'!A2`,
+      valueInputOption: "RAW",
+      requestBody: { values: sorted.map(padRow) },
+    });
+  } catch (err) {
+    return { sorted: 0, error: `Sheet write failed: ${String(err)}` };
+  }
+
+  return { sorted: sorted.length };
+}
