@@ -675,3 +675,69 @@ export const adInquiries = mysqlTable("ad_inquiries", {
 
 export type AdInquiry = typeof adInquiries.$inferSelect;
 export type InsertAdInquiry = typeof adInquiries.$inferInsert;
+
+// ─── PRIZE POOL (event-level prize fund configuration) ───────────────────────
+// One row per event. Stores the total prize fund and the paytable mode.
+// paytableMode:
+//   'percentage' — each paytable entry specifies a % of totalAmount
+//   'rank'       — each paytable entry specifies a fixed dollar amount per finishing place
+export const prizePool = mysqlTable("prize_pool", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull().unique(), // one prize pool per event
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  paytableMode: mysqlEnum("paytableMode", ["percentage", "rank"]).notNull().default("rank"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PrizePool = typeof prizePool.$inferSelect;
+export type InsertPrizePool = typeof prizePool.$inferInsert;
+
+// ─── PAYTABLE ENTRIES (per-place or per-percentage payout rules) ─────────────
+// Ordered list of payout rules for a prize pool.
+//   rank mode:       place=1 → amount=$500, place=2 → amount=$300, …
+//   percentage mode: place=1 → percentage=30 (30% of totalAmount), …
+// Only one of `amount` or `percentage` is meaningful depending on paytableMode;
+// both are stored so the ED can switch modes without losing data.
+export const paytableEntries = mysqlTable("paytable_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  prizePoolId: int("prizePoolId").notNull(), // FK → prize_pool.id
+  eventId: int("eventId").notNull(),         // denormalized for fast event queries
+  place: int("place").notNull(),             // finishing place (1 = 1st, 2 = 2nd, …)
+  amount: decimal("amount", { precision: 10, scale: 2 }),       // fixed dollar amount (rank mode)
+  percentage: decimal("percentage", { precision: 6, scale: 3 }), // % of total (percentage mode, e.g. 30.000)
+  label: varchar("label", { length: 100 }),  // optional display label, e.g. "1st Place", "Top 5"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaytableEntry = typeof paytableEntries.$inferSelect;
+export type InsertPaytableEntry = typeof paytableEntries.$inferInsert;
+
+// ─── TEAM PAYOUTS (per-team finishing result and payout) ─────────────────────
+// One row per team per event once results are entered.
+// denominationBreakdown stores the bill/coin split as JSON:
+//   e.g. { "100": 2, "50": 1, "20": 0, "10": 1, "5": 0, "1": 0 }
+export const teamPayouts = mysqlTable("team_payouts", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  teamId: int("teamId").notNull(),
+  prizePoolId: int("prizePoolId"),           // FK → prize_pool.id (nullable for manual payouts)
+  paytableEntryId: int("paytableEntryId"),   // FK → paytable_entries.id (nullable for manual)
+  finishingPlace: int("finishingPlace"),      // 1-based rank this team achieved
+  score: decimal("score", { precision: 10, scale: 3 }), // raw score (pins, avg, or custom metric)
+  payoutAmount: decimal("payoutAmount", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  // Bill/coin denomination breakdown for cash payouts
+  // Stored as JSON: { "100": 2, "50": 1, "20": 0, "10": 1, "5": 0, "1": 0 }
+  denominationBreakdown: json("denominationBreakdown"),
+  paid: boolean("paid").default(false).notNull(),
+  paidAt: bigint("paidAt", { mode: "number" }),
+  paidByEdStaffId: int("paidByEdStaffId"),   // FK → ed_staff.id or app_users.id
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TeamPayout = typeof teamPayouts.$inferSelect;
+export type InsertTeamPayout = typeof teamPayouts.$inferInsert;
