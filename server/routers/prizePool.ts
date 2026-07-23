@@ -167,7 +167,26 @@ export const prizePoolRouter = router({
       return payouts;
     }),
 
-  // ─── Upsert a single team result (place, score, payout) ────────────────────────────
+  // ─── Get bowler counts per team for an event ──────────────────────────────────────────
+  getTeamBowlerCounts: protectedProcedure
+    .input(z.object({ eventId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const rows = await rawQuery<{ teamId: number; bowlerCount: number }>(
+        `SELECT teamId, COUNT(*) AS bowlerCount
+         FROM bowlers
+         WHERE eventId = ? AND teamId IS NOT NULL
+         GROUP BY teamId`,
+        [input.eventId]
+      );
+      // Return as a map: teamId → bowlerCount
+      const map: Record<number, number> = {};
+      for (const row of rows) {
+        map[row.teamId] = Number(row.bowlerCount);
+      }
+      return map;
+    }),
+
+  // ─── Upsert a single team result (place, score, payout, denomination breakdown) ────
   upsertTeamResult: protectedProcedure
     .input(
       z.object({
@@ -177,11 +196,13 @@ export const prizePoolRouter = router({
         finishingPlace: z.number().int().min(1).nullable().optional(),
         score: z.string().nullable().optional(),
         payoutAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).or(z.literal("0")),
+        denominationBreakdown: z.record(z.string(), z.number()).nullable().optional(),
         notes: z.string().max(500).nullable().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, notes } = input;
+      const { eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, denominationBreakdown, notes } = input;
+      const denomJson = denominationBreakdown ? JSON.stringify(denominationBreakdown) : null;
 
       const existing = await rawQuery<{ id: number }>(
         `SELECT id FROM team_payouts WHERE eventId = ? AND teamId = ? LIMIT 1`,
@@ -191,16 +212,19 @@ export const prizePoolRouter = router({
       if (existing.length > 0) {
         await rawQuery(
           `UPDATE team_payouts
-           SET prizePoolId = ?, finishingPlace = ?, score = ?, payoutAmount = ?, notes = ?, updatedAt = NOW()
+           SET prizePoolId = ?, finishingPlace = ?, score = ?, payoutAmount = ?,
+               denominationBreakdown = ?, notes = ?, updatedAt = NOW()
            WHERE id = ?`,
-          [prizePoolId ?? null, finishingPlace ?? null, score ?? null, payoutAmount, notes ?? null, existing[0].id]
+          [prizePoolId ?? null, finishingPlace ?? null, score ?? null, payoutAmount,
+           denomJson, notes ?? null, existing[0].id]
         );
         return { id: existing[0].id, created: false };
       } else {
         const result = await rawExec(
-          `INSERT INTO team_payouts (eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, notes, paid, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())`,
-          [eventId, teamId, prizePoolId ?? null, finishingPlace ?? null, score ?? null, payoutAmount, notes ?? null]
+          `INSERT INTO team_payouts (eventId, teamId, prizePoolId, finishingPlace, score, payoutAmount, denominationBreakdown, notes, paid, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())`,
+          [eventId, teamId, prizePoolId ?? null, finishingPlace ?? null, score ?? null,
+           payoutAmount, denomJson, notes ?? null]
         );
         return { id: result.insertId, created: true };
       }

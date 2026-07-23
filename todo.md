@@ -495,3 +495,13 @@
 - [x] Auto-save on blur (onBlur → saveTeamResult); explicit Save button shown when dirty
 - [x] Left border: amber = unsaved changes, green = saved, transparent = untouched
 - [x] Footer: saved count + total paid out running sum
+
+## Cash Denomination Calculator (Team Payouts tab)
+- [x] Write shared/denominations.ts — calcDenominations(), sumDenominations(), formatBreakdown()
+- [x] Write server/denominations.test.ts — 14 unit tests, all passing
+- [x] Add prizePool.getTeamBowlerCounts procedure (COUNT bowlers per teamId for event)
+- [x] Update prizePool.upsertTeamResult to accept denominationBreakdown JSON field
+- [x] Rewrite TeamPayoutsTab.tsx — denomination panel per team row (per-bowler + team-total bill counts)
+- [x] Adjustment flag: amber badge when amount rounded up, blue badge when rounded down, green when exact
+- [x] Grand Total section: sum of all saved team denomination counts + total cash needed
+- [x] TypeScript: no errors; all 14 denomination tests pass

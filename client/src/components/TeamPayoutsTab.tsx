@@ -1,26 +1,22 @@
 /**
- * TeamPayoutsTab — Prize pool configuration, paytable management, and team results entry.
+ * TeamPayoutsTab — Prize pool setup, paytable management, team results entry,
+ * and cash denomination calculator.
  *
- * Section 1 — Prize Pool Setup:
- *   - Mode toggle: "% of Prize Pool" | "Fixed $ per Place"
- *   - Total prize pool dollar input
- *   - Paytable paste textarea (one entry per line)
- *   - Live dollar calculation display
- *   - Save button
- *
- * Section 2 — Team Results:
- *   - All teams listed: Team Name, Team # (teamCode), Center Name
- *   - Sorted: Center → Team # (ascending)
- *   - Place input per team → auto-calculates payout from paytable
- *   - Score input (optional)
- *   - Dollar override input (manual override of calculated amount)
- *   - Save per row (debounced auto-save on blur)
- *   - Saved rows show green checkmark; unsaved show amber dot
+ * Section 1 — Prize Pool Setup (mode, total, paytable paste, preview, save)
+ * Section 2 — Team Results (place, score, payout, denomination breakdown per team)
+ * Section 3 — Grand Total Bill Counts (sum across all saved teams)
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import {
+  calcDenominations,
+  sumDenominations,
+  formatBreakdown,
+  BILL_DENOMINATIONS,
+  type DenominationBreakdown,
+} from "../../../shared/denominations";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,28 +29,22 @@ interface ParsedEntry {
   error?: string;
 }
 
-interface TeamRow {
-  id: number;         // teams.id
-  teamName: string;
-  teamCode: string;
-  centerName: string;
-}
-
 interface ResultDraft {
-  place: string;       // raw input string
-  score: string;       // raw input string
-  payoutOverride: string; // raw input string (empty = use calculated)
-  dirty: boolean;      // has unsaved changes
+  place: string;
+  score: string;
+  payoutOverride: string;
+  dirty: boolean;
   saving: boolean;
   savedAt: Date | null;
+  /** Last persisted denomination breakdown (from DB or just-saved) */
+  savedDenom: DenominationBreakdown | null;
 }
 
 // ─── Parse paytable text ──────────────────────────────────────────────────────
 
 function parsePaytableText(text: string, mode: PaytableMode): ParsedEntry[] {
-  const lines = text.split("\n");
   const entries: ParsedEntry[] = [];
-  for (const rawLine of lines) {
+  for (const rawLine of text.split("\n")) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
     const match = line.match(/^(\d+)(?:st|nd|rd|th)?[:\s]+(.+)$/i);
@@ -88,7 +78,7 @@ function parsePaytableText(text: string, mode: PaytableMode): ParsedEntry[] {
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
 
-function formatDollar(n: number): string {
+function fmt$(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
@@ -98,14 +88,32 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-/** Look up the dollar payout for a given place from the paytable. Returns null if not found. */
 function lookupPayout(place: number, entries: ParsedEntry[], mode: PaytableMode, total: number): number | null {
-  const entry = entries.find((e) => !e.error && e.place === place);
-  if (!entry) return null;
-  if (mode === "percentage") {
-    return (total * (entry.percentage ?? 0)) / 100;
-  }
-  return entry.amount ?? null;
+  const e = entries.find((x) => !x.error && x.place === place);
+  if (!e) return null;
+  return mode === "percentage" ? (total * (e.percentage ?? 0)) / 100 : (e.amount ?? null);
+}
+
+// ─── Bill row component ───────────────────────────────────────────────────────
+
+function BillRow({ label, counts }: { label: string; counts: Record<number, number> }) {
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="text-gray-500 w-28 shrink-0">{label}</span>
+      <div className="flex gap-1.5 flex-wrap">
+        {BILL_DENOMINATIONS.map((bill) =>
+          counts[bill] > 0 ? (
+            <span key={bill} className="px-2 py-0.5 bg-green-900/40 border border-green-600/40 rounded text-green-300 font-mono whitespace-nowrap">
+              {counts[bill]}×${bill}
+            </span>
+          ) : null
+        )}
+        {BILL_DENOMINATIONS.every((b) => !counts[b]) && (
+          <span className="text-gray-600">—</span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -117,6 +125,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
   const { data: poolData, isLoading: poolLoading } = trpc.prizePool.getEventPrizePool.useQuery({ eventId });
   const { data: teamsRaw = [], isLoading: teamsLoading } = trpc.teams.listByEvent.useQuery({ eventId });
   const { data: savedPayoutsRaw = [], isLoading: payoutsLoading } = trpc.prizePool.getTeamPayouts.useQuery({ eventId });
+  const { data: bowlerCountMap = {}, isLoading: countsLoading } = trpc.prizePool.getTeamBowlerCounts.useQuery({ eventId });
 
   // ── Mutations ──
   const upsertPool = trpc.prizePool.upsertPrizePool.useMutation();
@@ -130,24 +139,26 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
   const [paytableText, setPaytableText] = useState("");
   const [isSavingPool, setIsSavingPool] = useState(false);
 
-  // ── Team results draft state: teamId → ResultDraft ──
+  // ── Team results draft state ──
   const [drafts, setDrafts] = useState<Record<number, ResultDraft>>({});
 
-  // ── Load prize pool into form ──
+  // ── Load prize pool ──
   useEffect(() => {
     if (!poolData?.pool) return;
     const p = poolData.pool;
     setMode((p.paytableMode as PaytableMode) ?? "percentage");
     setTotalAmount(parseFloat(p.totalAmount).toFixed(2));
     if (poolData.entries.length > 0) {
-      const lines = poolData.entries.map((e) => {
-        if (p.paytableMode === "percentage" && e.percentage != null)
-          return `${e.place}: ${parseFloat(e.percentage)}%`;
-        if (e.amount != null)
-          return `${e.place}: $${parseFloat(e.amount).toFixed(2)}`;
-        return `${e.place}: ?`;
-      });
-      setPaytableText(lines.join("\n"));
+      setPaytableText(
+        poolData.entries
+          .map((e) => {
+            if (p.paytableMode === "percentage" && e.percentage != null)
+              return `${e.place}: ${parseFloat(e.percentage)}%`;
+            if (e.amount != null) return `${e.place}: $${parseFloat(e.amount).toFixed(2)}`;
+            return `${e.place}: ?`;
+          })
+          .join("\n")
+      );
     }
   }, [poolData]);
 
@@ -157,9 +168,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     setDrafts((prev) => {
       const next = { ...prev };
       for (const row of savedPayoutsRaw as any[]) {
-        const existing = next[row.teamId];
-        // Only load from server if the draft is not dirty
-        if (!existing || !existing.dirty) {
+        if (!next[row.teamId] || !next[row.teamId].dirty) {
           next[row.teamId] = {
             place: row.finishingPlace != null ? String(row.finishingPlace) : "",
             score: row.score ?? "",
@@ -167,6 +176,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
             dirty: false,
             saving: false,
             savedAt: row.updatedAt ? new Date(row.updatedAt) : null,
+            savedDenom: row.denominationBreakdown ?? null,
           };
         }
       }
@@ -174,13 +184,12 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     });
   }, [savedPayoutsRaw]);
 
-  // ── Derived: teams sorted by center → teamCode ──
+  // ── Derived: teams sorted center → teamCode ──
   const teams = useMemo(() => {
     const raw = teamsRaw as { id: number; teamName: string; teamCode: string; centerName: string }[];
     return [...raw].sort((a, b) => {
-      const cmp = (a.centerName ?? "").localeCompare(b.centerName ?? "");
-      if (cmp !== 0) return cmp;
-      return (a.teamCode ?? "").localeCompare(b.teamCode ?? "");
+      const c = (a.centerName ?? "").localeCompare(b.centerName ?? "");
+      return c !== 0 ? c : (a.teamCode ?? "").localeCompare(b.teamCode ?? "");
     });
   }, [teamsRaw]);
 
@@ -193,6 +202,40 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     () => (mode === "percentage" ? validEntries.reduce((s, e) => s + (e.percentage ?? 0), 0) : 0),
     [validEntries, mode]
   );
+  const paytableReady = validEntries.length > 0 && parseErrors.length === 0;
+
+  // ── Draft helpers ──
+  function getDraft(teamId: number): ResultDraft {
+    return drafts[teamId] ?? { place: "", score: "", payoutOverride: "", dirty: false, saving: false, savedAt: null, savedDenom: null };
+  }
+
+  function setDraft(teamId: number, patch: Partial<ResultDraft>) {
+    setDrafts((prev) => ({ ...prev, [teamId]: { ...getDraft(teamId), ...patch, dirty: true } }));
+  }
+
+  function computedPayout(teamId: number): number | null {
+    const draft = getDraft(teamId);
+    const place = parseInt(draft.place, 10);
+    if (!place || place < 1) return null;
+    return lookupPayout(place, validEntries, mode, totalAmountNum);
+  }
+
+  function effectivePayout(teamId: number): number | null {
+    const draft = getDraft(teamId);
+    if (draft.payoutOverride !== "") {
+      const v = parseFloat(draft.payoutOverride);
+      return isNaN(v) ? null : v;
+    }
+    return computedPayout(teamId);
+  }
+
+  /** Compute denomination breakdown for a team given its effective payout */
+  function teamDenom(teamId: number): DenominationBreakdown | null {
+    const payout = effectivePayout(teamId);
+    if (payout === null || payout <= 0) return null;
+    const bowlerCount = (bowlerCountMap as Record<number, number>)[teamId] ?? 1;
+    return calcDenominations(payout, bowlerCount);
+  }
 
   // ── Prize pool save ──
   async function handleSavePool() {
@@ -223,36 +266,6 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
     }
   }
 
-  // ── Draft helpers ──
-  function getDraft(teamId: number): ResultDraft {
-    return drafts[teamId] ?? { place: "", score: "", payoutOverride: "", dirty: false, saving: false, savedAt: null };
-  }
-
-  function setDraft(teamId: number, patch: Partial<ResultDraft>) {
-    setDrafts((prev) => ({
-      ...prev,
-      [teamId]: { ...getDraft(teamId), ...patch, dirty: true },
-    }));
-  }
-
-  /** Computed payout for a team based on their entered place and the paytable. */
-  function computedPayout(teamId: number): number | null {
-    const draft = getDraft(teamId);
-    const place = parseInt(draft.place, 10);
-    if (!place || place < 1) return null;
-    return lookupPayout(place, validEntries, mode, totalAmountNum);
-  }
-
-  /** The effective payout: override if set, otherwise computed. */
-  function effectivePayout(teamId: number): number | null {
-    const draft = getDraft(teamId);
-    if (draft.payoutOverride !== "") {
-      const v = parseFloat(draft.payoutOverride);
-      return isNaN(v) ? null : v;
-    }
-    return computedPayout(teamId);
-  }
-
   // ── Save a single team result ──
   const saveTeamResult = useCallback(
     async (teamId: number) => {
@@ -261,14 +274,13 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
       const place = parseInt(draft.place, 10);
       const payout = effectivePayout(teamId);
 
-      // If nothing entered, clear the row
       if (!draft.place && !draft.score && !draft.payoutOverride) {
         setDrafts((prev) => ({ ...prev, [teamId]: { ...getDraft(teamId), saving: true } }));
         try {
           await clearResult.mutateAsync({ eventId, teamId });
           setDrafts((prev) => ({
             ...prev,
-            [teamId]: { place: "", score: "", payoutOverride: "", dirty: false, saving: false, savedAt: new Date() },
+            [teamId]: { place: "", score: "", payoutOverride: "", dirty: false, saving: false, savedAt: new Date(), savedDenom: null },
           }));
           await utils.prizePool.getTeamPayouts.invalidate({ eventId });
         } catch {
@@ -278,9 +290,11 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
       }
 
       if (payout === null && draft.payoutOverride === "") {
-        toast.error("Enter a place that exists in the paytable, or enter a manual dollar amount.");
+        toast.error("Enter a place in the paytable, or enter a manual dollar amount.");
         return;
       }
+
+      const denom = teamDenom(teamId);
 
       setDrafts((prev) => ({ ...prev, [teamId]: { ...getDraft(teamId), saving: true } }));
       try {
@@ -291,11 +305,28 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
           finishingPlace: place > 0 ? place : null,
           score: draft.score || null,
           payoutAmount: (payout ?? 0).toFixed(2),
+          denominationBreakdown: denom
+            ? ({
+                "100": denom.teamTotal[100],
+                "50": denom.teamTotal[50],
+                "20": denom.teamTotal[20],
+                "10": denom.teamTotal[10],
+                "5": denom.teamTotal[5],
+                perBowler_100: denom.perBowler[100],
+                perBowler_50: denom.perBowler[50],
+                perBowler_20: denom.perBowler[20],
+                perBowler_10: denom.perBowler[10],
+                perBowler_5: denom.perBowler[5],
+                bowlerCount: denom.bowlerCount,
+                adjustedTotal: denom.adjustedTotal,
+                delta: denom.delta,
+              } as Record<string, number>)
+            : null,
           notes: null,
         });
         setDrafts((prev) => ({
           ...prev,
-          [teamId]: { ...getDraft(teamId), dirty: false, saving: false, savedAt: new Date() },
+          [teamId]: { ...getDraft(teamId), dirty: false, saving: false, savedAt: new Date(), savedDenom: denom },
         }));
         await utils.prizePool.getTeamPayouts.invalidate({ eventId });
       } catch (err: unknown) {
@@ -304,27 +335,39 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [drafts, poolData, validEntries, mode, totalAmountNum, eventId]
+    [drafts, poolData, validEntries, mode, totalAmountNum, bowlerCountMap, eventId]
   );
 
-  // ── Render ──
-  const isLoading = poolLoading || teamsLoading || payoutsLoading;
+  // ── Grand total denominations (sum of all saved team totals) ──
+  const grandTotalDenom = useMemo(() => {
+    const breakdowns: DenominationBreakdown[] = [];
+    for (const team of teams) {
+      const draft = getDraft(team.id);
+      if (draft.savedAt && !draft.dirty) {
+        const payout = effectivePayout(team.id);
+        if (payout && payout > 0) {
+          const bowlerCount = (bowlerCountMap as Record<number, number>)[team.id] ?? 1;
+          breakdowns.push(calcDenominations(payout, bowlerCount));
+        }
+      }
+    }
+    return sumDenominations(breakdowns);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts, teams, bowlerCountMap, validEntries, mode, totalAmountNum]);
 
+  const grandTotalAmount = useMemo(
+    () => BILL_DENOMINATIONS.reduce((s, b) => s + grandTotalDenom[b] * b, 0),
+    [grandTotalDenom]
+  );
+
+  const isLoading = poolLoading || teamsLoading || payoutsLoading || countsLoading;
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-gray-400 text-sm">
-        Loading prize pool…
-      </div>
-    );
+    return <div className="flex items-center justify-center py-16 text-gray-400 text-sm">Loading prize pool…</div>;
   }
-
-  const paytableReady = validEntries.length > 0 && parseErrors.length === 0;
 
   return (
     <div className="space-y-8 max-w-5xl">
-      {/* ════════════════════════════════════════════════════════════════════════
-          SECTION 1 — Prize Pool Setup
-      ════════════════════════════════════════════════════════════════════════ */}
+      {/* ═══ SECTION 1 — Prize Pool Setup ═══════════════════════════════════════ */}
       <div>
         <h2 className="text-xl font-bold text-yellow-400">🏆 Team Payouts</h2>
         <p className="text-gray-400 text-sm mt-1">
@@ -348,12 +391,12 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
         </div>
         <p className="text-xs text-gray-500">
           {mode === "percentage"
-            ? 'Enter percentages per line: "1: 30%", "2: 20%"'
-            : 'Enter fixed dollar amounts per line: "1: $1500", "2: $1000"'}
+            ? 'Paste percentages: "1: 30%", "2: 20%"'
+            : 'Paste fixed amounts: "1: $1500", "2: $1000"'}
         </p>
       </div>
 
-      {/* Total + paytable side by side */}
+      {/* Total + paytable */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5 space-y-3">
           <h3 className="text-sm font-semibold text-gray-300">Total Prize Pool</h3>
@@ -362,9 +405,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
             <input type="number" min="0" step="0.01" placeholder="e.g. 5000.00"
               value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)}
               className="w-40 px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-yellow-500" />
-            {totalAmountNum > 0 && (
-              <span className="text-green-400 font-semibold text-sm">{formatDollar(totalAmountNum)}</span>
-            )}
+            {totalAmountNum > 0 && <span className="text-green-400 font-semibold text-sm">{fmt$(totalAmountNum)}</span>}
           </div>
           <p className="text-xs text-gray-500">{teams.length} team{teams.length !== 1 ? "s" : ""} in this event.</p>
         </div>
@@ -391,53 +432,43 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             {validEntries.map((e) => {
-              const dollar = mode === "percentage"
-                ? (totalAmountNum * (e.percentage ?? 0)) / 100
-                : (e.amount ?? 0);
+              const dollar = mode === "percentage" ? (totalAmountNum * (e.percentage ?? 0)) / 100 : (e.amount ?? 0);
               return (
                 <div key={e.place} className="flex items-center justify-between px-3 py-1.5 bg-[#111] rounded-lg border border-white/5 text-xs">
                   <span className="text-gray-400 font-semibold">{ordinal(e.place)}</span>
-                  <span className="text-green-400 font-bold font-mono">{formatDollar(dollar)}</span>
+                  <span className="text-green-400 font-bold font-mono">{fmt$(dollar)}</span>
                 </div>
               );
             })}
           </div>
-          {parseErrors.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {parseErrors.map((e, i) => (
-                <p key={i} className="text-red-400 text-xs font-mono">Place {e.place}: {e.error}</p>
-              ))}
-            </div>
-          )}
+          {parseErrors.map((e, i) => (
+            <p key={i} className="text-red-400 text-xs font-mono">Place {e.place}: {e.error}</p>
+          ))}
         </div>
       )}
 
-      {/* Save prize pool button */}
+      {/* Save pool button */}
       <div className="flex items-center gap-4">
         <button onClick={handleSavePool} disabled={isSavingPool}
           className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-bold rounded-lg text-sm transition-all active:scale-95">
           {isSavingPool ? "Saving…" : "Save Prize Pool & Paytable"}
         </button>
         {poolData?.pool && (
-          <span className="text-xs text-gray-500">
-            Last saved: {new Date(poolData.pool.updatedAt).toLocaleString()}
-          </span>
+          <span className="text-xs text-gray-500">Last saved: {new Date(poolData.pool.updatedAt).toLocaleString()}</span>
         )}
       </div>
 
-      {/* ════════════════════════════════════════════════════════════════════════
-          SECTION 2 — Team Results
-      ════════════════════════════════════════════════════════════════════════ */}
+      {/* ═══ SECTION 2 — Team Results ════════════════════════════════════════════ */}
       <div className="border-t border-white/10 pt-8">
         <div className="mb-4">
           <h3 className="text-lg font-bold text-white">📋 Team Results</h3>
           <p className="text-gray-400 text-sm mt-1">
-            Enter each team's finishing place and/or score. The payout is calculated automatically from the paytable.
-            Override the dollar amount if needed. Changes save on blur.
+            Enter each team's finishing place and/or score. The payout and bill breakdown are calculated automatically.
+            Override the dollar amount if needed. Changes save on blur (Tab away) or click Save.
           </p>
           {!paytableReady && (
             <div className="mt-2 px-3 py-2 bg-amber-900/30 border border-amber-500/40 rounded-lg text-amber-300 text-xs">
-              ⚠ Save a valid paytable above first so payouts can be calculated automatically.
+              ⚠ Save a valid paytable above so payouts and denominations can be calculated automatically.
             </div>
           )}
         </div>
@@ -445,136 +476,188 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
         {teams.length === 0 ? (
           <p className="text-gray-500 text-sm">No teams found for this event.</p>
         ) : (
-          <div className="rounded-2xl border border-white/10 overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto] gap-0 bg-[#111] border-b border-white/10 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              <span>Team</span>
-              <span>Team #</span>
-              <span>Center</span>
-              <span>Place</span>
-              <span>Score</span>
-              <span>Payout ($)</span>
-              <span className="w-16 text-center">Save</span>
-            </div>
+          <div className="space-y-3">
+            {teams.map((team, idx) => {
+              const draft = getDraft(team.id);
+              const calc = computedPayout(team.id);
+              const effective = effectivePayout(team.id);
+              const isOverridden = draft.payoutOverride !== "" && calc !== null && Math.abs(parseFloat(draft.payoutOverride) - calc) > 0.005;
+              const bowlerCount = (bowlerCountMap as Record<number, number>)[team.id] ?? 0;
+              const denom = effective && effective > 0 ? calcDenominations(effective, bowlerCount || 1) : null;
 
-            {/* Team rows */}
-            <div className="divide-y divide-white/5">
-              {teams.map((team, idx) => {
-                const draft = getDraft(team.id);
-                const calc = computedPayout(team.id);
-                const effective = effectivePayout(team.id);
-                const isOverridden = draft.payoutOverride !== "" && calc !== null && Math.abs(parseFloat(draft.payoutOverride) - calc) > 0.005;
-
-                return (
-                  <div
-                    key={team.id}
-                    className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto] gap-0 items-center px-4 py-2 text-sm transition-colors ${
-                      idx % 2 === 0 ? "bg-[#1a1a1a]" : "bg-[#161616]"
-                    } ${draft.dirty ? "border-l-2 border-amber-500" : draft.savedAt ? "border-l-2 border-green-600" : "border-l-2 border-transparent"}`}
-                  >
-                    {/* Team name */}
-                    <div className="pr-3 min-w-0">
-                      <p className="text-white font-semibold truncate">{team.teamName || "—"}</p>
+              return (
+                <div key={team.id}
+                  className={`rounded-xl border transition-colors ${
+                    draft.dirty ? "border-amber-500/60 bg-amber-900/10"
+                      : draft.savedAt ? "border-green-700/40 bg-[#1a1a1a]"
+                      : "border-white/8 bg-[#1a1a1a]"
+                  }`}
+                >
+                  {/* Top row: team info + inputs */}
+                  <div className="grid grid-cols-[2fr_auto_auto_auto_auto_auto] gap-3 items-center px-4 py-3">
+                    {/* Team info */}
+                    <div className="min-w-0">
+                      <p className="text-white font-semibold truncate text-sm">{team.teamName || "—"}</p>
+                      <p className="text-gray-500 text-xs">
+                        #{team.teamCode} · {team.centerName}
+                        {bowlerCount > 0 && <span className="ml-1 text-gray-600">· {bowlerCount} bowler{bowlerCount !== 1 ? "s" : ""}</span>}
+                      </p>
                     </div>
 
-                    {/* Team # */}
-                    <div className="text-gray-400 font-mono text-xs">{team.teamCode}</div>
-
-                    {/* Center */}
-                    <div className="text-gray-400 text-xs truncate pr-2">{team.centerName}</div>
-
-                    {/* Place input */}
-                    <div>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="—"
-                        value={draft.place}
+                    {/* Place */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Place</label>
+                      <input type="number" min="1" placeholder="—" value={draft.place}
                         onChange={(e) => setDraft(team.id, { place: e.target.value, payoutOverride: "" })}
                         onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
-                        className="w-16 px-2 py-1 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center"
-                      />
+                        className="w-16 px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center" />
                     </div>
 
-                    {/* Score input */}
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="—"
-                        value={draft.score}
+                    {/* Score */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Score</label>
+                      <input type="text" placeholder="—" value={draft.score}
                         onChange={(e) => setDraft(team.id, { score: e.target.value })}
                         onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
-                        className="w-20 px-2 py-1 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center"
-                      />
+                        className="w-20 px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center" />
                     </div>
 
-                    {/* Payout input (auto-filled or override) */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-500 text-xs">$</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder={calc != null ? calc.toFixed(2) : "—"}
-                        value={draft.payoutOverride}
-                        onChange={(e) => setDraft(team.id, { payoutOverride: e.target.value })}
-                        onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
-                        className={`w-24 px-2 py-1 bg-[#111] border rounded text-xs font-mono focus:outline-none text-right ${
-                          isOverridden
-                            ? "border-amber-500 text-amber-300 focus:border-amber-400"
-                            : "border-white/20 text-green-400 focus:border-yellow-500"
-                        }`}
-                      />
+                    {/* Payout */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Payout $</label>
+                      <div className="flex items-center gap-1">
+                        <input type="number" min="0" step="0.01"
+                          placeholder={calc != null ? calc.toFixed(2) : "—"}
+                          value={draft.payoutOverride}
+                          onChange={(e) => setDraft(team.id, { payoutOverride: e.target.value })}
+                          onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
+                          className={`w-24 px-2 py-1.5 bg-[#111] border rounded text-xs font-mono focus:outline-none text-right ${
+                            isOverridden ? "border-amber-500 text-amber-300" : "border-white/20 text-green-400 focus:border-yellow-500"
+                          }`} />
+                      </div>
                       {calc != null && draft.payoutOverride === "" && (
-                        <span className="text-green-400 text-xs font-mono ml-1 whitespace-nowrap">
-                          {formatDollar(calc)}
-                        </span>
+                        <span className="text-green-500 text-[10px] font-mono">{fmt$(calc)}</span>
                       )}
                     </div>
 
-                    {/* Status / save button */}
-                    <div className="w-16 flex items-center justify-center">
+                    {/* Denomination summary */}
+                    <div className="flex flex-col items-start gap-0.5 min-w-[120px]">
+                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Bills (per bowler)</label>
+                      {denom ? (
+                        <span className="text-green-300 text-[10px] font-mono leading-tight">
+                          {formatBreakdown(denom.perBowler)}
+                          {denom.delta !== 0 && (
+                            <span className={`ml-1 ${denom.delta > 0 ? "text-amber-400" : "text-blue-400"}`}>
+                              ({denom.delta > 0 ? "+" : ""}{fmt$(denom.delta)})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 text-[10px]">—</span>
+                      )}
+                    </div>
+
+                    {/* Save / status */}
+                    <div className="flex items-center justify-center w-12">
                       {draft.saving ? (
                         <span className="text-gray-400 text-xs">…</span>
                       ) : draft.dirty ? (
-                        <button
-                          onClick={() => saveTeamResult(team.id)}
+                        <button onClick={() => saveTeamResult(team.id)}
                           className="px-2 py-1 bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-bold rounded transition-all active:scale-95">
                           Save
                         </button>
                       ) : draft.savedAt ? (
                         <span className="text-green-500 text-xs" title={`Saved ${draft.savedAt.toLocaleTimeString()}`}>✓</span>
                       ) : (
-                        <span className="text-gray-600 text-xs">—</span>
+                        <span className="text-gray-700 text-xs">—</span>
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Denomination detail panel (shown when payout is set) */}
+                  {denom && (
+                    <div className="border-t border-white/5 px-4 py-3 space-y-2 bg-black/20 rounded-b-xl">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold text-gray-400">💵 Denomination Breakdown</span>
+                        {denom.delta !== 0 && (
+                          <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                            denom.delta > 0 ? "bg-amber-900/40 text-amber-300 border border-amber-600/40"
+                              : "bg-blue-900/40 text-blue-300 border border-blue-600/40"
+                          }`}>
+                            Adjusted {denom.delta > 0 ? "up" : "down"} {fmt$(Math.abs(denom.delta))} for even split
+                          </span>
+                        )}
+                        {denom.delta === 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-green-900/30 text-green-400 border border-green-700/30">
+                            Exact split ✓
+                          </span>
+                        )}
+                      </div>
+                      <BillRow
+                        label={`Per bowler (${denom.bowlerCount}) ${fmt$(denom.perBowlerAmount)}`}
+                        counts={denom.perBowler}
+                      />
+                      <BillRow
+                        label={`Team total ${fmt$(denom.adjustedTotal)}`}
+                        counts={denom.teamTotal}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {/* Summary footer */}
-            <div className="bg-[#111] border-t border-white/10 px-4 py-3 flex items-center justify-between text-xs text-gray-400">
+            <div className="rounded-xl bg-[#111] border border-white/10 px-4 py-3 flex items-center justify-between text-xs text-gray-400">
               <span>
-                {Object.values(drafts).filter((d) => d.savedAt && !d.dirty).length} of {teams.length} teams have results saved
+                {Object.values(drafts).filter((d) => d.savedAt && !d.dirty).length} of {teams.length} teams saved
               </span>
               {paytableReady && (
                 <span className="text-green-400 font-semibold">
-                  Total paid out:{" "}
-                  {formatDollar(
-                    Object.entries(drafts)
-                      .filter(([, d]) => d.savedAt && !d.dirty)
-                      .reduce((sum, [tid]) => {
-                        const eff = effectivePayout(Number(tid));
-                        return sum + (eff ?? 0);
-                      }, 0)
-                  )}
+                  Total committed: {fmt$(Object.entries(drafts)
+                    .filter(([, d]) => d.savedAt && !d.dirty)
+                    .reduce((sum, [tid]) => sum + (effectivePayout(Number(tid)) ?? 0), 0))}
                 </span>
               )}
             </div>
           </div>
         )}
       </div>
+
+      {/* ═══ SECTION 3 — Grand Total Bill Counts ════════════════════════════════ */}
+      {grandTotalAmount > 0 && (
+        <div className="border-t border-white/10 pt-8">
+          <h3 className="text-lg font-bold text-white mb-4">🏦 Grand Total — Bills Needed for Entire Event</h3>
+          <div className="bg-[#1a1a1a] rounded-2xl border border-yellow-500/30 p-5 space-y-4">
+            <p className="text-gray-400 text-sm">
+              Sum of all saved team payouts. Use this to prepare the cash envelope before the event.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {BILL_DENOMINATIONS.map((bill) => (
+                <div key={bill} className={`rounded-xl border p-4 text-center ${
+                  grandTotalDenom[bill] > 0
+                    ? "bg-green-900/20 border-green-600/40"
+                    : "bg-[#111] border-white/5 opacity-40"
+                }`}>
+                  <p className="text-2xl font-bold text-white">{grandTotalDenom[bill]}</p>
+                  <p className="text-green-400 font-semibold text-sm">${bill} bills</p>
+                  {grandTotalDenom[bill] > 0 && (
+                    <p className="text-gray-500 text-xs mt-1">{fmt$(grandTotalDenom[bill] * bill)}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <span className="text-gray-400 text-sm font-semibold">Total cash needed:</span>
+              <span className="text-yellow-400 text-xl font-bold">{fmt$(grandTotalAmount)}</span>
+            </div>
+            <p className="text-xs text-gray-600">
+              Note: individual team amounts may have been adjusted by ±$5–$20 to achieve an even per-bowler split.
+              Adjusted amounts are flagged on each team row above.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
