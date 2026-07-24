@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { AdInquiryDialog } from "@/components/AdInquiryDialog";
 
-const ADVERTISE_HERE_IMG = "/manus-storage/advertise-here_389a09e4.jpg";
+const ADVERTISE_HERE_IMGS = [
+  "/manus-storage/advertise-here-1_c6721558.jpg",  // dark chalkboard style
+  "/manus-storage/advertise-here-2_50f2b6e8.jpg",  // navy blue style
+];
 
 /**
  * AdRotator — sponsor advertisement slot for the Bowler & Captain portals.
@@ -101,7 +104,7 @@ export function AdRotator({
           aria-label="Advertise here — contact the Event Director"
         >
           <img
-            src={ADVERTISE_HERE_IMG}
+            src={ADVERTISE_HERE_IMGS[slot % ADVERTISE_HERE_IMGS.length]}
             alt="Advertise here"
             className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
           />

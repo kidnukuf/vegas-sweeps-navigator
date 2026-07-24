@@ -4,7 +4,10 @@
 import { useState } from "react";
 import { AdInquiryDialog } from "@/components/AdInquiryDialog";
 
-const ADVERTISE_HERE_IMG = "/manus-storage/advertise-here_389a09e4.jpg";
+const ADVERTISE_HERE_IMGS = [
+  "/manus-storage/advertise-here-1_c6721558.jpg",  // dark chalkboard style
+  "/manus-storage/advertise-here-2_50f2b6e8.jpg",  // navy blue style
+];
 
 interface SponsorAdBannerProps {
   slot?: "top" | "bottom" | "sidebar";
@@ -18,6 +21,7 @@ interface SponsorAdBannerProps {
  */
 export function SponsorAdBanner({ slot = "bottom", className = "", eventId = null }: SponsorAdBannerProps) {
   const [inquiryOpen, setInquiryOpen] = useState(false);
+  const imgSrc = ADVERTISE_HERE_IMGS[slot === "top" ? 0 : 1];
   return (
     <>
       <button
@@ -29,7 +33,7 @@ export function SponsorAdBanner({ slot = "bottom", className = "", eventId = nul
         data-slot={slot}
       >
         <img
-          src={ADVERTISE_HERE_IMG}
+          src={imgSrc}
           alt="Advertise here"
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
         />
@@ -51,7 +55,7 @@ export function SponsorAdSidebar({ className = "", eventId = null }: { className
         aria-label="Advertise here — contact the Event Director"
       >
         <img
-          src={ADVERTISE_HERE_IMG}
+          src={ADVERTISE_HERE_IMGS[0]}
           alt="Advertise here"
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
         />
