@@ -5,65 +5,76 @@ import type { TrpcContext } from "./_core/context";
 import { COOKIE_NAME } from "../shared/const";
 
 // ─── Scantron ID Generation ───────────────────────────────────────────────
-// Format: CC(2) + L(1) + EE(2) + TT(2) + BB(2) = 9 digits
-// CC = center code (01-99, alphabetical), L = league code (1 digit)
+// Format: CC(2) + LL(2) + EE(2) + TT(2) + BB(2) = 10 digits
+// CC = center code (01-99, alphabetical), LL = league code (2 digits, e.g. 01)
 // EE = event code (2 digits, e.g. 26 = 2026), TT = team code (2 digits)
 // BB = sequential bowler # within team (01-99)
 describe("generateScantronId", () => {
-  it("produces exactly 9 digits (CC2+L1+EE2+TT2+BB2)", () => {
-    const id = generateScantronId("01", "1", "01", "01", "01");
-    expect(id).toHaveLength(9);
-    expect(/^\d{9}$/.test(id)).toBe(true);
+  it("produces exactly 10 digits (CC2+LL2+EE2+TT2+BB2)", () => {
+    const id = generateScantronId("01", "01", "01", "01", "01");
+    expect(id).toHaveLength(10);
+    expect(/^\d{10}$/.test(id)).toBe(true);
   });
 
   it("pads single-digit center code to 2 digits", () => {
-    const id = generateScantronId("1", "2", "03", "05", "02");
+    const id = generateScantronId("1", "02", "03", "05", "02");
     expect(id.slice(0, 2)).toBe("01");
   });
 
-  it("uses only first digit of league code", () => {
+  it("pads single-digit league code to 2 digits", () => {
     const id = generateScantronId("02", "4", "01", "03", "01");
-    expect(id[2]).toBe("4");
+    expect(id.slice(2, 4)).toBe("04");
   });
 
   it("pads single-digit event code to 2 digits", () => {
-    const id = generateScantronId("01", "1", "5", "01", "01");
-    expect(id.slice(3, 5)).toBe("05");
+    const id = generateScantronId("01", "01", "5", "01", "01");
+    expect(id.slice(4, 6)).toBe("05");
   });
 
   it("pads single-digit team code to 2 digits", () => {
-    const id = generateScantronId("01", "1", "01", "7", "01");
-    expect(id.slice(5, 7)).toBe("07");
+    const id = generateScantronId("01", "01", "01", "7", "01");
+    expect(id.slice(6, 8)).toBe("07");
   });
 
   it("pads single-digit bowler seq to 2 digits", () => {
-    const id = generateScantronId("01", "1", "01", "01", "3");
-    expect(id.slice(7, 9)).toBe("03");
+    const id = generateScantronId("01", "01", "01", "01", "3");
+    expect(id.slice(8, 10)).toBe("03");
   });
 
   it("produces correct full ID for known inputs", () => {
-    // Center 01, League 1, Event 26, Team 07, Bowler 01
-    const id = generateScantronId("01", "1", "26", "07", "01");
-    expect(id).toBe("011260701");
+    // Center 01, League 01, Event 26, Team 07, Bowler 01
+    const id = generateScantronId("01", "01", "26", "07", "01");
+    expect(id).toBe("0101260701");
   });
 
   it("handles two-digit codes without padding", () => {
-    const id = generateScantronId("13", "4", "52", "99", "10");
-    expect(id).toBe("134529910");
+    const id = generateScantronId("13", "04", "52", "99", "10");
+    expect(id).toBe("1304529910");
   });
 
   it("CC segment is always exactly 2 chars at positions 0-1", () => {
-    const id = generateScantronId("05", "3", "12", "08", "04");
+    const id = generateScantronId("05", "03", "12", "08", "04");
     expect(id.slice(0, 2)).toBe("05");
   });
 
-  it("BB segment is always exactly 2 chars at positions 7-8", () => {
-    const id = generateScantronId("02", "2", "01", "04", "09");
-    expect(id.slice(7, 9)).toBe("09");
+  it("LL segment is always exactly 2 chars at positions 2-3", () => {
+    const id = generateScantronId("02", "02", "01", "04", "09");
+    expect(id.slice(2, 4)).toBe("02");
+  });
+
+  it("BB segment is always exactly 2 chars at positions 8-9", () => {
+    const id = generateScantronId("02", "02", "01", "04", "09");
+    expect(id.slice(8, 10)).toBe("09");
   });
 
   it("throws for non-numeric center code", () => {
-    expect(() => generateScantronId("HS", "1", "26", "07", "01")).toThrow();
+    expect(() => generateScantronId("HS", "01", "26", "07", "01")).toThrow();
+  });
+
+  it("real-world example: Center 14, League 01, Year 26, Team 07, Bowler 01", () => {
+    const id = generateScantronId("14", "01", "26", "07", "01");
+    expect(id).toBe("1401260701");
+    expect(id).toHaveLength(10);
   });
 });
 
@@ -144,34 +155,46 @@ describe("checkInBowler audit log", () => {
 });
 
 // ─── ID Format Validation ─────────────────────────────────────────────────
-describe("Scantron ID format CC-L-EE-TT-BB (9 digits)", () => {
+describe("Scantron ID format CC-LL-EE-TT-BB (10 digits)", () => {
   it("segment CC (positions 0-1) is always numeric", () => {
-    const id = generateScantronId("07", "3", "01", "05", "02");
+    const id = generateScantronId("07", "03", "01", "05", "02");
     expect(/^\d{2}$/.test(id.slice(0, 2))).toBe(true);
   });
 
-  it("segment L (position 2) is always 1 digit", () => {
-    const id = generateScantronId("01", "5", "01", "01", "01");
-    expect(/^\d$/.test(id[2]!)).toBe(true);
+  it("segment LL (positions 2-3) is always 2 digits", () => {
+    const id = generateScantronId("01", "05", "01", "01", "01");
+    expect(/^\d{2}$/.test(id.slice(2, 4))).toBe(true);
   });
 
-  it("segment EE (positions 3-4) is always 2 digits", () => {
-    const id = generateScantronId("01", "1", "08", "01", "01");
-    expect(/^\d{2}$/.test(id.slice(3, 5))).toBe(true);
+  it("segment EE (positions 4-5) is always 2 digits", () => {
+    const id = generateScantronId("01", "01", "08", "01", "01");
+    expect(/^\d{2}$/.test(id.slice(4, 6))).toBe(true);
   });
 
-  it("segment TT (positions 5-6) is always 2 digits", () => {
-    const id = generateScantronId("01", "1", "01", "12", "01");
-    expect(/^\d{2}$/.test(id.slice(5, 7))).toBe(true);
+  it("segment TT (positions 6-7) is always 2 digits", () => {
+    const id = generateScantronId("01", "01", "01", "12", "01");
+    expect(/^\d{2}$/.test(id.slice(6, 8))).toBe(true);
   });
 
-  it("segment BB (positions 7-8) is always 2 digits", () => {
-    const id = generateScantronId("01", "1", "01", "01", "04");
-    expect(/^\d{2}$/.test(id.slice(7, 9))).toBe(true);
+  it("segment BB (positions 8-9) is always 2 digits", () => {
+    const id = generateScantronId("01", "01", "01", "01", "04");
+    expect(/^\d{2}$/.test(id.slice(8, 10))).toBe(true);
   });
 
-  it("total length is always exactly 9 characters (CC+L+EE+TT+BB)", () => {
-    const id = generateScantronId("01", "1", "26", "07", "01");
-    expect(id).toHaveLength(9);
+  it("total length is always exactly 10 characters (CC+LL+EE+TT+BB)", () => {
+    const id = generateScantronId("01", "01", "26", "07", "01");
+    expect(id).toHaveLength(10);
+  });
+
+  it("seating chart parser accepts the generated ID (10 digits)", () => {
+    const id = generateScantronId("14", "01", "26", "07", "01");
+    expect(/^\d{10}$/.test(id)).toBe(true);
+  });
+
+  it("guest token format: 10-digit ID + letter suffix = 11 chars", () => {
+    const id = generateScantronId("14", "01", "26", "07", "01");
+    const guestToken = id + "A";
+    expect(guestToken).toHaveLength(11);
+    expect(/^\d{10}[A-Z]$/.test(guestToken)).toBe(true);
   });
 });

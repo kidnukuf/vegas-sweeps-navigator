@@ -273,10 +273,10 @@ export default function ImportData() {
         const rows = (roster.data as Record<string, unknown>[]).map(b => {
           const sid = String(b.scantronId ?? "");
           const cc = sid.slice(0, 2);
-          const l = sid.slice(2, 3);
-          const ee = sid.slice(3, 5);
-          const tt = sid.slice(5, 7);
-          const bb = sid.slice(7, 9);
+          const l = sid.slice(2, 4);  // LL = 2-digit league code
+          const ee = sid.slice(4, 6);
+          const tt = sid.slice(6, 8);
+          const bb = sid.slice(8, 10);
           return {
             scantronId: sid,
             firstName: String(b.legalFirstName ?? ""),
@@ -410,7 +410,7 @@ export default function ImportData() {
                 <li>Upload your roster CSV, paste a Google Sheets link, or paste raw data</li>
                 <li>The system detects column headers automatically</li>
                 <li>Review and fix any errors before importing</li>
-                <li>Each bowler gets a unique 9-digit scantron ID generated automatically</li>
+                <li>Each bowler gets a unique 10-digit scantron ID generated automatically</li>
                 <li>Bowlers can then sign up and claim their pre-generated record</li>
               </ol>
             </div>
@@ -418,13 +418,13 @@ export default function ImportData() {
             {/* League Code + Event Code Inputs */}
             <div className="neon-card p-5 border-yellow-500/30">
               <h2 className="text-yellow-400 font-bold text-lg mb-1">🔢 ID Generation Settings</h2>
-              <p className="text-gray-400 text-xs mb-4">These two values are baked into every bowler's 9-digit scantron ID. Set them before importing — they cannot be changed after.</p>
+              <p className="text-gray-400 text-xs mb-4">These two values are baked into every bowler's 10-digit scantron ID. Set them before importing — they cannot be changed after.</p>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-gray-400 text-xs font-semibold mb-1">League Code <span className="text-yellow-500">(1 digit)</span></label>
+                  <label className="block text-gray-400 text-xs font-semibold mb-1">League Code <span className="text-yellow-500">(2 digits)</span></label>
                   <input
-                    type="text" maxLength={1} value={leagueCode}
-                    onChange={e => setLeagueCode(e.target.value.replace(/\D/g, "").slice(0, 1))}
+                    type="text" maxLength={2} value={leagueCode}
+                    onChange={e => setLeagueCode(e.target.value.replace(/\D/g, "").slice(0, 2))}
                     className="w-full bg-[#111] border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-300 font-mono text-lg text-center focus:outline-none focus:border-yellow-500"
                     placeholder="1"
                   />
@@ -443,22 +443,22 @@ export default function ImportData() {
               </div>
               {/* ID Formula Decoder */}
               <div className="bg-[#0a0a0a] rounded-xl p-4 border border-white/5">
-                <p className="text-gray-400 text-xs font-semibold mb-3 tracking-widest">HOW THE 9-DIGIT ID IS BUILT</p>
+                <p className="text-gray-400 text-xs font-semibold mb-3 tracking-widest">HOW THE 10-DIGIT ID IS BUILT</p>
                 <div className="font-mono text-sm mb-3 flex flex-wrap gap-0 items-center">
                   <span className="bg-cyan-900/40 border border-cyan-500/40 text-cyan-300 px-2 py-1 rounded-l">CC</span>
-                  <span className="bg-purple-900/40 border border-purple-500/40 text-purple-300 px-2 py-1">{leagueCode || "?"}</span>
+                  <span className="bg-purple-900/40 border border-purple-500/40 text-purple-300 px-2 py-1">{leagueCode ? leagueCode.padStart(2,"0") : "??"}</span>
                   <span className="bg-green-900/40 border border-green-500/40 text-green-300 px-2 py-1">{eventCode ? eventCode.padStart(2,"0") : "??"}</span>
                   <span className="bg-orange-900/40 border border-orange-500/40 text-orange-300 px-2 py-1">TT</span>
                   <span className="bg-red-900/40 border border-red-500/40 text-red-300 px-2 py-1 rounded-r">BB</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2 text-xs">
                   <div className="text-center"><div className="text-cyan-400 font-bold">CC</div><div className="text-gray-500">Center Code</div><div className="text-gray-600 text-[10px]">2 digits</div></div>
-                  <div className="text-center"><div className="text-purple-400 font-bold">L</div><div className="text-gray-500">League #</div><div className="text-gray-600 text-[10px]">1 digit</div></div>
+                  <div className="text-center"><div className="text-purple-400 font-bold">LL</div><div className="text-gray-500">League #</div><div className="text-gray-600 text-[10px]">2 digits</div></div>
                   <div className="text-center"><div className="text-green-400 font-bold">EE</div><div className="text-gray-500">Event Year</div><div className="text-gray-600 text-[10px]">2 digits</div></div>
                   <div className="text-center"><div className="text-orange-400 font-bold">TT</div><div className="text-gray-500">Team #</div><div className="text-gray-600 text-[10px]">2 digits</div></div>
                   <div className="text-center"><div className="text-red-400 font-bold">BB</div><div className="text-gray-500">Bowler Seq</div><div className="text-gray-600 text-[10px]">2 digits</div></div>
                 </div>
-                <p className="text-gray-600 text-xs mt-3">Example: <span className="font-mono text-cyan-400">03</span><span className="font-mono text-purple-400">1</span><span className="font-mono text-green-400">26</span><span className="font-mono text-orange-400">07</span><span className="font-mono text-red-400">01</span> = Center 03, League 1, Year 2026, Team 7, Bowler #01</p>
+                <p className="text-gray-600 text-xs mt-3">Example: <span className="font-mono text-cyan-400">03</span><span className="font-mono text-purple-400">01</span><span className="font-mono text-green-400">26</span><span className="font-mono text-orange-400">07</span><span className="font-mono text-red-400">01</span> = Center 03, League 01, Year 2026, Team 7, Bowler #01</p>
               </div>
             </div>
 
@@ -703,7 +703,7 @@ export default function ImportData() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-yellow-400 font-bold text-lg">🔢 Bowler ID Reference Sheet</h3>
-                    <p className="text-gray-500 text-xs mt-0.5">{idRosterRows.length} bowlers — each 9-digit ID is unique and permanent</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{idRosterRows.length} bowlers — each 10-digit ID is unique and permanent</p>
                   </div>
                   <div className="flex gap-2">
                     <button

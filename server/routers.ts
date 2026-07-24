@@ -35,13 +35,13 @@ import { v4 as uuidv4 } from "uuid";
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
 // ─── ID GENERATION ────────────────────────────────────────────────────────────
-// Format: CC(2) + L(1) + EE(2) + TT(2) + BB(2) = 9 digits
-// CC = center code (01-99, numeric, alphabetical order), L = league code (1 digit)
+// Format: CC(2) + LL(2) + EE(2) + TT(2) + BB(2) = 10 digits
+// CC = center code (01-99, alphabetical order), LL = league code (2 digits, e.g. 01)
 // EE = event code (2 digits, e.g. 26 = 2026), TT = team code (2 digits), BB = bowler seq # (01-99)
-export function generateScantronId(cc: string, l: string, ee: string, tt: string, bb: string): string {
-  const id = `${cc.padStart(2, "0")}${l.slice(0,1).padStart(1, "0")}${ee.padStart(2, "0")}${tt.padStart(2, "0")}${bb.padStart(2, "0")}`;
-  if (!/^\d{9}$/.test(id)) throw new Error(`Invalid scantronId generated: "${id}" — must be exactly 9 digits`);
-  if (id === "000000000") throw new Error("Reserved test ID — regenerate");
+export function generateScantronId(cc: string, ll: string, ee: string, tt: string, bb: string): string {
+  const id = `${cc.padStart(2, "0")}${ll.padStart(2, "0")}${ee.padStart(2, "0")}${tt.padStart(2, "0")}${bb.padStart(2, "0")}`;
+  if (!/^\d{10}$/.test(id)) throw new Error(`Invalid scantronId generated: "${id}" — must be exactly 10 digits`);
+  if (id === "0000000000") throw new Error("Reserved test ID — regenerate");
   return id;
 }
 
