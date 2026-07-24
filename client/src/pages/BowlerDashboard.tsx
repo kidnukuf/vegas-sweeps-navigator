@@ -247,20 +247,88 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
   );
 }
 
+// ─── ED Inline Edit Field ────────────────────────────────────────────────────
+interface EDEditFieldProps {
+  label: string;
+  fieldKey: string;
+  value: string | null | undefined;
+  bowlerId: number;
+  onSaved: () => void;
+  type?: "text" | "number" | "select";
+  options?: { label: string; value: string }[];
+}
+function EDEditField({ label, fieldKey, value, bowlerId, onSaved, type = "text", options }: EDEditFieldProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const update = trpc.bowlerAuth.edUpdateBowlerField.useMutation({
+    onSuccess: () => { setEditing(false); onSaved(); },
+    onError: (e) => toast.error(e.message),
+  });
+  if (!editing) {
+    return (
+      <button
+        onClick={() => { setDraft(value ?? ""); setEditing(true); }}
+        className="inline-flex items-center gap-1 text-amber-400/80 hover:text-amber-300 text-xs ml-1 underline underline-offset-2"
+        title={`Edit ${label}`}
+      >
+        ✏️
+      </button>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 ml-1">
+      {type === "select" && options ? (
+        <select
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="text-xs bg-zinc-800 border border-amber-400/40 rounded px-1 py-0.5 text-white"
+        >
+          {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      ) : (
+        <input
+          type={type}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="text-xs bg-zinc-800 border border-amber-400/40 rounded px-1 py-0.5 text-white w-28"
+          autoFocus
+        />
+      )}
+      <button
+        onClick={() => update.mutate({ bowlerId, fields: { [fieldKey]: type === "number" ? Number(draft) : draft } })}
+        disabled={update.isPending}
+        className="text-emerald-400 text-xs font-bold hover:text-emerald-300"
+      >
+        {update.isPending ? "…" : "✓"}
+      </button>
+      <button onClick={() => setEditing(false)} className="text-red-400 text-xs font-bold hover:text-red-300">✕</button>
+    </span>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function BowlerDashboard() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: number; [key: string]: any } = {}) {
   const [, navigate] = useLocation();
   const token = getBowlerToken();
   const isCapitain = localStorage.getItem(BOWLER_IS_CAPTAIN_KEY) === "1";
+  const isEDMode = edBowlerId != null;
 
   useEffect(() => {
-    if (!token) navigate("/bowler-login");
-  }, [token, navigate]);
+    if (!isEDMode && !token) navigate("/bowler-login");
+  }, [token, navigate, isEDMode]);
 
-  const profileQuery = trpc.bowlerAuth.me.useQuery(
+  // Bowler mode: fetch via JWT token
+  const bowlerProfileQuery = trpc.bowlerAuth.me.useQuery(
     { token: token ?? "" },
-    { enabled: !!token, retry: false }
+    { enabled: !isEDMode && !!token, retry: false }
   );
+  // ED mode: fetch via bowler ID directly
+  const edProfileQuery = trpc.bowlerAuth.edGetBowlerProfile.useQuery(
+    { bowlerId: edBowlerId ?? 0 },
+    { enabled: isEDMode, retry: false }
+  );
+  const profileQuery = isEDMode ? edProfileQuery : bowlerProfileQuery;
 
   const bowlerEventId = (profileQuery.data as any)?.eventId as number | undefined;
   const eventSettingsQuery = trpc.event.getSettings.useQuery(
@@ -418,6 +486,14 @@ export default function BowlerDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* ── ED Mode Banner ── */}
+      {isEDMode && (
+        <div className="sticky top-0 z-50 bg-amber-500 text-black px-4 py-2 flex items-center justify-between text-sm font-bold shadow-lg">
+          <span>🔑 ED VIEW — {p.legalFirstName} {p.legalLastName} (ID: {p.scantronId})</span>
+          <span className="text-xs font-normal opacity-70">✏️ pencil icons = editable fields</span>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header className="bowler-portal-header px-4 py-3 flex items-center justify-between">
         {(() => {
@@ -465,10 +541,14 @@ export default function BowlerDashboard() {
               <span className="text-3xl">🎳</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-white truncate">{displayName}</h2>
+              <h2 className="text-xl font-bold text-white truncate">
+                {displayName}
+                {isEDMode && <EDEditField label="Preferred Name" fieldKey="preferredName" value={p.preferredName} bowlerId={p.id} onSaved={() => profileQuery.refetch()} />}
+              </h2>
               <p className="text-white/60 text-sm truncate">{p.centerName ?? "—"}</p>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <StatusBadge status={p.registrationStatus} />
+                {isEDMode && <EDEditField label="Registration Status" fieldKey="registrationStatus" value={p.registrationStatus} bowlerId={p.id} onSaved={() => profileQuery.refetch()} type="select" options={[{label:"Pre-Registered",value:"pre_registered"},{label:"Signed Up",value:"signed_up"},{label:"Verified",value:"verified"},{label:"Checked In",value:"checked_in"},{label:"Unmatched",value:"unmatched"}]} />}
                 {Boolean(p.isCapitain) && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     ⭐ Team Captain
@@ -533,27 +613,46 @@ export default function BowlerDashboard() {
           <InfoRow icon="📍" label="Bowling Center" value={p.centerName ?? undefined} />
           <InfoRow icon="👥" label="Team" value={p.teamName ? `${p.teamName} (${p.teamCode})` : undefined} />
           <InfoRow icon="📆" label="Bowling Date" value={p.bowlingDate ?? undefined} />
+          {isEDMode && (
+            <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+              <p className="text-amber-400/70 text-xs font-semibold uppercase tracking-wider">ED: Edit Lane & Squad</p>
+              <div className="flex items-center gap-2">
+                <span className="text-white/60 text-xs w-20">Lane #</span>
+                <EDEditField label="Lane Number" fieldKey="laneNumber" value={String(p.laneNumber ?? "")} bowlerId={p.id} onSaved={() => profileQuery.refetch()} type="number" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-white/60 text-xs w-20">Squad Time</span>
+                <EDEditField label="Squad Time" fieldKey="squadTime" value={p.squadTime} bowlerId={p.id} onSaved={() => profileQuery.refetch()} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Hotel info is now inside the Lane to Banquet accordion (Reg section) */}
 
         {/* ── 5. Payment Status ── */}
-        {p.totalAmountDue && (
+        {(p.totalAmountDue || isEDMode) && (
           <div className="bowler-card">
             <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
               <span>💳</span> Payment
             </h3>
             <div className="flex items-center justify-between">
               <span className="text-white/60 text-sm">Total Due</span>
-              <span className="text-white font-bold text-lg">${Number(p.totalAmountDue).toFixed(2)}</span>
+              <span className="text-white font-bold text-lg">
+                {p.totalAmountDue ? `$${Number(p.totalAmountDue).toFixed(2)}` : "—"}
+                {isEDMode && <EDEditField label="Total Amount Due" fieldKey="totalAmountDue" value={p.totalAmountDue} bowlerId={p.id} onSaved={() => profileQuery.refetch()} type="number" />}
+              </span>
             </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-white/60 text-sm">Status</span>
-              {p.paid ? (
-                <span className="text-emerald-400 font-semibold text-sm">✓ Paid</span>
-              ) : (
-                <span className="text-red-400 font-semibold text-sm">⚠ Outstanding</span>
-              )}
+              <span className="flex items-center gap-1">
+                {p.paid ? (
+                  <span className="text-emerald-400 font-semibold text-sm">✓ Paid</span>
+                ) : (
+                  <span className="text-red-400 font-semibold text-sm">⚠ Outstanding</span>
+                )}
+                {isEDMode && <EDEditField label="Paid" fieldKey="paid" value={p.paid ? "1" : "0"} bowlerId={p.id} onSaved={() => profileQuery.refetch()} type="select" options={[{label:"Paid",value:"1"},{label:"Outstanding",value:"0"}]} />}
+              </span>
             </div>
           </div>
         )}
@@ -563,8 +662,14 @@ export default function BowlerDashboard() {
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
             <span>📞</span> My Contact Info
           </h3>
-          <InfoRow icon="📧" label="Email" value={p.email ?? undefined} />
-          <InfoRow icon="📱" label="Phone" value={p.phone ?? undefined} />
+          <div className="flex items-center gap-1">
+            <InfoRow icon="📧" label="Email" value={p.email ?? undefined} />
+            {isEDMode && <EDEditField label="Email" fieldKey="email" value={p.email} bowlerId={p.id} onSaved={() => profileQuery.refetch()} />}
+          </div>
+          <div className="flex items-center gap-1">
+            <InfoRow icon="📱" label="Phone" value={p.phone ?? undefined} />
+            {isEDMode && <EDEditField label="Phone" fieldKey="phone" value={p.phone} bowlerId={p.id} onSaved={() => profileQuery.refetch()} />}
+          </div>
           <InfoRow icon="🆔" label="Scantron ID" value={p.scantronId ?? undefined} />
           {!p.email && !p.phone && (
             <div className="mt-3">
