@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AppFooter from "@/components/AppFooter";
 import EventWizard from "@/components/EventWizard";
+import EDBowlerView from "@/components/EDBowlerView";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -185,6 +186,7 @@ function PassportManager({
   passportFilter,
   setPassportFilter,
   refetch,
+  onViewBowler,
 }: {
   bowlers: Bowler[];
   eventId: number;
@@ -193,6 +195,7 @@ function PassportManager({
   passportFilter: "all" | "redeemed" | "pending" | "disabled";
   setPassportFilter: (v: "all" | "redeemed" | "pending" | "disabled") => void;
   refetch: () => void;
+  onViewBowler?: (bowlerId: number) => void;
 }) {
   const edToken = localStorage.getItem("vsn_ed_token") ?? "";
   const disablePassport = trpc.bowlerAuth.disablePassport.useMutation({
@@ -303,7 +306,13 @@ function PassportManager({
                   <tr key={String(b.id)} className="border-b border-white/5 hover:bg-white/5">
                     <td className="px-4 py-3">
                       <div className="font-semibold text-white">{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</div>
-                      <div className="text-xs text-gray-500 font-mono">{String(b.scantronId ?? "")}</div>
+                      <button
+                        className="text-xs text-amber-400/70 hover:text-amber-300 font-mono underline underline-offset-2 transition-colors cursor-pointer"
+                        title="Click to view/edit this bowler's portal"
+                        onClick={() => onViewBowler?.(b.id as number)}
+                      >
+                        {String(b.scantronId ?? "")}
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">{String(b.centerName ?? "")}</td>
                     <td className="px-4 py-3 text-center">
@@ -464,6 +473,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const { data: adLeadCount } = trpc.adInquiry.newCount.useQuery(undefined, { refetchInterval: 60000 });
   const [collapsedCenters, setCollapsedCenters] = useState<Set<string>>(new Set());
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
+  const [impersonateBowlerId, setImpersonateBowlerId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
   const [accountFilter, setAccountFilter] = useState<"all" | "signed_up" | "not_signed_up">("all");
 
@@ -1206,7 +1216,15 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                         const hasAccount = !!b.passwordHash;
                         return (
                         <tr key={String(b.id)} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${hasAccount ? "bg-green-950/40" : ""}`}>
-                          <td className="px-4 py-2 font-mono text-yellow-400 text-xs">{String(b.scantronId ?? "—")}</td>
+                          <td className="px-4 py-2 font-mono text-xs">
+                            <button
+                              className="text-amber-400/80 hover:text-amber-300 underline underline-offset-2 transition-colors font-mono"
+                              title="Click to view/edit this bowler's portal"
+                              onClick={() => setImpersonateBowlerId(b.id as number)}
+                            >
+                              {String(b.scantronId ?? "—")}
+                            </button>
+                          </td>
                           <td className="px-4 py-2 font-semibold">
                             <div className="flex items-center gap-2">
                               <span>{b.isCapitain ? "⭐ " : ""}{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</span>
@@ -1273,7 +1291,15 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                                 const hasAccount = !!b.passwordHash;
                                 return (
                                 <tr key={String(b.id)} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${hasAccount ? "bg-green-950/40" : ""}`}>
-                                  <td className="px-4 py-2 font-mono text-yellow-400 text-xs">{String(b.scantronId ?? "—")}</td>
+                                  <td className="px-4 py-2 font-mono text-xs">
+                                    <button
+                                      className="text-amber-400/80 hover:text-amber-300 underline underline-offset-2 transition-colors font-mono"
+                                      title="Click to view/edit this bowler's portal"
+                                      onClick={() => setImpersonateBowlerId(b.id as number)}
+                                    >
+                                      {String(b.scantronId ?? "—")}
+                                    </button>
+                                  </td>
                                   <td className="px-4 py-2 font-semibold">
                                     <div className="flex items-center gap-2">
                                       <span>{b.isCapitain ? "⭐ " : ""}{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</span>
@@ -1708,6 +1734,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             passportFilter={passportFilter}
             setPassportFilter={setPassportFilter}
             refetch={refetch}
+            onViewBowler={setImpersonateBowlerId}
           />
         )}
 
@@ -2247,11 +2274,17 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         </div>
       )}
 
+            {/* ── ED Bowler View overlay ── */}
+      {impersonateBowlerId !== null && (
+        <EDBowlerView
+          bowlerId={impersonateBowlerId}
+          onClose={() => setImpersonateBowlerId(null)}
+        />
+      )}
       <AppFooter dark />
     </div>
   );
 }
-
 export default function AdminDashboard() {
   const [isAuthed, setIsAuthed] = useState(() => !!getEdToken());
   if (!isAuthed) return <EdLoginGate onAuth={() => setIsAuthed(true)} />;

@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { rawQuery } from "../db";
+import { rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, writeAuditLog } from "../db";
 import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
@@ -1110,6 +1110,51 @@ export const bowlerAuthRouter = router({
         })().catch((err: unknown) => console.error("[googleSheets] writeContactInfo failed:", err));
       }
 
+      return { success: true };
+    }),
+
+  // ── ED: VIEW / EDIT BOWLER PORTAL ─────────────────────────────────────────────────────────
+  /**
+   * ED-only: fetch the full bowler profile (same data the bowler sees) by bowler DB id.
+   */
+  edGetBowlerProfile: publicProcedure
+    .input(z.object({ bowlerId: z.number() }))
+    .query(async ({ input }) => {
+      const profile = await getBowlerProfile(input.bowlerId);
+      if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
+      return profile;
+    }),
+
+  /**
+   * ED-only: update any field visible in the bowler portal.
+   * Routes hotel/payment fields to the correct tables automatically.
+   */
+  edUpdateBowlerField: publicProcedure
+    .input(z.object({
+      bowlerId: z.number(),
+      fields: z.record(z.string(), z.unknown()),
+    }))
+    .mutation(async ({ input }) => {
+      const HOTEL_FIELDS = ["checkinDate","checkoutDate","roomType","roomNumber","roommateRequested","roommateFirstName","roommateLastName","roomAmount","confirmationCode"];
+      const PAYMENT_FIELDS = ["banquetAmount","poolParty","totalAmountDue","paid"];
+      const bowlerFields: Record<string, unknown> = {};
+      const hotelFields: Record<string, unknown> = {};
+      const paymentFields: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(input.fields)) {
+        if (HOTEL_FIELDS.includes(k)) hotelFields[k] = v;
+        else if (PAYMENT_FIELDS.includes(k)) paymentFields[k] = v;
+        else bowlerFields[k] = v;
+      }
+      if (Object.keys(bowlerFields).length > 0) await updateBowler(input.bowlerId, bowlerFields);
+      if (Object.keys(hotelFields).length > 0) await upsertHotelRecord(input.bowlerId, hotelFields);
+      if (Object.keys(paymentFields).length > 0) await upsertPaymentRecord(input.bowlerId, paymentFields);
+      await writeAuditLog({
+        actorRole: "EventDirector",
+        action: "ed_update_bowler_field",
+        targetId: input.bowlerId,
+        targetType: "bowler",
+        details: JSON.stringify(Object.keys(input.fields)),
+      });
       return { success: true };
     }),
 
