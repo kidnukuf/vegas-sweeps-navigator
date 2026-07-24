@@ -35,13 +35,13 @@ import { v4 as uuidv4 } from "uuid";
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
 // ─── ID GENERATION ────────────────────────────────────────────────────────────
-// Format: CC(2) + L(1) + EE(2) + TT(2) + X(1) + BB(2) = 10 digits
-// CC = center code (01-99), L = league code (1 digit), EE = event code (2 digits)
-// TT = team code (2 digits), X = bowling position within team (1-5), BB = bowler seq # (01-99)
-export function generateScantronId(cc: string, l: string, ee: string, tt: string, x: string, bb: string): string {
-  const id = `${cc.padStart(2, "0")}${l.slice(0,1).padStart(1, "0")}${ee.padStart(2, "0")}${tt.padStart(2, "0")}${x.slice(0,1).padStart(1, "0")}${bb.padStart(2, "0")}`;
-  if (!/^\d{10}$/.test(id)) throw new Error(`Invalid scantronId generated: "${id}" — must be exactly 10 digits`);
-  if (id === "0000000000") throw new Error("Reserved test ID — regenerate");
+// Format: CC(2) + L(1) + EE(2) + TT(2) + BB(2) = 9 digits
+// CC = center code (01-99, numeric, alphabetical order), L = league code (1 digit)
+// EE = event code (2 digits, e.g. 26 = 2026), TT = team code (2 digits), BB = bowler seq # (01-99)
+export function generateScantronId(cc: string, l: string, ee: string, tt: string, bb: string): string {
+  const id = `${cc.padStart(2, "0")}${l.slice(0,1).padStart(1, "0")}${ee.padStart(2, "0")}${tt.padStart(2, "0")}${bb.padStart(2, "0")}`;
+  if (!/^\d{9}$/.test(id)) throw new Error(`Invalid scantronId generated: "${id}" — must be exactly 9 digits`);
+  if (id === "000000000") throw new Error("Reserved test ID — regenerate");
   return id;
 }
 
@@ -1410,13 +1410,10 @@ export const appRouter = router({
             const currentPos = (teamPositionMap.get(teamKey) ?? 0) + 1;
             teamPositionMap.set(teamKey, currentPos);
             const bb = String(currentPos).padStart(2, "0");
-            // X = bowling position within team (1-5), read from row; default to currentPos if missing
-            const xRaw = String(row["Position"] ?? row["position"] ?? row["bowlerPosition"] ?? row["Bowler Position"] ?? row["Bowler #"] ?? currentPos).trim();
-            const x = xRaw.replace(/\D/g, "").slice(0, 1) || String(currentPos % 10);
             // Generate scantron ID
             let scantronId: string;
             try {
-              scantronId = generateScantronId(cc, input.leagueCode, input.eventCode, teamCode, x, bb);
+              scantronId = generateScantronId(cc, input.leagueCode, input.eventCode, teamCode, bb);
             } catch {
               errors++;
               errorDetails.push({ row: firstName + " " + lastName, error: "ID generation failed" });
