@@ -108,6 +108,18 @@ export default function MasterSheetImport() {
     onError: (err: any) => toast.error(`DB clear failed: ${err.message}`),
   });
 
+  // ─── Sheet vs DB Validation ───────────────────────────────────────────────
+  const [validateEnabled, setValidateEnabled] = useState(false);
+  const validateQuery = trpc.masterSheet.validateSheetVsDb.useQuery(
+    { eventId },
+    { enabled: validateEnabled, staleTime: 0 }
+  );
+  const handleValidate = useCallback(() => {
+    setValidateEnabled(false);
+    // force a fresh fetch next tick
+    setTimeout(() => setValidateEnabled(true), 0);
+  }, []);
+
   const sortSheetRowsMutation = trpc.masterSheet.sortSheetRows.useMutation({
     onSuccess: (data) => {
       if (data.error) {
@@ -428,6 +440,82 @@ export default function MasterSheetImport() {
             <p className="text-xs text-gray-500 mt-1">
               Generates Pool QR and Banquet QR tokens for any bowler that was imported before token generation was wired up. Safe to run multiple times — existing tokens are never overwritten.
             </p>
+          </div>
+
+          {/* Validate Sheet vs DB */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                onClick={handleValidate}
+                disabled={validateQuery.isFetching || !activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName}
+                className="bg-sky-700 hover:bg-sky-600 text-sm font-semibold"
+              >
+                {validateQuery.isFetching ? "🔍 Validating..." : "🔍 Validate Sheet vs Database"}
+              </Button>
+              {validateQuery.data && !validateQuery.isFetching && (
+                <span className="text-xs text-gray-400">
+                  {validateQuery.data.mismatches.length === 0 && validateQuery.data.inSheetNotInDb.length === 0
+                    ? `✅ All ${validateQuery.data.totalWithId} IDs match`
+                    : `⚠️ ${validateQuery.data.mismatches.length} mismatch${validateQuery.data.mismatches.length !== 1 ? "es" : ""} · ${validateQuery.data.inSheetNotInDb.length} ID${validateQuery.data.inSheetNotInDb.length !== 1 ? "s" : ""} not in DB`}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Reads the linked Google Sheet and compares every bowler ID against the database — highlights name or lane number mismatches so you can fix them before the event.
+            </p>
+            {validateQuery.error && (
+              <div className="mt-2 p-3 bg-red-950/40 border border-red-500/30 rounded-lg text-xs text-red-400">
+                {validateQuery.error.message}
+              </div>
+            )}
+            {validateQuery.data && !validateQuery.isFetching && (
+              <div className="mt-3 space-y-3">
+                {/* Mismatches */}
+                {validateQuery.data.mismatches.length > 0 && (
+                  <div className="bg-yellow-950/40 border border-yellow-500/40 rounded-lg p-4">
+                    <p className="text-yellow-400 font-bold text-xs mb-3">⚠️ {validateQuery.data.mismatches.length} Name / Lane Mismatch{validateQuery.data.mismatches.length !== 1 ? "es" : ""}</p>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {validateQuery.data.mismatches.map((m, i) => (
+                        <div key={i} className="bg-[#1a1a1a] rounded p-2 text-xs">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-gray-500 shrink-0">Row {m.sheetRow}</span>
+                            <span className="font-mono text-cyan-400">{m.bowlerId}</span>
+                            <span className="text-white font-semibold">{m.sheetFirstName} {m.sheetLastName}</span>
+                            {m.sheetLane !== null && <span className="text-gray-400">Lane {m.sheetLane}</span>}
+                          </div>
+                          <div className="space-y-0.5 pl-2 border-l border-yellow-500/30">
+                            {m.issues.map((issue, j) => (
+                              <div key={j} className="text-yellow-300">{issue}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* IDs in sheet but not in DB */}
+                {validateQuery.data.inSheetNotInDb.length > 0 && (
+                  <div className="bg-orange-950/40 border border-orange-500/40 rounded-lg p-4">
+                    <p className="text-orange-400 font-bold text-xs mb-3">🔎 {validateQuery.data.inSheetNotInDb.length} Bowler ID{validateQuery.data.inSheetNotInDb.length !== 1 ? "s" : ""} in Sheet Not Found in Database</p>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {validateQuery.data.inSheetNotInDb.map((r, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className="text-gray-500 shrink-0">Row {r.sheetRow}</span>
+                          <span className="font-mono text-cyan-400">{r.bowlerId}</span>
+                          <span className="text-white">{r.sheetFirstName} {r.sheetLastName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* All clear */}
+                {validateQuery.data.mismatches.length === 0 && validateQuery.data.inSheetNotInDb.length === 0 && (
+                  <div className="bg-green-950/40 border border-green-500/40 rounded-lg p-3 text-xs text-green-400">
+                    ✅ All {validateQuery.data.totalWithId} bowler IDs in the sheet match the database — names and lane numbers are consistent.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sort Sheet Rows */}

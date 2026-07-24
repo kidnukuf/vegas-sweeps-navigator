@@ -710,4 +710,131 @@ export const masterSheetRouter = router({
         reentryTokensCleared: reentryResult.affectedRows,
       };
     }),
+
+  // ─── VALIDATE SHEET VS DB ───────────────────────────────────────────────────────────
+  // Reads the linked Google Sheet and compares every row that has a Bowler ID
+  // in column A against the database record for that scantronId.
+  // Returns a list of mismatches (name or lane differences).
+  validateSheetVsDb: publicProcedure
+    .input(z.object({ eventId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
+
+      const { eventId } = input;
+
+      // Get sheet target for this event
+      const target = await getEventSheetTarget(eventId);
+      if (!target.spreadsheetId || !target.sheetName) {
+        throw new Error("Event not configured with a Google Sheet target.");
+      }
+
+      const sheetsClient = await getSheetsClient();
+      if (!sheetsClient) {
+        throw new Error("Google Sheets client not available.");
+      }
+
+      // Fetch all rows from the sheet (A:K covers through Last Name)
+      const resp = await sheetsClient.spreadsheets.values.get({
+        spreadsheetId: target.spreadsheetId,
+        range: `'${target.sheetName}'!A:K`,
+      });
+      const sheetRows = resp.data.values ?? [];
+
+      // Load all bowlers for this event indexed by scantronId
+      const dbBowlers = await rawQuery(
+        `SELECT b.scantronId, b.legalFirstName, b.legalLastName, b.firstName, b.lastName, b.laneNumber
+         FROM bowlers b
+         WHERE b.eventId = ?`,
+        [eventId]
+      ) as Array<{
+        scantronId: string | null;
+        legalFirstName: string | null;
+        legalLastName: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        laneNumber: number | null;
+      }>;
+
+      const dbMap = new Map<string, typeof dbBowlers[0]>();
+      for (const b of dbBowlers) {
+        if (b.scantronId) dbMap.set(b.scantronId.trim(), b);
+      }
+
+      const mismatches: Array<{
+        sheetRow: number;
+        bowlerId: string;
+        sheetFirstName: string;
+        sheetLastName: string;
+        sheetLane: number | null;
+        dbFirstName: string | null;
+        dbLastName: string | null;
+        dbLane: number | null;
+        issues: string[];
+      }> = [];
+
+      const inSheetNotInDb: Array<{ sheetRow: number; bowlerId: string; sheetFirstName: string; sheetLastName: string }> = [];
+
+      // Start at row index 1 to skip header
+      for (let i = 1; i < sheetRows.length; i++) {
+        const row = sheetRows[i];
+        if (!row) continue;
+
+        const bowlerId = (row[COLS.BOWLER_ID] ?? "").toString().trim();
+        if (!bowlerId || !/^\d{10}$/.test(bowlerId)) continue; // skip rows without a valid 10-digit ID
+
+        const sheetFirst = (row[COLS.FIRST_NAME] ?? "").toString().trim().toLowerCase();
+        const sheetLast  = (row[COLS.LAST_NAME]  ?? "").toString().trim().toLowerCase();
+        const sheetLane  = parseInt((row[COLS.LANE] ?? "").toString().trim(), 10);
+        const sheetLaneNum = isNaN(sheetLane) ? null : sheetLane;
+
+        const dbRow = dbMap.get(bowlerId);
+        if (!dbRow) {
+          // ID exists in sheet but not in DB
+          inSheetNotInDb.push({
+            sheetRow: i + 1,
+            bowlerId,
+            sheetFirstName: (row[COLS.FIRST_NAME] ?? "").toString().trim(),
+            sheetLastName:  (row[COLS.LAST_NAME]  ?? "").toString().trim(),
+          });
+          continue;
+        }
+
+        const issues: string[] = [];
+
+        // Compare names (use legalFirstName/legalLastName if available, fall back to firstName/lastName)
+        const dbFirst = (dbRow.legalFirstName ?? dbRow.firstName ?? "").trim().toLowerCase();
+        const dbLast  = (dbRow.legalLastName  ?? dbRow.lastName  ?? "").trim().toLowerCase();
+
+        if (sheetFirst && dbFirst && sheetFirst !== dbFirst) {
+          issues.push(`First name: sheet="${(row[COLS.FIRST_NAME] ?? "").toString().trim()}" db="${dbRow.legalFirstName ?? dbRow.firstName ?? ""}"`);
+        }
+        if (sheetLast && dbLast && sheetLast !== dbLast) {
+          issues.push(`Last name: sheet="${(row[COLS.LAST_NAME] ?? "").toString().trim()}" db="${dbRow.legalLastName ?? dbRow.lastName ?? ""}"`);
+        }
+        if (sheetLaneNum !== null && dbRow.laneNumber !== null && sheetLaneNum !== dbRow.laneNumber) {
+          issues.push(`Lane: sheet=${sheetLaneNum} db=${dbRow.laneNumber}`);
+        }
+
+        if (issues.length > 0) {
+          mismatches.push({
+            sheetRow: i + 1,
+            bowlerId,
+            sheetFirstName: (row[COLS.FIRST_NAME] ?? "").toString().trim(),
+            sheetLastName:  (row[COLS.LAST_NAME]  ?? "").toString().trim(),
+            sheetLane: sheetLaneNum,
+            dbFirstName: dbRow.legalFirstName ?? dbRow.firstName ?? null,
+            dbLastName:  dbRow.legalLastName  ?? dbRow.lastName  ?? null,
+            dbLane: dbRow.laneNumber,
+            issues,
+          });
+        }
+      }
+
+      return {
+        totalSheetRows: sheetRows.length - 1,
+        totalWithId: dbMap.size,
+        mismatches,
+        inSheetNotInDb,
+      };
+    }),
 });
