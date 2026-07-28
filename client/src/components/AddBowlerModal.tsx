@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,8 @@ interface AddBowlerModalProps {
   open: boolean;
   onClose: () => void;
   centers: BowlingCenter[];
+  eventId: number;
+  onSuccess?: () => void;
 }
 
 interface BowlerFormData {
@@ -31,12 +34,12 @@ interface BowlerFormData {
   squadTime: string;
   laneNumber: string;
   average: string;
-  under21: string;        // "yes" | "no" | ""
+  under21: string;          // "yes" | "no" | ""
   tshirtSize: string;
   hotelCheckin: string;
   hotelCheckout: string;
-  hasGuest: string;       // "yes" | "no" | ""
-  attendingBanquet: string;  // "yes" | "no" | ""
+  hasGuest: string;         // "yes" | "no" | ""
+  attendingBanquet: string; // "yes" | "no" | ""
   attendingPoolParty: string; // "yes" | "no" | ""
 }
 
@@ -127,29 +130,87 @@ function YesNoSelect({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModalProps) {
+export default function AddBowlerModal({ open, onClose, centers, eventId, onSuccess }: AddBowlerModalProps) {
   const [form, setForm] = useState<BowlerFormData>(EMPTY_FORM);
+  const [errors, setErrors] = useState<Partial<Record<keyof BowlerFormData, string>>>({});
+
+  const addMutation = trpc.bowlers.addManual.useMutation({
+    onSuccess: (data) => {
+      toast.success(
+        `✅ ${form.firstName} ${form.lastName} added! Scantron ID: ${data.scantronId}`,
+        { duration: 6000 }
+      );
+      setForm(EMPTY_FORM);
+      setErrors({});
+      onClose();
+      onSuccess?.();
+    },
+    onError: (err) => {
+      toast.error(`Failed to add bowler: ${err.message}`);
+    },
+  });
 
   function set(field: keyof BowlerFormData) {
-    return (value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+    return (value: string) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    };
   }
 
   function handleClose() {
+    if (addMutation.isPending) return;
     setForm(EMPTY_FORM);
+    setErrors({});
     onClose();
+  }
+
+  function validate(): boolean {
+    const newErrors: Partial<Record<keyof BowlerFormData, string>> = {};
+    if (!form.firstName.trim()) newErrors.firstName = "Required";
+    if (!form.lastName.trim()) newErrors.lastName = "Required";
+    if (!form.centerId) newErrors.centerId = "Required";
+    if (form.laneNumber && isNaN(Number(form.laneNumber))) newErrors.laneNumber = "Must be a number";
+    if (form.average && isNaN(Number(form.average))) newErrors.average = "Must be a number";
+    if (form.phone && !/^\d{10}$/.test(form.phone.replace(/\D/g, ""))) {
+      newErrors.phone = "Enter a 10-digit phone number";
+    }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = "Enter a valid email";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.firstName.trim() || !form.lastName.trim()) {
-      toast.error("First Name and Last Name are required.");
+    if (!validate()) {
+      toast.error("Please fix the highlighted fields.");
       return;
     }
-    // No backend yet — log and show success toast
-    console.log("[AddBowler] Form data:", form);
-    toast.success(`Bowler "${form.firstName} ${form.lastName}" ready to save (backend not wired yet).`);
-    handleClose();
+
+    addMutation.mutate({
+      eventId,
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      phone: form.phone.replace(/\D/g, "") || "",
+      email: form.email.trim() || "",
+      centerId: Number(form.centerId),
+      teamNumber: form.teamNumber.trim() || "",
+      teamName: form.teamName.trim() || "",
+      squadTime: form.squadTime.trim() || "",
+      laneNumber: form.laneNumber ? Number(form.laneNumber) : null,
+      average: form.average ? Number(form.average) : null,
+      under21: form.under21 === "yes",
+      tshirtSize: form.tshirtSize || "",
+      hotelCheckin: form.hotelCheckin || "",
+      hotelCheckout: form.hotelCheckout || "",
+      hasGuest: form.hasGuest === "yes",
+      attendingBanquet: form.attendingBanquet === "yes",
+      attendingPoolParty: form.attendingPoolParty === "yes",
+    });
   }
+
+  const isPending = addMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
@@ -163,7 +224,9 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
             <span>➕</span>
             <span>Add Bowler</span>
           </DialogTitle>
-          <p className="text-gray-500 text-xs mt-0.5">Fill in the bowler's details. No data is saved until the backend is wired.</p>
+          <p className="text-gray-500 text-xs mt-0.5">
+            Fields marked <span className="text-red-400">*</span> are required. A 10-digit Scantron ID and passport tokens will be generated automatically.
+          </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
@@ -179,18 +242,22 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
               <div className="space-y-1">
                 <FieldLabel required>First Name</FieldLabel>
                 <FieldInput id="firstName" value={form.firstName} onChange={set("firstName")} placeholder="Jane" />
+                {errors.firstName && <p className="text-red-400 text-xs">{errors.firstName}</p>}
               </div>
               <div className="space-y-1">
                 <FieldLabel required>Last Name</FieldLabel>
                 <FieldInput id="lastName" value={form.lastName} onChange={set("lastName")} placeholder="Smith" />
+                {errors.lastName && <p className="text-red-400 text-xs">{errors.lastName}</p>}
               </div>
               <div className="space-y-1">
                 <FieldLabel>Phone</FieldLabel>
-                <FieldInput id="phone" value={form.phone} onChange={set("phone")} placeholder="(702) 555-0100" type="tel" />
+                <FieldInput id="phone" value={form.phone} onChange={set("phone")} placeholder="7025550100" type="tel" />
+                {errors.phone && <p className="text-red-400 text-xs">{errors.phone}</p>}
               </div>
               <div className="space-y-1">
                 <FieldLabel>Email</FieldLabel>
                 <FieldInput id="email" value={form.email} onChange={set("email")} placeholder="jane@example.com" type="email" />
+                {errors.email && <p className="text-red-400 text-xs">{errors.email}</p>}
               </div>
             </div>
           </section>
@@ -205,7 +272,7 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
             <div className="grid grid-cols-2 gap-3">
               {/* Center */}
               <div className="col-span-2 space-y-1">
-                <FieldLabel>Center Bowled At</FieldLabel>
+                <FieldLabel required>Center Bowled At</FieldLabel>
                 <Select value={form.centerId} onValueChange={set("centerId")}>
                   <SelectTrigger className="bg-black/50 border-white/10 text-white h-9 focus:border-yellow-500/50 data-[placeholder]:text-gray-600">
                     <SelectValue placeholder="Select a center…" />
@@ -226,6 +293,7 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
                     )}
                   </SelectContent>
                 </Select>
+                {errors.centerId && <p className="text-red-400 text-xs">{errors.centerId}</p>}
               </div>
 
               <div className="space-y-1">
@@ -242,11 +310,13 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
               </div>
               <div className="space-y-1">
                 <FieldLabel>Lane Number</FieldLabel>
-                <FieldInput id="laneNumber" value={form.laneNumber} onChange={set("laneNumber")} placeholder="14" />
+                <FieldInput id="laneNumber" value={form.laneNumber} onChange={set("laneNumber")} placeholder="14" type="number" />
+                {errors.laneNumber && <p className="text-red-400 text-xs">{errors.laneNumber}</p>}
               </div>
               <div className="space-y-1">
                 <FieldLabel>Average</FieldLabel>
                 <FieldInput id="average" value={form.average} onChange={set("average")} placeholder="185" type="number" />
+                {errors.average && <p className="text-red-400 text-xs">{errors.average}</p>}
               </div>
               <div className="space-y-1">
                 <FieldLabel>Under 21?</FieldLabel>
@@ -321,6 +391,7 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
             type="button"
             variant="ghost"
             onClick={handleClose}
+            disabled={isPending}
             className="text-gray-400 hover:text-white hover:bg-white/5 border border-white/10"
           >
             Cancel
@@ -328,9 +399,10 @@ export default function AddBowlerModal({ open, onClose, centers }: AddBowlerModa
           <Button
             type="submit"
             onClick={handleSubmit}
-            className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 transition-all active:scale-[0.97]"
+            disabled={isPending}
+            className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 transition-all active:scale-[0.97] disabled:opacity-60"
           >
-            ➕ Add Bowler
+            {isPending ? "Saving…" : "➕ Add Bowler"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -574,9 +574,181 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    // ── Manual add (ED portal "Add Bowler" form) ─────────────────────────────
+    addManual: publicProcedure
+      .input(z.object({
+        eventId: z.number(),
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        phone: z.string().optional().default(""),
+        email: z.string().optional().default(""),
+        centerId: z.number(),
+        teamNumber: z.string().optional().default(""),
+        teamName: z.string().optional().default(""),
+        squadTime: z.string().optional().default(""),
+        laneNumber: z.number().nullable().optional(),
+        average: z.number().nullable().optional(),
+        under21: z.boolean().optional().default(false),
+        tshirtSize: z.string().optional().default(""),
+        hotelCheckin: z.string().optional().default(""),
+        hotelCheckout: z.string().optional().default(""),
+        hasGuest: z.boolean().optional().default(false),
+        attendingBanquet: z.boolean().optional().default(false),
+        attendingPoolParty: z.boolean().optional().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        // 1. Resolve center
+        const centerRows = await rawQuery(
+          "SELECT id, centerCode, centerName FROM bowling_centers WHERE id = ? LIMIT 1",
+          [input.centerId]
+        ) as Record<string, unknown>[];
+        if (!centerRows.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Center not found" });
+        const center = centerRows[0];
+        const cc = String(center.centerCode).padStart(2, "0");
+
+        // 2. Resolve league codes for this event (use first league found, default to "1" / "01")
+        const leagueRows = await rawQuery(
+          "SELECT id, leagueCode, eventCode FROM leagues WHERE eventId = ? LIMIT 1",
+          [input.eventId]
+        ) as Record<string, unknown>[];
+        const leagueId = leagueRows.length ? (leagueRows[0].id as number) : 1;
+        const ll = leagueRows.length ? String(leagueRows[0].leagueCode) : "1";
+        const ee = leagueRows.length ? String(leagueRows[0].eventCode ?? "01") : "01";
+
+        // 3. Resolve or create team
+        const teamCode = input.teamNumber ? input.teamNumber.padStart(2, "0") : "00";
+        let teamId: number | null = null;
+        if (teamCode !== "00") {
+          let teamRows = await rawQuery(
+            "SELECT id FROM teams WHERE teamCode = ? AND centerId = ? AND eventId = ? LIMIT 1",
+            [teamCode, input.centerId, input.eventId]
+          ) as Record<string, unknown>[];
+          if (teamRows.length === 0) {
+            await rawQuery(
+              "INSERT INTO teams (leagueId, centerId, eventId, teamCode, teamName, status) VALUES (?, ?, ?, ?, ?, 'gray')",
+              [leagueId, input.centerId, input.eventId, teamCode, input.teamName || `Team ${teamCode}`]
+            );
+            teamRows = await rawQuery(
+              "SELECT id FROM teams WHERE teamCode = ? AND centerId = ? AND eventId = ? LIMIT 1",
+              [teamCode, input.centerId, input.eventId]
+            ) as Record<string, unknown>[];
+          } else if (input.teamName) {
+            await rawQuery("UPDATE teams SET teamName = ? WHERE id = ?", [input.teamName, teamRows[0].id]);
+          }
+          teamId = (teamRows[0]?.id as number) ?? null;
+        }
+
+        // 4. Determine bowler position (next available slot on this team)
+        const existingOnTeam = teamId
+          ? ((await rawQuery("SELECT COUNT(*) as cnt FROM bowlers WHERE teamId = ? AND eventId = ?", [teamId, input.eventId]) as Record<string, unknown>[])[0]?.cnt as number ?? 0)
+          : 0;
+        const bb = String(Number(existingOnTeam) + 1).padStart(2, "0");
+
+        // 5. Generate scantron ID (same formula as import path)
+        let scantronId: string;
+        try {
+          scantronId = generateScantronId(cc, ll, ee, teamCode, bb);
+        } catch {
+          scantronId = String(Date.now()).slice(-10).padStart(10, "0");
+        }
+        // Ensure uniqueness within event
+        const dupCheck = await rawQuery(
+          "SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1",
+          [scantronId, input.eventId]
+        ) as Record<string, unknown>[];
+        if (dupCheck.length) {
+          for (let attempt = 2; attempt <= 99; attempt++) {
+            const altBb = String(attempt).padStart(2, "0");
+            try { scantronId = generateScantronId(cc, ll, ee, teamCode, altBb); } catch { break; }
+            const dup2 = await rawQuery(
+              "SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1",
+              [scantronId, input.eventId]
+            ) as Record<string, unknown>[];
+            if (!dup2.length) break;
+          }
+        }
+
+        // 6. Insert bowler row
+        await rawQuery(
+          `INSERT INTO bowlers
+             (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition,
+              legalFirstName, legalLastName, phone, email, registrationStatus,
+              bestAverage, tshirtSize, under21, squadTime, laneNumber)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?)`,
+          [
+            input.eventId, leagueId, teamId, input.centerId, scantronId, bb,
+            input.firstName, input.lastName,
+            input.phone || null, input.email || null,
+            input.average ?? null,
+            input.tshirtSize || null,
+            input.under21 ? 1 : 0,
+            input.squadTime || null,
+            input.laneNumber ?? null,
+          ]
+        );
+
+        const newRows = await rawQuery(
+          "SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1",
+          [scantronId, input.eventId]
+        ) as Record<string, unknown>[];
+        const bowlerId = newRows[0]?.id as number;
+        if (!bowlerId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Insert failed" });
+
+        // 7. Generate passport QR tokens (identical to import path)
+        const poolPartyToken = uuidv4().replace(/-/g, "");
+        const banquetToken = uuidv4().replace(/-/g, "");
+        await rawQuery(
+          "UPDATE bowlers SET poolPartyToken = ?, banquetToken = ? WHERE id = ?",
+          [poolPartyToken, banquetToken, bowlerId]
+        );
+
+        // 8. Hotel record if dates provided
+        if (input.hotelCheckin || input.hotelCheckout) {
+          await upsertHotelRecord(bowlerId, {
+            checkinDate: input.hotelCheckin || null,
+            checkoutDate: input.hotelCheckout || null,
+            roomType: null, roommateRequested: false,
+            roommateFirstName: null, roommateLastName: null,
+            roomAmount: 0, confirmationCode: null,
+          });
+        }
+
+        // 9. Payment record if banquet/pool party selected
+        if (input.attendingBanquet || input.attendingPoolParty) {
+          await upsertPaymentRecord(bowlerId, {
+            roomAmount: 0,
+            banquetAmount: input.attendingBanquet ? 1 : 0,
+            poolParty: input.attendingPoolParty ? 1 : 0,
+            extraGuestFee: 0,
+            totalAmountDue: 0,
+          });
+        }
+
+        // 10. Guest token if hasGuest
+        if (input.hasGuest) {
+          const guestId = `${scantronId}A`;
+          await rawQuery(
+            `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, suffix, token, banquetToken) VALUES (?, ?, ?, ?, ?, ?)`,
+            [bowlerId, input.eventId, guestId, "A", guestId, `${guestId}-BQ`]
+          );
+        }
+
+        // 11. Audit log
+        await writeAuditLog({
+          eventId: input.eventId,
+          actorRole: "EventDirector",
+          action: "add_bowler_manual",
+          targetId: bowlerId,
+          targetType: "bowler",
+          details: `${input.firstName} ${input.lastName} — scantronId=${scantronId}`,
+        });
+
+        return { success: true, bowlerId, scantronId };
+      }),
   }),
 
-  // ─── TEAMS ────────────────────────────────────────────────────────────────
+  // ─── TEAMS ──────────────────────────────────────────────────────────────────────────────────────
   teams: router({
     // List all teams for an event
     listByEvent: publicProcedure

@@ -2288,6 +2288,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         open={addBowlerOpen}
         onClose={() => setAddBowlerOpen(false)}
         centers={centersList as { id: number; centerCode: string; centerName: string }[]}
+        eventId={EVENT_ID}
+        onSuccess={() => { refetch(); }}
       />
 
             {/* ── ED Bowler View overlay ── */}
