@@ -413,6 +413,7 @@ function PassportManager({
   );
 }
 
+import AddBowlerModal from "@/components/AddBowlerModal";
 import AdManagerTab from "@/components/AdManagerTab";
 import TeamPayoutsTab from "@/components/TeamPayoutsTab";
 import ClaimCodesTab from "@/components/ClaimCodesTab";
@@ -474,6 +475,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [collapsedCenters, setCollapsedCenters] = useState<Set<string>>(new Set());
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const [impersonateBowlerId, setImpersonateBowlerId] = useState<number | null>(null);
+  const [addBowlerOpen, setAddBowlerOpen] = useState(false);
+  const { data: centersList = [] } = trpc.centers.list.useQuery();
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
   const [accountFilter, setAccountFilter] = useState<"all" | "signed_up" | "not_signed_up">("all");
 
@@ -1164,7 +1167,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               );
             })()}
 
-            <div className="mb-4 flex gap-3 flex-wrap">
+            <div className="mb-4 flex gap-3 flex-wrap items-center">
+              <button
+                onClick={() => setAddBowlerOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-black rounded-xl text-sm transition-all active:scale-[0.97] shrink-0"
+              >
+                ➕ Add Bowler
+              </button>
               <input type="text" placeholder="🔍 Search by name, ID, phone, center, team..." value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 min-w-[200px] px-4 py-3 bg-[#1a1a1a] border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500" />
@@ -2273,6 +2282,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
           <SurveyResultsTab eventId={EVENT_ID} />
         </div>
       )}
+
+      {/* ── Add Bowler Modal ── */}
+      <AddBowlerModal
+        open={addBowlerOpen}
+        onClose={() => setAddBowlerOpen(false)}
+        centers={centersList as { id: number; centerCode: string; centerName: string }[]}
+      />
 
             {/* ── ED Bowler View overlay ── */}
       {impersonateBowlerId !== null && (
