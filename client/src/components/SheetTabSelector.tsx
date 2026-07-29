@@ -10,6 +10,7 @@
  * spreadsheetId  – bare ID or full URL; required to trigger the fetch
  * value          – currently selected tab name (controlled)
  * onChange       – called with the new tab name when the user picks one
+ * onTabSelect    – optional; called with the full {name, gid} object on selection
  * label          – optional label text (default "Sheet Tab")
  * required       – shows a red asterisk
  * disabled       – disables the control
@@ -22,10 +23,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
 
+export interface SheetTab {
+  name: string;
+  gid: number;
+}
+
 interface SheetTabSelectorProps {
   spreadsheetId: string;
   value: string;
   onChange: (tab: string) => void;
+  /** Called with the full tab object (name + gid) when user picks a tab */
+  onTabSelect?: (tab: SheetTab) => void;
   label?: string;
   required?: boolean;
   disabled?: boolean;
@@ -44,6 +52,7 @@ export default function SheetTabSelector({
   spreadsheetId,
   value,
   onChange,
+  onTabSelect,
   label = "Sheet Tab",
   required = false,
   disabled = false,
@@ -57,9 +66,22 @@ export default function SheetTabSelector({
     { enabled, staleTime: 30_000 }
   );
 
-  const tabs = tabsQuery.data?.tabs ?? [];
+  // Support both legacy string[] and new {name,gid}[] shapes from the server
+  const rawTabs = tabsQuery.data?.tabs ?? [];
+  const tabs: SheetTab[] = rawTabs.map((t) =>
+    typeof t === "string" ? { name: t as string, gid: 0 } : (t as SheetTab)
+  );
   const loading = tabsQuery.isFetching;
   const hasTabs = tabs.length > 0;
+
+  const handleValueChange = (v: string) => {
+    const name = v === "__none__" ? "" : v;
+    onChange(name);
+    if (name && onTabSelect) {
+      const found = tabs.find((t) => t.name === name);
+      if (found) onTabSelect(found);
+    }
+  };
 
   return (
     <div className={`space-y-1 ${className}`}>
@@ -91,7 +113,7 @@ export default function SheetTabSelector({
       {hasTabs ? (
         <Select
           value={value || "__none__"}
-          onValueChange={(v) => onChange(v === "__none__" ? "" : v)}
+          onValueChange={handleValueChange}
           disabled={disabled || loading}
         >
           <SelectTrigger className="bg-black/50 border-white/10 text-white h-9 focus:border-yellow-500/50 data-[placeholder]:text-gray-600">
@@ -103,11 +125,11 @@ export default function SheetTabSelector({
             </SelectItem>
             {tabs.map((tab) => (
               <SelectItem
-                key={tab}
-                value={tab}
+                key={tab.name}
+                value={tab.name}
                 className="focus:bg-yellow-500/20 focus:text-yellow-300"
               >
-                {tab}
+                {tab.name}
               </SelectItem>
             ))}
           </SelectContent>

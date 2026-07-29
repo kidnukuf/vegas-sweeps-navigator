@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import SheetTabSelector from "@/components/SheetTabSelector";
 
 interface ParsedRow {
   rowIndex: number;
@@ -242,6 +243,8 @@ export default function ImportData() {
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[] } | null>(null);
   const [googleUrl, setGoogleUrl] = useState("");
+  const [importTabName, setImportTabName] = useState("");
+  const [importTabGid, setImportTabGid] = useState<number | null>(null);
   const [pastedText, setPastedText] = useState("");
   const [activeTab, setActiveTab] = useState<"file" | "google" | "paste">("file");
   const [isDragging, setIsDragging] = useState(false);
@@ -332,7 +335,7 @@ export default function ImportData() {
     let csvUrl = googleUrl;
     const match = googleUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if (match) {
-      csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+      csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv${importTabGid !== null ? `&gid=${importTabGid}` : ""}`;
     }
     try {
       const resp = await fetch(`/api/proxy-csv?url=${encodeURIComponent(csvUrl)}`);
@@ -357,8 +360,8 @@ export default function ImportData() {
       const idMatch = googleUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
       if (idMatch) sheetSpreadsheetId = idMatch[1];
       // Extract gid (tab) from URL if present, otherwise leave undefined (server will use first tab)
-      const gidMatch = googleUrl.match(/[#&?]gid=([0-9]+)/);
-      void gidMatch; // tab name resolved server-side from sheetTabName field in event settings
+      // Use the tab name selected via the SheetTabSelector dropdown
+      sheetTabName = importTabName || undefined;
     }
     importMutation.mutate({
       rows: rawRows as unknown as Record<string, unknown>[],
@@ -496,10 +499,33 @@ export default function ImportData() {
                   className="neon-input"
                   placeholder="https://docs.google.com/spreadsheets/d/..."
                   value={googleUrl}
-                  onChange={(e) => setGoogleUrl(e.target.value)}
+                  onChange={(e) => {
+                    setGoogleUrl(e.target.value);
+                    // Reset tab selection when URL changes
+                    setImportTabName("");
+                    setImportTabGid(null);
+                  }}
                 />
-                <button onClick={handleGoogleFetch} className="neon-btn-gold w-full py-3">
-                  📊 Fetch Google Sheet
+                {/* Tab picker — shown once a valid spreadsheet ID is detected */}
+                {googleUrl.match(/\/d\/([a-zA-Z0-9-_]{10,})/) && (
+                  <SheetTabSelector
+                    spreadsheetId={googleUrl}
+                    value={importTabName}
+                    onChange={setImportTabName}
+                    onTabSelect={(tab) => {
+                      setImportTabName(tab.name);
+                      setImportTabGid(tab.gid);
+                    }}
+                    label="Import From Tab"
+                  />
+                )}
+                <button
+                  onClick={handleGoogleFetch}
+                  className="neon-btn-gold w-full py-3"
+                  disabled={!!googleUrl.match(/\/d\/([a-zA-Z0-9-_]{10,})/) && !importTabName}
+                  title={!!googleUrl.match(/\/d\/([a-zA-Z0-9-_]{10,})/) && !importTabName ? "Select a tab first" : undefined}
+                >
+                  📊 Fetch Google Sheet{importTabName ? ` — ${importTabName}` : ""}
                 </button>
               </div>
             )}

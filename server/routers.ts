@@ -333,9 +333,12 @@ export const appRouter = router({
           if (!sheets) return { tabs: [] };
           const res = await sheets.spreadsheets.get({
             spreadsheetId: target.spreadsheetId,
-            fields: 'sheets.properties.title',
+            fields: 'sheets.properties(title,sheetId)',
           });
-          const tabs = (res.data.sheets ?? []).map((s) => s.properties?.title ?? '').filter((t): t is string => Boolean(t));
+          const tabs = (res.data.sheets ?? []).map((s) => ({
+            name: s.properties?.title ?? '',
+            gid: s.properties?.sheetId ?? 0,
+          })).filter((t) => Boolean(t.name));
           return { tabs };
         } catch (err) {
           console.error('[getSheetTabs] Failed to fetch tabs:', err);

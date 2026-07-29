@@ -221,7 +221,10 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
     { enabled: bareId.length > 10, staleTime: 30_000 }
   );
 
-  const tabs = tabsQuery.data?.tabs ?? [];
+  const rawTabs = tabsQuery.data?.tabs ?? [];
+  const tabs: { name: string; gid: number }[] = rawTabs.map((t) =>
+    typeof t === 'string' ? { name: t as string, gid: 0 } : (t as { name: string; gid: number })
+  );
   const loading = tabsQuery.isFetching;
 
   return (
@@ -249,7 +252,7 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
           >
             <option value="">— Select a tab —</option>
             {tabs.map((tab) => (
-              <option key={tab} value={tab}>{tab}</option>
+              <option key={tab.name} value={tab.name}>{tab.name}</option>
             ))}
           </select>
         ) : (
