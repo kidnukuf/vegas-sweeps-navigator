@@ -26,6 +26,7 @@ import {
   type DoorMode,
 } from "../db";
 import { writeScanUsedToSheet } from "../googleSheets";
+import { generateOfflineBundle } from "../offlineBundleGenerator";
 
 const modeSchema = z.enum(["banquet", "pool"]);
 const zoneSchema = z.enum(["N", "E", "S", "W"]);
@@ -282,6 +283,21 @@ export const offlineDoorRouter = router({
 
   // Expose zone schema for client typing convenience (no-op runtime).
   _zones: publicProcedure.query(() => ["N", "E", "S", "W"] as const),
+
+  /**
+   * Generate a self-contained offline scanner HTML bundle.
+   * Returns the HTML as a string; the client triggers a browser download.
+   * Contains all tokens (banquet OR pool) + reentry codes embedded.
+   * Works 100% offline — no internet required after download.
+   */
+  generateBundle: publicProcedure
+    .input(z.object({ eventId: z.number(), mode: modeSchema }))
+    .mutation(async ({ input }) => {
+      const html = await generateOfflineBundle(input.eventId, input.mode);
+      const modeLabel = input.mode === "banquet" ? "Banquet" : "PoolParty";
+      const filename = `VSN-OfflineScanner-Event${input.eventId}-${modeLabel}-${new Date().toISOString().slice(0, 10)}.html`;
+      return { html, filename, generatedAtMs: Date.now() };
+    }),
 });
 
 export type ReentryZoneT = z.infer<typeof zoneSchema>;

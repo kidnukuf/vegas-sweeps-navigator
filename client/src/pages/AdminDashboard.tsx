@@ -736,6 +736,28 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     setShowExportMenu(false);
   };
 
+  // ── Offline Scanner Bundle ──────────────────────────────────────────────────
+  const generateBundleMut = trpc.offlineDoor.generateBundle.useMutation({
+    onError: (e) => toast.error(`Bundle generation failed: ${e.message}`),
+  });
+
+  const downloadOfflineScanner = async (mode: "banquet" | "pool") => {
+    const modeLabel = mode === "banquet" ? "Banquet" : "Pool Party";
+    const toastId = toast.loading(`Generating ${modeLabel} offline scanner…`);
+    try {
+      const res = await generateBundleMut.mutateAsync({ eventId: EVENT_ID, mode });
+      // Trigger browser download of the self-contained HTML file
+      const blob = new Blob([res.html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${modeLabel} offline scanner downloaded — open in Chrome, no internet needed`, { id: toastId, duration: 6000 });
+    } catch { toast.dismiss(toastId); }
+  };
+
   const generateTestQr = trpc.tokens.generateTest.useMutation({
     onSuccess: (data) => setTestQr(data),
   });
@@ -894,6 +916,26 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 <DropdownMenuItem onClick={exportByCenter} className="text-yellow-300 focus:bg-yellow-500/10 focus:text-yellow-300 cursor-pointer">🏠 Per-Center Roster</DropdownMenuItem>
                 <DropdownMenuItem onClick={exportCheckedIn} className="text-cyan-300 focus:bg-cyan-500/10 focus:text-cyan-300 cursor-pointer">✅ Check-In Status</DropdownMenuItem>
                 <DropdownMenuItem onClick={exportAuditLog} className="text-gray-300 focus:bg-white/5 focus:text-gray-300 cursor-pointer">📜 Audit Log</DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuLabel className="text-gray-500 text-[10px] uppercase tracking-wider">Offline Scanner Bundle</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem
+                  onClick={() => downloadOfflineScanner("banquet")}
+                  disabled={generateBundleMut.isPending}
+                  className="text-purple-300 focus:bg-purple-500/10 focus:text-purple-300 cursor-pointer"
+                >
+                  🍽️ Download Banquet Scanner
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => downloadOfflineScanner("pool")}
+                  disabled={generateBundleMut.isPending}
+                  className="text-blue-300 focus:bg-blue-500/10 focus:text-blue-300 cursor-pointer"
+                >
+                  🏊 Download Pool Party Scanner
+                </DropdownMenuItem>
+                <div className="px-2 py-1 text-[10px] text-gray-500 leading-tight">
+                  Self-contained HTML · works offline · dual-scanner · race-lock
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
