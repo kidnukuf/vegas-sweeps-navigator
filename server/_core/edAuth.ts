@@ -9,6 +9,7 @@
  * accessible to both the Manus owner and any edStaff account.
  */
 import jwt from "jsonwebtoken";
+import { parse as parseCookieHeader } from "cookie";
 import { TRPCError } from "@trpc/server";
 import { initTRPC } from "@trpc/server";
 import { router, publicProcedure } from "./trpc";
@@ -27,12 +28,29 @@ export interface EdSession {
 }
 
 /**
+ * Read a cookie value by name.
+ * Prefers req.cookies (cookie-parser middleware) and falls back to manual header parsing.
+ */
+function getRawCookie(req: any, name: string): string | undefined {
+  // Prefer already-parsed cookies (cookie-parser middleware)
+  if (req?.cookies?.[name]) return req.cookies[name];
+  // Fall back to manual parsing of the raw Cookie header
+  const header = req?.headers?.cookie;
+  if (!header) return undefined;
+  try {
+    return parseCookieHeader(header)[name];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Verify the ed_staff_token cookie from the request.
  * Returns the staffId if valid, null otherwise.
  */
 export function verifyStaffCookie(req: any): { staffId: number } | null {
   try {
-    const token = req?.cookies?.[STAFF_COOKIE];
+    const token = getRawCookie(req, STAFF_COOKIE);
     if (!token) return null;
     const payload = jwt.verify(token, JWT_SECRET) as any;
     if (payload?.type !== "ed_staff" || !payload?.staffId) return null;

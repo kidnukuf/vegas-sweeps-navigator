@@ -842,4 +842,199 @@ export const masterSheetRouter = router({
         inSheetNotInDb,
       };
     }),
+
+  /**
+   * Export bowler data AND write the same data back to the configured Google Sheet tab.
+   * Returns the CSV string so the browser can trigger a download immediately.
+   *
+   * exportType:
+   *   "full"       — all bowlers (name, phone, email, center, team, status, hotel, lane, squad)
+   *   "by_center"  — same data grouped by center → team → name
+   *   "checked_in" — only checked-in bowlers
+   *   "audit_log"  — audit log rows (download only, no sheet write-back)
+   *
+   * Sheet write-back updates: Bowler ID (A), Phone (B), Email (C),
+   *   T-Shirt Size (R), Check-in (T), Check-out (U) for each matched row.
+   */
+  exportAndWriteBack: publicProcedure
+    .input(z.object({
+      eventId: z.number().int().positive(),
+      exportType: z.enum(["full", "by_center", "checked_in", "audit_log"]),
+      sheetTabOverride: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await requireEdSession(ctx);
+      const { eventId, exportType, sheetTabOverride } = input;
+
+      // ── 1. Fetch bowlers ──────────────────────────────────────────────────
+      const bowlers = await rawQuery<{
+        id: number;
+        scantronId: string | null;
+        legalFirstName: string;
+        legalLastName: string;
+        phone: string | null;
+        email: string | null;
+        centerName: string | null;
+        teamName: string | null;
+        teamCode: string | null;
+        registrationStatus: string | null;
+        checkinDate: string | null;
+        checkoutDate: string | null;
+        roomType: string | null;
+        banquetAmount: string | null;
+        tshirtSize: string | null;
+        laneNumber: number | null;
+        squadTime: string | null;
+        bestAverage: number | null;
+        under21: boolean | null;
+      }>(
+        `SELECT b.id, b.scantronId, b.legalFirstName, b.legalLastName, b.phone, b.email,
+                bc.centerName, t.teamName, t.teamCode,
+                b.registrationStatus, b.tshirtSize, b.laneNumber, b.squadTime,
+                b.bestAverage, b.under21,
+                hr.checkinDate, hr.checkoutDate, hr.roomType,
+                pr.banquetAmount
+         FROM bowlers b
+         LEFT JOIN bowling_centers bc ON b.centerId = bc.id
+         LEFT JOIN teams t ON b.teamId = t.id
+         LEFT JOIN hotel_records hr ON hr.bowlerId = b.id
+         LEFT JOIN payment_records pr ON pr.bowlerId = b.id
+         WHERE b.eventId = ?
+         ORDER BY bc.centerName, t.teamCode, b.legalLastName, b.legalFirstName`,
+        [eventId]
+      );
+
+      // ── 2. Build CSV ──────────────────────────────────────────────────────
+      const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      let csvHeaders: string[];
+      let csvRows: string[][];
+
+      if (exportType === "full" || exportType === "by_center") {
+        csvHeaders = ["ScantronID","FirstName","LastName","Phone","Email","Center","Team","Status","CheckIn","CheckOut","Room","Banquet","TShirtSize","LaneAssignment","SquadTime","Average","Under21"];
+        const sorted = [...bowlers].sort((a, b) => {
+          const ca = (a.centerName ?? "").toLowerCase();
+          const cb = (b.centerName ?? "").toLowerCase();
+          if (ca !== cb) return ca < cb ? -1 : 1;
+          const ta = parseInt(a.teamCode ?? "9999", 10);
+          const tb = parseInt(b.teamCode ?? "9999", 10);
+          if (ta !== tb) return ta - tb;
+          const la = (a.legalLastName ?? "").toLowerCase();
+          const lb = (b.legalLastName ?? "").toLowerCase();
+          return la < lb ? -1 : la > lb ? 1 : 0;
+        });
+        if (exportType === "by_center") {
+          csvRows = [];
+          let lastCenter = "";
+          for (const b of sorted) {
+            const c = b.centerName ?? "Unknown";
+            if (c !== lastCenter) {
+              csvRows.push([`=== ${c} ===`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
+              lastCenter = c;
+            }
+            csvRows.push([b.scantronId??"",b.legalFirstName,b.legalLastName,b.phone??"",b.email??"",b.centerName??"",b.teamName??"",b.registrationStatus??"",b.checkinDate??"",b.checkoutDate??"",b.roomType??"",b.banquetAmount??"",b.tshirtSize??"",String(b.laneNumber??""),b.squadTime??"",String(b.bestAverage??""),b.under21?"Yes":"No"]);
+          }
+        } else {
+          csvRows = sorted.map((b) => [b.scantronId??"",b.legalFirstName,b.legalLastName,b.phone??"",b.email??"",b.centerName??"",b.teamName??"",b.registrationStatus??"",b.checkinDate??"",b.checkoutDate??"",b.roomType??"",b.banquetAmount??"",b.tshirtSize??"",String(b.laneNumber??""),b.squadTime??"",String(b.bestAverage??""),b.under21?"Yes":"No"]);
+        }
+      } else if (exportType === "checked_in") {
+        const checked = bowlers.filter((b) => b.registrationStatus === "checked_in");
+        csvHeaders = ["ScantronID","FirstName","LastName","Center","Team","Phone","LaneAssignment","SquadTime"];
+        csvRows = checked.map((b) => [b.scantronId??"",b.legalFirstName,b.legalLastName,b.centerName??"",b.teamName??"",b.phone??"",String(b.laneNumber??""),b.squadTime??""]);
+      } else {
+        // audit_log — download only, no sheet write-back
+        const logs = await rawQuery<Record<string, unknown>>(
+          `SELECT createdAt, action, actorRole, actorId, targetType, targetId, details
+           FROM audit_log WHERE eventId = ? ORDER BY createdAt DESC LIMIT 5000`,
+          [eventId]
+        );
+        csvHeaders = ["Timestamp","Action","ActorRole","ActorId","TargetType","TargetId","Details"];
+        csvRows = logs.map((l) => [l.createdAt,l.action,l.actorRole,l.actorId,l.targetType,l.targetId,l.details].map(String));
+        const csv = [csvHeaders.map(esc).join(","), ...csvRows.map((r) => r.map(esc).join(","))].join("\n");
+        return { csv, rowCount: csvRows.length, sheetWritten: 0, sheetErrors: 0, sheetSkipped: 0 };
+      }
+
+      // Build CSV (skip section-header rows that start with "===")
+      const dataRows = csvRows.filter((r) => !r[0].startsWith("==="));
+      const csv = [csvHeaders.map(esc).join(","), ...dataRows.map((r) => r.map(esc).join(","))].join("\n");
+
+      // ── 3. Write back to Google Sheet ─────────────────────────────────────
+      const sheetTarget = await getEventSheetTarget(eventId);
+      if (sheetTabOverride) sheetTarget.sheetName = sheetTabOverride;
+
+      let sheetWritten = 0;
+      let sheetErrors = 0;
+      let sheetSkipped = 0;
+
+      if (sheetTarget.spreadsheetId && sheetTarget.sheetName) {
+        const sheets = await getSheetsClient();
+        if (sheets) {
+          // Read the current sheet to build a name+lane → row index map
+          let sheetRows: string[][] = [];
+          try {
+            const resp = await sheets.spreadsheets.values.get({
+              spreadsheetId: sheetTarget.spreadsheetId,
+              range: `'${sheetTarget.sheetName}'!A:U`,
+            });
+            sheetRows = (resp.data.values ?? []) as string[][];
+          } catch (err) {
+            console.error("[exportAndWriteBack] Could not read sheet:", err);
+          }
+
+          if (sheetRows.length > 1) {
+            // Build first+last+lane → 1-indexed row number map
+            const rowMap = new Map<string, number>();
+            for (let i = 1; i < sheetRows.length; i++) {
+              const row = sheetRows[i];
+              const fn = (row[9] ?? "").toLowerCase().trim();  // col J = First Name
+              const ln = (row[10] ?? "").toLowerCase().trim(); // col K = Last Name
+              const lane = (row[4] ?? "").trim();               // col E = Lane
+              if (fn && ln) {
+                rowMap.set(`${fn}|${ln}|${lane}`, i + 1);
+                rowMap.set(`${fn}|${ln}|`, i + 1); // fallback without lane
+              }
+            }
+
+            const updateData: { range: string; values: string[][] }[] = [];
+            const bowlersToWrite = exportType === "checked_in"
+              ? bowlers.filter((b) => b.registrationStatus === "checked_in")
+              : bowlers;
+
+            for (const b of bowlersToWrite) {
+              const fn = b.legalFirstName.toLowerCase().trim();
+              const ln = b.legalLastName.toLowerCase().trim();
+              const lane = String(b.laneNumber ?? "");
+              const rowNum = rowMap.get(`${fn}|${ln}|${lane}`) ?? rowMap.get(`${fn}|${ln}|`);
+              if (!rowNum) { sheetSkipped++; continue; }
+
+              const tab = sheetTarget.sheetName!;
+              if (b.scantronId)   updateData.push({ range: `'${tab}'!A${rowNum}`, values: [[b.scantronId]] });
+              if (b.phone)        updateData.push({ range: `'${tab}'!B${rowNum}`, values: [[b.phone]] });
+              if (b.email)        updateData.push({ range: `'${tab}'!C${rowNum}`, values: [[b.email]] });
+              if (b.tshirtSize)   updateData.push({ range: `'${tab}'!R${rowNum}`, values: [[b.tshirtSize]] });
+              if (b.checkinDate)  updateData.push({ range: `'${tab}'!T${rowNum}`, values: [[b.checkinDate]] });
+              if (b.checkoutDate) updateData.push({ range: `'${tab}'!U${rowNum}`, values: [[b.checkoutDate]] });
+              sheetWritten++;
+            }
+
+            // Execute in batches of 100 ranges to stay within API limits
+            const BATCH = 100;
+            for (let i = 0; i < updateData.length; i += BATCH) {
+              const chunk = updateData.slice(i, i + BATCH);
+              try {
+                await sheets.spreadsheets.values.batchUpdate({
+                  spreadsheetId: sheetTarget.spreadsheetId,
+                  requestBody: { valueInputOption: "RAW", data: chunk },
+                });
+              } catch (err) {
+                console.error("[exportAndWriteBack] batchUpdate error:", err);
+                sheetErrors += chunk.length;
+                sheetWritten = Math.max(0, sheetWritten - chunk.length);
+              }
+            }
+          }
+        }
+      }
+
+      return { csv, rowCount: dataRows.length, sheetWritten, sheetErrors, sheetSkipped };
+    }),
 });

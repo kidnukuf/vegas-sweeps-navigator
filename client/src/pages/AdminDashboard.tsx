@@ -664,58 +664,76 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event";
   }, [activeEvent]);
 
-  const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
-    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+  /** Trigger a browser download from a CSV string. */
+  const downloadCSVString = (filename: string, csv: string) => {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   };
-
-  const exportFullRoster = () => {
-    const rows = (bowlers as Bowler[]);
-    if (!rows.length) { toast.error("No data to export"); return; }
-    downloadCSV(`${eventSlug}-full-roster.csv`,
-      ["ScantronID","FirstName","LastName","Phone","Email","Center","Team","Status","CheckIn","Room","Banquet","ExtraBanquet","ExtraPoolParty","BanquetTable","LaneAssignment","SquadTime"],
-      rows.map((b) => [b.scantronId,b.legalFirstName,b.legalLastName,b.phone,b.email,b.centerName,b.teamName,b.registrationStatus,b.checkinDate,b.roomType,b.banquetAmount,(b as any).extraBanquet ?? '',(b as any).guestPoolPartyAmount ?? '',(b as any).banquetTable ?? '',b.laneAssignment,b.squadTime] as string[])
-    );
-    toast.success("Full roster exported"); setShowExportMenu(false);
+  /** Legacy helper kept for any callers that build rows client-side. */
+  const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
+    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+    downloadCSVString(filename, csv);
   };
 
-  const exportByCenter = () => {
-    const rows = (bowlers as Bowler[]);
-    if (!rows.length) { toast.error("No data to export"); return; }
-    // Group by center and create separate CSV sections
-    const grouped: Record<string, Bowler[]> = {};
-    rows.forEach((b) => { const c = String(b.centerName ?? "Unknown"); if (!grouped[c]) grouped[c] = []; grouped[c].push(b); });
-    const headers = ["Center","ScantronID","FirstName","LastName","Team","Status","Phone"];
-    const allRows: string[][] = [];
-    Object.entries(grouped).forEach(([center, members]) => {
-      allRows.push([`=== ${center} (${members.length} bowlers) ===`, "", "", "", "", "", ""]);
-      members.forEach((b) => allRows.push([center,b.scantronId,b.legalFirstName,b.legalLastName,b.teamName,b.registrationStatus,b.phone] as string[]));
-    });
-    downloadCSV(`${eventSlug}-by-center.csv`, headers, allRows);
-    toast.success("Per-center export done"); setShowExportMenu(false);
+  /** Shared mutation — called by all 4 export actions. */
+  const exportAndWriteBackMut = trpc.masterSheet.exportAndWriteBack.useMutation({
+    onError: (e) => toast.error(`Export failed: ${e.message}`),
+  });
+
+  const exportFullRoster = async () => {
+    if (!(bowlers as Bowler[]).length) { toast.error("No data to export"); return; }
+    const toastId = toast.loading("Exporting and writing back to sheet…");
+    try {
+      const res = await exportAndWriteBackMut.mutateAsync({ eventId: EVENT_ID, exportType: "full" });
+      downloadCSVString(`${eventSlug}-full-roster.csv`, res.csv);
+      const sheetMsg = res.sheetWritten > 0
+        ? ` · ${res.sheetWritten} rows written to sheet`
+        : (res.sheetSkipped > 0 ? " · Sheet not configured — download only" : "");
+      toast.success(`Full roster exported (${res.rowCount} rows)${sheetMsg}`, { id: toastId });
+    } catch { toast.dismiss(toastId); }
+    setShowExportMenu(false);
   };
 
-  const exportCheckedIn = () => {
-    const rows = (bowlers as Bowler[]).filter((b) => b.registrationStatus === "checked_in");
-    if (!rows.length) { toast.error("No checked-in bowlers yet"); return; }
-    downloadCSV(`${eventSlug}-checkedin.csv`,
-      ["ScantronID","FirstName","LastName","Center","Team","Phone","LaneAssignment","SquadTime"],
-      rows.map((b) => [b.scantronId,b.legalFirstName,b.legalLastName,b.centerName,b.teamName,b.phone,b.laneAssignment,b.squadTime] as string[])
-    );
-    toast.success("Check-in status exported"); setShowExportMenu(false);
+  const exportByCenter = async () => {
+    if (!(bowlers as Bowler[]).length) { toast.error("No data to export"); return; }
+    const toastId = toast.loading("Exporting and writing back to sheet…");
+    try {
+      const res = await exportAndWriteBackMut.mutateAsync({ eventId: EVENT_ID, exportType: "by_center" });
+      downloadCSVString(`${eventSlug}-by-center.csv`, res.csv);
+      const sheetMsg = res.sheetWritten > 0
+        ? ` · ${res.sheetWritten} rows written to sheet`
+        : (res.sheetSkipped > 0 ? " · Sheet not configured — download only" : "");
+      toast.success(`Per-center export done (${res.rowCount} rows)${sheetMsg}`, { id: toastId });
+    } catch { toast.dismiss(toastId); }
+    setShowExportMenu(false);
   };
 
-  const exportAuditLog = () => {
-    const logs = (auditLog as Record<string, unknown>[]);
-    if (!logs.length) { toast.error("No audit log entries yet"); return; }
-    downloadCSV(`${eventSlug}-audit-log.csv`,
-      ["Timestamp","Action","ActorRole","ActorId","TargetType","TargetId","Details"],
-      logs.map((l) => [l.createdAt,l.action,l.actorRole,l.actorId,l.targetType,l.targetId,l.details] as string[])
-    );
-    toast.success("Audit log exported"); setShowExportMenu(false);
+  const exportCheckedIn = async () => {
+    const checkedIn = (bowlers as Bowler[]).filter((b) => b.registrationStatus === "checked_in");
+    if (!checkedIn.length) { toast.error("No checked-in bowlers yet"); return; }
+    const toastId = toast.loading("Exporting and writing back to sheet…");
+    try {
+      const res = await exportAndWriteBackMut.mutateAsync({ eventId: EVENT_ID, exportType: "checked_in" });
+      downloadCSVString(`${eventSlug}-checkedin.csv`, res.csv);
+      const sheetMsg = res.sheetWritten > 0
+        ? ` · ${res.sheetWritten} rows written to sheet`
+        : (res.sheetSkipped > 0 ? " · Sheet not configured — download only" : "");
+      toast.success(`Check-in status exported (${res.rowCount} rows)${sheetMsg}`, { id: toastId });
+    } catch { toast.dismiss(toastId); }
+    setShowExportMenu(false);
+  };
+
+  const exportAuditLog = async () => {
+    if (!(auditLog as Record<string, unknown>[]).length) { toast.error("No audit log entries yet"); return; }
+    const toastId = toast.loading("Exporting audit log…");
+    try {
+      const res = await exportAndWriteBackMut.mutateAsync({ eventId: EVENT_ID, exportType: "audit_log" });
+      downloadCSVString(`${eventSlug}-audit-log.csv`, res.csv);
+      toast.success(`Audit log exported (${res.rowCount} entries)`, { id: toastId });
+    } catch { toast.dismiss(toastId); }
+    setShowExportMenu(false);
   };
 
   const generateTestQr = trpc.tokens.generateTest.useMutation({
