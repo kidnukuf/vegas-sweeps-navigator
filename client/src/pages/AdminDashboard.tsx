@@ -414,6 +414,7 @@ function PassportManager({
 }
 
 import AddBowlerModal from "@/components/AddBowlerModal";
+import { UploadScanLogModal } from "@/components/UploadScanLogModal";
 import AdManagerTab from "@/components/AdManagerTab";
 import TeamPayoutsTab from "@/components/TeamPayoutsTab";
 import ClaimCodesTab from "@/components/ClaimCodesTab";
@@ -476,6 +477,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const [impersonateBowlerId, setImpersonateBowlerId] = useState<number | null>(null);
   const [addBowlerOpen, setAddBowlerOpen] = useState(false);
+  const [uploadScanLogOpen, setUploadScanLogOpen] = useState(false);
   const { data: centersList = [] } = trpc.centers.list.useQuery();
   const [viewMode, setViewMode] = useState<"hierarchy" | "flat">("hierarchy");
   const [accountFilter, setAccountFilter] = useState<"all" | "signed_up" | "not_signed_up">("all");
@@ -936,6 +938,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 <div className="px-2 py-1 text-[10px] text-gray-500 leading-tight">
                   Self-contained HTML · works offline · dual-scanner · race-lock
                 </div>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem
+                  onClick={() => { setUploadScanLogOpen(true); setShowExportMenu(false); }}
+                  className="text-green-300 focus:bg-green-500/10 focus:text-green-300 cursor-pointer"
+                >
+                  📤 Upload Offline Scan Log
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -1496,6 +1505,12 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   className="px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2">
                   Open Offline Door Scanner →
                 </a>
+                <button
+                  onClick={() => setUploadScanLogOpen(true)}
+                  className="px-5 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2"
+                >
+                  📤 Upload Scan Log
+                </button>
               </div>
               <p className="text-gray-600 text-xs mt-3">Setup order: 1) Open on the laptop → 2) Load Banquet or Pool Party data (needs internet once) → 3) Open Door A / Door B windows on your TVs → 4) Go offline and scan. Full guide: references/door-kiosk-setup.md</p>
             </div>
@@ -2350,6 +2365,11 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         centers={centersList as { id: number; centerCode: string; centerName: string }[]}
         eventId={EVENT_ID}
         onSuccess={() => { refetch(); }}
+      />
+
+      <UploadScanLogModal
+        open={uploadScanLogOpen}
+        onClose={() => setUploadScanLogOpen(false)}
       />
 
             {/* ── ED Bowler View overlay ── */}
