@@ -88,6 +88,9 @@ export default function MasterSheetImport() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
   const [googleUrl, setGoogleUrl] = useState("");
+  // Tab selected for the Google Sheets URL import
+  const [googleTabName, setGoogleTabName] = useState<string>("");
+  const [googleTabGid, setGoogleTabGid] = useState<number | null>(null);
   const [eventId, setEventId] = useState<number>(() => {
     const saved = Number(localStorage.getItem("vsn_selected_event_id"));
     return Number.isFinite(saved) && saved > 0 ? saved : 1;
@@ -618,23 +621,51 @@ export default function MasterSheetImport() {
                   </button>
                 </div>
 
-                <div className="border-2 border-dashed border-cyan-500/30 rounded-lg p-6">
+                <div className="border-2 border-dashed border-cyan-500/30 rounded-lg p-6 space-y-3">
                   <label className="text-sm font-semibold text-gray-300 mb-2 block">Or paste Google Sheets URL</label>
                   <div className="flex gap-2">
                     <input
                       value={googleUrl}
-                      onChange={(e) => setGoogleUrl(e.target.value)}
+                      onChange={(e) => {
+                        setGoogleUrl(e.target.value);
+                        // Reset tab selection when URL changes
+                        setGoogleTabName("");
+                        setGoogleTabGid(null);
+                      }}
                       placeholder="https://docs.google.com/spreadsheets/d/..."
                       className="flex-1 px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
                     />
-                    <Button
-                      onClick={() => fetchGoogleSheet.mutate({ url: googleUrl })}
-                      disabled={fetchGoogleSheet.isPending || !googleUrl}
-                      className="bg-cyan-600 hover:bg-cyan-500"
-                    >
-                      {fetchGoogleSheet.isPending ? "Loading..." : "Load"}
-                    </Button>
                   </div>
+                  {/* Tab selector — shown once a valid spreadsheet URL is entered */}
+                  {googleUrl.includes("/spreadsheets/d/") && (
+                    <SheetTabSelector
+                      spreadsheetId={googleUrl}
+                      value={googleTabName}
+                      onChange={(name) => setGoogleTabName(name)}
+                      onTabSelect={(tab) => {
+                        setGoogleTabName(tab.name);
+                        setGoogleTabGid(tab.gid);
+                      }}
+                      label="Import From Tab"
+                      required
+                    />
+                  )}
+                  <Button
+                    onClick={() => fetchGoogleSheet.mutate({ url: googleUrl, gid: googleTabGid })}
+                    disabled={fetchGoogleSheet.isPending || !googleUrl || (googleUrl.includes("/spreadsheets/d/") && !googleTabName)}
+                    className="bg-cyan-600 hover:bg-cyan-500 w-full"
+                  >
+                    {fetchGoogleSheet.isPending
+                      ? "Loading..."
+                      : googleTabName
+                        ? `📊 Load — ${googleTabName}`
+                        : googleUrl.includes("/spreadsheets/d/")
+                          ? "Select a tab above to load"
+                          : "Load"}
+                  </Button>
+                  {googleUrl.includes("/spreadsheets/d/") && !googleTabName && (
+                    <p className="text-xs text-yellow-400/80">⚠️ Select a sheet tab before loading — without a tab the first sheet is always fetched.</p>
+                  )}
                 </div>
               </div>
             </div>

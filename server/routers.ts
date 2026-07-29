@@ -1868,13 +1868,16 @@ export const appRouter = router({
 
     // Fetch data from a Google Sheets URL
     fetchGoogleSheet: publicProcedure
-      .input(z.object({ url: z.string() }))
+      .input(z.object({ url: z.string(), gid: z.number().optional().nullable() }))
       .mutation(async ({ input }) => {
         // Extract sheet ID from URL
         const match = input.url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
         if (!match) throw new Error('Invalid Google Sheets URL');
         const sheetId = match[1];
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+        // Append gid when a specific tab was selected so we fetch the right tab.
+        // Without gid the Google Sheets export always returns the first (leftmost) tab.
+        const gidParam = input.gid != null ? `&gid=${input.gid}` : '';
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}`;
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error('Could not fetch sheet — make sure it is shared publicly');
         const text = await resp.text();
