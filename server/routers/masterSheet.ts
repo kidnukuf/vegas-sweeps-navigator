@@ -420,14 +420,16 @@ export const masterSheetRouter = router({
    * Returns counts of bowlers synced, skipped (no tokens), and failed.
    */
   bulkSyncQRCodes: publicProcedure
-    .input(z.object({ eventId: z.number() }))
+    .input(z.object({ eventId: z.number(), sheetTabOverride: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       await requireEdSession(ctx);
 
       const sheetTarget = await getEventSheetTarget(input.eventId);
-      if (!sheetTarget.spreadsheetId || !sheetTarget.sheetName) {
+      if (!sheetTarget.spreadsheetId || (!sheetTarget.sheetName && !input.sheetTabOverride)) {
         throw new Error("No Google Sheet configured for this event. Set the Sheet ID and Tab Name in Event Settings first.");
       }
+      // Allow the ED to override the tab name for this operation
+      if (input.sheetTabOverride) sheetTarget.sheetName = input.sheetTabOverride;
 
       // Fetch all bowlers with any token
       const bowlers = await rawQuery<{
@@ -638,13 +640,14 @@ export const masterSheetRouter = router({
 
   // ─── Clear all QR "used" columns in the Google Sheet ──────────────────────
   clearQRUsedColumns: publicProcedure
-    .input(z.object({ eventId: z.number().int().positive() }))
+    .input(z.object({ eventId: z.number().int().positive(), sheetTabOverride: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       await requireEdSession(ctx);
       const sheetTarget = await getEventSheetTarget(input.eventId);
       if (!sheetTarget.spreadsheetId) {
         return { cleared: 0, error: "No Google Sheet linked to this event. Import from a sheet URL first." };
       }
+      if (input.sheetTabOverride) sheetTarget.sheetName = input.sheetTabOverride;
       const result = await clearQRUsedColumns({
         target: { spreadsheetId: sheetTarget.spreadsheetId, sheetName: sheetTarget.sheetName },
       });
@@ -653,13 +656,14 @@ export const masterSheetRouter = router({
 
   // ─── Sort sheet rows by center → team # → last name → first name ────────────
   sortSheetRows: publicProcedure
-    .input(z.object({ eventId: z.number().int().positive() }))
+    .input(z.object({ eventId: z.number().int().positive(), sheetTabOverride: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       await requireEdSession(ctx);
       const sheetTarget = await getEventSheetTarget(input.eventId);
       if (!sheetTarget.spreadsheetId) {
         return { sorted: 0, error: "No Google Sheet linked to this event. Import from a sheet URL first." };
       }
+      if (input.sheetTabOverride) sheetTarget.sheetName = input.sheetTabOverride;
       const result = await sortSheetRows({
         target: { spreadsheetId: sheetTarget.spreadsheetId, sheetName: sheetTarget.sheetName },
       });
@@ -716,7 +720,7 @@ export const masterSheetRouter = router({
   // in column A against the database record for that scantronId.
   // Returns a list of mismatches (name or lane differences).
   validateSheetVsDb: publicProcedure
-    .input(z.object({ eventId: z.number() }))
+    .input(z.object({ eventId: z.number(), sheetTabOverride: z.string().optional() }))
     .query(async ({ input, ctx }) => {
       await requireEdSession(ctx);
 
@@ -724,6 +728,7 @@ export const masterSheetRouter = router({
 
       // Get sheet target for this event
       const target = await getEventSheetTarget(eventId);
+      if (input.sheetTabOverride) target.sheetName = input.sheetTabOverride;
       if (!target.spreadsheetId || !target.sheetName) {
         throw new Error("Event not configured with a Google Sheet target.");
       }

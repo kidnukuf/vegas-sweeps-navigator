@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import SheetTabSelector from "@/components/SheetTabSelector";
 
 type ImportRow = Record<string, unknown>;
 type EventRecord = Record<string, unknown>;
@@ -99,6 +100,8 @@ export default function MasterSheetImport() {
   const { data: events = [] } = trpc.event.list.useQuery();
 
   const [clearQRUsedInDBResult, setClearQRUsedInDBResult] = useState<{ bowlersCleared: number; guestTokensCleared: number; guestBowlersCleared: number; reentryTokensCleared: number } | null>(null);
+  // Tab override: lets the ED pick a different tab than the stored default for any write-back action
+  const [sheetTabOverride, setSheetTabOverride] = useState<string>("");
 
   const clearQRUsedInDBMutation = trpc.masterSheet.clearQRUsedInDB.useMutation({
     onSuccess: (data) => {
@@ -111,7 +114,7 @@ export default function MasterSheetImport() {
   // ─── Sheet vs DB Validation ───────────────────────────────────────────────
   const [validateEnabled, setValidateEnabled] = useState(false);
   const validateQuery = trpc.masterSheet.validateSheetVsDb.useQuery(
-    { eventId },
+    { eventId, sheetTabOverride: sheetTabOverride || undefined },
     { enabled: validateEnabled, staleTime: 0 }
   );
   const handleValidate = useCallback(() => {
@@ -372,19 +375,43 @@ export default function MasterSheetImport() {
               </select>
             </div>
 
+          {/* ─── Sheet Tab Override ─────────────────────────────────────────── */}
+          {Boolean(activeEvent?.sheetSpreadsheetId) && (
+            <div className="mb-6 p-4 bg-black/30 border border-yellow-500/20 rounded-lg">
+              <p className="text-xs font-bold text-yellow-400/80 uppercase tracking-wider mb-3">🎯 Write-back Target Tab</p>
+              <p className="text-xs text-gray-400 mb-3">
+                All write-back actions below will target this tab. Leave blank to use the default tab saved in Event Settings
+                {Boolean(activeEvent?.sheetTabName) ? (
+                  <> (<span className="text-green-300 font-mono">{String(activeEvent?.sheetTabName)}</span>)</>
+                ) : (
+                  <span className="text-yellow-400"> (none configured)</span>
+                )}.
+              </p>
+              <SheetTabSelector
+                spreadsheetId={String(activeEvent?.sheetSpreadsheetId ?? "")}
+                value={sheetTabOverride}
+                onChange={(tab) => setSheetTabOverride(tab)}
+                label="Override Tab (optional)"
+              />
+            </div>
+          )}
           {/* Bulk Sync QR Codes */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <Button
                 onClick={() => {
-                  if (!activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName) {
-                    toast.error("No sheet tab configured for this event. Set it in Event Settings first.");
+                  if (!activeEvent?.sheetSpreadsheetId) {
+                    toast.error("No Google Sheet configured for this event. Set it in Event Settings first.");
+                    return;
+                  }
+                  if (!sheetTabOverride && !activeEvent?.sheetTabName) {
+                    toast.error("No sheet tab selected. Pick a tab in the Write-back Target Tab selector above.");
                     return;
                   }
                   setSyncResult(null);
-                  bulkSyncMutation.mutate({ eventId });
+                  bulkSyncMutation.mutate({ eventId, sheetTabOverride: sheetTabOverride || undefined });
                 }}
-                disabled={bulkSyncMutation.isPending || !activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName}
+                disabled={bulkSyncMutation.isPending || !activeEvent?.sheetSpreadsheetId}
                 className="bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold"
               >
                 {bulkSyncMutation.isPending ? "⏳ Syncing QR codes..." : "📤 Bulk Sync QR Codes to Sheet"}
@@ -619,7 +646,7 @@ export default function MasterSheetImport() {
               <Button
                 onClick={() => {
                   if (!window.confirm("Clear all QR used data from the Google Sheet? Only do this if no real scans have occurred.")) return;
-                  clearQRUsedMutation.mutate({ eventId });
+                  clearQRUsedMutation.mutate({ eventId, sheetTabOverride: sheetTabOverride || undefined });
                 }}
                 disabled={clearQRUsedMutation.isPending}
                 className="w-full bg-red-700 hover:bg-red-600 text-white text-sm"
@@ -805,7 +832,7 @@ export default function MasterSheetImport() {
             <Button
               onClick={() => {
                 if (!window.confirm("Are you sure? This clears all QR used data from the Google Sheet. Only do this if no real scans have occurred.")) return;
-                clearQRUsedMutation.mutate({ eventId });
+                clearQRUsedMutation.mutate({ eventId, sheetTabOverride: sheetTabOverride || undefined });
               }}
               disabled={clearQRUsedMutation.isPending}
               className="w-full bg-red-700 hover:bg-red-600 text-white"
