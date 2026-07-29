@@ -683,8 +683,10 @@ export default function ImportData() {
               </button>
               <button
                 onClick={() => {
-                  if (!selectedEvent?.sheetTabName) {
-                    toast.error("No Google Sheet tab configured. Go to Event Settings → Sheet tab to set one before importing.");
+                  // For Google Sheets imports, require a tab to be selected via the dropdown.
+                  // For CSV/paste imports no tab is needed.
+                  if (activeTab === "google" && !importTabName) {
+                    toast.error("Please select a sheet tab before importing. Use the \"Import From Tab\" dropdown above.");
                     return;
                   }
                   handleImport();
