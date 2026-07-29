@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { normalizeSquadTime } from "@/lib/squadTime";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import AppFooter from "@/components/AppFooter";
+import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 
 // ─── PWA install popup types ──────────────────────────────────────────────────
 interface BeforeInstallPromptEvent extends Event {
@@ -411,6 +412,11 @@ function PassportStep({ profile, onDone }: { profile: any; onDone: () => void })
           )}
         </div>
 
+        {/* App download prompt — shown until bowler confirms they downloaded the app */}
+        <AppDownloadPrompt
+          token={localStorage.getItem("vsn_bowler_token")}
+          dismissed={Boolean(profile?.appDownloadDismissed)}
+        />
         {/* PWA Install Prompt */}
         <PwaInstallPrompt />
 

@@ -158,6 +158,7 @@ async function getBowlerProfile(bowlerId: number) {
     banquetTable: string | null;
     banquetLocation: string | null;
     banquetTime: string | null;
+    appDownloadDismissed: number;
   }>(
     `SELECT b.id, b.legalFirstName, b.legalLastName, b.preferredName,
             b.email, b.phone, b.scantronId, b.registrationStatus,
@@ -169,7 +170,8 @@ async function getBowlerProfile(bowlerId: number) {
             p.totalAmountDue, p.paid,
             b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
             b.guestPoolPartyAmount, b.eventId,
-            b.banquetTable, e.banquetLocation, e.banquetTime
+            b.banquetTable, e.banquetLocation, e.banquetTime,
+            b.appDownloadDismissed
      FROM bowlers b
      LEFT JOIN teams t ON t.id = b.teamId
      LEFT JOIN bowling_centers bc ON bc.id = b.centerId
@@ -1155,6 +1157,22 @@ export const bowlerAuthRouter = router({
         targetType: "bowler",
         details: JSON.stringify(Object.keys(input.fields)),
       });
+      return { success: true };
+    }),
+
+  // ── APP DOWNLOAD PROMPT DISMISS ────────────────────────────────────────────
+  /** Permanently mark this bowler as having downloaded the app so the prompt stops showing. */
+  dismissAppPrompt: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ input }) => {
+      const payload = verifyToken(input.token);
+      if (!payload || typeof payload.bowlerId !== "number") {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid or expired session." });
+      }
+      await rawQuery(
+        "UPDATE bowlers SET appDownloadDismissed = 1 WHERE id = ?",
+        [payload.bowlerId]
+      );
       return { success: true };
     }),
 

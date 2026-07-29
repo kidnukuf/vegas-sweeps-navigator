@@ -28,6 +28,7 @@ import AppFooter from "@/components/AppFooter";
 import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
 import AdRotator from "@/components/AdRotator";
 import SurveyDialog from "@/components/SurveyDialog";
+import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -559,6 +560,14 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           </div>
         </div>
 
+        {/* ── App download prompt (shown until bowler confirms download) ── */}
+        {!isEDMode && (
+          <AppDownloadPrompt
+            token={token}
+            dismissed={Boolean((p as any).appDownloadDismissed)}
+            onDismissed={() => profileQuery.refetch()}
+          />
+        )}
         {/* ── Add to Home Screen button ── */}
         <PwaInstallPrompt />
 

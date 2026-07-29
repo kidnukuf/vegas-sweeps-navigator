@@ -218,6 +218,8 @@ export const bowlers = mysqlTable("bowlers", {
   // T-shirt distribution: set true when captain marks shirts received (Section 1 Q3)
   tshirtsReceived: boolean("tshirtsReceived").default(false),
   tshirtsReceivedAt: bigint("tshirtsReceivedAt", { mode: "number" }),
+  // App download prompt: set true once bowler confirms they downloaded the app
+  appDownloadDismissed: boolean("appDownloadDismissed").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
