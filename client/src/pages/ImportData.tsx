@@ -241,7 +241,7 @@ export default function ImportData() {
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
   const [headerMap, setHeaderMap] = useState<Record<number, string>>({});
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[] } | null>(null);
   const [googleUrl, setGoogleUrl] = useState("");
   const [importTabName, setImportTabName] = useState("");
   const [importTabGid, setImportTabGid] = useState<number | null>(null);
@@ -317,8 +317,8 @@ export default function ImportData() {
 
   const importMutation = trpc.import.process.useMutation({
     onSuccess: async (data: unknown) => {
-      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[] };
-      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [] });
+      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[] };
+      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [], errorDetails: d.errorDetails ?? [] });
       // Fetch the full roster to build the ID reference sheet
       const roster = await adminRosterQuery.refetch();
       if (roster.data) {
@@ -860,6 +860,26 @@ export default function ImportData() {
                 </div>
               </div>
             </div>
+
+            {/* Error Details — unrecognized center names */}
+            {importResult.errorDetails && importResult.errorDetails.length > 0 && (() => {
+              const centerErrors = importResult.errorDetails
+                .map(e => { const m = e.error.match(/Center not found: "([^"]+)"/i); return m ? m[1] : null; })
+                .filter((x): x is string => x !== null);
+              const uniqueCenters = Array.from(new Set(centerErrors));
+              if (uniqueCenters.length === 0) return null;
+              return (
+                <div className="neon-card p-5 border-red-500/40">
+                  <h3 className="text-red-400 font-bold text-lg mb-1">⚠️ Unrecognized Center Names ({uniqueCenters.length} unique)</h3>
+                  <p className="text-gray-400 text-sm mb-3">These center names from the sheet did not match any center in the database. Fix the spelling in your Google Sheet to match exactly, or go to Settings → Bowling Centers to add them.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueCenters.map((name, i) => (
+                      <span key={i} className="bg-red-900/50 border border-red-500/50 text-red-300 text-xs px-3 py-1.5 rounded font-mono">{name}</span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ID Reference Sheet */}
             {idRosterRows.length > 0 && (
