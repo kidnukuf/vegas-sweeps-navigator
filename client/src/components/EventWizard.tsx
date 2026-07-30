@@ -382,12 +382,9 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
   // Build dynamic step list (conditional follow-ups handled within step bodies)
   const steps = [
     { key: "basics", title: "Event Basics" },
-    { key: "checkin", title: "Hotel Check-In" },
-    { key: "registration", title: "Bowling Registration" },
     { key: "tshirts", title: "T-Shirts" },
     { key: "pool", title: "Pool Party" },
     { key: "banquet", title: "Banquet Dinner" },
-    { key: "checkout", title: "Hotel Check-Out" },
     { key: "survey", title: "Post-Event Survey" },
     { key: "sheet", title: "Google Sheet" },
     { key: "review", title: "Review & Save" },
@@ -396,18 +393,12 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
 
   const placardSteps = useMemo(() => {
     const items: { label: string; detail: string }[] = [];
-    if (s.hotelCheckinDay || s.hotelCheckinTime)
-      items.push({ label: "Hotel Check-In", detail: [s.hotelCheckinDay, s.hotelCheckinTime].filter(Boolean).join(" · ") });
-    if (s.registrationDay || s.registrationTime)
-      items.push({ label: "Reg — Bowling Registration", detail: [s.registrationDay, s.registrationTime].filter(Boolean).join(" · ") });
     if (s.tshirtsProvided)
       items.push({ label: "T-Shirt Pickup", detail: [s.tshirtPickupLocation, s.tshirtPickupTime].filter(Boolean).join(" · ") || "See captain" });
     if (s.poolPartyEnabled)
       items.push({ label: "Pool Party", detail: s.poolPartyTime ? `Check-in ${s.poolPartyTime}` : "Time TBA" });
     if (s.banquetDay || s.banquetTime || s.banquetLocation)
       items.push({ label: "Banquet Dinner", detail: [s.banquetDay, s.banquetTime, s.banquetLocation].filter(Boolean).join(" · ") });
-    if (s.hotelCheckoutDay || s.hotelCheckoutTime)
-      items.push({ label: "Hotel Check-Out", detail: [s.hotelCheckoutDay, s.hotelCheckoutTime].filter(Boolean).join(" · ") });
     return items;
   }, [s]);
 
@@ -449,42 +440,6 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
               <div>
                 <label className={labelCls}>Year</label>
                 <input type="number" className={inputCls} value={s.eventYear} onChange={(e) => set("eventYear", e.target.value)} />
-              </div>
-            </div>
-          )}
-
-          {steps[step].key === "checkin" && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-400">When can guests check into the hotel? This drives the first stop on the Lane to Banquet trip planner.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Day</label>
-                  <input className={inputCls} value={s.hotelCheckinDay} onChange={(e) => set("hotelCheckinDay", e.target.value)} placeholder="e.g. Thursday, Feb 12" />
-                </div>
-                <div>
-                  <label className={labelCls}>Time</label>
-                  <input className={inputCls} value={s.hotelCheckinTime} onChange={(e) => set("hotelCheckinTime", e.target.value)} placeholder="e.g. 4:00 PM" />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-gray-300">
-                <input type="checkbox" checked={s.showHotelInfoCard} onChange={(e) => set("showHotelInfoCard", e.target.checked)} className="h-4 w-4 accent-yellow-400" />
-                Show The Orleans Hotel fee &amp; policy card in the portals
-              </label>
-            </div>
-          )}
-
-          {steps[step].key === "registration" && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-400">When does bowling registration open?</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Day</label>
-                  <input className={inputCls} value={s.registrationDay} onChange={(e) => set("registrationDay", e.target.value)} placeholder="e.g. Friday, Feb 13" />
-                </div>
-                <div>
-                  <label className={labelCls}>Time</label>
-                  <input className={inputCls} value={s.registrationTime} onChange={(e) => set("registrationTime", e.target.value)} placeholder="e.g. 9:00 AM" />
-                </div>
               </div>
             </div>
           )}
@@ -543,22 +498,6 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
               <div>
                 <label className={labelCls}>Location</label>
                 <input className={inputCls} value={s.banquetLocation} onChange={(e) => set("banquetLocation", e.target.value)} placeholder="e.g. Mardi Gras Ballroom" />
-              </div>
-            </div>
-          )}
-
-          {steps[step].key === "checkout" && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-400">When must guests check out? This is also when the survey invitation goes out (if enabled).</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Day</label>
-                  <input className={inputCls} value={s.hotelCheckoutDay} onChange={(e) => set("hotelCheckoutDay", e.target.value)} placeholder="e.g. Sunday, Feb 15" />
-                </div>
-                <div>
-                  <label className={labelCls}>Time</label>
-                  <input className={inputCls} value={s.hotelCheckoutTime} onChange={(e) => set("hotelCheckoutTime", e.target.value)} placeholder="e.g. 11:00 AM" />
-                </div>
               </div>
             </div>
           )}
