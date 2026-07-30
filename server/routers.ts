@@ -1741,6 +1741,35 @@ export const appRouter = router({
               if (effectiveBanquet || totalAmountDue || effectivePoolParty || effectiveExtraGuest) {
                 await upsertPaymentRecord(bowlerId, { roomAmount, banquetAmount: effectiveBanquet, poolParty: effectivePoolParty, extraGuestFee: effectiveExtraGuest, totalAmountDue });
               }
+              // Write back scantronId to the sheet for updated bowlers too
+              // (new inserts handle this below; updates previously skipped it entirely)
+              const existingScantronId = (existing[0].scantronId as string | undefined) ?? scantronId;
+              const existingTokenRows = await rawQuery(
+                "SELECT poolPartyToken, banquetToken FROM bowlers WHERE id = ? LIMIT 1",
+                [bowlerId]
+              ) as Record<string, unknown>[];
+              const existingPoolToken = existingTokenRows[0]?.poolPartyToken as string | undefined;
+              const existingBanquetToken = existingTokenRows[0]?.banquetToken as string | undefined;
+              if (existingScantronId) {
+                Promise.resolve().then(async () => {
+                  try {
+                    await writeBowlerIdToSheet({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId, target: eventSheetTarget });
+                    if (existingPoolToken && existingBanquetToken) {
+                      await writeQRCodesToSheet({
+                        firstName, lastName, laneNumber: laneNumber ?? null,
+                        banquetToken: existingBanquetToken,
+                        poolPartyToken: existingPoolToken,
+                        guestPoolTokens: [],
+                        guestBanquetTokens: [],
+                        appOrigin: APP_ORIGIN,
+                        target: eventSheetTarget,
+                      });
+                    }
+                  } catch (e) {
+                    console.warn('[import] sheet write-back (update) failed:', e);
+                  }
+                });
+              }
               updated++;
             } else {
               // Insert new bowler
@@ -1881,11 +1910,35 @@ export const appRouter = router({
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error('Could not fetch sheet — make sure it is shared publicly');
         const text = await resp.text();
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) throw new Error('Sheet appears empty');
-        const headers = lines[0].split(',').map((h: string) => h.trim().replace(/"/g, ''));
-        const rows = lines.slice(1).map((line: string) => {
-          const vals = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
+        // RFC-4180 compliant CSV parser — handles quoted fields with embedded commas/newlines
+        function parseCSVRobust(raw: string): string[][] {
+          const result: string[][] = [];
+          let row: string[] = [];
+          let cell = '';
+          let inQ = false;
+          for (let i = 0; i < raw.length; i++) {
+            const ch = raw[i];
+            if (ch === '"') {
+              if (inQ && raw[i + 1] === '"') { cell += '"'; i++; } // escaped quote
+              else { inQ = !inQ; }
+            } else if (!inQ && ch === ',') {
+              row.push(cell.trim()); cell = '';
+            } else if (!inQ && (ch === '\n' || ch === '\r')) {
+              row.push(cell.trim()); cell = '';
+              if (row.some((v: string) => v !== '')) result.push(row);
+              row = [];
+              if (ch === '\r' && raw[i + 1] === '\n') i++;
+            } else {
+              cell += ch;
+            }
+          }
+          if (cell.trim() || row.length > 0) { row.push(cell.trim()); if (row.some((v: string) => v !== '')) result.push(row); }
+          return result;
+        }
+        const allRows = parseCSVRobust(text);
+        if (allRows.length < 2) throw new Error('Sheet appears empty');
+        const headers = allRows[0];
+        const rows = allRows.slice(1).map((vals: string[]) => {
           const row: Record<string, unknown> = {};
           headers.forEach((h: string, i: number) => { row[h] = vals[i] ?? ''; });
           return row;
