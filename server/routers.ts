@@ -1953,8 +1953,8 @@ export const appRouter = router({
         const sheetId = match[1];
         // Append gid when a specific tab was selected so we fetch the right tab.
         // Without gid the Google Sheets export always returns the first (leftmost) tab.
-        // Use &sheet=NAME (URL-encoded) — name-based is bulletproof; gid=0 always maps to first tab.
-        const tabParam = input.tabName ? `&sheet=${encodeURIComponent(input.tabName)}` : (input.gid != null ? `&gid=${input.gid}` : '');
+        // Google Sheets CSV export ONLY supports &gid=NUMBER. &sheet=NAME is NOT valid and is silently ignored.
+        const tabParam = input.gid != null ? `&gid=${input.gid}` : '';
         const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${tabParam}`;
         console.log(`[fetchGoogleSheet] tabName=${input.tabName} gid=${input.gid} tabParam="${tabParam}" csvUrl=${csvUrl}`);
         const resp = await fetch(csvUrl);

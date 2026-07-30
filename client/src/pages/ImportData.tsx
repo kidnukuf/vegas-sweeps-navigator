@@ -384,10 +384,12 @@ export default function ImportData() {
     let csvUrl = googleUrl;
     const match = googleUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if (match) {
-      // Use &sheet=NAME (URL-encoded) — name-based is bulletproof.
-      // gid=0 always maps to the first tab regardless of which tab the user selected,
-      // so gid-based selection silently fetches the wrong tab when gid happens to be 0.
-      csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv${importTabName ? `&sheet=${encodeURIComponent(importTabName)}` : ""}`;
+      // Google Sheets CSV export ONLY supports &gid=NUMBER for tab selection.
+      // &sheet=NAME is NOT a valid parameter and is silently ignored by Google (always returns tab 1).
+      // importTabGid is set by SheetTabSelector.onTabSelect from the live sheets.spreadsheets.get response.
+      const gidSuffix = importTabGid !== null ? `&gid=${importTabGid}` : "";
+      csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv${gidSuffix}`;
+      console.log(`[ImportData] Fetching tab "${importTabName}" gid=${importTabGid} → ${csvUrl}`);
     }
     try {
       const resp = await fetch(`/api/proxy-csv?url=${encodeURIComponent(csvUrl)}`);
