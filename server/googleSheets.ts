@@ -1036,7 +1036,17 @@ export async function sortSheetRows({
  * the Google Sheets API quota when importing 600+ rows.
  */
 export async function batchWriteBowlerIds(
-  entries: Array<{ firstName: string; lastName: string; laneNumber: number | null; scantronId: string }>,
+  entries: Array<{
+    firstName: string;
+    lastName: string;
+    laneNumber: number | null;
+    scantronId: string;
+    poolPartyToken?: string;
+    banquetToken?: string;
+    guestPoolTokens?: string[];
+    guestBanquetTokens?: string[];
+    appOrigin?: string;
+  }>,
   target?: SheetTarget
 ): Promise<{ written: number; notFound: number; error?: string }> {
   const resolved = resolveSheetTarget(target);
@@ -1084,9 +1094,26 @@ export async function batchWriteBowlerIds(
       console.warn(`[googleSheets] batchWriteBowlerIds: not found: ${entry.firstName} ${entry.lastName}`);
       continue;
     }
+    // Bowler ID in column A
     updateData.push({
       range: `'${resolved.sheetName}'!A${rowNum}`,
       values: [[entry.scantronId]],
+    });
+    // QR codes — write in same batch if tokens provided
+    const origin = entry.appOrigin ?? '';
+    if (entry.poolPartyToken) {
+      updateData.push({ range: `'${resolved.sheetName}'!Z${rowNum}`, values: [[`${origin}/pool?t=${entry.poolPartyToken}`]] });
+    }
+    if (entry.banquetToken) {
+      updateData.push({ range: `'${resolved.sheetName}'!AB${rowNum}`, values: [[`${origin}/banquet?t=${entry.banquetToken}`]] });
+    }
+    (entry.guestPoolTokens ?? []).forEach((tok, i) => {
+      const col = GUEST_POOL_COLUMNS[i];
+      if (col) updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[`${origin}/pool?t=${tok}`]] });
+    });
+    (entry.guestBanquetTokens ?? []).forEach((tok, i) => {
+      const col = GUEST_BANQUET_COLUMNS[i];
+      if (col) updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[`${origin}/banquet?t=${tok}`]] });
     });
   }
 

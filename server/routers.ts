@@ -28,7 +28,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import QRCode from "qrcode";
-import { writeBowlerIdToSheet, writeQRCodesToSheet, markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
+import { markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
 import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
 
@@ -1550,7 +1550,12 @@ export const appRouter = router({
           console.log('[import] column headers in first row:', Object.keys(input.rows[0]).join(', '));
         }
         // Batch write-back: collect all entries then write in one API call
-        const batchWriteEntries: Array<{ firstName: string; lastName: string; laneNumber: number | null; scantronId: string }> = [];
+        const batchWriteEntries: Array<{
+          firstName: string; lastName: string; laneNumber: number | null; scantronId: string;
+          poolPartyToken?: string; banquetToken?: string;
+          guestPoolTokens?: string[]; guestBanquetTokens?: string[];
+          appOrigin?: string;
+        }> = [];
         // Group rows by center+team to assign BB positions
         const teamPositionMap = new Map<string, number>();
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1777,26 +1782,14 @@ export const appRouter = router({
               const existingPoolToken = existingTokenRows[0]?.poolPartyToken as string | undefined;
               const existingBanquetToken = existingTokenRows[0]?.banquetToken as string | undefined;
               if (existingScantronId) {
-                // Collect for batch write-back (IDs written in one API call after loop)
-                batchWriteEntries.push({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId });
-                Promise.resolve().then(async () => {
-                  try {
-                    // QR write-back still per-bowler (different columns); ID handled by batch below
-                    void writeBowlerIdToSheet; // referenced to avoid unused import warning
-                    if (existingPoolToken && existingBanquetToken) {
-                      await writeQRCodesToSheet({
-                        firstName, lastName, laneNumber: laneNumber ?? null,
-                        banquetToken: existingBanquetToken,
-                        poolPartyToken: existingPoolToken,
-                        guestPoolTokens: [],
-                        guestBanquetTokens: [],
-                        appOrigin: APP_ORIGIN,
-                        target: eventSheetTarget,
-                      });
-                    }
-                  } catch (e) {
-                    console.warn('[import] sheet write-back (update) failed:', e);
-                  }
+                // Collect for batch write-back (IDs + QR codes written in one API call after loop)
+                batchWriteEntries.push({
+                  firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId,
+                  poolPartyToken: existingPoolToken,
+                  banquetToken: existingBanquetToken,
+                  guestPoolTokens: [],
+                  guestBanquetTokens: [],
+                  appOrigin: APP_ORIGIN,
                 });
               }
               updated++;
@@ -1867,27 +1860,14 @@ export const appRouter = router({
                   }
                 }
 
-                // Collect for batch write-back (IDs written in one API call after loop)
-                batchWriteEntries.push({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId });
-                // Fire-and-forget: write QR URLs to the Google Sheet (IDs handled by batch below)
-                Promise.resolve().then(async () => {
-                  try {
-                    // ID write-back is batched after the loop; only QR codes here
-                    await writeQRCodesToSheet({
-                      firstName,
-                      lastName,
-                      laneNumber: laneNumber ?? null,
-                      banquetToken: importBanquetToken,
-                      poolPartyToken: importPoolToken,
-                      guestPoolTokens: importGuestTokens,
-                      guestBanquetTokens: importGuestBanquetTokens,
-                      appOrigin: APP_ORIGIN,
-                      target: eventSheetTarget,
-                    });
-                    await recordSheetSync(input.eventId);
-                  } catch (e) {
-                    console.warn("[import] sheet write-back failed:", e);
-                  }
+                // Collect for batch write-back (IDs + QR codes written in one API call after loop)
+                batchWriteEntries.push({
+                  firstName, lastName, laneNumber: laneNumber ?? null, scantronId,
+                  poolPartyToken: importPoolToken,
+                  banquetToken: importBanquetToken,
+                  guestPoolTokens: importGuestTokens.map(g => g.token),
+                  guestBanquetTokens: importGuestBanquetTokens.map(g => g.banquetToken),
+                  appOrigin: APP_ORIGIN,
                 });
               }
               generatedIds.push(scantronId);
@@ -1926,10 +1906,41 @@ export const appRouter = router({
         return { success: true, imported, updated, skipped, errors, errorDetails, generatedIds, sessionId };
       }),
 
-    history: publicProcedure
+        history: publicProcedure
       .input(z.object({ eventId: z.number().optional() }))
       .query(async ({ input }) => {
         return getImportHistory(input.eventId);
+      }),
+
+    // Re-sync all bowler IDs from a past import session to the Google Sheet
+    resyncIds: publicProcedure
+      .input(z.object({
+        eventId: z.number().int().positive(),
+        spreadsheetId: z.string().min(1),
+        sheetTabName: z.string().min(1),
+      }))
+      .mutation(async ({ input }) => {
+        // Fetch all bowlers for this event that have a scantronId
+        const bowlers = await rawQuery(
+          `SELECT legalFirstName, legalLastName, scantronId, laneNumber
+           FROM bowlers
+           WHERE eventId = ? AND scantronId IS NOT NULL AND scantronId != ''
+           ORDER BY scantronId`,
+          [input.eventId]
+        ) as Record<string, unknown>[];
+        if (bowlers.length === 0) {
+          return { success: false, written: 0, notFound: 0, error: 'No bowlers with IDs found for this event' };
+        }
+        const entries = bowlers.map(b => ({
+          firstName: String(b.legalFirstName ?? ''),
+          lastName: String(b.legalLastName ?? ''),
+          laneNumber: b.laneNumber != null ? Number(b.laneNumber) : null,
+          scantronId: String(b.scantronId),
+        }));
+        const target = { spreadsheetId: input.spreadsheetId, sheetName: input.sheetTabName };
+        const result = await batchWriteBowlerIds(entries, target);
+        console.log(`[resyncIds] event=${input.eventId} written=${result.written} notFound=${result.notFound}`);
+        return { success: true, ...result };
       }),
 
     // Fetch data from a Google Sheets URL
