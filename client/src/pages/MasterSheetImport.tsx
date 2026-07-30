@@ -651,7 +651,7 @@ export default function MasterSheetImport() {
                     />
                   )}
                   <Button
-                    onClick={() => fetchGoogleSheet.mutate({ url: googleUrl, gid: googleTabGid })}
+                    onClick={() => fetchGoogleSheet.mutate({ url: googleUrl, gid: googleTabGid, tabName: googleTabName || null })}
                     disabled={fetchGoogleSheet.isPending || !googleUrl || (googleUrl.includes("/spreadsheets/d/") && !googleTabName)}
                     className="bg-cyan-600 hover:bg-cyan-500 w-full"
                   >

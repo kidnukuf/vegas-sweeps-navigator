@@ -373,7 +373,10 @@ export default function ImportData() {
     let csvUrl = googleUrl;
     const match = googleUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if (match) {
-      csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv${importTabGid !== null ? `&gid=${importTabGid}` : ""}`;
+      // Use &sheet=NAME (URL-encoded) — name-based is bulletproof.
+      // gid=0 always maps to the first tab regardless of which tab the user selected,
+      // so gid-based selection silently fetches the wrong tab when gid happens to be 0.
+      csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv${importTabName ? `&sheet=${encodeURIComponent(importTabName)}` : ""}`;
     }
     try {
       const resp = await fetch(`/api/proxy-csv?url=${encodeURIComponent(csvUrl)}`);
