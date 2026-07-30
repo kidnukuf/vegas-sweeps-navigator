@@ -304,6 +304,17 @@ export default function ImportData() {
     { enabled: false }
   );
 
+  const resyncMutation = trpc.import.resyncIds.useMutation({
+    onSuccess: (d) => {
+      if (d.success) {
+        toast.success(`✅ Re-synced ${d.written} bowler IDs to sheet${d.notFound ? ` (${d.notFound} not matched)` : ""}`);
+      } else {
+        toast.error(d.error ?? "Re-sync failed");
+      }
+    },
+    onError: (e) => toast.error(`Re-sync failed: ${e.message}`),
+  });
+
   const importMutation = trpc.import.process.useMutation({
     onSuccess: async (data: unknown) => {
       const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[] };
@@ -931,6 +942,36 @@ export default function ImportData() {
               </div>
             )}
 
+            {/* Re-sync IDs to Sheet */}
+            {googleUrl && importTabName && (() => {
+              const idMatch = googleUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+              const spreadsheetId = idMatch ? idMatch[1] : null;
+              if (!spreadsheetId) return null;
+              return (
+                <div className="neon-card p-5 border-cyan-500/30">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h3 className="text-cyan-400 font-bold text-base">🔄 Re-sync IDs to Sheet</h3>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        Write all bowler IDs back to <span className="text-cyan-300 font-mono">{importTabName}</span> — useful if the sheet write-back failed or the sheet was cleared.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => resyncMutation.mutate({ eventId: selectedEventId, spreadsheetId, sheetTabName: importTabName })}
+                      disabled={resyncMutation.isPending}
+                      className="neon-btn-cyan px-5 py-2.5 text-sm font-bold disabled:opacity-50">
+                      {resyncMutation.isPending ? "⏳ Syncing…" : "🔄 Re-sync IDs to Sheet"}
+                    </button>
+                  </div>
+                  {resyncMutation.isSuccess && resyncMutation.data?.success && (
+                    <div className="mt-3 text-xs text-green-400 bg-green-900/20 border border-green-500/30 rounded-lg px-3 py-2">
+                      ✅ {resyncMutation.data.written} IDs written to sheet
+                      {resyncMutation.data.notFound ? ` · ${resyncMutation.data.notFound} rows not matched by name` : ""}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {/* Navigation */}
             <div className="flex gap-3 flex-wrap">
               <button onClick={() => { setStep("upload"); setImportResult(null); setParsedRows([]); setIdRosterRows([]); }} className="neon-btn-cyan flex-1 py-3 min-w-[140px]">
