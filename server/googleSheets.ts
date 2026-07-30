@@ -1028,3 +1028,85 @@ export async function sortSheetRows({
 
   return { sorted: sorted.length };
 }
+
+// ── Batch write-back ──────────────────────────────────────────────────────────
+/**
+ * Write Bowler IDs for ALL bowlers in one import session using a single sheet
+ * read + one batchUpdate call.  This avoids the per-bowler read that exhausts
+ * the Google Sheets API quota when importing 600+ rows.
+ */
+export async function batchWriteBowlerIds(
+  entries: Array<{ firstName: string; lastName: string; laneNumber: number | null; scantronId: string }>,
+  target?: SheetTarget
+): Promise<{ written: number; notFound: number; error?: string }> {
+  const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) {
+    return { written: 0, notFound: entries.length, error: "No sheet target configured" };
+  }
+  const sheets = await getSheetsClient();
+  if (!sheets) return { written: 0, notFound: entries.length, error: "Sheets client unavailable" };
+
+  // 1. Read the entire sheet once
+  let allRows: string[][] = [];
+  try {
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'!A1:AJ`,
+    });
+    allRows = (resp.data.values ?? []) as string[][];
+  } catch (err) {
+    console.error("[googleSheets] batchWriteBowlerIds: sheet read failed:", err);
+    return { written: 0, notFound: entries.length, error: String(err) };
+  }
+
+  // 2. Build a name->rowNumber map (1-indexed, skipping header row 1)
+  const nameToRow = new Map<string, number>();
+  for (let i = 1; i < allRows.length; i++) {
+    const row = allRows[i];
+    const fn = (row[COL_FIRST_NAME] ?? "").toLowerCase().trim();
+    const ln = (row[COL_LAST_NAME] ?? "").toLowerCase().trim();
+    if (fn && ln) {
+      const key = `${fn}|${ln}`;
+      if (!nameToRow.has(key)) nameToRow.set(key, i + 1); // 1-indexed
+    }
+  }
+
+  // 3. Match entries to rows
+  const updateData: Array<{ range: string; values: string[][] }> = [];
+  let notFound = 0;
+  for (const entry of entries) {
+    const fn = entry.firstName.toLowerCase().trim();
+    const ln = entry.lastName.toLowerCase().trim();
+    const key = `${fn}|${ln}`;
+    const rowNum = nameToRow.get(key);
+    if (!rowNum) {
+      notFound++;
+      console.warn(`[googleSheets] batchWriteBowlerIds: not found: ${entry.firstName} ${entry.lastName}`);
+      continue;
+    }
+    updateData.push({
+      range: `'${resolved.sheetName}'!A${rowNum}`,
+      values: [[entry.scantronId]],
+    });
+  }
+
+  if (updateData.length === 0) {
+    return { written: 0, notFound };
+  }
+
+  // 4. Write all IDs in a single batchUpdate call
+  try {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: {
+        valueInputOption: "RAW",
+        data: updateData,
+      },
+    });
+    console.log(`[googleSheets] batchWriteBowlerIds: wrote ${updateData.length} IDs, ${notFound} not found`);
+    return { written: updateData.length, notFound };
+  } catch (err) {
+    console.error("[googleSheets] batchWriteBowlerIds: batchUpdate failed:", err);
+    return { written: 0, notFound: entries.length, error: String(err) };
+  }
+}

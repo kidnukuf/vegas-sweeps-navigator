@@ -28,7 +28,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import QRCode from "qrcode";
-import { writeBowlerIdToSheet, writeQRCodesToSheet, markTshirtReceivedInSheet } from "./googleSheets";
+import { writeBowlerIdToSheet, writeQRCodesToSheet, markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
 import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
 
@@ -1545,13 +1545,24 @@ export const appRouter = router({
           (c.centerName as string).toLowerCase(), c
         ]));
 
+        // Log column headers from first row for debugging center-name issues
+        if (input.rows.length > 0) {
+          console.log('[import] column headers in first row:', Object.keys(input.rows[0]).join(', '));
+        }
+        // Batch write-back: collect all entries then write in one API call
+        const batchWriteEntries: Array<{ firstName: string; lastName: string; laneNumber: number | null; scantronId: string }> = [];
         // Group rows by center+team to assign BB positions
         const teamPositionMap = new Map<string, number>();
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
         for (const row of input.rows) {
           try {
-            let centerName = String(row["centerName"] ?? row["Center"] ?? row["center"] ?? "").trim();
+            let centerName = String(
+              row["centerName"] ?? row["Center"] ?? row["center"] ??
+              row["Bowling Center"] ?? row["bowling_center"] ?? row["BowlingCenter"] ??
+              row["Location"] ?? row["location"] ?? row["Alley"] ?? row["alley"] ??
+              row["Venue"] ?? row["venue"] ?? ""
+            ).trim();
             // Normalize known spreadsheet center-name variants to seeded DB names
             const CENTER_NAME_ALIASES: Record<string, string> = {
               "bowlero river grove sat": "Bowlero River Grove (Saturday)",
@@ -1766,9 +1777,12 @@ export const appRouter = router({
               const existingPoolToken = existingTokenRows[0]?.poolPartyToken as string | undefined;
               const existingBanquetToken = existingTokenRows[0]?.banquetToken as string | undefined;
               if (existingScantronId) {
+                // Collect for batch write-back (IDs written in one API call after loop)
+                batchWriteEntries.push({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId });
                 Promise.resolve().then(async () => {
                   try {
-                    await writeBowlerIdToSheet({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId, target: eventSheetTarget });
+                    // QR write-back still per-bowler (different columns); ID handled by batch below
+                    void writeBowlerIdToSheet; // referenced to avoid unused import warning
                     if (existingPoolToken && existingBanquetToken) {
                       await writeQRCodesToSheet({
                         firstName, lastName, laneNumber: laneNumber ?? null,
@@ -1853,10 +1867,12 @@ export const appRouter = router({
                   }
                 }
 
-                // Fire-and-forget: write Bowler ID + all QR URLs to the Google Sheet
+                // Collect for batch write-back (IDs written in one API call after loop)
+                batchWriteEntries.push({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId });
+                // Fire-and-forget: write QR URLs to the Google Sheet (IDs handled by batch below)
                 Promise.resolve().then(async () => {
                   try {
-                    await writeBowlerIdToSheet({ firstName, lastName, laneNumber: laneNumber ?? null, scantronId, target: eventSheetTarget });
+                    // ID write-back is batched after the loop; only QR codes here
                     await writeQRCodesToSheet({
                       firstName,
                       lastName,
@@ -1901,6 +1917,12 @@ export const appRouter = router({
           details: `Imported ${imported}, updated ${updated}, skipped ${skipped}, errors ${errors} from ${input.sourceName ?? input.sourceType}`,
         });
 
+        // Batch-write all bowler IDs in one API call (avoids quota exhaustion on 600+ row imports)
+        if (batchWriteEntries.length > 0 && eventSheetTarget.spreadsheetId && eventSheetTarget.sheetName) {
+          batchWriteBowlerIds(batchWriteEntries, eventSheetTarget).then(result => {
+            console.log(`[import] batchWriteBowlerIds result: written=${result.written}, notFound=${result.notFound}${result.error ? ', error=' + result.error : ''}`);
+          }).catch(e => console.warn('[import] batchWriteBowlerIds failed:', e));
+        }
         return { success: true, imported, updated, skipped, errors, errorDetails, generatedIds, sessionId };
       }),
 
@@ -1922,6 +1944,7 @@ export const appRouter = router({
         // Without gid the Google Sheets export always returns the first (leftmost) tab.
         const gidParam = input.gid != null ? `&gid=${input.gid}` : '';
         const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}`;
+        console.log(`[fetchGoogleSheet] input.gid=${input.gid} gidParam="${gidParam}" csvUrl=${csvUrl}`);
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error('Could not fetch sheet — make sure it is shared publicly');
         const text = await resp.text();
