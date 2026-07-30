@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -260,6 +260,44 @@ export default function ImportData() {
   const utils = trpc.useUtils();
   const { data: events = [] } = trpc.event.list.useQuery();
   const selectedEvent = (events as Record<string, unknown>[]).find((e) => Number(e.id) === selectedEventId) ?? null;
+
+  // ── Center mismatch detection ──────────────────────────────────────────────
+  const { data: allCenters = [] } = trpc.centers.list.useQuery();
+  const centerNameSet = useMemo(() => {
+    const s = new Set<string>();
+    (allCenters as Record<string, unknown>[]).forEach(c => s.add(String(c.centerName ?? "").toLowerCase().trim()));
+    return s;
+  }, [allCenters]);
+  // centerOverrides: maps a mismatched sheet name → corrected DB name the ED chose
+  const [centerOverrides, setCenterOverrides] = useState<Record<string, string>>({});
+  const [editingCenter, setEditingCenter] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const addCenterMutation = trpc.centers.add.useMutation({
+    onSuccess: (data) => {
+      toast.success(`✅ Center "${data.centerName}" added (code ${data.centerCode})`);
+      utils.centers.list.invalidate();
+      // Remove the override for this name so the banner re-evaluates
+      setCenterOverrides(prev => { const n = { ...prev }; delete n[editingCenter ?? ""]; return n; });
+      setEditingCenter(null);
+    },
+    onError: (e) => toast.error(`Failed to add center: ${e.message}`),
+  });
+
+  // Unique center names from parsed rows that don’t match any DB center
+  const mismatchedCenters = useMemo(() => {
+    if (step !== "preview" || parsedRows.length === 0) return [];
+    const unique = new Set<string>();
+    parsedRows.forEach(r => {
+      if (!r.centerName) return;
+      const key = r.centerName.toLowerCase().trim();
+      // A center is mismatched if it’s not in the DB AND not already overridden/added
+      if (!centerNameSet.has(key) && !centerOverrides[r.centerName]) {
+        unique.add(r.centerName);
+      }
+    });
+    return Array.from(unique).sort();
+  }, [step, parsedRows, centerNameSet, centerOverrides]);
 
   const adminRosterQuery = trpc.bowlers.adminList.useQuery(
     { eventId: selectedEventId },
@@ -599,6 +637,88 @@ export default function ImportData() {
                 })}
               </div>
             </div>
+
+            {/* ⚠️ Center Mismatch Banner */}
+            {mismatchedCenters.length > 0 && (
+              <div className="neon-card p-4 border-orange-500/50 bg-orange-950/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">⚠️</span>
+                  <h3 className="text-orange-400 font-bold text-sm">
+                    {mismatchedCenters.length} Center Name{mismatchedCenters.length > 1 ? "s" : ""} Not Recognized
+                  </h3>
+                  <span className="text-gray-500 text-xs ml-1">— Fix spelling or add as new center before importing</span>
+                </div>
+                <div className="space-y-2">
+                  {mismatchedCenters.map(name => (
+                    <div key={name} className="flex items-center gap-2 bg-[#1a0d00] border border-orange-500/20 rounded-lg px-3 py-2">
+                      <span className="text-orange-300 font-mono text-sm flex-1 min-w-0 truncate" title={name}>❌ "{name}"</span>
+                      {editingCenter === name ? (
+                        <>
+                          <input
+                            className="bg-[#111] border border-yellow-500/40 rounded px-2 py-1 text-yellow-300 text-xs w-48 focus:outline-none focus:border-yellow-400"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            placeholder="Correct spelling..."
+                            autoFocus
+                            onKeyDown={e => {
+                              if (e.key === "Enter" && editValue.trim()) {
+                                // Check if the corrected name already exists in DB
+                                const exists = centerNameSet.has(editValue.trim().toLowerCase());
+                                if (exists) {
+                                  // Mark as overridden — will be resolved during import
+                                  setCenterOverrides(prev => ({ ...prev, [name]: editValue.trim() }));
+                                  setEditingCenter(null);
+                                  toast.success(`Mapped "${name}" → "${editValue.trim()}"`);
+                                } else {
+                                  toast.error(`"${editValue.trim()}" is not in the DB either. Use "Add as New Center" instead.`);
+                                }
+                              }
+                              if (e.key === "Escape") { setEditingCenter(null); setEditValue(""); }
+                            }}
+                          />
+                          <button
+                            className="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded transition-colors"
+                            onClick={() => {
+                              if (!editValue.trim()) return;
+                              const exists = centerNameSet.has(editValue.trim().toLowerCase());
+                              if (exists) {
+                                setCenterOverrides(prev => ({ ...prev, [name]: editValue.trim() }));
+                                setEditingCenter(null);
+                                toast.success(`Mapped "${name}" → "${editValue.trim()}"`);
+                              } else {
+                                toast.error(`"${editValue.trim()}" is not in the DB either. Use "Add as New Center" instead.`);
+                              }
+                            }}
+                          >✓ Apply</button>
+                          <button
+                            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                            onClick={() => { setEditingCenter(null); setEditValue(""); }}
+                          >Cancel</button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="text-xs px-2 py-1 bg-yellow-700 hover:bg-yellow-600 text-black font-bold rounded transition-colors whitespace-nowrap"
+                            onClick={() => { setEditingCenter(name); setEditValue(name); }}
+                          >✏️ Fix Spelling</button>
+                          <button
+                            className="text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors whitespace-nowrap"
+                            disabled={addCenterMutation.isPending}
+                            onClick={() => {
+                              setEditingCenter(name);
+                              addCenterMutation.mutate({ centerName: name });
+                            }}
+                          >{addCenterMutation.isPending && editingCenter === name ? "Adding..." : "➕ Add as New Center"}</button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-orange-400/60 text-xs mt-3">
+                  Rows with unrecognized centers will fail to import. Fix all issues above before proceeding.
+                </p>
+              </div>
+            )}
 
             {/* Preview Table */}
             <div className="neon-card overflow-hidden">

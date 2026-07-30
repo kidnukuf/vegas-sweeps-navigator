@@ -65,6 +65,21 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return getAllCenters();
     }),
+    add: publicProcedure
+      .input(z.object({ centerName: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        // Find the next available center code
+        const existing = await rawQuery(
+          "SELECT centerCode FROM bowling_centers ORDER BY CAST(centerCode AS UNSIGNED) DESC LIMIT 1"
+        ) as Record<string, unknown>[];
+        const lastCode = existing[0] ? parseInt(String(existing[0].centerCode)) : 0;
+        const nextCode = String(lastCode + 1).padStart(2, "0");
+        await rawQuery(
+          "INSERT INTO bowling_centers (centerCode, centerName) VALUES (?, ?)",
+          [nextCode, input.centerName.trim()]
+        );
+        return { success: true, centerCode: nextCode, centerName: input.centerName.trim() };
+      }),
   }),
 
   // ─── EVENT ────────────────────────────────────────────────────────────────
