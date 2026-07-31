@@ -1655,10 +1655,23 @@ export const appRouter = router({
             teamId = teamRows[0]?.id as number;
 
             // Check duplicate — scoped to this event so same bowler in a different event creates a new record
-            const existing = await rawQuery(
-              "SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1",
+            // First try by scantronId (exact match), then fall back to name+event match
+            // (handles re-imports where teamPositionMap resets and generates same IDs)
+            let existing = await rawQuery(
+              "SELECT id, scantronId FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1",
               [scantronId, input.eventId]
             ) as Record<string, unknown>[];
+            if (existing.length === 0) {
+              // Fallback: match by name + event (case-insensitive)
+              existing = await rawQuery(
+                "SELECT id, scantronId FROM bowlers WHERE legalFirstName = ? AND legalLastName = ? AND eventId = ? LIMIT 1",
+                [firstName, lastName, input.eventId]
+              ) as Record<string, unknown>[];
+              // If found by name, reuse the existing scantronId so we don't collide
+              if (existing.length > 0 && existing[0].scantronId) {
+                scantronId = existing[0].scantronId as string;
+              }
+            }
 
             // ── Hotel / room data ─────────────────────────────────────────────────────
             // Col M: Hotel Confirmation # (confirmation code from hotel)
