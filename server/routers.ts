@@ -1885,6 +1885,9 @@ export const appRouter = router({
             }
           } catch (err) {
             errors++;
+            if (errors <= 3) {
+              console.log('[import] row exception:', String(err));
+            }
             errorDetails.push({ error: String(err) });
           }
         }
