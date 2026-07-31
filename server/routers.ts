@@ -1548,6 +1548,13 @@ export const appRouter = router({
         // Log column headers from first row for debugging center-name issues
         if (input.rows.length > 0) {
           console.log('[import] column headers in first row:', Object.keys(input.rows[0]).join(', '));
+          const firstRow = input.rows[0];
+          const firstCenter = String(
+            firstRow["centerName"] ?? firstRow["Center"] ?? firstRow["center"] ??
+            firstRow["Bowling Center"] ?? firstRow["bowling_center"] ?? ""
+          ).trim();
+          console.log('[import] first row center value:', JSON.stringify(firstCenter));
+          console.log('[import] centerMap keys:', Array.from(centerMap.keys()).join(', '));
         }
         // Batch write-back: collect all entries then write in one API call
         const batchWriteEntries: Array<{
@@ -1603,6 +1610,9 @@ export const appRouter = router({
             }
             if (!center) {
               errors++;
+              if (errors <= 3) {
+                console.log(`[import] center not found: "${centerName}" (key: "${centerName.toLowerCase()}", charCodes: ${Array.from(centerName).map(c => c.charCodeAt(0)).join(',')})`);
+              }
               const availableCenters = Array.from(centerMap.keys()).join(", ");
               errorDetails.push({ 
                 row: firstName + " " + lastName, 
