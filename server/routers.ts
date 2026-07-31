@@ -1528,6 +1528,13 @@ export const appRouter = router({
         let imported = 0, updated = 0, skipped = 0, errors = 0;
         const errorDetails: unknown[] = [];
         const generatedIds: string[] = [];
+        // Per-row result list for display in the import results screen
+        const rowResults: {
+          status: 'new' | 'updated' | 'error' | 'skipped';
+          firstName: string; lastName: string;
+          centerName: string; teamName: string; teamCode: string;
+          squadTime: string; scantronId?: string; error?: string;
+        }[] = [];
 
         // Use the sheet provided in THIS import request, not the stored default
         // This allows importing from different sheets without being locked to the previous one
@@ -1639,6 +1646,7 @@ export const appRouter = router({
                 row: firstName + " " + lastName, 
                 error: `Center not found: "${centerName}" (key: "${centerName.toLowerCase()}"). Available: [${availableCenters}]` 
               });
+              rowResults.push({ status: 'error', firstName, lastName, centerName, teamName, teamCode, squadTime: String(row["Squad Day & Time"] ?? row["Squad Time"] ?? "").trim(), error: `Center not found: "${centerName}"` });
               continue;
             }
 
@@ -1655,6 +1663,7 @@ export const appRouter = router({
               errors++;
               if (errors <= 5) console.log('[import] ID gen failed:', firstName, lastName, 'cc='+cc, 'teamCode='+teamCode, 'bb='+bb, String(genErr));
               errorDetails.push({ row: firstName + " " + lastName, error: "ID generation failed: " + String(genErr) });
+              rowResults.push({ status: 'error', firstName, lastName, centerName, teamName, teamCode, squadTime: String(row["Squad Day & Time"] ?? row["Squad Time"] ?? "").trim(), error: "ID generation failed: " + String(genErr) });
               continue;
             }
             if (imported + updated < 5) {
@@ -1840,6 +1849,7 @@ export const appRouter = router({
                   appOrigin: APP_ORIGIN,
                 });
               }
+              rowResults.push({ status: 'updated', firstName, lastName, centerName, teamName, teamCode, squadTime: squadTimeVal ?? '', scantronId: existingScantronId });
               updated++;
             } else {
               // Insert new bowler — use INSERT IGNORE to handle any race/duplicate scenario atomically
@@ -1919,6 +1929,7 @@ export const appRouter = router({
                 });
               }
               generatedIds.push(scantronId);
+              rowResults.push({ status: 'new', firstName, lastName, centerName, teamName, teamCode, squadTime: squadTimeVal ?? '', scantronId });
               imported++;
             }
           } catch (err) {
@@ -1927,6 +1938,16 @@ export const appRouter = router({
               console.log('[import] row exception (errors so far=' + errors + '):', String(err));
             }
             errorDetails.push({ error: String(err) });
+            // Best-effort row info for catch block
+            try {
+              const fn = String(row['First Name'] ?? row['first_name'] ?? '').trim();
+              const ln = String(row['Last Name'] ?? row['last_name'] ?? '').trim();
+              const cn = String(row['Center'] ?? row['center'] ?? '').trim();
+              const tn = String(row['Team Name'] ?? row['team_name'] ?? '').trim();
+              const tc = String(row['Team #'] ?? row['team'] ?? '').trim();
+              const sq = String(row['Squad Day & Time'] ?? row['Squad Time'] ?? '').trim();
+              rowResults.push({ status: 'error', firstName: fn, lastName: ln, centerName: cn, teamName: tn, teamCode: tc, squadTime: sq, error: String(err) });
+            } catch { /* ignore */ }
           }
         }
 
@@ -1954,7 +1975,7 @@ export const appRouter = router({
             console.log(`[import] batchWriteBowlerIds result: written=${result.written}, notFound=${result.notFound}${result.error ? ', error=' + result.error : ''}`);
           }).catch(e => console.warn('[import] batchWriteBowlerIds failed:', e));
         }
-        return { success: true, imported, updated, skipped, errors, errorDetails, generatedIds, sessionId };
+        return { success: true, imported, updated, skipped, errors, errorDetails, generatedIds, sessionId, rowResults };
       }),
 
         history: publicProcedure

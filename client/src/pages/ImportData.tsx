@@ -241,7 +241,7 @@ export default function ImportData() {
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
   const [headerMap, setHeaderMap] = useState<Record<number, string>>({});
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[]; rowResults?: { status: 'new' | 'updated' | 'error' | 'skipped'; firstName: string; lastName: string; centerName: string; teamName: string; teamCode: string; squadTime: string; scantronId?: string; error?: string }[] } | null>(null);
   const [googleUrl, setGoogleUrl] = useState("");
   const [importTabName, setImportTabName] = useState("");
   const [importTabGid, setImportTabGid] = useState<number | null>(null);
@@ -317,8 +317,8 @@ export default function ImportData() {
 
   const importMutation = trpc.import.process.useMutation({
     onSuccess: async (data: unknown) => {
-      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[] };
-      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [], errorDetails: d.errorDetails ?? [] });
+      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[]; rowResults?: { status: 'new' | 'updated' | 'error' | 'skipped'; firstName: string; lastName: string; centerName: string; teamName: string; teamCode: string; squadTime: string; scantronId?: string; error?: string }[] };
+      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [], errorDetails: d.errorDetails ?? [], rowResults: d.rowResults ?? [] });
       // Fetch the full roster to build the ID reference sheet
       const roster = await adminRosterQuery.refetch();
       if (roster.data) {
@@ -861,21 +861,80 @@ export default function ImportData() {
               </div>
             </div>
 
-            {/* Error Details — unrecognized center names */}
-            {importResult.errorDetails && importResult.errorDetails.length > 0 && (() => {
-              const centerErrors = importResult.errorDetails
-                .map(e => { const m = e.error.match(/Center not found: "([^"]+)"/i); return m ? m[1] : null; })
-                .filter((x): x is string => x !== null);
-              const uniqueCenters = Array.from(new Set(centerErrors));
-              if (uniqueCenters.length === 0) return null;
+            {/* Combined import result list — errors first in red, then successes */}
+            {importResult.rowResults && importResult.rowResults.length > 0 && (() => {
+              const errorRows = importResult.rowResults.filter(r => r.status === 'error');
+              const successRows = importResult.rowResults.filter(r => r.status !== 'error' && r.status !== 'skipped');
+              const allRows = [...errorRows, ...successRows];
               return (
-                <div className="neon-card p-5 border-red-500/40">
-                  <h3 className="text-red-400 font-bold text-lg mb-1">⚠️ Unrecognized Center Names ({uniqueCenters.length} unique)</h3>
-                  <p className="text-gray-400 text-sm mb-3">These center names from the sheet did not match any center in the database. Fix the spelling in your Google Sheet to match exactly, or go to Settings → Bowling Centers to add them.</p>
-                  <div className="flex flex-wrap gap-2">
-                    {uniqueCenters.map((name, i) => (
-                      <span key={i} className="bg-red-900/50 border border-red-500/50 text-red-300 text-xs px-3 py-1.5 rounded font-mono">{name}</span>
-                    ))}
+                <div className="neon-card p-5 border-yellow-500/20">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-yellow-400 font-bold text-lg">📋 Import Row Results</h3>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {errorRows.length > 0 && <span className="text-red-400 font-semibold">{errorRows.length} errors</span>}
+                        {errorRows.length > 0 && successRows.length > 0 && <span className="text-gray-600"> · </span>}
+                        {successRows.length > 0 && <span className="text-green-400 font-semibold">{successRows.length} imported/updated</span>}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const header = 'Status,First Name,Last Name,Center,Team,Team#,Squad Time,Scantron ID,Error';
+                        const csv = allRows.map(r =>
+                          `${r.status},${r.firstName},${r.lastName},"${r.centerName}","${r.teamName}",${r.teamCode},"${r.squadTime}",${r.scantronId ?? ''},"${r.error ?? ''}"`
+                        ).join('\n');
+                        const blob = new Blob([header + '\n' + csv], { type: 'text/csv' });
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                        a.download = 'import-results.csv'; a.click();
+                      }}
+                      className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded px-3 py-1.5 transition-colors">
+                      ⬇ Download CSV
+                    </button>
+                  </div>
+                  <div className="overflow-auto max-h-[500px] rounded-xl border border-white/10">
+                    <table className="w-full text-xs">
+                      <thead className="bg-[#111] sticky top-0 z-10">
+                        <tr className="text-left">
+                          <th className="px-3 py-2 text-gray-400 font-semibold">Status</th>
+                          <th className="px-3 py-2 text-gray-400 font-semibold">Name</th>
+                          <th className="px-3 py-2 text-gray-400 font-semibold">Center</th>
+                          <th className="px-3 py-2 text-gray-400 font-semibold">Team</th>
+                          <th className="px-3 py-2 text-gray-400 font-semibold">Team#</th>
+                          <th className="px-3 py-2 text-gray-400 font-semibold">Squad Time</th>
+                          <th className="px-3 py-2 text-yellow-400 font-mono font-semibold">Scantron ID</th>
+                          <th className="px-3 py-2 text-red-400 font-semibold">Error</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allRows.map((r, i) => {
+                          const isErr = r.status === 'error';
+                          const isNew = r.status === 'new';
+                          const rowBg = isErr
+                            ? (i % 2 === 0 ? 'bg-red-950/60' : 'bg-red-950/40')
+                            : (i % 2 === 0 ? 'bg-[#0d0d0d]' : 'bg-[#111]');
+                          return (
+                            <tr key={i} className={`border-t ${isErr ? 'border-red-800/40' : 'border-white/5'} ${rowBg}`}>
+                              <td className="px-3 py-1.5">
+                                {isErr ? (
+                                  <span className="bg-red-900/60 text-red-300 border border-red-600/40 rounded px-1.5 py-0.5 font-bold">ERROR</span>
+                                ) : isNew ? (
+                                  <span className="bg-green-900/60 text-green-300 border border-green-600/40 rounded px-1.5 py-0.5 font-bold">NEW</span>
+                                ) : (
+                                  <span className="bg-blue-900/60 text-blue-300 border border-blue-600/40 rounded px-1.5 py-0.5 font-bold">UPDATED</span>
+                                )}
+                              </td>
+                              <td className={`px-3 py-1.5 font-semibold ${isErr ? 'text-red-200' : 'text-white'}`}>{r.firstName} {r.lastName}</td>
+                              <td className={`px-3 py-1.5 ${isErr ? 'text-red-300' : 'text-gray-400'}`}>{r.centerName}</td>
+                              <td className={`px-3 py-1.5 ${isErr ? 'text-red-300' : 'text-gray-400'}`}>{r.teamName}</td>
+                              <td className={`px-3 py-1.5 font-mono ${isErr ? 'text-red-300' : 'text-orange-400'}`}>{r.teamCode}</td>
+                              <td className={`px-3 py-1.5 ${isErr ? 'text-red-300' : 'text-gray-400'}`}>{r.squadTime}</td>
+                              <td className="px-3 py-1.5 font-mono text-yellow-400 tracking-widest">{r.scantronId ?? '—'}</td>
+                              <td className="px-3 py-1.5 text-red-400 max-w-[200px] truncate" title={r.error}>{r.error ?? ''}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               );
