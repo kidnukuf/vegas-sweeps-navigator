@@ -1564,7 +1564,28 @@ export const appRouter = router({
           appOrigin?: string;
         }> = [];
         // Group rows by center+team to assign BB positions
+        // Pre-populate from existing DB bowlers so re-imports continue from the right position
         const teamPositionMap = new Map<string, number>();
+        {
+          const existingBowlers = await rawQuery(
+            `SELECT b.bowlerPosition, bc.centerCode, t.teamCode
+             FROM bowlers b
+             JOIN teams t ON b.teamId = t.id
+             JOIN bowling_centers bc ON b.centerId = bc.id
+             WHERE b.eventId = ?`,
+            [input.eventId]
+          ) as Record<string, unknown>[];
+          for (const eb of existingBowlers) {
+            const key = `${String(eb.centerCode)}-${String(eb.teamCode).padStart(2, "0")}`;
+            const pos = parseInt(String(eb.bowlerPosition)) || 0;
+            if (pos > (teamPositionMap.get(key) ?? 0)) {
+              teamPositionMap.set(key, pos);
+            }
+          }
+          if (existingBowlers.length > 0) {
+            console.log('[import] pre-populated teamPositionMap with', existingBowlers.length, 'existing bowlers');
+          }
+        }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
         for (const row of input.rows) {
@@ -1630,10 +1651,14 @@ export const appRouter = router({
             let scantronId: string;
             try {
               scantronId = generateScantronId(cc, input.leagueCode, input.eventCode, teamCode, bb);
-            } catch {
+            } catch (genErr) {
               errors++;
-              errorDetails.push({ row: firstName + " " + lastName, error: "ID generation failed" });
+              if (errors <= 5) console.log('[import] ID gen failed:', firstName, lastName, 'cc='+cc, 'teamCode='+teamCode, 'bb='+bb, String(genErr));
+              errorDetails.push({ row: firstName + " " + lastName, error: "ID generation failed: " + String(genErr) });
               continue;
+            }
+            if (imported + updated < 5) {
+              console.log('[import] row', imported+updated+1, firstName, lastName, 'center='+centerName, 'teamCode='+teamCode, 'bb='+bb, 'scantronId='+scantronId);
             }
 
             // Check for existing team or create
@@ -1817,9 +1842,9 @@ export const appRouter = router({
               }
               updated++;
             } else {
-              // Insert new bowler
+              // Insert new bowler — use INSERT IGNORE to handle any race/duplicate scenario atomically
               await rawQuery(
-                `INSERT INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
+                `INSERT IGNORE INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
                    sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, laneToEvent, guestPoolPartyAmount, banquetTable)
                  VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
@@ -1828,7 +1853,7 @@ export const appRouter = router({
                  under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null, laneToEvent || null,
                  guestPoolPartyAmount.toFixed(2), banquetTable || null]
               );
-              const newBowler = await rawQuery("SELECT id FROM bowlers WHERE scantronId = ? LIMIT 1", [scantronId]) as Record<string, unknown>[];
+              const newBowler = await rawQuery("SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1", [scantronId, input.eventId]) as Record<string, unknown>[];
               const bowlerId = newBowler[0]?.id as number;
               if (bowlerId) {
                 if (checkinDate || checkoutDate || roomType || hotelConfirmation) {
@@ -1898,8 +1923,8 @@ export const appRouter = router({
             }
           } catch (err) {
             errors++;
-            if (errors <= 3) {
-              console.log('[import] row exception:', String(err));
+            if (errors <= 5) {
+              console.log('[import] row exception (errors so far=' + errors + '):', String(err));
             }
             errorDetails.push({ error: String(err) });
           }
