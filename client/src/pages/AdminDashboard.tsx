@@ -600,14 +600,27 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   // Delete event state
   const [deleteEventModal, setDeleteEventModal] = useState<null | { id: number; name: string; year: number }>(null);
   const [deleteEventConfirmText, setDeleteEventConfirmText] = useState("");
+  const [clearBowlersModal, setClearBowlersModal] = useState(false);
+  const [clearBowlersConfirmText, setClearBowlersConfirmText] = useState("");
+  const clearBowlersMut = trpc.bowlers.clearAll.useMutation({
+    onSuccess: () => {
+      toast.success("All bowlers cleared. You can now re-import.");
+      setClearBowlersModal(false);
+      setClearBowlersConfirmText("");
+      void refetch();
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const deleteEventMut = trpc.event.delete.useMutation({
     onSuccess: () => {
       toast.success("Event permanently deleted.");
       setDeleteEventModal(null);
       setDeleteEventConfirmText("");
-      refetchEvents();
-      // Reset to first remaining event or 0
-      setSelectedEventId(0);
+      refetchEvents().then((result) => {
+        const remaining = (result.data ?? []) as Record<string, unknown>[];
+        const firstId = remaining.length > 0 ? Number(remaining[0].id) : 0;
+        selectEvent(firstId);
+      }).catch(() => selectEvent(0));
     },
     onError: (e) => toast.error(e.message),
   });
@@ -1034,6 +1047,14 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   className="text-yellow-300 focus:bg-yellow-500/10 focus:text-yellow-300 cursor-pointer"
                 >✏️ Rename Current Event</DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (!activeEvent) return;
+                    setClearBowlersConfirmText("");
+                    setClearBowlersModal(true);
+                  }}
+                  className="text-orange-400 focus:bg-orange-500/10 focus:text-orange-400 cursor-pointer"
+                >🧹 Clear All Bowlers…</DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
                     if (!activeEvent) return;
@@ -2071,6 +2092,50 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </button>
               <button
                 onClick={() => { setDeleteEventModal(null); setDeleteEventConfirmText(""); }}
+                className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors"
+              >Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Clear Bowlers Confirmation Modal ── */}
+      {clearBowlersModal && activeEvent && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4" onClick={() => setClearBowlersModal(false)}>
+          <div className="bg-[#1a1a1a] border border-orange-500/50 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">🧹</span>
+              <h3 className="text-xl font-black text-orange-400">Clear All Bowlers</h3>
+            </div>
+            <div className="rounded-xl px-4 py-3 mb-4 text-sm"
+              style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.3)" }}>
+              <p className="text-orange-300 font-bold mb-1">⚠️ This will permanently delete all bowler data for this event.</p>
+              <p className="text-white/70 text-sm">
+                All bowlers, passports, check-ins, tokens, and import history for <span className="text-white font-bold">{String(activeEvent.eventName)} {Number(activeEvent.eventYear)}</span> will be removed.
+                The event itself and bowling centers will be kept. You can re-import from your Google Sheet afterward.
+              </p>
+            </div>
+            <p className="text-white/60 text-sm mb-2">
+              To confirm, type <span className="font-black text-orange-400 tracking-widest">clear</span> in the box below:
+            </p>
+            <input
+              className="w-full bg-black/50 border border-orange-500/40 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-orange-400 mb-4"
+              placeholder='Type "clear" to confirm'
+              value={clearBowlersConfirmText}
+              onChange={(e) => setClearBowlersConfirmText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => clearBowlersMut.mutate({ eventId: EVENT_ID })}
+                disabled={clearBowlersConfirmText !== "clear" || clearBowlersMut.isPending}
+                className="flex-1 py-2.5 rounded-xl font-black text-white text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: clearBowlersConfirmText === "clear" ? "linear-gradient(135deg, #ea580c, #c2410c)" : "rgba(249,115,22,0.2)" }}
+              >
+                {clearBowlersMut.isPending ? "Clearing…" : "🧹 Clear All Bowlers"}
+              </button>
+              <button
+                onClick={() => { setClearBowlersModal(false); setClearBowlersConfirmText(""); }}
                 className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors"
               >Cancel</button>
             </div>

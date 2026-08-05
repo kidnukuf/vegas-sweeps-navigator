@@ -485,6 +485,32 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    clearAll: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { eventId } = input;
+        const bowlerSubquery = 'SELECT id FROM bowlers WHERE eventId=?';
+        await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM offline_sync_queue WHERE bowler_id IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM payment_records WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM entry_tokens WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM checkIns WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM contact_requests WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM hotel_records WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery(`DELETE FROM hotelRecords WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
+        await rawQuery('DELETE FROM import_sessions WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM teams WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM leagues WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM bowlers WHERE eventId=?', [eventId]);
+        await writeAuditLog({
+          eventId,
+          actorRole: 'EventDirector',
+          action: 'clear_all_bowlers',
+          targetType: 'event',
+          details: `All bowlers cleared for event ${eventId}`,
+        });
+        return { success: true };
+      }),
     delete: publicProcedure
       .input(z.object({
         id: z.number(),
