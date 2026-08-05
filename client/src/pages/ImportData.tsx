@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -260,6 +260,21 @@ export default function ImportData() {
   const utils = trpc.useUtils();
   const { data: events = [] } = trpc.event.list.useQuery();
   const selectedEvent = (events as Record<string, unknown>[]).find((e) => Number(e.id) === selectedEventId) ?? null;
+
+  // Auto-fill Google URL and tab name from the event's saved sheet settings
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const savedId = String(selectedEvent.sheetSpreadsheetId ?? "");
+    const savedTab = String(selectedEvent.sheetTabName ?? "");
+    if (savedId) {
+      setGoogleUrl(prev => prev || `https://docs.google.com/spreadsheets/d/${savedId}/edit`);
+      setActiveTab("google");
+    }
+    if (savedTab) {
+      setImportTabName(prev => prev || savedTab);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEvent?.sheetSpreadsheetId, selectedEvent?.sheetTabName]);
 
   // ── Center mismatch detection ──────────────────────────────────────────────
   const { data: allCenters = [] } = trpc.centers.list.useQuery();
