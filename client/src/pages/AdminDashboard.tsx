@@ -28,15 +28,16 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
   // Legacy appAuth login (EventDirector app_user)
   const legacyLogin = trpc.appAuth.login.useMutation({
     onSuccess: (data) => {
-      if (data.user?.appRole !== "EventDirector") {
-        toast.error("Access denied. Event Director credentials required.");
+      // If legacy returned success:false or wrong role, fall through to edStaff
+      if (!data.success || data.user?.appRole !== "EventDirector") {
+        staffLogin.mutate({ username: username.trim(), password });
         return;
       }
       localStorage.setItem(ED_TOKEN_KEY, data.token ?? "");
       onAuth();
     },
     onError: () => {
-      // Legacy failed — try edStaff
+      // Legacy threw — try edStaff
       staffLogin.mutate({ username: username.trim(), password });
     },
   });
