@@ -849,7 +849,7 @@ export const appRouter = router({
   // ─── APP USERS (role accounts) ────────────────────────────────────────────
   appAuth: router({
     login: publicProcedure
-      .input(z.object({ username: z.string(), password: z.string() }))
+      .input(z.object({ username: z.string(), password: z.string(), rememberMe: z.boolean().optional() }))
       .mutation(async ({ input, ctx }) => {
         const user = await getAppUserByUsername(input.username) as Record<string, unknown> | null;
         if (!user) return { success: false, error: "Invalid credentials" };

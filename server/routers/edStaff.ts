@@ -40,6 +40,7 @@ export const edStaffRouter = router({
     .input(z.object({
       username: z.string().min(1),
       password: z.string().min(1),
+      rememberMe: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const rows = await rawQuery<{
@@ -64,7 +65,7 @@ export const edStaffRouter = router({
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          maxAge: input.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 30 days if remembered, else 7
           path: "/",
         });
       }

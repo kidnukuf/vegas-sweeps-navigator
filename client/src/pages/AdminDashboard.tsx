@@ -24,6 +24,7 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Legacy appAuth login (EventDirector app_user)
   const legacyLogin = trpc.appAuth.login.useMutation({
@@ -46,6 +47,12 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
   const staffLogin = trpc.edStaff.login.useMutation({
     onSuccess: () => {
       // Cookie is set server-side; mark as authed
+      // Store remember-me preference so the session duration is known client-side
+      if (rememberMe) {
+        localStorage.setItem("vsn_ed_remember", "1");
+      } else {
+        localStorage.removeItem("vsn_ed_remember");
+      }
       localStorage.setItem(ED_TOKEN_KEY, "staff_session");
       onAuth();
     },
@@ -58,7 +65,7 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
     e.preventDefault();
     if (!username || !password) return toast.error("Enter username and password");
     // Try legacy first; on failure edStaff is tried in onError
-    legacyLogin.mutate({ username: username.trim(), password });
+    legacyLogin.mutate({ username: username.trim(), password, rememberMe });
   }
 
   return (
@@ -142,6 +149,15 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
           >
             {isPending ? "Authenticating…" : "Access Dashboard →"}
           </button>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 accent-yellow-500 rounded"
+            />
+            <span className="text-gray-400 text-sm">Remember this device for 30 days</span>
+          </label>
         </form>
 
         <p className="text-center text-gray-700 text-xs mt-4">
@@ -434,6 +450,12 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const { data: edStaffList = [], refetch: refetchStaff } = trpc.edStaff.listStaff.useQuery();
   const createStaffMut = trpc.edStaff.createStaff.useMutation({
     onSuccess: () => { toast.success("Staff account created"); refetchStaff(); setNewStaff({ username: "", password: "", name: "" }); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [resetStaffModal, setResetStaffModal] = useState<{ id: number; name: string } | null>(null);
+  const [resetStaffPw, setResetStaffPw] = useState("");
+  const resetStaffMut = trpc.edStaff.resetStaffPassword.useMutation({
+    onSuccess: () => { toast.success("Password updated"); setResetStaffModal(null); setResetStaffPw(""); },
     onError: (e) => toast.error(e.message),
   });
   const deleteStaffMut = trpc.edStaff.deleteStaff.useMutation({
@@ -1634,11 +1656,18 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                         <p className="text-white font-semibold text-sm">{s.name}</p>
                         <p className="text-gray-500 text-xs font-mono">@{s.username}</p>
                       </div>
-                      <button
-                        onClick={() => { if (confirm(`Remove staff account for ${s.name}?`)) deleteStaffMut.mutate({ staffId: s.id }); }}
-                        className="px-3 py-1.5 bg-red-900/50 hover:bg-red-700 text-red-300 hover:text-white rounded-lg text-xs font-semibold transition-all">
-                        Remove
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setResetStaffPw(""); setResetStaffModal({ id: s.id, name: s.name }); }}
+                          className="px-3 py-1.5 bg-yellow-900/50 hover:bg-yellow-700 text-yellow-300 hover:text-white rounded-lg text-xs font-semibold transition-all">
+                          Reset PW
+                        </button>
+                        <button
+                          onClick={() => { if (confirm(`Remove staff account for ${s.name}?`)) deleteStaffMut.mutate({ staffId: s.id }); }}
+                          className="px-3 py-1.5 bg-red-900/50 hover:bg-red-700 text-red-300 hover:text-white rounded-lg text-xs font-semibold transition-all">
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2139,6 +2168,37 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 onClick={() => { setClearBowlersModal(false); setClearBowlersConfirmText(""); }}
                 className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors"
               >Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Reset Staff Password Modal ── */}
+      {resetStaffModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4" onClick={() => setResetStaffModal(null)}>
+          <div className="bg-[#1a1a1a] border border-yellow-500/50 rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-black text-yellow-400 mb-4">🔑 Reset Password — {resetStaffModal.name}</h3>
+            <input
+              type="password"
+              className="w-full bg-black/50 border border-yellow-500/40 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-yellow-400 mb-4"
+              placeholder="New password (min 8 chars)"
+              value={resetStaffPw}
+              onChange={(e) => setResetStaffPw(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (resetStaffPw.length < 8) return toast.error("Password must be at least 8 characters");
+                  resetStaffMut.mutate({ staffId: resetStaffModal.id, newPassword: resetStaffPw });
+                }}
+                disabled={resetStaffMut.isPending || resetStaffPw.length < 8}
+                className="flex-1 py-2.5 rounded-xl font-black text-black text-sm transition-all disabled:opacity-30"
+                style={{ background: "linear-gradient(135deg, #ffd700, #ff8c00)" }}
+              >
+                {resetStaffMut.isPending ? "Saving…" : "Update Password"}
+              </button>
+              <button onClick={() => setResetStaffModal(null)} className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors">Cancel</button>
             </div>
           </div>
         </div>
