@@ -531,3 +531,7 @@
 ## Event Director Access
 - [x] Diagnose Cassie Davis Event Director login failure and restore access
 - [x] Verify the active ED account options and their intended login routes
+
+## Bowler Database Reset
+- [x] Clear bowler records and dependent operational data while retaining centers, ED accounts, events, and configuration
+- [x] Verify that no bowler records remain and retained configuration data is intact
