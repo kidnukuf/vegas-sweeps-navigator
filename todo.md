@@ -522,3 +522,8 @@
 ## QR False-Scan Fix
 - [x] Add read-only validatePassportToken query (no DB write)
 - [x] Rewrite ScanPassport.tsx to use read-only query — never calls scanPassport mutation
+
+## Guest Tickets in Edit Bowler
+- [x] Add banquet and pool party guest-ticket controls to the Edit Bowler workflow
+- [x] Store guest names, create linked guest access codes, and write the corresponding codes back to the event Google Sheet
+- [x] Test guest-ticket creation, QR access behavior, and Google Sheets write-back

@@ -470,6 +470,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [editingBowler, setEditingBowler] = useState<Bowler | null>(null);
   const [editFields, setEditFields] = useState<Record<string, string>>({});
   const [showAllFields, setShowAllFields] = useState(false);
+  const [newGuestTicket, setNewGuestTicket] = useState({ name: "", poolParty: false, banquet: false });
   const [newDoorman, setNewDoorman] = useState({ designation: "", password: "" });
   const [testQr, setTestQr] = useState<{ qrDataUrl: string; tokenValue: string } | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -682,12 +683,26 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     onSuccess: () => { toast.success("Bowler updated"); refetch(); setEditingBowler(null); },
     onError: (e) => toast.error(e.message),
   });
+  const { data: editingGuestTickets = [], refetch: refetchEditingGuestTickets } = trpc.bowlerAuth.listGuestTickets.useQuery(
+    { token: edToken, bowlerId: Number(editingBowler?.id ?? 0) },
+    { enabled: Boolean(editingBowler?.id) }
+  );
+  const createGuestTicket = trpc.bowlerAuth.createGuestTicket.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Guest ticket ${result.guestId} created and synced to the Google Sheet.`);
+      setNewGuestTicket({ name: "", poolParty: false, banquet: false });
+      void refetchEditingGuestTickets();
+      void refetch();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   // Reset destructive-action panels whenever the edited bowler changes.
   useEffect(() => {
     setConfirmReset(false);
     setShowDeletePanel(false);
     setDeleteConfirmText("");
+    setNewGuestTicket({ name: "", poolParty: false, banquet: false });
   }, [editingBowler?.id]);
 
   const createDoorman = trpc.appAuth.createDoorman.useMutation({
@@ -2007,6 +2022,72 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   </div>
                 </>
               )}
+
+              <div className="pt-3 mt-1 border-t border-purple-500/30">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <p className="text-xs text-purple-300 uppercase tracking-wide font-bold">🎟️ Guest Tickets</p>
+                    <p className="text-xs text-gray-500 mt-1">Create a named banquet and/or pool party guest ticket. Codes are linked to {String(editingBowler.scantronId ?? "this bowler")} and written back to the selected Google Sheet tab.</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] px-2 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-200">{editingGuestTickets.length} guest{editingGuestTickets.length === 1 ? "" : "s"}</span>
+                </div>
+
+                {editingGuestTickets.length > 0 && (
+                  <div className="mb-3 space-y-1.5">
+                    {editingGuestTickets.map((guest) => (
+                      <div key={guest.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                        <span className="font-semibold text-white">{guest.guestName || `Guest ${guest.suffix}`}</span>
+                        <span className="font-mono text-yellow-300">{guest.guestId}</span>
+                        {guest.hasBanquetTicket && <span className={`rounded px-1.5 py-0.5 ${guest.banquetUsed ? "bg-green-500/15 text-green-300" : "bg-purple-500/15 text-purple-200"}`}>🍽️ {guest.banquetUsed ? "Banquet used" : "Banquet"}</span>}
+                        {guest.hasPoolTicket && <span className={`rounded px-1.5 py-0.5 ${guest.used ? "bg-green-500/15 text-green-300" : "bg-cyan-500/15 text-cyan-200"}`}>🏊 {guest.used ? "Pool used" : "Pool"}</span>}
+                        {guest.disabled && <span className="rounded px-1.5 py-0.5 bg-orange-500/15 text-orange-200">Disabled</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="rounded-xl bg-[#111] border border-purple-400/20 p-3 space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Guest full name</label>
+                    <input
+                      value={newGuestTicket.name}
+                      onChange={(e) => setNewGuestTicket({ ...newGuestTicket, name: e.target.value })}
+                      placeholder="e.g. Jordan Smith"
+                      className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-lg text-white text-sm focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewGuestTicket({ ...newGuestTicket, banquet: !newGuestTicket.banquet })}
+                      className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${newGuestTicket.banquet ? "border-purple-400 bg-purple-500/20 text-purple-100" : "border-white/15 bg-black/20 text-gray-400 hover:text-white"}`}
+                    >
+                      {newGuestTicket.banquet ? "✓ " : "+ "}🍽️ Banquet Ticket
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewGuestTicket({ ...newGuestTicket, poolParty: !newGuestTicket.poolParty })}
+                      className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${newGuestTicket.poolParty ? "border-cyan-400 bg-cyan-500/20 text-cyan-100" : "border-white/15 bg-black/20 text-gray-400 hover:text-white"}`}
+                    >
+                      {newGuestTicket.poolParty ? "✓ " : "+ "}🏊 Pool Party Ticket
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => createGuestTicket.mutate({
+                      token: edToken,
+                      bowlerId: editingBowler.id as number,
+                      guestName: newGuestTicket.name,
+                      includePoolParty: newGuestTicket.poolParty,
+                      includeBanquet: newGuestTicket.banquet,
+                    })}
+                    disabled={!newGuestTicket.name.trim() || (!newGuestTicket.poolParty && !newGuestTicket.banquet) || createGuestTicket.isPending}
+                    className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {createGuestTicket.isPending ? "Creating & syncing..." : "Add Guest Ticket"}
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => updateBowler.mutate({ id: editingBowler.id as number, fields: editFields, actorRole: "EventDirector" })}

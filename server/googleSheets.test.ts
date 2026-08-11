@@ -185,6 +185,30 @@ describe("writeQRCodesToSheet", () => {
     expect(allValues.some((v) => v.includes("xyz789"))).toBe(true);
   });
 
+  it("writes each guest ticket to the column assigned to its suffix", async () => {
+    mockValuesGet.mockResolvedValueOnce(fakeSheetWithBowler("John", "Doe", "5"));
+    mockBatchUpdate.mockResolvedValueOnce({ data: { totalUpdatedCells: 2 } });
+
+    await writeQRCodesToSheet({
+      firstName: "John",
+      lastName: "Doe",
+      laneNumber: 5,
+      banquetToken: null,
+      poolPartyToken: null,
+      guestPoolTokens: [{ suffix: "B", token: "guest-pool-b" }],
+      guestBanquetTokens: [{ suffix: "A", banquetToken: "guest-banquet-a" }],
+      appOrigin: APP_ORIGIN,
+      target: VALID_TARGET,
+    });
+
+    const batchCall = mockBatchUpdate.mock.calls[0][0] as {
+      requestBody: { data: { range: string; values: string[][] }[] };
+    };
+    const ranges = batchCall.requestBody.data.map((entry) => entry.range);
+    expect(ranges.some((range) => range.endsWith("!AH2"))).toBe(true);
+    expect(ranges.some((range) => range.endsWith("!AF2"))).toBe(true);
+  });
+
   it("logs a warning and does not throw when bowler is not found in sheet", async () => {
     mockValuesGet.mockResolvedValueOnce({
       data: {

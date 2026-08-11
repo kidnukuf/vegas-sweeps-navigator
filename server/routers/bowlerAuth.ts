@@ -743,10 +743,10 @@ export const bowlerAuthRouter = router({
       if (input.passportType === "guest-banquet") {
         const guestRows = await rawQuery<{
           id: number; suffix: string; banquetUsed: number; disabled: number;
-          legalFirstName: string; legalLastName: string; eventId: number | null;
+          guestName: string | null; legalFirstName: string; legalLastName: string; eventId: number | null;
         }>(
           `SELECT g.id, g.suffix, g.banquetUsed, g.disabled,
-                  b.legalFirstName, b.legalLastName, b.eventId
+                  g.guestName, b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g
            JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.banquetToken = ? LIMIT 1`,
@@ -756,7 +756,7 @@ export const bowlerAuthRouter = router({
           return { result: "invalid" as const, message: "Invalid QR Code — guest banquet token not found." };
         }
         const g = guestRows[0];
-        const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        const bowlerName = g.guestName?.trim() || `${g.legalFirstName} ${g.legalLastName} (Guest ${g.suffix})`;
         if (g.disabled) {
           return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
         }
@@ -785,10 +785,10 @@ export const bowlerAuthRouter = router({
       if (input.passportType === "guest-pool") {
         const guestRows = await rawQuery<{
           id: number; bowlerId: number; suffix: string; used: number; disabled: number;
-          legalFirstName: string; legalLastName: string; eventId: number | null;
+          guestName: string | null; legalFirstName: string; legalLastName: string; eventId: number | null;
         }>(
           `SELECT g.id, g.bowlerId, g.suffix, g.used, g.disabled,
-                  b.legalFirstName, b.legalLastName, b.eventId
+                  g.guestName, b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g
            JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.token = ? LIMIT 1`,
@@ -798,7 +798,7 @@ export const bowlerAuthRouter = router({
           return { result: "invalid" as const, message: "Invalid QR Code — guest token not found." };
         }
         const g = guestRows[0];
-        const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        const bowlerName = g.guestName?.trim() || `${g.legalFirstName} ${g.legalLastName} (Guest ${g.suffix})`;
         if (g.disabled) {
           return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
         }
@@ -927,6 +927,121 @@ export const bowlerAuthRouter = router({
         [input.bowlerId, guestId, bowler?.eventId ?? null, nextSuffix, newToken]
       );
       return { success: true, suffix: nextSuffix, token: newToken };
+    }),
+
+  // ── ED: LIST NAMED GUEST TICKETS FOR A BOWLER ──────────────────────────────
+  listGuestTickets: publicProcedure
+    .input(z.object({ token: z.string().optional().default(""), bowlerId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const payload = verifyToken(input.token);
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
+      }
+      const rows = await rawQuery<{
+        id: number; guestId: string | null; guestName: string | null; suffix: string;
+        token: string; banquetToken: string | null; used: number; banquetUsed: number; disabled: number;
+      }>(
+        `SELECT id, guestId, guestName, suffix, token, banquetToken, used, banquetUsed, disabled
+         FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+        [input.bowlerId]
+      );
+      return rows.map((row) => ({
+        ...row,
+        hasPoolTicket: Boolean(row.token && !row.token.endsWith("-BQ")),
+        hasBanquetTicket: Boolean(row.banquetToken),
+        used: Boolean(row.used),
+        banquetUsed: Boolean(row.banquetUsed),
+        disabled: Boolean(row.disabled),
+      }));
+    }),
+
+  // ── ED: CREATE A NAMED GUEST TICKET AND SYNC ITS QR CODE(S) TO THE SHEET ───
+  createGuestTicket: publicProcedure
+    .input(z.object({
+      token: z.string().optional().default(""),
+      bowlerId: z.number(),
+      guestName: z.string().trim().min(2, "Enter the guest's full name.").max(120),
+      includePoolParty: z.boolean(),
+      includeBanquet: z.boolean(),
+    }).refine((value) => value.includePoolParty || value.includeBanquet, {
+      message: "Select a banquet ticket, a pool party ticket, or both.",
+      path: ["includePoolParty"],
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const payload = verifyToken(input.token);
+      const staffCookie = verifyStaffCookie(ctx.req);
+      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
+      }
+
+      const [bowler] = await rawQuery<{
+        id: number; eventId: number | null; scantronId: string | null;
+        legalFirstName: string; legalLastName: string; laneNumber: number | null;
+        poolPartyToken: string | null; banquetToken: string | null;
+      }>(
+        `SELECT id, eventId, scantronId, legalFirstName, legalLastName, laneNumber, poolPartyToken, banquetToken
+         FROM bowlers WHERE id = ? LIMIT 1`,
+        [input.bowlerId]
+      );
+      if (!bowler?.scantronId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Bowler record or bowler ID was not found." });
+      }
+
+      const existing = await rawQuery<{ suffix: string }>(
+        `SELECT suffix FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+        [input.bowlerId]
+      );
+      const usedSuffixes = new Set(existing.map((row) => row.suffix.toUpperCase()));
+      // The selected Google Sheet layout reserves guest ticket columns for A and B.
+      const nextSuffix = ["A", "B"].find((suffix) => !usedSuffixes.has(suffix));
+      if (!nextSuffix) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Both guest-ticket slots are already used for this bowler." });
+      }
+
+      // Guest IDs remain linked to the host's ten-digit ID so seating and door reports stay grouped.
+      const guestId = `${bowler.scantronId}${nextSuffix}`;
+      const poolToken = input.includePoolParty ? guestId : `${guestId}-BQ`;
+      const banquetToken = input.includeBanquet ? `${guestId}-BQ` : null;
+      await rawQuery(
+        `INSERT INTO guest_pool_party_tokens
+           (bowlerId, guestId, guestName, eventId, suffix, token, used, banquetToken, banquetUsed, disabled)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 0, 0)`,
+        [input.bowlerId, guestId, input.guestName, bowler.eventId, nextSuffix, poolToken, banquetToken]
+      );
+
+      // Rebuild both sets from the database so suffix A always writes to A's columns,
+      // even when a guest has only one of the two ticket types.
+      const guestRows = await rawQuery<{ suffix: string; token: string; banquetToken: string | null }>(
+        `SELECT suffix, token, banquetToken FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+        [input.bowlerId]
+      );
+      const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
+      const sheetTarget = bowler.eventId ? await getEventSheetTarget(bowler.eventId) : undefined;
+      await writeQRCodesToSheet({
+        firstName: bowler.legalFirstName,
+        lastName: bowler.legalLastName,
+        laneNumber: bowler.laneNumber,
+        poolPartyToken: bowler.poolPartyToken,
+        banquetToken: bowler.banquetToken,
+        guestPoolTokens: guestRows
+          .filter((guest) => guest.token && !guest.token.endsWith("-BQ"))
+          .map((guest) => ({ suffix: guest.suffix, token: guest.token })),
+        guestBanquetTokens: guestRows
+          .filter((guest) => guest.banquetToken)
+          .map((guest) => ({ suffix: guest.suffix, banquetToken: guest.banquetToken! })),
+        appOrigin,
+        target: sheetTarget,
+      });
+      await writeAuditLog({
+        eventId: bowler.eventId ?? undefined,
+        actorRole: "EventDirector",
+        action: "guest_ticket_created",
+        targetId: input.bowlerId,
+        targetType: "bowler",
+        details: JSON.stringify({ guestName: input.guestName, guestId, includePoolParty: input.includePoolParty, includeBanquet: input.includeBanquet }),
+      });
+      return { success: true, guestId, suffix: nextSuffix, poolToken: input.includePoolParty ? poolToken : null, banquetToken };
     }),
 
   disableGuestPass: publicProcedure

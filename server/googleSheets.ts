@@ -424,14 +424,18 @@ export async function writeQRCodesToSheet(params: {
       // Z (index 25) = Pool QR
       updateData.push({ range: `'${resolved.sheetName}'!Z${rowNum}`, values: [[poolPartyQRUrl]] });
     }
-    for (let i = 0; i < Math.min(guestPoolTokens.length, GUEST_POOL_COLUMNS.length); i++) {
-      const col = GUEST_POOL_COLUMNS[i]; // AD=#A Pool QR, AH=#B Pool QR
-      const guestUrl = `${appOrigin}/scan/guest-pool/${guestPoolTokens[i].token}`;
+    for (const guest of guestPoolTokens) {
+      const index = guest.suffix.toUpperCase().charCodeAt(0) - 65;
+      const col = GUEST_POOL_COLUMNS[index]; // AD=#A Pool QR, AH=#B Pool QR
+      if (!col) continue;
+      const guestUrl = `${appOrigin}/scan/guest-pool/${guest.token}`;
       updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestUrl]] });
     }
-    for (let i = 0; i < Math.min(guestBanquetTokens.length, GUEST_BANQUET_COLUMNS.length); i++) {
-      const col = GUEST_BANQUET_COLUMNS[i]; // AF=#A Banquet QR, AJ=#B Banquet QR
-      const guestBanquetUrl = `${appOrigin}/scan/guest-banquet/${guestBanquetTokens[i].banquetToken}`;
+    for (const guest of guestBanquetTokens) {
+      const index = guest.suffix.toUpperCase().charCodeAt(0) - 65;
+      const col = GUEST_BANQUET_COLUMNS[index]; // AF=#A Banquet QR, AJ=#B Banquet QR
+      if (!col) continue;
+      const guestBanquetUrl = `${appOrigin}/scan/guest-banquet/${guest.banquetToken}`;
       updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[guestBanquetUrl]] });
     }
 
