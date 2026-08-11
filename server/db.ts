@@ -538,12 +538,12 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     // Guest banquet tokens
     const guestRows = await rawQuery<{
       token: string; suffix: string; banquetUsed: number; disabled: number;
-      legalFirstName: string; legalLastName: string;
+      guestName: string | null; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null;
       bowlerId: number; laneNumber: number | null;
     }>(
       `SELECT g.banquetToken AS token, g.suffix, g.banquetUsed, g.disabled,
-              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
+              g.guestName, b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
@@ -553,7 +553,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     for (const r of guestRows) {
       out.push({
         token: r.token,
-        displayName: `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
+        displayName: r.guestName?.trim() || `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
         teamNumber: r.teamCode ?? null,
         teamName: r.teamName ?? null,
         entitlementType: "guest",
@@ -597,12 +597,12 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     // Guest pool tokens
     const guestRows = await rawQuery<{
       token: string; suffix: string; used: number; disabled: number;
-      legalFirstName: string; legalLastName: string;
+      guestName: string | null; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null;
       bowlerId: number; laneNumber: number | null;
     }>(
       `SELECT g.token AS token, g.suffix, g.used, g.disabled,
-              b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
+              g.guestName, b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
@@ -612,7 +612,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     for (const r of guestRows) {
       out.push({
         token: r.token,
-        displayName: `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
+        displayName: r.guestName?.trim() || `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
         teamNumber: r.teamCode ?? null,
         teamName: r.teamName ?? null,
         entitlementType: "guest",

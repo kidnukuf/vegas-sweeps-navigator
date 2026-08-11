@@ -535,3 +535,8 @@
 ## Bowler Database Reset
 - [x] Clear bowler records and dependent operational data while retaining centers, ED accounts, events, and configuration
 - [x] Verify that no bowler records remain and retained configuration data is intact
+
+## Master Sheet Guest Name Import
+- [x] Read Guest Name (BJ) and Additional Guest Name (BK) during Google Sheet import
+- [x] Create linked named guest tickets with banquet QR and eligible pool-party QR codes
+- [x] Write imported guest QR codes to their correct Google Sheet columns and validate the import path

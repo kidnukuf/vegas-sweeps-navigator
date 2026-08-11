@@ -1593,7 +1593,8 @@ export const appRouter = router({
         const batchWriteEntries: Array<{
           firstName: string; lastName: string; laneNumber: number | null; scantronId: string;
           poolPartyToken?: string; banquetToken?: string;
-          guestPoolTokens?: string[]; guestBanquetTokens?: string[];
+          guestPoolTokens?: Array<{ suffix: string; token: string }>;
+          guestBanquetTokens?: Array<{ suffix: string; banquetToken: string }>;
           appOrigin?: string;
         }> = [];
         // Group rows by center+team to assign BB positions
@@ -1809,6 +1810,12 @@ export const appRouter = router({
               resolveGuestAmount(extraPoolPartyDollarRaw) ||
               resolveGuestAmount(extraPoolPartyRaw) ||
               0;
+            // BJ and BK are the two named guest slots. A supplied name always gets a
+            // banquet QR; it also gets a pool QR when this row is pool-party eligible.
+            const namedGuestSlots = [
+              String(row["Guest Name"] ?? row["guestName"] ?? row["guest_name"] ?? "").trim(),
+              String(row["Additional Guest Name"] ?? row["additionalGuestName"] ?? row["additional_guest_name"] ?? "").trim(),
+            ];
             const extraGuestFee = guestPoolPartyAmount;
             const totalAmountDue = parseFloat(String(row["Total Due"] ?? row["Total Amount"] ?? row["total"] ?? "0").replace(/[$,]/g, "")) || 0;
             const notes = String(row["Special Notes"] ?? row["notes"] ?? "").trim();
@@ -1864,14 +1871,38 @@ export const appRouter = router({
               ) as Record<string, unknown>[];
               const existingPoolToken = existingTokenRows[0]?.poolPartyToken as string | undefined;
               const existingBanquetToken = existingTokenRows[0]?.banquetToken as string | undefined;
+              // Add or refresh only the named slots supplied by the master sheet.
+              // Blank BJ/BK cells intentionally leave ED-created guest tickets intact.
+              for (let gi = 0; gi < namedGuestSlots.length; gi++) {
+                const guestName = namedGuestSlots[gi];
+                if (!guestName) continue;
+                const suffix = ["A", "B"][gi];
+                const guestId = `${existingScantronId}${suffix}`;
+                const poolTok = poolParty ? guestId : `${guestId}-BQ`;
+                const banquetTok = `${guestId}-BQ`;
+                await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ? AND suffix = ?`, [bowlerId, suffix]);
+                await rawQuery(
+                  `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken, used, banquetUsed, disabled)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
+                  [bowlerId, input.eventId, guestId, guestName, suffix, poolTok, banquetTok]
+                );
+              }
+              const existingGuestRows = await rawQuery<{ suffix: string; token: string; banquetToken: string | null }>(
+                `SELECT suffix, token, banquetToken FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+                [bowlerId]
+              );
               if (existingScantronId) {
                 // Collect for batch write-back (IDs + QR codes written in one API call after loop)
                 batchWriteEntries.push({
                   firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId,
                   poolPartyToken: existingPoolToken,
                   banquetToken: existingBanquetToken,
-                  guestPoolTokens: [],
-                  guestBanquetTokens: [],
+                  guestPoolTokens: existingGuestRows
+                    .filter((guest) => guest.token && !guest.token.endsWith("-BQ"))
+                    .map((guest) => ({ suffix: guest.suffix, token: guest.token })),
+                  guestBanquetTokens: existingGuestRows
+                    .filter((guest) => guest.banquetToken)
+                    .map((guest) => ({ suffix: guest.suffix, banquetToken: guest.banquetToken! })),
                   appOrigin: APP_ORIGIN,
                 });
               }
@@ -1911,17 +1942,19 @@ export const appRouter = router({
                   [importPoolToken, importBanquetToken, bowlerId]
                 );
 
-                // Guest tokens: guest ID = scantronId + suffix letter (A, B, C…)
-                // Pool: one guest per $15 in guestPoolPartyAmount.
-                // Banquet: one guest per $80 in extraBanquet (dollar amount).
-                // A single guest gets BOTH a pool and a banquet pass if both were paid;
-                // the number of guest rows = max(poolGuests, banquetGuests).
-                const SUFFIXES = ["A","B","C","D","E","F","G","H"];
+                // Guest IDs are linked to the bowler ID plus A/B. BJ and BK take
+                // precedence as named guests and always receive banquet access.
+                // Existing numeric/fee fields still create unnamed guest tickets.
+                const SUFFIXES = ["A", "B"];
                 const poolGuestCount = Math.floor(guestPoolPartyAmount / 15);
                 const banquetGuestCount = extraBanquet >= 1 && extraBanquet < 80
                   ? Math.round(extraBanquet) // Y/N or small integer count
                   : Math.floor(extraBanquet / 80);
-                const totalGuestCount = Math.min(Math.max(poolGuestCount, banquetGuestCount), SUFFIXES.length);
+                const lastNamedGuestSlot = namedGuestSlots.reduce(
+                  (lastSlot, name, index) => name ? index + 1 : lastSlot,
+                  0
+                );
+                const totalGuestCount = Math.min(Math.max(poolGuestCount, banquetGuestCount, lastNamedGuestSlot), SUFFIXES.length);
                 const importGuestTokens: Array<{ suffix: string; token: string }> = [];
                 const importGuestBanquetTokens: Array<{ suffix: string; banquetToken: string }> = [];
                 if (totalGuestCount > 0) {
@@ -1929,15 +1962,19 @@ export const appRouter = router({
                   for (let gi = 0; gi < totalGuestCount; gi++) {
                     const suffix = SUFFIXES[gi];
                     const guestId = `${scantronId}${suffix}`;
-                    // pool token for this guest (only if they have a pool pass)
-                    const poolTok = gi < poolGuestCount ? guestId : null;
-                    // banquet token for this guest (only if they have a banquet pass)
-                    const banquetTok = gi < banquetGuestCount ? `${guestId}-BQ` : null;
+                    const guestName = namedGuestSlots[gi] || null;
+                    // BK may be filled while BJ is blank. Preserve its B suffix without
+                    // creating an unused placeholder A record.
+                    if (!guestName && gi >= poolGuestCount && gi >= banquetGuestCount) continue;
+                    // Named BJ/BK guests always receive banquet access. Pool QR is
+                    // added only when the bowler row is pool-party eligible.
+                    const poolTok = guestName ? (poolParty ? guestId : null) : (gi < poolGuestCount ? guestId : null);
+                    const banquetTok = guestName ? `${guestId}-BQ` : (gi < banquetGuestCount ? `${guestId}-BQ` : null);
                     // `token` column is NOT NULL + unique; use pool token, else banquet token, else guestId
                     const primaryToken = poolTok ?? banquetTok ?? guestId;
                     await rawQuery(
-                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, suffix, token, banquetToken) VALUES (?, ?, ?, ?, ?, ?)`,
-                      [bowlerId, input.eventId, guestId, suffix, primaryToken, banquetTok]
+                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                      [bowlerId, input.eventId, guestId, guestName, suffix, primaryToken, banquetTok]
                     );
                     if (poolTok) importGuestTokens.push({ suffix, token: poolTok });
                     if (banquetTok) importGuestBanquetTokens.push({ suffix, banquetToken: banquetTok });
@@ -1949,8 +1986,8 @@ export const appRouter = router({
                   firstName, lastName, laneNumber: laneNumber ?? null, scantronId,
                   poolPartyToken: importPoolToken,
                   banquetToken: importBanquetToken,
-                  guestPoolTokens: importGuestTokens.map(g => g.token),
-                  guestBanquetTokens: importGuestBanquetTokens.map(g => g.banquetToken),
+                  guestPoolTokens: importGuestTokens,
+                  guestBanquetTokens: importGuestBanquetTokens,
                   appOrigin: APP_ORIGIN,
                 });
               }

@@ -81,6 +81,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   "extra banquet": "extraBanquet", "extra banquet qr code": "extraBanquet",
   "extra pool party": "poolParty",
   "guest pool party": "guestPoolPartyAmount", "guest $15": "guestPoolPartyAmount",
+  "guest name": "guestName", "additional guest name": "additionalGuestName",
   // Notes
   "special notes": "specialNotes",
 

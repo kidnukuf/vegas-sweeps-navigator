@@ -41,6 +41,7 @@ vi.mock("./db", () => ({
 }));
 
 import {
+  batchWriteBowlerIds,
   writeQRCodesToSheet,
   writeBowlerIdToSheet,
   writeContactInfoToSheet,
@@ -272,6 +273,38 @@ describe("writeQRCodesToSheet", () => {
 
     expect(mockValuesGet).not.toHaveBeenCalled();
     warnSpy.mockRestore();
+  });
+});
+
+// ── batchWriteBowlerIds ─────────────────────────────────────────────────────
+describe("batchWriteBowlerIds", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON = FAKE_SA;
+  });
+
+  it("preserves A/B guest suffixes when importing QR codes in one batch", async () => {
+    mockValuesGet.mockResolvedValueOnce(fakeSheetWithBowler("John", "Doe", "5"));
+    mockBatchUpdate.mockResolvedValueOnce({ data: { totalUpdatedCells: 3 } });
+
+    await batchWriteBowlerIds([
+      {
+        firstName: "John",
+        lastName: "Doe",
+        laneNumber: 5,
+        scantronId: "0101010101",
+        guestPoolTokens: [{ suffix: "B", token: "pool-b" }],
+        guestBanquetTokens: [{ suffix: "A", banquetToken: "banquet-a" }],
+        appOrigin: "https://test.example.com",
+      },
+    ], VALID_TARGET);
+
+    const batchCall = mockBatchUpdate.mock.calls[0][0] as {
+      requestBody: { data: { range: string }[] };
+    };
+    const ranges = batchCall.requestBody.data.map((entry) => entry.range);
+    expect(ranges.some((range) => range.endsWith("!AH2"))).toBe(true);
+    expect(ranges.some((range) => range.endsWith("!AF2"))).toBe(true);
   });
 });
 

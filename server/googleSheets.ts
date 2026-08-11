@@ -1047,8 +1047,8 @@ export async function batchWriteBowlerIds(
     scantronId: string;
     poolPartyToken?: string;
     banquetToken?: string;
-    guestPoolTokens?: string[];
-    guestBanquetTokens?: string[];
+    guestPoolTokens?: Array<{ suffix: string; token: string }>;
+    guestBanquetTokens?: Array<{ suffix: string; banquetToken: string }>;
     appOrigin?: string;
   }>,
   target?: SheetTarget
@@ -1111,14 +1111,16 @@ export async function batchWriteBowlerIds(
     if (entry.banquetToken) {
       updateData.push({ range: `'${resolved.sheetName}'!AB${rowNum}`, values: [[`${origin}/banquet?t=${entry.banquetToken}`]] });
     }
-    (entry.guestPoolTokens ?? []).forEach((tok, i) => {
-      const col = GUEST_POOL_COLUMNS[i];
-      if (col) updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[`${origin}/pool?t=${tok}`]] });
-    });
-    (entry.guestBanquetTokens ?? []).forEach((tok, i) => {
-      const col = GUEST_BANQUET_COLUMNS[i];
-      if (col) updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[`${origin}/banquet?t=${tok}`]] });
-    });
+    for (const guest of entry.guestPoolTokens ?? []) {
+      const index = guest.suffix.toUpperCase().charCodeAt(0) - 65;
+      const col = GUEST_POOL_COLUMNS[index];
+      if (col) updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[`${origin}/pool?t=${guest.token}`]] });
+    }
+    for (const guest of entry.guestBanquetTokens ?? []) {
+      const index = guest.suffix.toUpperCase().charCodeAt(0) - 65;
+      const col = GUEST_BANQUET_COLUMNS[index];
+      if (col) updateData.push({ range: `'${resolved.sheetName}'!${col}${rowNum}`, values: [[`${origin}/banquet?t=${guest.banquetToken}`]] });
+    }
   }
 
   if (updateData.length === 0) {
