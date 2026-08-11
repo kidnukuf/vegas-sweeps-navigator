@@ -527,3 +527,7 @@
 - [x] Add banquet and pool party guest-ticket controls to the Edit Bowler workflow
 - [x] Store guest names, create linked guest access codes, and write the corresponding codes back to the event Google Sheet
 - [x] Test guest-ticket creation, QR access behavior, and Google Sheets write-back
+
+## Event Director Access
+- [x] Diagnose Cassie Davis Event Director login failure and restore access
+- [x] Verify the active ED account options and their intended login routes
