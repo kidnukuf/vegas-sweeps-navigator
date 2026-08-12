@@ -544,3 +544,7 @@
 ## Cross-Domain Event Director Login
 - [x] Diagnose why Cassie Davis cannot log in on production domains despite valid staff credentials
 - [x] Validate and correct login/session behavior across all configured production domains
+
+## Missing Bowler IDs and QR Codes
+- [x] Compare non-vacant rows in the supplied master sheet with the import eligibility and write-back rules
+- [x] Fix the identified Bowler ID or QR write-back failure and verify affected rows

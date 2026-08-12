@@ -306,6 +306,29 @@ describe("batchWriteBowlerIds", () => {
     expect(ranges.some((range) => range.endsWith("!AH2"))).toBe(true);
     expect(ranges.some((range) => range.endsWith("!AF2"))).toBe(true);
   });
+
+  it("uses center, team, and lane to write same-name bowlers to their own rows", async () => {
+    const first = makeRow("Carl", "Thomas", "5");
+    first[5] = "Bowlero Palmdale Thur";
+    first[7] = "39";
+    const second = makeRow("Carl", "Thomas", "8");
+    second[5] = "Bowlero Palmdale Sun";
+    second[7] = "10";
+    mockValuesGet.mockResolvedValueOnce({ data: { values: [new Array(61).fill("header"), first, second] } });
+    mockBatchUpdate.mockResolvedValueOnce({ data: { totalUpdatedCells: 2 } });
+
+    await batchWriteBowlerIds([
+      { firstName: "Carl", lastName: "Thomas", centerName: "Bowlero Palmdale Thur", teamCode: "39", laneNumber: 5, scantronId: "2201263901" },
+      { firstName: "Carl", lastName: "Thomas", centerName: "Bowlero Palmdale Sun", teamCode: "10", laneNumber: 8, scantronId: "2301261001" },
+    ], VALID_TARGET);
+
+    const batchCall = mockBatchUpdate.mock.calls[0][0] as {
+      requestBody: { data: { range: string; values: string[][] }[] };
+    };
+    const updatesByRange = new Map(batchCall.requestBody.data.map((entry) => [entry.range, entry.values[0][0]]));
+    expect(updatesByRange.get("'Sheet1'!A2")).toBe("2201263901");
+    expect(updatesByRange.get("'Sheet1'!A3")).toBe("2301261001");
+  });
 });
 
 // ── writeBowlerIdToSheet ──────────────────────────────────────────────────────

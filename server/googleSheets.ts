@@ -1044,6 +1044,8 @@ export async function batchWriteBowlerIds(
     firstName: string;
     lastName: string;
     laneNumber: number | null;
+    centerName?: string;
+    teamCode?: string;
     scantronId: string;
     poolPartyToken?: string;
     banquetToken?: string;
@@ -1073,15 +1075,33 @@ export async function batchWriteBowlerIds(
     return { written: 0, notFound: entries.length, error: String(err) };
   }
 
-  // 2. Build a name->rowNumber map (1-indexed, skipping header row 1)
-  const nameToRow = new Map<string, number>();
+  // 2. Build row maps. Names alone are not unique in a traveling event, so use
+  // center + team + lane when the import entry supplies those source fields.
+  const normalizeText = (value: string | undefined) => String(value ?? "")
+    .toLowerCase()
+    .replace(/["“”]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const normalizeNumber = (value: string | number | null | undefined) => {
+    const text = String(value ?? "").trim();
+    const number = Number(text);
+    return text && Number.isFinite(number) ? String(number) : normalizeText(text);
+  };
+  const nameKey = (firstName: string, lastName: string) => `${normalizeText(firstName)}|${normalizeText(lastName)}`;
+  const detailKey = (firstName: string, lastName: string, center: string, team: string | number, lane: string | number | null) =>
+    `${nameKey(firstName, lastName)}|${normalizeText(center)}|${normalizeNumber(team)}|${normalizeNumber(lane)}`;
+  const nameToRows = new Map<string, number[]>();
+  const detailToRow = new Map<string, number>();
   for (let i = 1; i < allRows.length; i++) {
     const row = allRows[i];
-    const fn = (row[COL_FIRST_NAME] ?? "").toLowerCase().trim();
-    const ln = (row[COL_LAST_NAME] ?? "").toLowerCase().trim();
+    const fn = row[COL_FIRST_NAME] ?? "";
+    const ln = row[COL_LAST_NAME] ?? "";
     if (fn && ln) {
-      const key = `${fn}|${ln}`;
-      if (!nameToRow.has(key)) nameToRow.set(key, i + 1); // 1-indexed
+      const key = nameKey(fn, ln);
+      const rows = nameToRows.get(key) ?? [];
+      rows.push(i + 1);
+      nameToRows.set(key, rows);
+      detailToRow.set(detailKey(fn, ln, row[COL_CENTER] ?? "", row[COL_TEAM_CODE] ?? "", row[COL_LANE] ?? ""), i + 1);
     }
   }
 
@@ -1089,13 +1109,13 @@ export async function batchWriteBowlerIds(
   const updateData: Array<{ range: string; values: string[][] }> = [];
   let notFound = 0;
   for (const entry of entries) {
-    const fn = entry.firstName.toLowerCase().trim();
-    const ln = entry.lastName.toLowerCase().trim();
-    const key = `${fn}|${ln}`;
-    const rowNum = nameToRow.get(key);
+    const key = nameKey(entry.firstName, entry.lastName);
+    const rowNum = entry.centerName && entry.teamCode
+      ? detailToRow.get(detailKey(entry.firstName, entry.lastName, entry.centerName, entry.teamCode, entry.laneNumber))
+      : (nameToRows.get(key)?.length === 1 ? nameToRows.get(key)?.[0] : undefined);
     if (!rowNum) {
       notFound++;
-      console.warn(`[googleSheets] batchWriteBowlerIds: not found: ${entry.firstName} ${entry.lastName}`);
+      console.warn(`[googleSheets] batchWriteBowlerIds: not found or ambiguous: ${entry.firstName} ${entry.lastName} (${entry.centerName ?? "no center"}, team ${entry.teamCode ?? "n/a"})`);
       continue;
     }
     // Bowler ID in column A

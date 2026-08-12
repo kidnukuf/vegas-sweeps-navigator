@@ -1592,6 +1592,7 @@ export const appRouter = router({
         // Batch write-back: collect all entries then write in one API call
         const batchWriteEntries: Array<{
           firstName: string; lastName: string; laneNumber: number | null; scantronId: string;
+          centerName: string; teamCode: string;
           poolPartyToken?: string; banquetToken?: string;
           guestPoolTokens?: Array<{ suffix: string; token: string }>;
           guestBanquetTokens?: Array<{ suffix: string; banquetToken: string }>;
@@ -1716,17 +1717,17 @@ export const appRouter = router({
             teamId = teamRows[0]?.id as number;
 
             // Check duplicate — scoped to this event so same bowler in a different event creates a new record
-            // First try by scantronId (exact match), then fall back to name+event match
-            // (handles re-imports where teamPositionMap resets and generates same IDs)
+            // First try by scantronId, then by the roster identity fields. A name alone
+            // is not unique: the same bowler name may appear at different centers/teams.
             let existing = await rawQuery(
               "SELECT id, scantronId FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1",
               [scantronId, input.eventId]
             ) as Record<string, unknown>[];
             if (existing.length === 0) {
-              // Fallback: match by name + event (case-insensitive)
+              // Fallback: match by name + event + center + team.
               existing = await rawQuery(
-                "SELECT id, scantronId FROM bowlers WHERE legalFirstName = ? AND legalLastName = ? AND eventId = ? LIMIT 1",
-                [firstName, lastName, input.eventId]
+                "SELECT id, scantronId FROM bowlers WHERE legalFirstName = ? AND legalLastName = ? AND eventId = ? AND centerId = ? AND teamId = ? LIMIT 1",
+                [firstName, lastName, input.eventId, center.id, teamId]
               ) as Record<string, unknown>[];
               // If found by name, reuse the existing scantronId so we don't collide
               if (existing.length > 0 && existing[0].scantronId) {
@@ -1894,7 +1895,7 @@ export const appRouter = router({
               if (existingScantronId) {
                 // Collect for batch write-back (IDs + QR codes written in one API call after loop)
                 batchWriteEntries.push({
-                  firstName, lastName, laneNumber: laneNumber ?? null, scantronId: existingScantronId,
+                  firstName, lastName, laneNumber: laneNumber ?? null, centerName, teamCode, scantronId: existingScantronId,
                   poolPartyToken: existingPoolToken,
                   banquetToken: existingBanquetToken,
                   guestPoolTokens: existingGuestRows
@@ -1983,7 +1984,7 @@ export const appRouter = router({
 
                 // Collect for batch write-back (IDs + QR codes written in one API call after loop)
                 batchWriteEntries.push({
-                  firstName, lastName, laneNumber: laneNumber ?? null, scantronId,
+                  firstName, lastName, laneNumber: laneNumber ?? null, centerName, teamCode, scantronId,
                   poolPartyToken: importPoolToken,
                   banquetToken: importBanquetToken,
                   guestPoolTokens: importGuestTokens,
@@ -2057,10 +2058,12 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         // Fetch all bowlers for this event that have a scantronId
         const bowlers = await rawQuery(
-          `SELECT legalFirstName, legalLastName, scantronId, laneNumber
-           FROM bowlers
-           WHERE eventId = ? AND scantronId IS NOT NULL AND scantronId != ''
-           ORDER BY scantronId`,
+          `SELECT b.legalFirstName, b.legalLastName, b.scantronId, b.laneNumber, bc.centerName, t.teamCode
+           FROM bowlers b
+           LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+           LEFT JOIN teams t ON t.id = b.teamId
+           WHERE b.eventId = ? AND b.scantronId IS NOT NULL AND b.scantronId != ''
+           ORDER BY b.scantronId`,
           [input.eventId]
         ) as Record<string, unknown>[];
         if (bowlers.length === 0) {
@@ -2070,6 +2073,8 @@ export const appRouter = router({
           firstName: String(b.legalFirstName ?? ''),
           lastName: String(b.legalLastName ?? ''),
           laneNumber: b.laneNumber != null ? Number(b.laneNumber) : null,
+          centerName: String(b.centerName ?? ''),
+          teamCode: String(b.teamCode ?? ''),
           scantronId: String(b.scantronId),
         }));
         const target = { spreadsheetId: input.spreadsheetId, sheetName: input.sheetTabName };
