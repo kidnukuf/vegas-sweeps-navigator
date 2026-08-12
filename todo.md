@@ -540,3 +540,7 @@
 - [x] Read Guest Name (BJ) and Additional Guest Name (BK) during Google Sheet import
 - [x] Create linked named guest tickets with banquet QR and eligible pool-party QR codes
 - [x] Write imported guest QR codes to their correct Google Sheet columns and validate the import path
+
+## Cross-Domain Event Director Login
+- [x] Diagnose why Cassie Davis cannot log in on production domains despite valid staff credentials
+- [x] Validate and correct login/session behavior across all configured production domains
