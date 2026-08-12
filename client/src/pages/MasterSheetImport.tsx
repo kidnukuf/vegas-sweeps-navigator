@@ -212,6 +212,28 @@ export default function MasterSheetImport() {
 
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number; failed: number; errors: string[] } | null>(null);
   const [regenResult, setRegenResult] = useState<{ updated: number; alreadyComplete: number; failed: number; errors: string[]; hasSheet: boolean } | null>(null);
+  const [claimCodeResult, setClaimCodeResult] = useState<{ created: number; total: number; written: number; notFound: number; error?: string } | null>(null);
+
+  const generateMissingClaimCodesMutation = trpc.claimCodes.generateForEvent.useMutation({
+    onSuccess: (data) => {
+      const result = {
+        created: data.created,
+        total: data.totalForEvent,
+        written: data.sheet?.written ?? 0,
+        notFound: data.sheet?.notFound ?? 0,
+        error: data.sheet?.error,
+      };
+      setClaimCodeResult(result);
+      if (result.error) {
+        toast.error(`Claim codes generated, but BL sync failed: ${result.error}`);
+      } else if (result.notFound > 0) {
+        toast.warning(`Created ${result.created}; wrote ${result.written} to BL; ${result.notFound} did not match a sheet row.`);
+      } else {
+        toast.success(`✅ ${result.created} missing code${result.created !== 1 ? "s" : ""} generated; ${result.written} code${result.written !== 1 ? "s" : ""} written to BL.`);
+      }
+    },
+    onError: (e: any) => toast.error(e.message ?? "Claim-code generation failed"),
+  });
 
   const regenMutation = trpc.masterSheet.regenerateMissingTokens.useMutation({
     onSuccess: (data) => {
@@ -469,6 +491,47 @@ export default function MasterSheetImport() {
             )}
             <p className="text-xs text-gray-500 mt-1">
               Generates Pool QR and Banquet QR tokens for any bowler that was imported before token generation was wired up. Safe to run multiple times — existing tokens are never overwritten.
+            </p>
+          </div>
+
+          {/* Generate Missing Claim Codes */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                onClick={() => {
+                  if (!activeEvent?.sheetSpreadsheetId) {
+                    toast.error("No Google Sheet configured for this event. Set it in Event Settings first.");
+                    return;
+                  }
+                  if (!sheetTabOverride && !activeEvent?.sheetTabName) {
+                    toast.error("No sheet tab selected. Pick a tab in the Write-back Target Tab selector above.");
+                    return;
+                  }
+                  setClaimCodeResult(null);
+                  generateMissingClaimCodesMutation.mutate({
+                    eventId,
+                    regenerateUnused: false,
+                    sheetTabOverride: sheetTabOverride || undefined,
+                  });
+                }}
+                disabled={generateMissingClaimCodesMutation.isPending || !activeEvent?.sheetSpreadsheetId}
+                className="bg-violet-700 hover:bg-violet-600 text-sm font-semibold"
+              >
+                {generateMissingClaimCodesMutation.isPending ? "⏳ Generating claim codes..." : "🎟️ Generate Missing Claim Codes"}
+              </Button>
+              {claimCodeResult && (
+                <span className="text-xs text-gray-400">
+                  {claimCodeResult.created} generated · {claimCodeResult.written} written to BL · {claimCodeResult.notFound} unmatched
+                </span>
+              )}
+            </div>
+            {claimCodeResult?.error && (
+              <div className="mt-2 p-3 bg-red-950/40 border border-red-500/30 rounded-lg text-xs text-red-300">
+                {claimCodeResult.error}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Creates a unique, one-time claim code only for bowlers who do not already have one, then writes all active codes to column BL on the selected sheet tab. Existing codes are never replaced.
             </p>
           </div>
 

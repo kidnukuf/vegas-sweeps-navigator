@@ -27,7 +27,7 @@ type BowlerRow = {
   teamCode: string | null;
 };
 
-async function syncCodesToSheet(eventId: number) {
+async function syncCodesToSheet(eventId: number, sheetTabOverride?: string) {
   const rows = await rawQuery<BowlerRow & { code: string }>(
     `SELECT c.code, b.id, b.legalFirstName, b.legalLastName, b.laneNumber,
             bc.centerName AS centerName, t.teamName AS teamName, t.teamCode, b.scantronId
@@ -40,6 +40,7 @@ async function syncCodesToSheet(eventId: number) {
     [eventId],
   );
   const target = await getEventSheetTarget(eventId);
+  if (sheetTabOverride) target.sheetName = sheetTabOverride;
   return writeClaimCodesToSheet(rows.map((row) => ({
     firstName: row.legalFirstName ?? "",
     lastName: row.legalLastName ?? "",
@@ -53,7 +54,7 @@ async function syncCodesToSheet(eventId: number) {
 export const claimCodesRouter = router({
   // ── ED: generate one unique unused code per bowler that doesn't already have one ──
   generateForEvent: publicProcedure
-    .input(z.object({ eventId: z.number(), regenerateUnused: z.boolean().default(false) }))
+    .input(z.object({ eventId: z.number(), regenerateUnused: z.boolean().default(false), sheetTabOverride: z.string().optional() }))
     .mutation(async ({ input }) => {
       // Optionally clear existing UNUSED codes first (never touches redeemed ones)
       if (input.regenerateUnused) {
@@ -103,7 +104,7 @@ export const claimCodesRouter = router({
         `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
         [input.eventId]
       );
-      const sheet = await syncCodesToSheet(input.eventId);
+      const sheet = await syncCodesToSheet(input.eventId, input.sheetTabOverride);
       return { created, totalForEvent: total[0]?.c ?? 0, sheet };
     }),
 
@@ -211,6 +212,6 @@ export const claimCodesRouter = router({
 
   // ── ED: re-write active codes to column BL without generating new codes ─────
   syncToSheet: publicProcedure
-    .input(z.object({ eventId: z.number() }))
-    .mutation(async ({ input }) => syncCodesToSheet(input.eventId)),
+    .input(z.object({ eventId: z.number(), sheetTabOverride: z.string().optional() }))
+    .mutation(async ({ input }) => syncCodesToSheet(input.eventId, input.sheetTabOverride)),
 });

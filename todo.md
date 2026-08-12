@@ -571,3 +571,7 @@
 - [x] Diagnose why claim codes are not populating BL in the selected Google Sheet tab
 - [x] Correct the sync for matched roster records and make partial row-match failures visible to the Event Director
 - [x] Reconcile the unmatched Group 3 Cassie Davis roster row before issuing its claim code
+
+## Sheet Sync Claim Codes
+- [x] Add a Generate Missing Claim Codes button to the ED Sheet Sync section
+- [x] Generate only absent codes, write them to BL, and show created/written/unmatched counts
