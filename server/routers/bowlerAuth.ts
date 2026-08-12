@@ -73,12 +73,14 @@ async function findBowlerByName(
   firstName: string,
   lastName: string,
   eventId: number,
-  centerId?: number
+  centerId?: number,
+  bowlerId?: number
 ) {
   const centerClause = centerId ? "AND b.centerId = ?" : "";
-  const params: unknown[] = centerId
-    ? [eventId, firstName, lastName, centerId]
-    : [eventId, firstName, lastName];
+  const bowlerClause = bowlerId ? "AND b.id = ?" : "";
+  const params: unknown[] = [eventId, firstName, lastName];
+  if (centerId) params.push(centerId);
+  if (bowlerId) params.push(bowlerId);
   const rows = await rawQuery<{
     id: number;
     legalFirstName: string;
@@ -110,6 +112,7 @@ async function findBowlerByName(
        AND LOWER(TRIM(b.legalFirstName)) = LOWER(TRIM(?))
        AND LOWER(TRIM(b.legalLastName))  = LOWER(TRIM(?))
        ${centerClause}
+       ${bowlerClause}
      LIMIT 1`,
     params
   );
@@ -133,6 +136,7 @@ async function getBowlerProfile(bowlerId: number) {
     centerId: number | null;
     teamName: string | null;
     teamCode: string | null;
+    coordinatorName: string | null;
     centerName: string | null;
     laneNumber: number | null;
     squadTime: string | null;
@@ -171,7 +175,7 @@ async function getBowlerProfile(bowlerId: number) {
     `SELECT b.id, b.legalFirstName, b.legalLastName, b.preferredName,
             b.email, b.phone, b.scantronId, b.registrationStatus,
             b.isCapitain, b.captainVerified, b.teamId, b.centerId,
-            t.teamName, t.teamCode, bc.centerName,
+            t.teamName, t.teamCode, t.coordinatorName, bc.centerName,
             b.laneNumber, b.squadTime, b.laneNumber2, b.squadTime2, b.laneToEvent,
             e.eventName, e.bowlingDate, b.tshirtSize,
             e.tshirtsProvided, e.tshirtPickupLocation, e.tshirtPickupTime,
@@ -289,28 +293,7 @@ export const bowlerAuthRouter = router({
       await verifyTurnstile(input.turnstileToken, ip);
 
       // Look up bowler by first name + last name + center (3-field match)
-      const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId, input.centerId);
-
-      if (!bowler) {
-        // Notify ED of failed sign-up attempt
-        notifyED({ category: "security" as const,
-          title: "⚠️ Unknown Bowler Sign-Up Attempt",
-          content: `Someone tried to sign up but was NOT found in the roster.\n\nName entered: ${input.firstName} ${input.lastName}\nCenter ID: ${input.centerId}\nIP: ${ip ?? "unknown"}\n\nIf this is a valid bowler, add them to the roster and re-import.`,
-        }).catch(() => {});
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message:
-            "No bowler found matching that name and bowling center. Please check your spelling or contact your Event Director.",
-        });
-      }
-
-      if (bowler.passwordHash) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message:
-            "An account already exists for this bowler. Please sign in instead.",
-        });
-      }
+      let bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId, input.centerId);
 
       // ── CLAIM-CODE SECURITY (fall-season) ───────────────────────────────────
       // Enforcement is automatic & seamless: if ANY claim codes exist for this
@@ -351,19 +334,50 @@ export const bowlerAuthRouter = router({
               "That claim code has already been used (or was voided). If you didn't use it, contact your Event Director for a reissue.",
           });
         }
-        if (codeRow.bowlerId !== bowler.id) {
-          // Code belongs to a different bowler than the entered name/center
+        const codeMatchedBowler = await findBowlerByName(
+          input.firstName,
+          input.lastName,
+          input.eventId,
+          input.centerId,
+          codeRow.bowlerId
+        );
+        if (!codeMatchedBowler) {
+          // Code belongs to a different bowler than the entered name/center.
+          // Looking it up by its ID keeps same-name bowlers at one center distinct.
           notifyED({ category: "security" as const,
             title: "⚠️ Claim Code / Name Mismatch on Sign-Up",
-            content: `A claim code was entered that does not match the name+center provided.\n\nName entered: ${input.firstName} ${input.lastName}\nCode: ${entered}\nCode belongs to bowlerId: ${codeRow.bowlerId}\nMatched bowlerId: ${bowler.id}`,
+            content: `A claim code was entered that does not match the name+center provided.\n\nName entered: ${input.firstName} ${input.lastName}\nCode: ${entered}\nCode belongs to bowlerId: ${codeRow.bowlerId}`,
           }).catch(() => {});
           throw new TRPCError({
             code: "FORBIDDEN",
             message:
-              "This claim code does not belong to the name and bowling center entered. Please verify your details or contact your Event Director.",
+            "This claim code does not belong to the name and bowling center entered. Please verify your details or contact your Event Director.",
           });
         }
+        bowler = codeMatchedBowler;
         redeemedCodeId = codeRow.id;
+      }
+
+      if (!bowler) {
+        // Notify ED of failed sign-up attempt after claim-code resolution so a
+        // valid code can disambiguate two bowlers with the same name and center.
+        notifyED({ category: "security" as const,
+          title: "⚠️ Unknown Bowler Sign-Up Attempt",
+          content: `Someone tried to sign up but was NOT found in the roster.\n\nName entered: ${input.firstName} ${input.lastName}\nCenter ID: ${input.centerId}\nIP: ${ip ?? "unknown"}\n\nIf this is a valid bowler, add them to the roster and re-import.`,
+        }).catch(() => {});
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message:
+            "No bowler found matching that name and bowling center. Please check your spelling or contact your Event Director.",
+        });
+      }
+
+      if (bowler.passwordHash) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            "An account already exists for this bowler. Please sign in instead.",
+        });
       }
 
       const hash = await bcrypt.hash(input.password, 12);

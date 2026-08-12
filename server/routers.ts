@@ -1642,6 +1642,7 @@ export const appRouter = router({
             const firstName = String(row["First Name"] ?? row["first_name"] ?? row["FirstName"] ?? "").trim();
             const lastName = String(row["Last Name"] ?? row["last_name"] ?? row["LastName"] ?? "").trim();
             const teamName = String(row["Team Name"] ?? row["team_name"] ?? "").trim();
+            const coordinatorName = String(row["Coordinator"] ?? row["coordinator"] ?? "").trim() || null;
             const captRaw = String(row["Capt"] ?? row["Captain"] ?? row["Is Captain"] ?? row["capt"] ?? row["captain"] ?? "").trim().toLowerCase();
             const isCapt = ["y", "yes", "true", "1", "x"].includes(captRaw);
 
@@ -1706,8 +1707,8 @@ export const appRouter = router({
             let teamId: number;
             if (teamRows.length === 0) {
               await rawQuery(
-                "INSERT INTO teams (leagueId, centerId, eventId, teamCode, teamName, status) VALUES (1, ?, ?, ?, ?, 'gray')",
-                [center.id, input.eventId, teamCode, teamName || `Team ${teamCode}`]
+                "INSERT INTO teams (leagueId, centerId, eventId, teamCode, teamName, coordinatorName, status) VALUES (1, ?, ?, ?, ?, ?, 'gray')",
+                [center.id, input.eventId, teamCode, teamName || `Team ${teamCode}`, coordinatorName]
               );
               teamRows = await rawQuery(
                 "SELECT id FROM teams WHERE teamCode = ? AND centerId = ? AND eventId = ? LIMIT 1",
@@ -1715,6 +1716,9 @@ export const appRouter = router({
               ) as Record<string, unknown>[];
             }
             teamId = teamRows[0]?.id as number;
+            if (coordinatorName) {
+              await rawQuery("UPDATE teams SET teamName = ?, coordinatorName = ? WHERE id = ?", [teamName || `Team ${teamCode}`, coordinatorName, teamId]);
+            }
 
             // Check duplicate — scoped to this event so same bowler in a different event creates a new record
             // First try by scantronId, then by the roster identity fields. A name alone
@@ -1917,7 +1921,7 @@ export const appRouter = router({
               await rawQuery(
                 `INSERT IGNORE INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
                    sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, squadTime2, laneNumber2, laneToEvent, guestPoolPartyAmount, banquetTable)
-                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
                  phone || null, email || null, notes || null,
                  sanctionNumber || null, gamesPlayed ?? null, bestAverage ?? null, tshirtSize || null,

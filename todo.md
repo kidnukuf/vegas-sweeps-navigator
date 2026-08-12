@@ -609,3 +609,9 @@
 - [x] Show imported T-shirt size together with the configured event pickup location
 - [x] Hide every pool-party detail and ticket element when pool party is disabled for the event
 - [x] Validate both enabled and disabled pool-party portal states
+
+## Full App and Google Sheet Coverage Audit
+- [x] Inventory app database fields, import aliases, sheet columns, write-back targets, and portal displays
+- [x] Run automated tests and targeted Event Director, Bowler Portal, claim-code, QR, and sheet-sync workflow checks
+- [x] Fix verified audit findings and re-test all corrected flows
+- [x] Produce a coverage report that identifies any remaining app-only data or implementation limitations

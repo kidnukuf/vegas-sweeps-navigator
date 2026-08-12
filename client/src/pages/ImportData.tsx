@@ -94,6 +94,8 @@ const COLUMN_ALIASES: Record<string, string> = {
   "bill breakdown (app-managed)": "_ignore",
   "team score": "_ignore",
   "team score (app-managed)": "_ignore",
+  "event ranking": "_ignore",
+  "payout amount": "_ignore",
   "#a pool party qr code": "_ignore",
   "#a pool qr code used": "_ignore",
   "extra guest banquet qr code": "_ignore",

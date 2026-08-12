@@ -251,7 +251,7 @@ export const prizePoolRouter = router({
       return { ok: true };
     }),
 
-  // ─── Write payout results to Google Sheet (BJ=Place, BK=Amount, BL=Bills) ──────────────────
+  // ─── Write payout results to Google Sheet (BO=Place, BP=Amount, BM=Bills) ──────────────────
   writePayoutsToSheet: publicProcedure
     .input(
       z.object({

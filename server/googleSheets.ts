@@ -82,7 +82,13 @@
  *   BG (58) = Q9 Answer              (app writes)
  *   BH (59) = Q10 Attend Next Year?  (question)
  *   BI (60) = Q10 Answer             (app writes)
+ *   BJ (61) = Guest Name              (ED supplies)
+ *   BK (62) = Additional Guest Name   (ED supplies)
  *   BL (63) = Claim Code              (app writes)
+ *   BM (64) = Bill Breakdown          (app writes)
+ *   BN (65) = Team Score              (app writes)
+ *   BO (66) = Event Ranking           (app writes)
+ *   BP (67) = Payout Amount           (app writes)
  *
  * ⬜ WHITE — Informational (no color, not parsed):
  *   M  (12) = Sanction #
@@ -695,7 +701,7 @@ export async function markTshirtReceivedInSheet(params: {
 
 /**
  * Write survey responses to the bowler's row in the Google Sheet.
- * Writes Q1-Q10 responses to red-pink columns (AR, AT, AV, AX, AZ, BB, BD, BF, BH, BJ).
+ * Writes Q1-Q10 responses to red-pink columns (AQ, AS, AU, AW, AY, BA, BC, BE, BG, BI).
  * Called after a bowler submits their survey in the portal.
  */
 export async function writeSurveyToSheet(params: {
@@ -831,14 +837,11 @@ export const SHEET_COLS = {
 };
 
 // ── Payout write-back ─────────────────────────────────────────────────────────
-// New columns appended after the last survey column (BI = col 60):
-//   BJ (61) = Event Ranking (Finishing Place)
-//   BK (62) = Payout Amount ($)
-//   BL (63) = Bowler Claim Code
-//   BM (64) = Bill Breakdown (per-team summary string)
-//   BN (65) = Team Score
-const COL_FINISHING_PLACE   = 61; // BJ
-const COL_PAYOUT_AMOUNT_COL = 62; // BK
+// Columns after the last survey answer (BI = col 60):
+//   BJ/BK are reserved for named guest imports; BL is the Bowler Claim Code;
+//   BM/BN hold Bill Breakdown and Team Score; BO/BP hold ranking and payout.
+const COL_FINISHING_PLACE   = 66; // BO
+const COL_PAYOUT_AMOUNT_COL = 67; // BP
 const COL_BILL_BREAKDOWN    = 64; // BM
 const COL_TEAM_SCORE        = 65; // BN
 
@@ -869,12 +872,12 @@ export interface PayoutSheetRow {
 
 /**
  * Write payout results (event ranking, payout amount, bill breakdown, team score)
- * for every team back to columns BJ, BK, BM, and BN of the Google Sheet.
+ * for every team back to columns BO, BP, BM, and BN of the Google Sheet.
  *
- * Step 1: Stamp column headers into row 1 (BJ=Event Ranking, BK=Payout Amount,
+ * Step 1: Stamp column headers into row 1 (BO=Event Ranking, BP=Payout Amount,
  *         BM=Bill Breakdown, BN=Team Score) so the sheet is self-documenting.
  * Step 2: Read the full sheet once, find all rows whose Team # (col H) matches
- *         a team in the payouts list, then batch-write BJ/BK/BM/BN for each row.
+ *         a team in the payouts list, then batch-write BO/BP/BM/BN for each row.
  * Multiple bowlers on the same team all receive the same values.
  *
  * Returns { written: number, skipped: number, error?: string }.
@@ -928,7 +931,7 @@ export async function writePayoutsToSheet(params: {
   try {
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId: resolved.spreadsheetId,
-      range: `'${resolved.sheetName}'!A1:BN`,
+      range: `'${resolved.sheetName}'!A1:BP`,
     });
     rows = (resp.data.values ?? []) as string[][];
   } catch (err) {

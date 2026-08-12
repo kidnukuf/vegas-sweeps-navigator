@@ -156,6 +156,7 @@ export const teams = mysqlTable("teams", {
   eventId: int("eventId").notNull(),
   teamCode: varchar("teamCode", { length: 2 }).notNull(), // TT (01-99)
   teamName: varchar("teamName", { length: 255 }),
+  coordinatorName: varchar("coordinatorName", { length: 255 }),
   captainBowlerId: int("captainBowlerId"),
   status: mysqlEnum("status", ["gray", "yellow", "green"]).default("gray").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

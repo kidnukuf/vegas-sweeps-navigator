@@ -285,7 +285,7 @@ export async function updateBowler(bowlerId: number, fields: Record<string, unkn
 
 export async function getAllBowlersForAdmin(eventId: number) {
   return rawQuery(`
-    SELECT b.*, bc.centerName, bc.centerCode, t.teamName, t.teamCode,
+    SELECT b.*, bc.centerName, bc.centerCode, t.teamName, t.teamCode, t.coordinatorName,
            l.leagueName, l.leagueCode,
            hr.checkinDate, hr.checkoutDate, hr.roomType, hr.roommateRequested,
            hr.roommateFirstName, hr.roommateLastName, hr.roomAmount,

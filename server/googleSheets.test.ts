@@ -45,6 +45,7 @@ import {
   writeQRCodesToSheet,
   writeBowlerIdToSheet,
   writeContactInfoToSheet,
+  writePayoutsToSheet,
   normalizeSquadTime,
   resolveSheetTarget,
 } from "./googleSheets";
@@ -475,5 +476,36 @@ describe("writeContactInfoToSheet", () => {
     expect(errorSpy).toHaveBeenCalled();
     expect(result).toEqual({ rowNum: null });
     errorSpy.mockRestore();
+  });
+});
+
+// ── writePayoutsToSheet ───────────────────────────────────────────────────────
+describe("writePayoutsToSheet", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON = FAKE_SA;
+    mockBatchUpdate.mockResolvedValue({ data: { totalUpdatedCells: 4 } });
+  });
+
+  it("writes payouts to BO/BP and preserves Guest Name columns BJ/BK", async () => {
+    const header = new Array(68).fill("header");
+    const bowlerRow = new Array(68).fill("");
+    bowlerRow[7] = "03"; // H = Team #
+    bowlerRow[61] = "Guest A"; // BJ
+    bowlerRow[62] = "Guest B"; // BK
+    mockValuesGet.mockResolvedValueOnce({ data: { values: [header, bowlerRow] } });
+
+    const result = await writePayoutsToSheet({
+      target: VALID_TARGET,
+      payouts: [{ teamCode: "03", finishingPlace: 1, payoutAmount: 250, billBreakdown: "2×$100 + 2×$20 + 1×$10", score: 948 }],
+    });
+
+    expect(result).toEqual({ written: 1, skipped: 0 });
+    const headerRanges = mockBatchUpdate.mock.calls[0][0].requestBody.data.map((entry: { range: string }) => entry.range);
+    expect(headerRanges).toEqual(["'Sheet1'!BO1", "'Sheet1'!BP1", "'Sheet1'!BM1", "'Sheet1'!BN1"]);
+    const dataRanges = mockBatchUpdate.mock.calls[1][0].requestBody.data.map((entry: { range: string }) => entry.range);
+    expect(dataRanges).toEqual(["'Sheet1'!BO2", "'Sheet1'!BP2", "'Sheet1'!BM2", "'Sheet1'!BN2"]);
+    expect(dataRanges).not.toContain("'Sheet1'!BJ2");
+    expect(dataRanges).not.toContain("'Sheet1'!BK2");
   });
 });

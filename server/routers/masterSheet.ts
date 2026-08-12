@@ -300,7 +300,8 @@ export const masterSheetRouter = router({
 
       const { sheetSpreadsheetId, sheetTabName } = event[0];
 
-      // Fetch all data from Google Sheet (columns A-BI)
+      // Fetch all data from Google Sheet, including guest names, claim codes,
+      // and payout fields that now extend through BP.
       const sheetsClient = await getSheetsClient();
       if (!sheetsClient) {
         throw new Error("Google Sheets client not available");
@@ -308,7 +309,7 @@ export const masterSheetRouter = router({
 
       const resp = await (sheetsClient.spreadsheets.values.get as any)({
         spreadsheetId: sheetSpreadsheetId,
-        range: `'${sheetTabName}'!A:BI`,
+        range: `'${sheetTabName}'!A:BP`,
       });
 
       const allRows = ((resp as any).data?.values as string[][]) || [];
