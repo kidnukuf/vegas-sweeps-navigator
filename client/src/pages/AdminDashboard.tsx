@@ -2537,7 +2537,15 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       {/* ── Claim Codes Tab ── */}
       {activeTab === "codes" && (
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <ClaimCodesTab eventId={EVENT_ID} />
+          <ClaimCodesTab
+            eventId={EVENT_ID}
+            eventDetails={{
+              name: String(activeEvent?.eventName ?? "B.O.B. Roll-Off"),
+              year: activeEvent?.eventYear ? String(activeEvent.eventYear) : undefined,
+              startDate: activeEvent?.startDate ? String(activeEvent.startDate) : undefined,
+              endDate: activeEvent?.endDate ? String(activeEvent.endDate) : undefined,
+            }}
+          />
         </div>
       )}
       {/* ── Advertiser Leads Tab ── */}

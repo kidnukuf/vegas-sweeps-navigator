@@ -580,3 +580,8 @@
 - [x] Format the claim-code PDF as eight cut-ready team cards per page in a 2-column by 4-row grid
 - [x] Show center name, team name, bowler name, and claim code on each team card
 - [x] Validate the printable card grid and overflow behavior for large teams
+
+## Center Claim-Code PDF Packets
+- [x] Generate one downloadable claim-code card PDF per bowling center
+- [x] Include the event name and event date window in each center PDF header
+- [x] Validate center grouping, PDF file names, and coordinator-ready card layouts

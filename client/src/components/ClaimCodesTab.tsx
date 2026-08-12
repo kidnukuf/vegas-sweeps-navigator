@@ -10,7 +10,14 @@ import { jsPDF } from "jspdf";
  * per-bowler claim codes, plus print a distribution sheet (name · team · code · QR)
  * that program directors hand out on league night.
  */
-export default function ClaimCodesTab({ eventId }: { eventId: number }) {
+type ClaimCodeEventDetails = {
+  name: string;
+  year?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: number; eventDetails?: ClaimCodeEventDetails }) {
   const utils = trpc.useUtils();
   const list = trpc.claimCodes.listForEvent.useQuery({ eventId });
   const [query, setQuery] = useState("");
@@ -77,6 +84,32 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [rows]);
 
+  const centerPackets = useMemo(() => {
+    const centers = new Map<string, typeof rows>();
+    for (const row of rows.filter((row) => row.status === "unused")) {
+      const center = row.center || "Unassigned Center";
+      if (!centers.has(center)) centers.set(center, []);
+      centers.get(center)!.push(row);
+    }
+    return Array.from(centers.entries())
+      .map(([center, members]) => ({
+        center,
+        members,
+        teamCount: new Set(members.map((member) => member.team || "— No Team —")).size,
+      }))
+      .sort((a, b) => a.center.localeCompare(b.center));
+  }, [rows]);
+
+  const eventTitle = eventDetails?.name || "B.O.B. Roll-Off";
+  const eventDateWindow = useMemo(() => {
+    const start = eventDetails?.startDate?.trim();
+    const end = eventDetails?.endDate?.trim();
+    if (start && end) return start === end ? start : `${start} – ${end}`;
+    if (start) return start;
+    if (end) return end;
+    return eventDetails?.year || "Event dates to be announced";
+  }, [eventDetails]);
+
   function printSheet() {
     const win = window.open("", "_blank", "width=900,height=1000");
     if (!win) {
@@ -131,14 +164,14 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
     win.document.close();
   }
 
-  function downloadTeamPdf() {
-    const activeTeams = byTeam
-      .map(([team, members]) => [team, members.filter((member) => member.status === "unused")] as const)
-      .filter(([, members]) => members.length > 0);
-    if (activeTeams.length === 0) {
-      toast.error("There are no unused claim codes to include in a distribution packet.");
-      return;
+  function downloadCenterPdf(centerName: string, centerMembers: typeof rows) {
+    const teams = new Map<string, typeof rows>();
+    for (const member of centerMembers) {
+      const team = member.team || "— No Team —";
+      if (!teams.has(team)) teams.set(team, []);
+      teams.get(team)!.push(member);
     }
+    const activeTeams = Array.from(teams.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
     const doc = new jsPDF({ unit: "pt", format: "letter" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -166,12 +199,13 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
     const header = (pageNumber: number, pageCount: number) => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);
-      doc.text("B.O.B. Roll-Off — Team Claim Code Cards", margin, 32);
+      doc.text(`${eventTitle} — Team Claim Code Cards`, margin, 28, { maxWidth: pageWidth - margin * 2 - 90 });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor(85);
-      doc.text("Cut along each card border and distribute by team. Each code creates one account and may be used once.", margin, 45);
-      doc.text(`Page ${pageNumber} of ${pageCount}`, pageWidth - margin, 32, { align: "right" });
+      doc.text(`${centerName} • ${eventDateWindow}`, margin, 40, { maxWidth: pageWidth - margin * 2 - 90 });
+      doc.text("Cut along each card border and distribute by team. Each code creates one account and may be used once.", margin, 50);
+      doc.text(`Page ${pageNumber} of ${pageCount}`, pageWidth - margin, 28, { align: "right" });
       doc.setTextColor(0);
     };
     const pageCount = Math.ceil(teamCards.length / teamsPerPage);
@@ -188,8 +222,6 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
       const row = Math.floor(slot / 2);
       const x = margin + column * (cardWidth + columnGap);
       const y = gridTop + row * (cardHeight + rowGap);
-      const centers = Array.from(new Set(card.members.map((member) => member.center).filter(Boolean))).join(" · ") || "Bowling Center";
-
       doc.setDrawColor(105);
       doc.setLineWidth(0.8);
       doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, "S");
@@ -202,7 +234,7 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
       doc.text(`TEAM: ${card.team}${card.continuation ? " (CONT.)" : ""}`, x + 8, y + 17, { maxWidth: cardWidth - 16 });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.2);
-      doc.text(centers, x + 8, y + 40, { maxWidth: cardWidth - 16 });
+      doc.text(centerName, x + 8, y + 40, { maxWidth: cardWidth - 16 });
       doc.setTextColor(0);
 
       let memberY = y + 51;
@@ -229,7 +261,9 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
       doc.setTextColor(0);
     });
 
-    doc.save(`BOB-Team-Claim-Code-Cards-Event-${eventId}.pdf`);
+    const safeCenter = centerName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    const safeEvent = eventTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    doc.save(`${safeEvent || "BOB"}-${safeCenter || "Center"}-Claim-Code-Cards.pdf`);
   }
 
   return (
@@ -282,13 +316,6 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
             🖨️ Print Browser Sheet
           </Button>
           <Button
-            onClick={downloadTeamPdf}
-            disabled={rows.length === 0}
-            className="bg-cyan-400 text-black hover:bg-cyan-300 font-bold"
-          >
-            ⬇ Download 8-Team Card PDF
-          </Button>
-          <Button
             onClick={() => syncToSheet.mutate({ eventId })}
             disabled={rows.length === 0 || syncToSheet.isPending}
             variant="outline"
@@ -296,6 +323,32 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
           >
             {syncToSheet.isPending ? "Writing BL…" : "↻ Write Codes to BL"}
           </Button>
+        </div>
+
+        <div className="mt-5 border-t border-white/10 pt-4">
+          <p className="text-sm font-bold text-cyan-200">Center Coordinator PDF Packets</p>
+          <p className="mt-1 text-xs text-gray-400">
+            Each download includes only that center’s teams, arranged as eight cut-ready team cards per page with the event name and date window.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {centerPackets.map((packet) => (
+              <Button
+                key={packet.center}
+                onClick={() => downloadCenterPdf(packet.center, packet.members)}
+                className="h-auto justify-start bg-cyan-400 px-3 py-2 text-left text-black hover:bg-cyan-300"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-bold">⬇ {packet.center}</span>
+                  <span className="block text-xs opacity-80">
+                    {packet.teamCount} team{packet.teamCount !== 1 ? "s" : ""} · {packet.members.length} unused code{packet.members.length !== 1 ? "s" : ""}
+                  </span>
+                </span>
+              </Button>
+            ))}
+            {centerPackets.length === 0 && (
+              <p className="text-xs text-gray-500">Generate unused claim codes before creating coordinator packets.</p>
+            )}
+          </div>
         </div>
       </div>
 
