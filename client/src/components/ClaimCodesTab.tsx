@@ -143,73 +143,93 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
     const doc = new jsPDF({ unit: "pt", format: "letter" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 36;
-    const cardGap = 12;
-    const cardWidth = (pageWidth - margin * 2 - cardGap) / 2;
-    const cardHeight = 78;
-    const origin = window.location.origin;
-    let y = 76;
-    let cardIndex = 0;
+    const margin = 24;
+    const columnGap = 10;
+    const rowGap = 8;
+    const gridTop = 58;
+    const teamsPerPage = 8;
+    const cardWidth = (pageWidth - margin * 2 - columnGap) / 2;
+    const cardHeight = (pageHeight - gridTop - margin - rowGap * 3) / 4;
+    const maxMembersPerCard = 6;
+    const teamCards = activeTeams.flatMap(([team, members]) => {
+      const cards = [] as Array<{ team: string; members: typeof members; continuation: boolean }>;
+      for (let index = 0; index < members.length; index += maxMembersPerCard) {
+        cards.push({
+          team,
+          members: members.slice(index, index + maxMembersPerCard),
+          continuation: index > 0,
+        });
+      }
+      return cards;
+    });
 
-    const header = () => {
+    const header = (pageNumber: number, pageCount: number) => {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(17);
-      doc.text("B.O.B. Roll-Off — Bowler Claim Codes", margin, 36);
+      doc.setFontSize(15);
+      doc.text("B.O.B. Roll-Off — Team Claim Code Cards", margin, 32);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(85);
-      doc.text("League-night distribution packet • Each code creates one account and may be used once.", margin, 51);
+      doc.text("Cut along each card border and distribute by team. Each code creates one account and may be used once.", margin, 45);
+      doc.text(`Page ${pageNumber} of ${pageCount}`, pageWidth - margin, 32, { align: "right" });
       doc.setTextColor(0);
     };
-    const newPage = () => {
-      doc.addPage();
-      header();
-      y = 76;
-      cardIndex = 0;
-    };
+    const pageCount = Math.ceil(teamCards.length / teamsPerPage);
 
-    header();
-    for (const [team, members] of activeTeams) {
-      if (y + 32 > pageHeight - margin) newPage();
+    teamCards.forEach((card, index) => {
+      const pageIndex = Math.floor(index / teamsPerPage);
+      const slot = index % teamsPerPage;
+      if (slot === 0) {
+        if (index > 0) doc.addPage();
+        header(pageIndex + 1, pageCount);
+      }
+
+      const column = slot % 2;
+      const row = Math.floor(slot / 2);
+      const x = margin + column * (cardWidth + columnGap);
+      const y = gridTop + row * (cardHeight + rowGap);
+      const centers = Array.from(new Set(card.members.map((member) => member.center).filter(Boolean))).join(" · ") || "Bowling Center";
+
+      doc.setDrawColor(105);
+      doc.setLineWidth(0.8);
+      doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, "S");
       doc.setFillColor(243, 193, 0);
-      doc.roundedRect(margin, y, pageWidth - margin * 2, 20, 3, 3, "F");
+      doc.roundedRect(x, y, cardWidth, 27, 3, 3, "F");
+      doc.rect(x, y + 18, cardWidth, 9, "F");
+      doc.setTextColor(17);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text(`TEAM: ${team}`, margin + 8, y + 14);
-      y += 28;
+      doc.setFontSize(10.5);
+      doc.text(`TEAM: ${card.team}${card.continuation ? " (CONT.)" : ""}`, x + 8, y + 17, { maxWidth: cardWidth - 16 });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.2);
+      doc.text(centers, x + 8, y + 40, { maxWidth: cardWidth - 16 });
+      doc.setTextColor(0);
 
-      for (const member of members) {
-        if (y + cardHeight > pageHeight - margin) newPage();
-        const column = cardIndex % 2;
-        const x = margin + column * (cardWidth + cardGap);
-        doc.setDrawColor(175);
-        doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, "S");
+      let memberY = y + 51;
+      for (const member of card.members) {
+        doc.setDrawColor(220);
+        doc.setLineWidth(0.35);
+        doc.line(x + 8, memberY + 3, x + cardWidth - 8, memberY + 3);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.text(`${member.firstName} ${member.lastName}`, x + 9, y + 17, { maxWidth: cardWidth - 18 });
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(85);
-        doc.text(`${member.center || "Bowling center"} • ${team}`, x + 9, y + 30, { maxWidth: cardWidth - 18 });
-        doc.setTextColor(0);
+        doc.setFontSize(8.8);
+        doc.text(`${member.firstName} ${member.lastName}`, x + 9, memberY + 14, { maxWidth: cardWidth - 100 });
         doc.setFont("courier", "bold");
-        doc.setFontSize(15);
-        doc.text(member.code, x + 9, y + 51);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7);
-        doc.text(`Use at ${origin}/bowler-login → Create Account`, x + 9, y + 67, { maxWidth: cardWidth - 18 });
-
-        if (column === 1) y += cardHeight + cardGap;
-        cardIndex++;
+        doc.setFontSize(9.5);
+        doc.text(member.code, x + cardWidth - 9, memberY + 14, { align: "right" });
+        memberY += 16;
       }
-      if (cardIndex % 2 === 1) {
-        y += cardHeight + cardGap;
-        cardIndex++;
-      }
-      y += 6;
-    }
 
-    doc.save(`BOB-Claim-Codes-Event-${eventId}.pdf`);
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.35);
+      doc.line(x + 8, y + cardHeight - 21, x + cardWidth - 8, y + cardHeight - 21);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.8);
+      doc.setTextColor(85);
+      doc.text("Go to the Bowler Portal → Create Account → enter your code.", x + 8, y + cardHeight - 9, { maxWidth: cardWidth - 16 });
+      doc.setTextColor(0);
+    });
+
+    doc.save(`BOB-Team-Claim-Code-Cards-Event-${eventId}.pdf`);
   }
 
   return (
@@ -266,7 +286,7 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
             disabled={rows.length === 0}
             className="bg-cyan-400 text-black hover:bg-cyan-300 font-bold"
           >
-            ⬇ Download Team PDF
+            ⬇ Download 8-Team Card PDF
           </Button>
           <Button
             onClick={() => syncToSheet.mutate({ eventId })}

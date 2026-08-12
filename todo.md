@@ -575,3 +575,8 @@
 ## Sheet Sync Claim Codes
 - [x] Add a Generate Missing Claim Codes button to the ED Sheet Sync section
 - [x] Generate only absent codes, write them to BL, and show created/written/unmatched counts
+
+## Claim-Code Print Cards
+- [x] Format the claim-code PDF as eight cut-ready team cards per page in a 2-column by 4-row grid
+- [x] Show center name, team name, bowler name, and claim code on each team card
+- [x] Validate the printable card grid and overflow behavior for large teams
