@@ -88,6 +88,12 @@ const COLUMN_ALIASES: Record<string, string> = {
   // ── App-written columns (orange in sheet) — recognized but IGNORED during import ──
   // These are written back by the app; importing them would overwrite app data.
   "bowler id": "_ignore",
+  "claim code": "_ignore",
+  "claim code (app-managed)": "_ignore",
+  "bill breakdown": "_ignore",
+  "bill breakdown (app-managed)": "_ignore",
+  "team score": "_ignore",
+  "team score (app-managed)": "_ignore",
   "#a pool party qr code": "_ignore",
   "#a pool qr code used": "_ignore",
   "extra guest banquet qr code": "_ignore",

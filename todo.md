@@ -558,3 +558,11 @@
 - [x] Write claim codes to Google Sheet column BL for the selected event tab
 - [x] Add ED controls to generate, reissue, and print claim-code packets grouped by team
 - [x] Validate claim codes during Bowler Portal sign-up and verify the PDF packet layout
+
+## Google Sheet Mapping Audit
+- [x] Compare current master-sheet headers with the app’s import and write-back column mapping
+- [x] Report fields that have no current Google Sheet column or may conflict with existing columns
+
+## Operational Sheet Header Mapping
+- [x] Recognize Claim Code, Bill Breakdown, and Team Score headers without showing them as unmapped in import preview
+- [x] Verify the import preview retains Guest Name mappings and clears the operational-header warnings
