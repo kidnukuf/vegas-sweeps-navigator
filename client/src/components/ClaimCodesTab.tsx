@@ -266,6 +266,21 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     doc.save(`${safeEvent || "BOB"}-${safeCenter || "Center"}-Claim-Code-Cards.pdf`);
   }
 
+  function downloadAllCenterPdfs() {
+    if (centerPackets.length === 0) {
+      toast.error("There are no unused claim codes to include in center packets.");
+      return;
+    }
+    const allowed = window.confirm(
+      `Download ${centerPackets.length} center PDF packet${centerPackets.length !== 1 ? "s" : ""}? Your browser may ask you to allow multiple downloads.`
+    );
+    if (!allowed) return;
+    for (const packet of centerPackets) {
+      downloadCenterPdf(packet.center, packet.members);
+    }
+    toast.success(`Started ${centerPackets.length} center PDF download${centerPackets.length !== 1 ? "s" : ""}.`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-white/10 bg-[#111] p-5">
@@ -330,6 +345,16 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           <p className="mt-1 text-xs text-gray-400">
             Each download includes only that center’s teams, arranged as eight cut-ready team cards per page with the event name and date window.
           </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button
+              onClick={downloadAllCenterPdfs}
+              disabled={centerPackets.length === 0}
+              className="bg-cyan-400 text-black hover:bg-cyan-300 font-bold"
+            >
+              📦 Download All Center PDFs
+            </Button>
+            <span className="text-xs text-gray-500">Allow multiple downloads if your browser asks.</span>
+          </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {centerPackets.map((packet) => (
               <Button

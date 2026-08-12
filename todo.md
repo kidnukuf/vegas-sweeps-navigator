@@ -585,3 +585,7 @@
 - [x] Generate one downloadable claim-code card PDF per bowling center
 - [x] Include the event name and event date window in each center PDF header
 - [x] Validate center grouping, PDF file names, and coordinator-ready card layouts
+
+## All-Center Claim-Code Packet Download
+- [x] Add a one-click ED control that downloads each selected event center’s PDF packet
+- [x] Show the browser download permission requirement and validate the all-centers action
