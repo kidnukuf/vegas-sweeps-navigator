@@ -599,3 +599,8 @@
 - [x] Generate missing unique claim codes as a built-in completion step after every bowler import
 - [x] Automatically write new and existing active claim codes to BL in the imported sheet tab
 - [x] Return clear automatic claim-code generation and BL sync results in the import outcome
+
+## Claim-Code Card Layout Correction
+- [x] Put event date, center, and team information above each individual cut-ready team card
+- [x] Give each of the four bowlers an evenly spaced QR-and-claim-code slot: two left and two right
+- [x] Validate the corrected printable coordinator packet layout

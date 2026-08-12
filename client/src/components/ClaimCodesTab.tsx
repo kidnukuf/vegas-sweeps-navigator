@@ -232,40 +232,46 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
       doc.setDrawColor(105);
       doc.setLineWidth(0.8);
       doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, "S");
+      doc.setFillColor(14, 23, 37);
+      doc.roundedRect(x, y, cardWidth, 44, 3, 3, "F");
+      doc.rect(x, y + 35, cardWidth, 9, "F");
+      doc.setTextColor(175);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(5.9);
+      doc.text(eventDateWindow, x + 8, y + 10, { maxWidth: cardWidth - 16 });
+      doc.setTextColor(220);
+      doc.setFontSize(7.2);
+      doc.text(centerName, x + 8, y + 21, { maxWidth: cardWidth - 16 });
       doc.setFillColor(243, 193, 0);
-      doc.roundedRect(x, y, cardWidth, 27, 3, 3, "F");
-      doc.rect(x, y + 18, cardWidth, 9, "F");
+      doc.rect(x, y + 28, cardWidth, 16, "F");
       doc.setTextColor(17);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.text(`TEAM: ${card.team}${card.continuation ? " (CONT.)" : ""}`, x + 8, y + 17, { maxWidth: cardWidth - 62 });
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.2);
-      doc.text(centerName, x + 8, y + 40, { maxWidth: cardWidth - 66 });
-      doc.setTextColor(0);
-      doc.addImage(signUpQr, "PNG", x + cardWidth - 53, y + 31, 45, 45);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(5.8);
-      doc.setTextColor(70);
-      doc.text("SIGN UP", x + cardWidth - 30, y + 82, { align: "center" });
+      doc.setFontSize(9.7);
+      doc.text(`TEAM: ${card.team}${card.continuation ? " (CONT.)" : ""}`, x + 8, y + 39, { maxWidth: cardWidth - 16 });
       doc.setTextColor(0);
 
       const bowlerColumnWidth = (cardWidth - 24) / 2;
       const bowlerColumns = [card.members.slice(0, 2), card.members.slice(2, 4)];
       bowlerColumns.forEach((members, columnIndex) => {
         const memberX = x + 8 + columnIndex * (bowlerColumnWidth + 8);
-        let memberY = y + 92;
+        let memberY = y + 53;
         for (const member of members) {
           doc.setDrawColor(220);
           doc.setLineWidth(0.35);
-          doc.line(memberX, memberY + 3, memberX + bowlerColumnWidth, memberY + 3);
+          doc.line(memberX, memberY, memberX + bowlerColumnWidth, memberY);
+          doc.addImage(signUpQr, "PNG", memberX + 2, memberY + 4, 27, 27);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(8.2);
-          doc.text(`${member.firstName} ${member.lastName}`, memberX + 1, memberY + 14, { maxWidth: bowlerColumnWidth - 56 });
+          doc.setFontSize(7.7);
+          doc.text(`${member.firstName} ${member.lastName}`, memberX + 33, memberY + 13, { maxWidth: bowlerColumnWidth - 35 });
           doc.setFont("courier", "bold");
-          doc.setFontSize(8.3);
-          doc.text(member.code, memberX + bowlerColumnWidth - 1, memberY + 14, { align: "right" });
-          memberY += 21;
+          doc.setFontSize(8.7);
+          doc.text(member.code, memberX + 33, memberY + 26, { maxWidth: bowlerColumnWidth - 35 });
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(4.9);
+          doc.setTextColor(90);
+          doc.text("SCAN TO SIGN UP", memberX + 15.5, memberY + 35, { align: "center" });
+          doc.setTextColor(0);
+          memberY += 47;
         }
       });
 
@@ -275,7 +281,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6.8);
       doc.setTextColor(85);
-      doc.text("Scan the QR code → Create Account → enter your claim code.", x + 8, y + cardHeight - 9, { maxWidth: cardWidth - 16 });
+      doc.text("Each bowler: scan your QR → Create Account → enter your claim code.", x + 8, y + cardHeight - 9, { maxWidth: cardWidth - 16 });
       doc.setTextColor(0);
     });
 
