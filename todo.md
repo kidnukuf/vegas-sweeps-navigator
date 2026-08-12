@@ -570,4 +570,4 @@
 ## Claim-Code Sheet Sync Repair
 - [x] Diagnose why claim codes are not populating BL in the selected Google Sheet tab
 - [x] Correct the sync for matched roster records and make partial row-match failures visible to the Event Director
-- [ ] Reconcile the unmatched Group 3 Cassie Davis roster row before issuing its claim code
+- [x] Reconcile the unmatched Group 3 Cassie Davis roster row before issuing its claim code
