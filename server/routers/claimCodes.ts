@@ -27,7 +27,7 @@ type BowlerRow = {
   teamCode: string | null;
 };
 
-async function syncCodesToSheet(eventId: number, sheetTabOverride?: string) {
+export async function syncCodesToSheet(eventId: number, sheetTabOverride?: string) {
   const rows = await rawQuery<BowlerRow & { code: string }>(
     `SELECT c.code, b.id, b.legalFirstName, b.legalLastName, b.laneNumber,
             bc.centerName AS centerName, t.teamName AS teamName, t.teamCode, b.scantronId
@@ -51,6 +51,52 @@ async function syncCodesToSheet(eventId: number, sheetTabOverride?: string) {
   })), target);
 }
 
+/**
+ * Application-side post-import workflow: mint codes only for bowlers that have
+ * never received one, then write every active code to the configured BL column.
+ * The function is idempotent, so re-importing a roster cannot replace a code
+ * that has already been distributed or redeemed.
+ */
+export async function ensureClaimCodesForEvent(eventId: number, sheetTabOverride?: string) {
+  const bowlers = await rawQuery<{ id: number }>(
+    `SELECT b.id FROM bowlers b
+     WHERE b.eventId = ?
+       AND b.id NOT IN (
+         SELECT bowlerId FROM bowler_claim_codes WHERE eventId = ?
+       )`,
+    [eventId, eventId]
+  );
+
+  const existing = await rawQuery<{ code: string }>(`SELECT code FROM bowler_claim_codes`, []);
+  const used = new Set(existing.map((row) => row.code));
+  const now = Date.now();
+  let created = 0;
+
+  for (const bowler of bowlers) {
+    let code = makeCode();
+    let guard = 0;
+    while (used.has(code) && guard < 1000) {
+      code = makeCode();
+      guard++;
+    }
+    if (used.has(code)) throw new Error("Could not create a unique claim code. Please try again.");
+    used.add(code);
+    await rawQuery(
+      `INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, createdAt)
+       VALUES (?, ?, ?, 'unused', ?)`,
+      [eventId, bowler.id, code, now]
+    );
+    created++;
+  }
+
+  const total = await rawQuery<{ c: number }>(
+    `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
+    [eventId]
+  );
+  const sheet = await syncCodesToSheet(eventId, sheetTabOverride);
+  return { created, totalForEvent: total[0]?.c ?? 0, sheet };
+}
+
 export const claimCodesRouter = router({
   // ── ED: generate one unique unused code per bowler that doesn't already have one ──
   generateForEvent: publicProcedure
@@ -64,48 +110,7 @@ export const claimCodesRouter = router({
         );
       }
 
-      // Bowlers in this event who do NOT yet have any claim code row
-      const bowlers = await rawQuery<{ id: number }>(
-        `SELECT b.id FROM bowlers b
-         WHERE b.eventId = ?
-           AND b.id NOT IN (
-             SELECT bowlerId FROM bowler_claim_codes WHERE eventId = ?
-           )`,
-        [input.eventId, input.eventId]
-      );
-
-      // Preload existing codes to guarantee global uniqueness
-      const existing = await rawQuery<{ code: string }>(
-        `SELECT code FROM bowler_claim_codes`,
-        []
-      );
-      const used = new Set(existing.map((r) => r.code));
-
-      let created = 0;
-      const now = Date.now();
-      for (const b of bowlers) {
-        let code = makeCode();
-        let guard = 0;
-        while (used.has(code) && guard < 1000) {
-          code = makeCode();
-          guard++;
-        }
-        if (used.has(code)) throw new Error("Could not create a unique claim code. Please try again.");
-        used.add(code);
-        await rawQuery(
-          `INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, createdAt)
-           VALUES (?, ?, ?, 'unused', ?)`,
-          [input.eventId, b.id, code, now]
-        );
-        created++;
-      }
-
-      const total = await rawQuery<{ c: number }>(
-        `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
-        [input.eventId]
-      );
-      const sheet = await syncCodesToSheet(input.eventId, input.sheetTabOverride);
-      return { created, totalForEvent: total[0]?.c ?? 0, sheet };
+      return ensureClaimCodesForEvent(input.eventId, input.sheetTabOverride);
     }),
 
   // ── ED: full list for printable distribution sheet (grouped client-side by team) ──

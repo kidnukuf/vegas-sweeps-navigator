@@ -264,7 +264,7 @@ export default function ImportData() {
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
   const [headerMap, setHeaderMap] = useState<Record<number, string>>({});
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[]; rowResults?: { status: 'new' | 'updated' | 'error' | 'skipped'; firstName: string; lastName: string; centerName: string; teamName: string; teamCode: string; squadTime: string; scantronId?: string; error?: string }[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[]; rowResults?: { status: 'new' | 'updated' | 'error' | 'skipped'; firstName: string; lastName: string; centerName: string; teamName: string; teamCode: string; squadTime: string; scantronId?: string; error?: string }[]; claimCodes?: { created: number; totalForEvent: number; sheet?: { written?: number; notFound?: number; error?: string }; error?: string } } | null>(null);
   const [googleUrl, setGoogleUrl] = useState("");
   const [importTabName, setImportTabName] = useState("");
   const [importTabGid, setImportTabGid] = useState<number | null>(null);
@@ -340,8 +340,8 @@ export default function ImportData() {
 
   const importMutation = trpc.import.process.useMutation({
     onSuccess: async (data: unknown) => {
-      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[]; rowResults?: { status: 'new' | 'updated' | 'error' | 'skipped'; firstName: string; lastName: string; centerName: string; teamName: string; teamCode: string; squadTime: string; scantronId?: string; error?: string }[] };
-      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [], errorDetails: d.errorDetails ?? [], rowResults: d.rowResults ?? [] });
+      const d = data as { imported: number; updated: number; skipped: number; errors: number; generatedIds: string[]; errorDetails?: { row: string; error: string }[]; rowResults?: { status: 'new' | 'updated' | 'error' | 'skipped'; firstName: string; lastName: string; centerName: string; teamName: string; teamCode: string; squadTime: string; scantronId?: string; error?: string }[]; claimCodes?: { created: number; totalForEvent: number; sheet?: { written?: number; notFound?: number; error?: string }; error?: string } };
+      setImportResult({ imported: d.imported ?? 0, updated: d.updated ?? 0, skipped: d.skipped ?? 0, errors: d.errors ?? 0, generatedIds: d.generatedIds ?? [], errorDetails: d.errorDetails ?? [], rowResults: d.rowResults ?? [], claimCodes: d.claimCodes });
       // Fetch the full roster to build the ID reference sheet
       const roster = await adminRosterQuery.refetch();
       if (roster.data) {
@@ -883,6 +883,27 @@ export default function ImportData() {
                 </div>
               </div>
             </div>
+
+            {importResult.claimCodes && (
+              <div className={`neon-card p-5 border ${importResult.claimCodes.error || importResult.claimCodes.sheet?.error ? 'border-red-500/40' : importResult.claimCodes.sheet?.notFound ? 'border-yellow-500/40' : 'border-emerald-500/40'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">🔐</div>
+                  <div>
+                    <h3 className="font-bold text-emerald-300">Claim Codes Created Automatically</h3>
+                    {importResult.claimCodes.error || importResult.claimCodes.sheet?.error ? (
+                      <p className="mt-1 text-sm text-red-300">Codes were created where possible, but BL sheet sync needs attention: {importResult.claimCodes.error ?? importResult.claimCodes.sheet?.error}</p>
+                    ) : (
+                      <p className="mt-1 text-sm text-gray-300">
+                        Generated <span className="font-bold text-emerald-300">{importResult.claimCodes.created}</span> missing code{importResult.claimCodes.created !== 1 ? 's' : ''};
+                        <span className="font-bold text-cyan-300"> {importResult.claimCodes.sheet?.written ?? 0}</span> active code{(importResult.claimCodes.sheet?.written ?? 0) !== 1 ? 's' : ''} written to BL.
+                        {importResult.claimCodes.sheet?.notFound ? <span className="text-yellow-300"> {importResult.claimCodes.sheet.notFound} row{importResult.claimCodes.sheet.notFound !== 1 ? 's' : ''} did not match the sheet.</span> : null}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">Every claim code is unique. Existing distributed or redeemed codes are retained on future imports.</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Combined import result list — errors first in red, then successes */}
             {importResult.rowResults && importResult.rowResults.length > 0 && (() => {

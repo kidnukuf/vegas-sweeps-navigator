@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "@shared/const";
 import { bowlerAuthRouter } from "./routers/bowlerAuth";
 import { offlineDoorRouter } from "./routers/offlineDoor";
-import { claimCodesRouter } from "./routers/claimCodes";
+import { claimCodesRouter, ensureClaimCodesForEvent } from "./routers/claimCodes";
 import { adInquiryRouter } from "./routers/adInquiry";
 import { masterSheetRouter } from "./routers/masterSheet";
 import { edStaffRouter } from "./routers/edStaff";
@@ -2042,7 +2042,29 @@ export const appRouter = router({
             console.log(`[import] batchWriteBowlerIds result: written=${result.written}, notFound=${result.notFound}${result.error ? ', error=' + result.error : ''}`);
           }).catch(e => console.warn('[import] batchWriteBowlerIds failed:', e));
         }
-        return { success: true, imported, updated, skipped, errors, errorDetails, generatedIds, sessionId, rowResults };
+
+        // Claim codes are a built-in import completion step. The app generates
+        // only missing codes, retains any already distributed/redeemed code, and
+        // writes active codes to BL on the same selected Google Sheet tab.
+        let claimCodes: {
+          created: number;
+          totalForEvent: number;
+          sheet?: { written?: number; notFound?: number; error?: string };
+          error?: string;
+        } | undefined;
+        try {
+          claimCodes = await ensureClaimCodesForEvent(
+            input.eventId,
+            input.sourceType === "google_sheets" ? input.sheetTabName ?? undefined : undefined
+          );
+          console.log(`[import] claimCodes created=${claimCodes.created}, total=${claimCodes.totalForEvent}, written=${claimCodes.sheet?.written ?? 0}, notFound=${claimCodes.sheet?.notFound ?? 0}${claimCodes.sheet?.error ? `, error=${claimCodes.sheet.error}` : ""}`);
+        } catch (claimCodeError) {
+          const error = String(claimCodeError);
+          console.warn("[import] automatic claim-code generation/sync failed:", error);
+          claimCodes = { created: 0, totalForEvent: 0, error };
+        }
+
+        return { success: true, imported, updated, skipped, errors, errorDetails, generatedIds, sessionId, rowResults, claimCodes };
       }),
 
         history: publicProcedure

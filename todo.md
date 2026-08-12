@@ -594,3 +594,8 @@
 - [x] Add a QR code linking to the B.O.B. Bowler Portal sign-up page on each center PDF card
 - [x] Lay out bowlers 1–2 in the left column and bowlers 3–4 in the right column while retaining card details
 - [x] Validate the revised print-and-cut center packet layout
+
+## Automatic Claim Codes on Import
+- [x] Generate missing unique claim codes as a built-in completion step after every bowler import
+- [x] Automatically write new and existing active claim codes to BL in the imported sheet tab
+- [x] Return clear automatic claim-code generation and BL sync results in the import outcome
