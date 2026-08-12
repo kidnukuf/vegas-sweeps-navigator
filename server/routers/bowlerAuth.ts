@@ -136,6 +136,8 @@ async function getBowlerProfile(bowlerId: number) {
     centerName: string | null;
     laneNumber: number | null;
     squadTime: string | null;
+    laneNumber2: number | null;
+    squadTime2: string | null;
     laneToEvent: string | null;
     eventName: string | null;
     bowlingDate: string | null;
@@ -164,7 +166,7 @@ async function getBowlerProfile(bowlerId: number) {
             b.email, b.phone, b.scantronId, b.registrationStatus,
             b.isCapitain, b.captainVerified, b.teamId, b.centerId,
             t.teamName, t.teamCode, bc.centerName,
-            b.laneNumber, b.squadTime, b.laneToEvent,
+            b.laneNumber, b.squadTime, b.laneNumber2, b.squadTime2, b.laneToEvent,
             e.eventName, e.bowlingDate,
             h.hotelName, h.checkinDate, h.checkoutDate, h.roomType, h.confirmationCode,
             p.totalAmountDue, p.paid,

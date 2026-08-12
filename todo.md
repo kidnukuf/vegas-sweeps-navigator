@@ -548,3 +548,7 @@
 ## Missing Bowler IDs and QR Codes
 - [x] Compare non-vacant rows in the supplied master sheet with the import eligibility and write-back rules
 - [x] Fix the identified Bowler ID or QR write-back failure and verify affected rows
+
+## Bowler Portal Second Squad
+- [x] Show imported second squad time and second lane assignment in the Bowler Portal when available
+- [x] Validate the conditional display for bowlers with and without a second squad

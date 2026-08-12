@@ -204,6 +204,8 @@ export const bowlers = mysqlTable("bowlers", {
   leagueMember: boolean("leagueMember").default(false),
   squadTime: varchar("squadTime", { length: 50 }),
   laneNumber: int("laneNumber"),
+  squadTime2: varchar("squadTime2", { length: 50 }),
+  laneNumber2: int("laneNumber2"),
   // Lane-to-event info (column 44 in import sheet — e.g. "Lanes 1-4 → Banquet Hall A")
   laneToEvent: text("laneToEvent"),
   // Guest pool party add-ons: $15 per extra guest entry (column U in sheet)

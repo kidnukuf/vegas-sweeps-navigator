@@ -181,18 +181,25 @@ function parseCSV(text: string): string[][] {
   return rows;
 }
 
-function mapHeaders(headers: string[]): Record<number, string> {
+export function mapHeaders(headers: string[]): Record<number, string> {
   const map: Record<number, string> = {};
+  let primaryLaneSeen = false;
   headers.forEach((h, i) => {
     const key = h.toLowerCase().trim();
-    if (COLUMN_ALIASES[key]) map[i] = COLUMN_ALIASES[key];
+    // The master sheet deliberately uses the "Lane #" header twice: E is the
+    // primary squad lane and Y is the additional squad lane. Preserve both.
+    if (key === "lane #" || key === "lane") {
+      map[i] = primaryLaneSeen ? "laneNumber2" : "laneNumber";
+      primaryLaneSeen = true;
+    }
+    else if (COLUMN_ALIASES[key]) map[i] = COLUMN_ALIASES[key];
     // Generic catch-all: any header containing 'qr', 'scan', 'reentry' is app/doorman-written
     else if (/qr|scan|reentry/i.test(h)) map[i] = "_ignore";
   });
   return map;
 }
 
-function parseRows(rawRows: string[][], headerMap: Record<number, string>, headers: string[]): ParsedRow[] {
+export function parseRows(rawRows: string[][], headerMap: Record<number, string>, headers: string[]): ParsedRow[] {
   return rawRows.map((row, idx) => {
     const get = (field: string) => {
       const colIdx = Object.entries(headerMap).find(([, v]) => v === field)?.[0];
@@ -200,7 +207,16 @@ function parseRows(rawRows: string[][], headerMap: Record<number, string>, heade
     };
     // Build raw record keyed by ORIGINAL header names so the server's header-based lookups work
     const raw: Record<string, string> = {};
-    headers.forEach((h, i) => { raw[h] = (row[i] ?? "").trim(); });
+    let primaryLaneSeen = false;
+    headers.forEach((h, i) => {
+      const key = h.toLowerCase().trim();
+      if (key === "lane #" || key === "lane") {
+        raw[primaryLaneSeen ? "2nd Lane #" : h] = (row[i] ?? "").trim();
+        primaryLaneSeen = true;
+      } else {
+        raw[h] = (row[i] ?? "").trim();
+      }
+    });
     const errors: string[] = [];
     const firstName = get("firstName");
     const lastName = get("lastName");

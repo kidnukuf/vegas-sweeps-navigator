@@ -29,6 +29,8 @@ export interface LaneToBanquetPlacardProps {
   laneToEvent?: string | null;
   laneNumber?: number | null;
   squadTime?: string | null;
+  laneNumber2?: number | null;
+  squadTime2?: string | null;
   hotelName?: string | null;
   confirmationCode?: string | null;
   checkinDate?: string | null;
@@ -41,7 +43,7 @@ export interface LaneToBanquetPlacardProps {
 }
 
 export function LaneToBanquetPlacard({
-  laneToEvent, laneNumber, squadTime, hotelName, confirmationCode, checkinDate,
+  laneToEvent, laneNumber, squadTime, laneNumber2, squadTime2, hotelName, confirmationCode, checkinDate,
   checkoutDate, roomType, banquetTable, banquetLocation, banquetTime, ev,
 }: LaneToBanquetPlacardProps) {
   const [open, setOpen] = useState(false);
@@ -59,7 +61,7 @@ export function LaneToBanquetPlacard({
   const hasHotel = hotelName || confirmationCode || checkinDate || checkoutDate;
   const hasBanquet = banquetTable || banquetLocation || banquetTime;
   const hasEvSteps = !!(ev && (ev.hotelCheckinDay || ev.hotelCheckinTime || ev.registrationDay || ev.registrationTime || ev.tshirtsProvided || ev.poolPartyEnabled || ev.banquetDay || ev.hotelCheckoutDay || ev.hotelCheckoutTime));
-  const hasInfo = laneToEvent || laneNumber || squadTime || hasHotel || hasBanquet || hasEvSteps;
+  const hasInfo = laneToEvent || laneNumber || squadTime || laneNumber2 || squadTime2 || hasHotel || hasBanquet || hasEvSteps;
   if (!hasInfo) return null;
 
   const showHotelCard = !ev || ev.showHotelInfoCard === undefined || ev.showHotelInfoCard === null ? true : Boolean(ev.showHotelInfoCard);
@@ -210,6 +212,31 @@ export function LaneToBanquetPlacard({
               <div>
                 <p className="text-white/75 text-xs">Squad Time</p>
                 <p className="text-white font-semibold text-sm">{normalizeSquadTime(squadTime)}</p>
+              </div>
+            </div>
+          )}
+          {(laneNumber2 || squadTime2) && (
+            <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3">
+              <p className="mb-2 text-cyan-200 text-xs font-bold uppercase tracking-wide">🎳 Additional Squad</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {squadTime2 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🕐</span>
+                    <div>
+                      <p className="text-white/65 text-xs">Squad Time</p>
+                      <p className="text-white font-semibold text-sm">{normalizeSquadTime(squadTime2)}</p>
+                    </div>
+                  </div>
+                )}
+                {laneNumber2 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎳</span>
+                    <div>
+                      <p className="text-white/65 text-xs">Lane Assignment</p>
+                      <p className="text-white font-semibold text-sm">Lane {laneNumber2}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

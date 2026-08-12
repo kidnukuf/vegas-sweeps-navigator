@@ -599,6 +599,8 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           laneToEvent={p.laneToEvent}
           laneNumber={p.laneNumber}
           squadTime={p.squadTime}
+          laneNumber2={(p as any).laneNumber2}
+          squadTime2={(p as any).squadTime2}
           hotelName={p.hotelName}
           confirmationCode={(p as any).confirmationCode}
           checkinDate={p.checkinDate}

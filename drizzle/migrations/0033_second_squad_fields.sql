@@ -1,0 +1,3 @@
+ALTER TABLE bowlers
+  ADD COLUMN squadTime2 VARCHAR(50) NULL,
+  ADD COLUMN laneNumber2 INT NULL;

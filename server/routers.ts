@@ -1838,6 +1838,9 @@ export const appRouter = router({
             const squadTimeVal = String(row["Squad Day & Time"] ?? row["Squad Time"] ?? row["squad_time"] ?? row["Squad"] ?? "").trim() || null;
             const laneRaw = String(row["Lane #"] ?? row["Lane"] ?? row["lane"] ?? "").trim();
             const laneNumber = laneRaw ? (parseInt(laneRaw) || null) : null;
+            const squadTime2Val = String(row["2nd Squad Time"] ?? row["Second Squad Time"] ?? row["squadTime2"] ?? row["secondSquadTime"] ?? "").trim() || null;
+            const lane2Raw = String(row["2nd Lane #"] ?? row["Second Lane #"] ?? row["laneNumber2"] ?? row["secondLaneNumber"] ?? "").trim();
+            const laneNumber2 = lane2Raw ? (parseInt(lane2Raw) || null) : null;
             // Column 44 — "Lane to Event" / "Lane to Banquet" directional info
             const laneToEvent = String(row["Lane to Event"] ?? row["Lane to Banquet"] ?? row["lane_to_event"] ?? row["LaneToEvent"] ?? "").trim() || null;
 
@@ -1850,7 +1853,7 @@ export const appRouter = router({
                 notes: notes || null,
                 phone: phone || null, email: email || null,
                 sanctionNumber, gamesPlayed, bestAverage, tshirtSize,
-                under21, leagueMember, squadTime: squadTimeVal, laneNumber, laneToEvent,
+                under21, leagueMember, squadTime: squadTimeVal, laneNumber, squadTime2: squadTime2Val, laneNumber2, laneToEvent,
                 guestPoolPartyAmount: guestPoolPartyAmount.toFixed(2),
                 banquetTable: banquetTable || null,
               });
@@ -1913,12 +1916,12 @@ export const appRouter = router({
               // Insert new bowler — use INSERT IGNORE to handle any race/duplicate scenario atomically
               await rawQuery(
                 `INSERT IGNORE INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
-                   sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, laneToEvent, guestPoolPartyAmount, banquetTable)
-                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                   sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, squadTime2, laneNumber2, laneToEvent, guestPoolPartyAmount, banquetTable)
+                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
                  phone || null, email || null, notes || null,
                  sanctionNumber || null, gamesPlayed ?? null, bestAverage ?? null, tshirtSize || null,
-                 under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null, laneToEvent || null,
+                 under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null, squadTime2Val || null, laneNumber2 ?? null, laneToEvent || null,
                  guestPoolPartyAmount.toFixed(2), banquetTable || null]
               );
               const newBowler = await rawQuery("SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1", [scantronId, input.eventId]) as Record<string, unknown>[];
