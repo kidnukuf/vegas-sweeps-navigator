@@ -24,6 +24,8 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
     onSuccess: (r) => {
       if (r.sheet?.error) {
         toast.warning(`Generated ${r.created} code(s), but BL sheet sync needs attention: ${r.sheet.error}`);
+      } else if ((r.sheet?.notFound ?? 0) > 0) {
+        toast.warning(`Generated ${r.created} code(s). ${r.sheet?.written ?? 0} wrote to BL; ${r.sheet?.notFound} did not match a sheet row.`);
       } else {
         toast.success(`Generated ${r.created} new code(s). ${r.sheet?.written ?? 0} code(s) written to Sheet column BL.`);
       }
@@ -34,7 +36,11 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
 
   const reissue = trpc.claimCodes.reissue.useMutation({
     onSuccess: (r) => {
-      if (r.ok) toast.success(r.sheet?.error ? `New code: ${r.newCode}. BL sync needs attention.` : `New code: ${r.newCode}. Sheet updated.`);
+      if (r.ok) {
+        if (r.sheet?.error) toast.warning(`New code: ${r.newCode}. BL sync needs attention.`);
+        else if ((r.sheet?.notFound ?? 0) > 0) toast.warning(`New code: ${r.newCode}. ${r.sheet?.notFound ?? 0} sheet row did not match.`);
+        else toast.success(`New code: ${r.newCode}. Sheet updated.`);
+      }
       else toast.error(r.reason);
       utils.claimCodes.listForEvent.invalidate({ eventId });
       if (activeQuery) utils.claimCodes.lookup.invalidate({ eventId, query: activeQuery });
@@ -45,6 +51,7 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
   const syncToSheet = trpc.claimCodes.syncToSheet.useMutation({
     onSuccess: (r) => {
       if (r.error) toast.error(`BL sheet sync failed: ${r.error}`);
+      else if (r.notFound > 0) toast.warning(`${r.written} claim code(s) wrote to BL; ${r.notFound} did not match a sheet row.`);
       else toast.success(`${r.written} claim code(s) written to Google Sheet column BL.`);
     },
     onError: (e) => toast.error(e.message),

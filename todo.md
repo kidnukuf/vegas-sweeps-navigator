@@ -566,3 +566,8 @@
 ## Operational Sheet Header Mapping
 - [x] Recognize Claim Code, Bill Breakdown, and Team Score headers without showing them as unmapped in import preview
 - [x] Verify the import preview retains Guest Name mappings and clears the operational-header warnings
+
+## Claim-Code Sheet Sync Repair
+- [x] Diagnose why claim codes are not populating BL in the selected Google Sheet tab
+- [x] Correct the sync for matched roster records and make partial row-match failures visible to the Event Director
+- [ ] Reconcile the unmatched Group 3 Cassie Davis roster row before issuing its claim code
