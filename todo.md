@@ -552,3 +552,9 @@
 ## Bowler Portal Second Squad
 - [x] Show imported second squad time and second lane assignment in the Bowler Portal when available
 - [x] Validate the conditional display for bowlers with and without a second squad
+
+## Bowler Claim-Code Distribution
+- [x] Generate one unique, non-duplicated claim code per imported bowler
+- [x] Write claim codes to Google Sheet column BL for the selected event tab
+- [x] Add ED controls to generate, reissue, and print claim-code packets grouped by team
+- [x] Validate claim codes during Bowler Portal sign-up and verify the PDF packet layout

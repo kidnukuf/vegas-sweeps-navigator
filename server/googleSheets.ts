@@ -82,6 +82,7 @@
  *   BG (58) = Q9 Answer              (app writes)
  *   BH (59) = Q10 Attend Next Year?  (question)
  *   BI (60) = Q10 Answer             (app writes)
+ *   BL (63) = Claim Code              (app writes)
  *
  * ⬜ WHITE — Informational (no color, not parsed):
  *   M  (12) = Sanction #
@@ -244,6 +245,9 @@ const COL_Q9_QUESTION   = 57;  // BF — Q9 Testimonial Permission?
 const COL_Q9_ANSWER     = 58;  // BG — Q9 Answer
 const COL_Q10_QUESTION  = 59;  // BH — Q10 Attend Next Year?
 const COL_Q10_ANSWER    = 60;  // BI — Q10 Answer
+// Claim code distribution. This event-specific column is populated after the
+// ED generates one-time sign-up codes and before league-night distribution.
+const COL_CLAIM_CODE    = 63;  // BL — Claim Code
 
 // Suppress unused-variable warnings for read-only constants used by other modules
 void COL_SQUAD_TIME; void COL_CENTER; void COL_COORDINATOR; void COL_TEAM_CODE; void COL_CAPTAIN;
@@ -259,6 +263,92 @@ void COL_EXTRA_POOL_QR; void COL_EXTRA_POOL_USED;
 void COL_Q1_QUESTION; void COL_Q2_QUESTION; void COL_Q3_QUESTION; void COL_Q4_QUESTION;
 void COL_Q5_QUESTION; void COL_Q6_QUESTION; void COL_Q7_QUESTION; void COL_Q8_QUESTION;
 void COL_Q9_QUESTION; void COL_Q10_QUESTION;
+
+export type ClaimCodeSheetEntry = {
+  firstName: string;
+  lastName: string;
+  laneNumber: number | null;
+  centerName?: string;
+  teamCode?: string;
+  code: string;
+};
+
+/**
+ * Write each active bowler claim code to column BL of the event's configured
+ * Google Sheet tab. Matching uses name + center + team + lane so same-name
+ * bowlers cannot receive one another's code.
+ */
+export async function writeClaimCodesToSheet(
+  entries: ClaimCodeSheetEntry[],
+  target?: SheetTarget,
+): Promise<{ written: number; notFound: number; error?: string }> {
+  const resolved = resolveSheetTarget(target);
+  if (!resolved.spreadsheetId || !resolved.sheetName) {
+    return { written: 0, notFound: entries.length, error: "No Google Sheet configured for this event." };
+  }
+  const sheets = await getSheetsClient();
+  if (!sheets) return { written: 0, notFound: entries.length, error: "Google Sheets credentials are not available." };
+
+  let allRows: string[][];
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: resolved.spreadsheetId,
+      range: `'${resolved.sheetName}'!A1:BL`,
+    });
+    allRows = (response.data.values ?? []) as string[][];
+  } catch (error) {
+    return { written: 0, notFound: entries.length, error: `Sheet read failed: ${String(error)}` };
+  }
+
+  const normalizeText = (value: string | undefined) => String(value ?? "")
+    .toLowerCase().replace(/["“”]/g, "").replace(/\s+/g, " ").trim();
+  const normalizeNumber = (value: string | number | null | undefined) => {
+    const text = String(value ?? "").trim();
+    const numeric = Number(text);
+    return text && Number.isFinite(numeric) ? String(numeric) : normalizeText(text);
+  };
+  const detailKey = (firstName: string, lastName: string, center: string, team: string | number, lane: string | number | null) =>
+    `${normalizeText(firstName)}|${normalizeText(lastName)}|${normalizeText(center)}|${normalizeNumber(team)}|${normalizeNumber(lane)}`;
+  const nameKey = (firstName: string, lastName: string) => `${normalizeText(firstName)}|${normalizeText(lastName)}`;
+  const detailToRow = new Map<string, number>();
+  const nameToRows = new Map<string, number[]>();
+  for (let i = 1; i < allRows.length; i++) {
+    const row = allRows[i];
+    const firstName = row[COL_FIRST_NAME] ?? "";
+    const lastName = row[COL_LAST_NAME] ?? "";
+    if (!firstName || !lastName) continue;
+    detailToRow.set(detailKey(firstName, lastName, row[COL_CENTER] ?? "", row[COL_TEAM_CODE] ?? "", row[COL_LANE] ?? ""), i + 1);
+    const key = nameKey(firstName, lastName);
+    nameToRows.set(key, [...(nameToRows.get(key) ?? []), i + 1]);
+  }
+
+  const updateData: Array<{ range: string; values: string[][] }> = [];
+  let notFound = 0;
+  const column = _colIdxToLetter(COL_CLAIM_CODE);
+  for (const entry of entries) {
+    const rowNum = entry.centerName && entry.teamCode
+      ? detailToRow.get(detailKey(entry.firstName, entry.lastName, entry.centerName, entry.teamCode, entry.laneNumber))
+      : (nameToRows.get(nameKey(entry.firstName, entry.lastName))?.length === 1
+        ? nameToRows.get(nameKey(entry.firstName, entry.lastName))?.[0]
+        : undefined);
+    if (!rowNum) {
+      notFound++;
+      continue;
+    }
+    updateData.push({ range: `'${resolved.sheetName}'!${column}${rowNum}`, values: [[entry.code]] });
+  }
+  if (updateData.length === 0) return { written: 0, notFound };
+
+  try {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: resolved.spreadsheetId,
+      requestBody: { valueInputOption: "RAW", data: updateData },
+    });
+    return { written: updateData.length, notFound };
+  } catch (error) {
+    return { written: 0, notFound: entries.length, error: `Sheet write failed: ${String(error)}` };
+  }
+}
 
 // Column letters for guest pool QR write-back (AD, AH = suffix A, B)
 const GUEST_POOL_COLUMNS = ["AD", "AH"];
@@ -744,12 +834,13 @@ export const SHEET_COLS = {
 // New columns appended after the last survey column (BI = col 60):
 //   BJ (61) = Event Ranking (Finishing Place)
 //   BK (62) = Payout Amount ($)
-//   BL (63) = Bill Breakdown (per-team summary string)
-//   BM (64) = Team Score
+//   BL (63) = Bowler Claim Code
+//   BM (64) = Bill Breakdown (per-team summary string)
+//   BN (65) = Team Score
 const COL_FINISHING_PLACE   = 61; // BJ
 const COL_PAYOUT_AMOUNT_COL = 62; // BK
-const COL_BILL_BREAKDOWN    = 63; // BL
-const COL_TEAM_SCORE        = 64; // BM
+const COL_BILL_BREAKDOWN    = 64; // BM
+const COL_TEAM_SCORE        = 65; // BN
 
 /** Convert a 0-based column index to an A1-notation letter (A=0, Z=25, AA=26, …). */
 function colIndexToLetter(idx: number): string {
@@ -778,12 +869,12 @@ export interface PayoutSheetRow {
 
 /**
  * Write payout results (event ranking, payout amount, bill breakdown, team score)
- * for every team back to columns BJ–BM of the Google Sheet.
+ * for every team back to columns BJ, BK, BM, and BN of the Google Sheet.
  *
  * Step 1: Stamp column headers into row 1 (BJ=Event Ranking, BK=Payout Amount,
- *         BL=Bill Breakdown, BM=Team Score) so the sheet is self-documenting.
+ *         BM=Bill Breakdown, BN=Team Score) so the sheet is self-documenting.
  * Step 2: Read the full sheet once, find all rows whose Team # (col H) matches
- *         a team in the payouts list, then batch-write BJ/BK/BL/BM for each row.
+ *         a team in the payouts list, then batch-write BJ/BK/BM/BN for each row.
  * Multiple bowlers on the same team all receive the same values.
  *
  * Returns { written: number, skipped: number, error?: string }.
@@ -805,8 +896,8 @@ export async function writePayoutsToSheet(params: {
   // Pre-compute column letters once
   const bjCol = colIndexToLetter(COL_FINISHING_PLACE);
   const bkCol = colIndexToLetter(COL_PAYOUT_AMOUNT_COL);
-  const blCol = colIndexToLetter(COL_BILL_BREAKDOWN);
-  const bmCol = colIndexToLetter(COL_TEAM_SCORE);
+  const bmCol = colIndexToLetter(COL_BILL_BREAKDOWN);
+  const bnCol = colIndexToLetter(COL_TEAM_SCORE);
 
   // Step 1: Stamp column headers into row 1 (best-effort, non-fatal)
   try {
@@ -817,8 +908,8 @@ export async function writePayoutsToSheet(params: {
         data: [
           { range: `'${resolved.sheetName}'!${bjCol}1`, values: [["Event Ranking"]] },
           { range: `'${resolved.sheetName}'!${bkCol}1`, values: [["Payout Amount"]] },
-          { range: `'${resolved.sheetName}'!${blCol}1`, values: [["Bill Breakdown"]] },
-          { range: `'${resolved.sheetName}'!${bmCol}1`, values: [["Team Score"]] },
+          { range: `'${resolved.sheetName}'!${bmCol}1`, values: [["Bill Breakdown"]] },
+          { range: `'${resolved.sheetName}'!${bnCol}1`, values: [["Team Score"]] },
         ],
       },
     });
@@ -832,12 +923,12 @@ export async function writePayoutsToSheet(params: {
     payoutMap.set(String(p.teamCode).trim().padStart(2, "0"), p);
   }
 
-  // Step 2: Read the full sheet (columns A through BM = 0..64)
+  // Step 2: Read the full sheet (columns A through BN = 0..65)
   let rows: string[][];
   try {
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId: resolved.spreadsheetId,
-      range: `'${resolved.sheetName}'!A1:BM`,
+      range: `'${resolved.sheetName}'!A1:BN`,
     });
     rows = (resp.data.values ?? []) as string[][];
   } catch (err) {
@@ -861,8 +952,8 @@ export async function writePayoutsToSheet(params: {
 
     updateData.push({ range: `'${resolved.sheetName}'!${bjCol}${rowNum}`, values: [[placeStr]] });
     updateData.push({ range: `'${resolved.sheetName}'!${bkCol}${rowNum}`, values: [[amountStr]] });
-    updateData.push({ range: `'${resolved.sheetName}'!${blCol}${rowNum}`, values: [[breakdownStr]] });
-    updateData.push({ range: `'${resolved.sheetName}'!${bmCol}${rowNum}`, values: [[scoreStr]] });
+    updateData.push({ range: `'${resolved.sheetName}'!${bmCol}${rowNum}`, values: [[breakdownStr]] });
+    updateData.push({ range: `'${resolved.sheetName}'!${bnCol}${rowNum}`, values: [[scoreStr]] });
     writtenTeams.add(rawCode);
   }
 

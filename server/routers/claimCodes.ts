@@ -1,16 +1,14 @@
 import { z } from "zod";
+import { randomBytes } from "crypto";
 import { publicProcedure, router } from "../_core/trpc";
-import { rawQuery } from "../db";
+import { getEventSheetTarget, rawQuery } from "../db";
+import { writeClaimCodesToSheet } from "../googleSheets";
 
 // Unambiguous alphabet: no 0/O/1/I/L to avoid paper-to-keyboard mistakes.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 function randomSegment(len: number): string {
-  let out = "";
-  for (let i = 0; i < len; i++) {
-    out += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-  }
-  return out;
+  return Array.from(randomBytes(len), (value) => ALPHABET[value % ALPHABET.length]).join("");
 }
 
 // e.g. BOB-7F3K
@@ -25,7 +23,32 @@ type BowlerRow = {
   centerName: string | null;
   teamName: string | null;
   scantronId: string | null;
+  laneNumber: number | null;
+  teamCode: string | null;
 };
+
+async function syncCodesToSheet(eventId: number) {
+  const rows = await rawQuery<BowlerRow & { code: string }>(
+    `SELECT c.code, b.id, b.legalFirstName, b.legalLastName, b.laneNumber,
+            bc.centerName AS centerName, t.teamName AS teamName, t.teamCode, b.scantronId
+     FROM bowler_claim_codes c
+     JOIN bowlers b ON b.id = c.bowlerId
+     LEFT JOIN teams t ON t.id = b.teamId
+     LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+     WHERE c.eventId = ? AND c.status <> 'void'
+     ORDER BY t.teamName ASC, b.legalLastName ASC, b.legalFirstName ASC`,
+    [eventId],
+  );
+  const target = await getEventSheetTarget(eventId);
+  return writeClaimCodesToSheet(rows.map((row) => ({
+    firstName: row.legalFirstName ?? "",
+    lastName: row.legalLastName ?? "",
+    laneNumber: row.laneNumber ?? null,
+    centerName: row.centerName ?? "",
+    teamCode: row.teamCode ?? "",
+    code: row.code,
+  })), target);
+}
 
 export const claimCodesRouter = router({
   // ── ED: generate one unique unused code per bowler that doesn't already have one ──
@@ -62,10 +85,11 @@ export const claimCodesRouter = router({
       for (const b of bowlers) {
         let code = makeCode();
         let guard = 0;
-        while (used.has(code) && guard < 50) {
+        while (used.has(code) && guard < 1000) {
           code = makeCode();
           guard++;
         }
+        if (used.has(code)) throw new Error("Could not create a unique claim code. Please try again.");
         used.add(code);
         await rawQuery(
           `INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, createdAt)
@@ -79,7 +103,8 @@ export const claimCodesRouter = router({
         `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
         [input.eventId]
       );
-      return { created, totalForEvent: total[0]?.c ?? 0 };
+      const sheet = await syncCodesToSheet(input.eventId);
+      return { created, totalForEvent: total[0]?.c ?? 0, sheet };
     }),
 
   // ── ED: full list for printable distribution sheet (grouped client-side by team) ──
@@ -170,15 +195,22 @@ export const claimCodesRouter = router({
       const used = new Set(existing.map((r) => r.code));
       let code = makeCode();
       let guard = 0;
-      while (used.has(code) && guard < 50) {
-        code = makeCode();
-        guard++;
-      }
+        while (used.has(code) && guard < 1000) {
+          code = makeCode();
+          guard++;
+        }
+        if (used.has(code)) throw new Error("Could not create a unique claim code. Please try again.");
       await rawQuery(
         `INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, reissuedFromId, createdAt)
          VALUES (?, ?, ?, 'unused', ?, ?)`,
         [input.eventId, row.bowlerId, code, input.codeId, Date.now()]
       );
-      return { ok: true as const, newCode: code };
+      const sheet = await syncCodesToSheet(input.eventId);
+      return { ok: true as const, newCode: code, sheet };
     }),
+
+  // ── ED: re-write active codes to column BL without generating new codes ─────
+  syncToSheet: publicProcedure
+    .input(z.object({ eventId: z.number() }))
+    .mutation(async ({ input }) => syncCodesToSheet(input.eventId)),
 });

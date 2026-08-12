@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { jsPDF } from "jspdf";
 
 /**
  * ClaimCodesTab — Event Director tool to generate, view, look up, and reissue
@@ -21,7 +22,11 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
 
   const generate = trpc.claimCodes.generateForEvent.useMutation({
     onSuccess: (r) => {
-      toast.success(`Generated ${r.created} new code(s). Total: ${r.totalForEvent}.`);
+      if (r.sheet?.error) {
+        toast.warning(`Generated ${r.created} code(s), but BL sheet sync needs attention: ${r.sheet.error}`);
+      } else {
+        toast.success(`Generated ${r.created} new code(s). ${r.sheet?.written ?? 0} code(s) written to Sheet column BL.`);
+      }
       utils.claimCodes.listForEvent.invalidate({ eventId });
     },
     onError: (e) => toast.error(e.message),
@@ -29,10 +34,18 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
 
   const reissue = trpc.claimCodes.reissue.useMutation({
     onSuccess: (r) => {
-      if (r.ok) toast.success(`New code: ${r.newCode}`);
+      if (r.ok) toast.success(r.sheet?.error ? `New code: ${r.newCode}. BL sync needs attention.` : `New code: ${r.newCode}. Sheet updated.`);
       else toast.error(r.reason);
       utils.claimCodes.listForEvent.invalidate({ eventId });
       if (activeQuery) utils.claimCodes.lookup.invalidate({ eventId, query: activeQuery });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const syncToSheet = trpc.claimCodes.syncToSheet.useMutation({
+    onSuccess: (r) => {
+      if (r.error) toast.error(`BL sheet sync failed: ${r.error}`);
+      else toast.success(`${r.written} claim code(s) written to Google Sheet column BL.`);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -41,7 +54,7 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
   const stats = useMemo(() => {
     const total = rows.length;
     const unused = rows.filter((r) => r.status === "unused").length;
-    const used = rows.filter((r) => r.status === "used").length;
+    const used = rows.filter((r) => r.status === "redeemed").length;
     const voided = rows.filter((r) => r.status === "void").length;
     return { total, unused, used, voided };
   }, [rows]);
@@ -111,6 +124,87 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
     win.document.close();
   }
 
+  function downloadTeamPdf() {
+    const activeTeams = byTeam
+      .map(([team, members]) => [team, members.filter((member) => member.status === "unused")] as const)
+      .filter(([, members]) => members.length > 0);
+    if (activeTeams.length === 0) {
+      toast.error("There are no unused claim codes to include in a distribution packet.");
+      return;
+    }
+
+    const doc = new jsPDF({ unit: "pt", format: "letter" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 36;
+    const cardGap = 12;
+    const cardWidth = (pageWidth - margin * 2 - cardGap) / 2;
+    const cardHeight = 78;
+    const origin = window.location.origin;
+    let y = 76;
+    let cardIndex = 0;
+
+    const header = () => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(17);
+      doc.text("B.O.B. Roll-Off — Bowler Claim Codes", margin, 36);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(85);
+      doc.text("League-night distribution packet • Each code creates one account and may be used once.", margin, 51);
+      doc.setTextColor(0);
+    };
+    const newPage = () => {
+      doc.addPage();
+      header();
+      y = 76;
+      cardIndex = 0;
+    };
+
+    header();
+    for (const [team, members] of activeTeams) {
+      if (y + 32 > pageHeight - margin) newPage();
+      doc.setFillColor(243, 193, 0);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 20, 3, 3, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(`TEAM: ${team}`, margin + 8, y + 14);
+      y += 28;
+
+      for (const member of members) {
+        if (y + cardHeight > pageHeight - margin) newPage();
+        const column = cardIndex % 2;
+        const x = margin + column * (cardWidth + cardGap);
+        doc.setDrawColor(175);
+        doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, "S");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(`${member.firstName} ${member.lastName}`, x + 9, y + 17, { maxWidth: cardWidth - 18 });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(85);
+        doc.text(`${member.center || "Bowling center"} • ${team}`, x + 9, y + 30, { maxWidth: cardWidth - 18 });
+        doc.setTextColor(0);
+        doc.setFont("courier", "bold");
+        doc.setFontSize(15);
+        doc.text(member.code, x + 9, y + 51);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.text(`Use at ${origin}/bowler-login → Create Account`, x + 9, y + 67, { maxWidth: cardWidth - 18 });
+
+        if (column === 1) y += cardHeight + cardGap;
+        cardIndex++;
+      }
+      if (cardIndex % 2 === 1) {
+        y += cardHeight + cardGap;
+        cardIndex++;
+      }
+      y += 6;
+    }
+
+    doc.save(`BOB-Claim-Codes-Event-${eventId}.pdf`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-white/10 bg-[#111] p-5">
@@ -158,7 +252,22 @@ export default function ClaimCodesTab({ eventId }: { eventId: number }) {
             disabled={rows.length === 0}
             className="bg-white text-black hover:bg-gray-200 font-bold"
           >
-            🖨️ Print Distribution Sheet
+            🖨️ Print Browser Sheet
+          </Button>
+          <Button
+            onClick={downloadTeamPdf}
+            disabled={rows.length === 0}
+            className="bg-cyan-400 text-black hover:bg-cyan-300 font-bold"
+          >
+            ⬇ Download Team PDF
+          </Button>
+          <Button
+            onClick={() => syncToSheet.mutate({ eventId })}
+            disabled={rows.length === 0 || syncToSheet.isPending}
+            variant="outline"
+            className="border-cyan-400/50 text-cyan-200 hover:bg-cyan-400/10"
+          >
+            {syncToSheet.isPending ? "Writing BL…" : "↻ Write Codes to BL"}
           </Button>
         </div>
       </div>
@@ -282,7 +391,7 @@ function Stat({ label, value, tone = "text-white" }: { label: string; value: num
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     unused: "bg-emerald-500/15 text-emerald-400",
-    used: "bg-sky-500/15 text-sky-400",
+    redeemed: "bg-sky-500/15 text-sky-400",
     void: "bg-rose-500/15 text-rose-400",
   };
   return (
