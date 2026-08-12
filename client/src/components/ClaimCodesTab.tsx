@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
+import QRCode from "qrcode";
 
 /**
  * ClaimCodesTab — Event Director tool to generate, view, look up, and reissue
@@ -101,6 +102,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
   }, [rows]);
 
   const eventTitle = eventDetails?.name || "B.O.B. Roll-Off";
+  const signUpUrl = "https://www.bobrolloffpassport.com/bowler-login";
   const eventDateWindow = useMemo(() => {
     const start = eventDetails?.startDate?.trim();
     const end = eventDetails?.endDate?.trim();
@@ -164,7 +166,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     win.document.close();
   }
 
-  function downloadCenterPdf(centerName: string, centerMembers: typeof rows) {
+  async function downloadCenterPdf(centerName: string, centerMembers: typeof rows) {
     const teams = new Map<string, typeof rows>();
     for (const member of centerMembers) {
       const team = member.team || "— No Team —";
@@ -174,6 +176,11 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     const activeTeams = Array.from(teams.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
     const doc = new jsPDF({ unit: "pt", format: "letter" });
+    const signUpQr = await QRCode.toDataURL(signUpUrl, {
+      width: 160,
+      margin: 1,
+      color: { dark: "#000000", light: "#FFFFFF" },
+    });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 24;
@@ -183,7 +190,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     const teamsPerPage = 8;
     const cardWidth = (pageWidth - margin * 2 - columnGap) / 2;
     const cardHeight = (pageHeight - gridTop - margin - rowGap * 3) / 4;
-    const maxMembersPerCard = 6;
+    const maxMembersPerCard = 4;
     const teamCards = activeTeams.flatMap(([team, members]) => {
       const cards = [] as Array<{ team: string; members: typeof members; continuation: boolean }>;
       for (let index = 0; index < members.length; index += maxMembersPerCard) {
@@ -231,25 +238,36 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
       doc.setTextColor(17);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10.5);
-      doc.text(`TEAM: ${card.team}${card.continuation ? " (CONT.)" : ""}`, x + 8, y + 17, { maxWidth: cardWidth - 16 });
+      doc.text(`TEAM: ${card.team}${card.continuation ? " (CONT.)" : ""}`, x + 8, y + 17, { maxWidth: cardWidth - 62 });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.2);
-      doc.text(centerName, x + 8, y + 40, { maxWidth: cardWidth - 16 });
+      doc.text(centerName, x + 8, y + 40, { maxWidth: cardWidth - 66 });
+      doc.setTextColor(0);
+      doc.addImage(signUpQr, "PNG", x + cardWidth - 53, y + 31, 45, 45);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.8);
+      doc.setTextColor(70);
+      doc.text("SIGN UP", x + cardWidth - 30, y + 82, { align: "center" });
       doc.setTextColor(0);
 
-      let memberY = y + 51;
-      for (const member of card.members) {
-        doc.setDrawColor(220);
-        doc.setLineWidth(0.35);
-        doc.line(x + 8, memberY + 3, x + cardWidth - 8, memberY + 3);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8.8);
-        doc.text(`${member.firstName} ${member.lastName}`, x + 9, memberY + 14, { maxWidth: cardWidth - 100 });
-        doc.setFont("courier", "bold");
-        doc.setFontSize(9.5);
-        doc.text(member.code, x + cardWidth - 9, memberY + 14, { align: "right" });
-        memberY += 16;
-      }
+      const bowlerColumnWidth = (cardWidth - 24) / 2;
+      const bowlerColumns = [card.members.slice(0, 2), card.members.slice(2, 4)];
+      bowlerColumns.forEach((members, columnIndex) => {
+        const memberX = x + 8 + columnIndex * (bowlerColumnWidth + 8);
+        let memberY = y + 92;
+        for (const member of members) {
+          doc.setDrawColor(220);
+          doc.setLineWidth(0.35);
+          doc.line(memberX, memberY + 3, memberX + bowlerColumnWidth, memberY + 3);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8.2);
+          doc.text(`${member.firstName} ${member.lastName}`, memberX + 1, memberY + 14, { maxWidth: bowlerColumnWidth - 56 });
+          doc.setFont("courier", "bold");
+          doc.setFontSize(8.3);
+          doc.text(member.code, memberX + bowlerColumnWidth - 1, memberY + 14, { align: "right" });
+          memberY += 21;
+        }
+      });
 
       doc.setDrawColor(180);
       doc.setLineWidth(0.35);
@@ -257,7 +275,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6.8);
       doc.setTextColor(85);
-      doc.text("Go to the Bowler Portal → Create Account → enter your code.", x + 8, y + cardHeight - 9, { maxWidth: cardWidth - 16 });
+      doc.text("Scan the QR code → Create Account → enter your claim code.", x + 8, y + cardHeight - 9, { maxWidth: cardWidth - 16 });
       doc.setTextColor(0);
     });
 
@@ -276,7 +294,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     );
     if (!allowed) return;
     for (const packet of centerPackets) {
-      downloadCenterPdf(packet.center, packet.members);
+      void downloadCenterPdf(packet.center, packet.members);
     }
     toast.success(`Started ${centerPackets.length} center PDF download${centerPackets.length !== 1 ? "s" : ""}.`);
   }
@@ -359,7 +377,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
             {centerPackets.map((packet) => (
               <Button
                 key={packet.center}
-                onClick={() => downloadCenterPdf(packet.center, packet.members)}
+                onClick={() => void downloadCenterPdf(packet.center, packet.members)}
                 className="h-auto justify-start bg-cyan-400 px-3 py-2 text-left text-black hover:bg-cyan-300"
               >
                 <span className="min-w-0">

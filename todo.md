@@ -589,3 +589,8 @@
 ## All-Center Claim-Code Packet Download
 - [x] Add a one-click ED control that downloads each selected event center’s PDF packet
 - [x] Show the browser download permission requirement and validate the all-centers action
+
+## QR-Enhanced Claim-Code Cards
+- [x] Add a QR code linking to the B.O.B. Bowler Portal sign-up page on each center PDF card
+- [x] Lay out bowlers 1–2 in the left column and bowlers 3–4 in the right column while retaining card details
+- [x] Validate the revised print-and-cut center packet layout
