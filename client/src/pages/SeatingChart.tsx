@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 import {
   parseRow,
   runSeatingAlgorithm,
@@ -194,7 +195,36 @@ export default function SeatingChart() {
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const [result, setResult] = useState<SeatingResult | null>(null);
   const [highlightTable, setHighlightTable] = useState<number | null>(null);
+  const [seatingEventId, setSeatingEventId] = useState<number | null>(null);
+  const [loadedFromEventRoster, setLoadedFromEventRoster] = useState(false);
   const outputRef = useRef<HTMLTextAreaElement>(null);
+  const { data: eventListData } = trpc.event.list.useQuery();
+  const events = (eventListData ?? []) as Array<{ id: number; eventName: string; eventYear: number }>;
+
+  useEffect(() => {
+    if (seatingEventId === null && events.length > 0) setSeatingEventId(events[0].id);
+  }, [events, seatingEventId]);
+
+  const activeSeatingEventId = seatingEventId ?? events[0]?.id ?? 1;
+  const banquetRosterQuery = trpc.seating.banquetRoster.useQuery(
+    { eventId: activeSeatingEventId },
+    { enabled: events.length > 0 && Boolean(activeSeatingEventId) }
+  );
+
+  const handleLoadEventRoster = useCallback(() => {
+    const roster = banquetRosterQuery.data ?? [];
+    if (roster.length === 0) {
+      toast.error("No banquet-eligible bowlers or named guests were found for this event.");
+      return;
+    }
+    const hostCount = roster.filter((person) => !person.isGuest).length;
+    const guestCount = roster.filter((person) => person.isGuest).length;
+    setPasteData(roster.map((person) => `${person.scantronId}\t${person.name}`).join("\n"));
+    setLoadedFromEventRoster(true);
+    const event = events.find((item) => item.id === activeSeatingEventId);
+    if (!eventTitle.trim()) setEventTitle(`${event?.eventName ?? "Event"} — Banquet Seating`);
+    toast.success(`Loaded ${hostCount} bowlers and ${guestCount} named banquet guest${guestCount === 1 ? "" : "s"}.`);
+  }, [activeSeatingEventId, banquetRosterQuery.data, eventTitle, events]);
 
   // ── Parse uploaded data ──────────────────────────────────────────────────
   const handleParse = useCallback(() => {
@@ -252,14 +282,12 @@ export default function SeatingChart() {
   // ── Build output column ──────────────────────────────────────────────────
   const buildOutput = useCallback((): string => {
     if (!result) return "";
-    const maxRow = Math.max(...Array.from(result.byOriginalIndex.keys()), -1);
-    const lines: string[] = [];
-    for (let i = 0; i <= maxRow; i++) {
-      const a = result.byOriginalIndex.get(i);
-      lines.push(a ? a.seatCode : "");
-    }
-    return lines.join("\n");
-  }, [result]);
+    const outputRows = loadedFromEventRoster ? rows.filter((row) => !row.isGuest) : rows;
+    return outputRows
+      .sort((a, b) => a.originalIndex - b.originalIndex)
+      .map((row) => result.byOriginalIndex.get(row.originalIndex)?.seatCode ?? "")
+      .join("\n");
+  }, [loadedFromEventRoster, result, rows]);
 
   const handleCopyOutput = useCallback(() => {
     const text = buildOutput();
@@ -349,6 +377,32 @@ export default function SeatingChart() {
               <CardTitle className="text-yellow-400">Step 2 — Upload Bowler Data</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-xl border border-cyan-500/35 bg-cyan-950/30 p-4 space-y-3">
+                <div>
+                  <p className="font-semibold text-cyan-200">Load Guest-Aware Banquet Roster</p>
+                  <p className="mt-1 text-xs text-cyan-100/70">Loads banquet-eligible bowlers and every active named guest from the app. Guests count toward table capacity and stay adjacent to their host.</p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select
+                    value={activeSeatingEventId}
+                    onChange={(event) => setSeatingEventId(Number(event.target.value))}
+                    className="h-10 min-w-0 flex-1 rounded-md border border-cyan-500/40 bg-slate-950 px-3 text-sm text-white"
+                    aria-label="Event roster to load"
+                  >
+                    {events.map((event) => (
+                      <option key={event.id} value={event.id}>{event.eventName} ({event.eventYear})</option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    onClick={handleLoadEventRoster}
+                    disabled={banquetRosterQuery.isLoading || events.length === 0}
+                    className="bg-cyan-500 text-slate-950 hover:bg-cyan-400"
+                  >
+                    {banquetRosterQuery.isLoading ? "Loading…" : "Load Banquet Roster"}
+                  </Button>
+                </div>
+              </div>
               <p className="text-gray-400 text-sm">
                 Paste your data below. Each line should contain a <strong className="text-white">10-digit Bowler ID</strong> (optionally followed by a tab or comma and the bowler's name).
                 Guest IDs are 11 characters: the host's 10-digit ID followed by a letter (A, B, C...).
@@ -527,6 +581,11 @@ export default function SeatingChart() {
                   The column below contains one seat code per row, in the <strong className="text-white">exact order of your uploaded file</strong>.
                   Copy it and paste starting at <strong className="text-yellow-400">Row 2</strong> of your Google Sheet's seat assignment column.
                 </p>
+                {loadedFromEventRoster && (
+                  <p className="rounded-lg border border-cyan-500/30 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100">
+                    Named guests are included in table capacity and shown in the seating confirmation, but only host bowler seat codes appear below so the output stays aligned with Google Sheet roster rows.
+                  </p>
+                )}
                 <p className="text-gray-400 text-sm">
                   Format: <span className="font-mono text-yellow-300">XX-O</span> where XX = table number (zero-padded) and O = seat letter.
                   Example: <span className="font-mono text-yellow-300">04-H</span> = Table 4, Seat H.
@@ -565,6 +624,7 @@ export default function SeatingChart() {
                     setRows([]);
                     setResult(null);
                     setParseErrors([]);
+                    setLoadedFromEventRoster(false);
                   }}
                   className="w-full border-gray-600 text-gray-300"
                 >

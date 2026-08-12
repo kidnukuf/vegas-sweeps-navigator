@@ -623,3 +623,8 @@
 ## Bowler Portal Guest Banquet Passes
 - [x] Display named Guest A and Guest B banquet QR codes beneath the bowler’s Banquet Dinner Passport
 - [x] Hide guest banquet pass cards when no imported guest ticket exists and validate redeemed-state labeling
+
+## Guest-Aware Banquet Seating
+- [x] Include active named banquet guests in seating-chart capacity and table counts
+- [x] Keep guest entries paired with their host bowler’s assigned table and expose them in seating output
+- [x] Validate seating charts with hosts that have zero, one, and two guests

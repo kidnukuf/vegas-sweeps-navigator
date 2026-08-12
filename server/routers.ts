@@ -2402,6 +2402,35 @@ export const appRouter = router({
         }
       }),
   }),
+
+  // ── Banquet Seating ──────────────────────────────────────────────────────
+  seating: router({
+    banquetRoster: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const rows = await rawQuery<{
+          scantronId: string;
+          name: string;
+          isGuest: number;
+          hostScantronId: string | null;
+        }>(
+          `SELECT b.scantronId, TRIM(CONCAT_WS(' ', b.legalFirstName, b.legalLastName)) AS name,
+                  0 AS isGuest, NULL AS hostScantronId
+           FROM bowlers b
+           WHERE b.eventId = ? AND b.banquetToken IS NOT NULL
+           UNION ALL
+           SELECT CONCAT(b.scantronId, g.suffix) AS scantronId,
+                  g.guestName AS name, 1 AS isGuest, b.scantronId AS hostScantronId
+           FROM guest_pool_party_tokens g
+           INNER JOIN bowlers b ON b.id = g.bowlerId
+           WHERE b.eventId = ? AND g.disabled = 0 AND g.banquetToken IS NOT NULL
+             AND g.guestName IS NOT NULL AND TRIM(g.guestName) <> ''
+           ORDER BY isGuest, scantronId`,
+          [input.eventId, input.eventId]
+        );
+        return rows;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
