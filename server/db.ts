@@ -145,30 +145,48 @@ export async function renameEvent(id: number, eventName: string, eventYear?: num
   }
 }
 
-// Deletes a bowler and its dependent records. The live DB has historically used
-// both snake_case and camelCase variants for some tables, so we only delete from
-// the dependent tables that actually exist and have a `bowlerId` column.
+// Permanently deletes a bowler and every dependent record. The live database has
+// both legacy snake_case/camelCase tables; discover all actual foreign references
+// so a removed bowler cannot remain visible in QR, guest, claim-code, or portal data.
 export async function deleteBowler(bowlerId: number) {
-  const candidates = [
-    "hotel_records", "hotelRecords",
-    "payment_records", "paymentRecords",
-    "entry_tokens", "entryTokens",
-    "wristbands",
-    "check_ins", "checkIns",
-    "lane_assignments", "laneAssignments",
-    "redemptions",
-  ];
-  for (const table of candidates) {
-    const cols = await rawQuery(
-      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'bowlerId'`,
-      [table]
+  const connection = await getPool().getConnection();
+  const deleted: Record<string, number> = {};
+  try {
+    await connection.beginTransaction();
+    const [references] = await connection.query<mysql2.RowDataPacket[]>(
+      `SELECT TABLE_NAME, COLUMN_NAME
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME <> 'bowlers'
+         AND COLUMN_NAME IN ('bowlerId', 'bowler_id')`
     );
-    if (cols.length > 0) {
-      await rawQuery(`DELETE FROM \`${table}\` WHERE bowlerId = ?`, [bowlerId]);
+
+    for (const reference of references) {
+      const table = String(reference.TABLE_NAME).replace(/`/g, '``');
+      const column = String(reference.COLUMN_NAME).replace(/`/g, '``');
+      const [result] = await connection.execute<mysql2.ResultSetHeader>(
+        `DELETE FROM \`${table}\` WHERE \`${column}\` = ?`,
+        [bowlerId]
+      );
+      if (result.affectedRows > 0) deleted[table] = result.affectedRows;
     }
+
+    const [bowlerResult] = await connection.execute<mysql2.ResultSetHeader>(
+      "DELETE FROM bowlers WHERE id = ?",
+      [bowlerId]
+    );
+    if (bowlerResult.affectedRows !== 1) {
+      throw new Error(`Bowler #${bowlerId} was not found or was already deleted.`);
+    }
+    deleted.bowlers = bowlerResult.affectedRows;
+    await connection.commit();
+    return deleted;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
-  await rawQuery("DELETE FROM bowlers WHERE id = ?", [bowlerId]);
 }
 
 // ─── LEAGUES ─────────────────────────────────────────────────────────────────

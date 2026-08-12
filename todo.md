@@ -628,3 +628,8 @@
 - [x] Include active named banquet guests in seating-chart capacity and table counts
 - [x] Keep guest entries paired with their host bowler’s assigned table and expose them in seating output
 - [x] Validate seating charts with hosts that have zero, one, and two guests
+
+## Persistent Bowler Deletion
+- [x] Trace individual and bulk Event Director bowler deletion actions
+- [x] Permanently remove bowler records and dependent data in database transactions
+- [x] Validate that deleted bowlers cannot appear in app queries or operational tables

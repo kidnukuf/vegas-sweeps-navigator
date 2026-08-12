@@ -532,8 +532,8 @@ export const appRouter = router({
           targetType: "bowler",
           details: `PERMANENTLY DELETED: ${label}`,
         });
-        await deleteBowler(input.id);
-        return { success: true };
+        const deleted = await deleteBowler(input.id);
+        return { success: true, deleted };
       }),
 
     matchForSignup: publicProcedure

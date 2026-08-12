@@ -40,14 +40,24 @@ describe("multi-event support", () => {
 
   it("permanently deletes a bowler and audit-logs before removal", async () => {
     const caller = appRouter.createCaller(createCtx());
+    const scantronId = `9${String(Date.now()).slice(-9)}`;
 
     // Insert a throwaway bowler scoped to event 1.
     const ins = await rawExec(
-      "INSERT INTO bowlers (legalFirstName, legalLastName, eventId, registrationStatus) VALUES (?, ?, 1, 'unmatched')",
-      ["DeleteMe", `Test${Date.now()}`]
+      "INSERT INTO bowlers (legalFirstName, legalLastName, scantronId, eventId, registrationStatus) VALUES (?, ?, ?, 1, 'unmatched')",
+      ["DeleteMe", `Test${Date.now()}`, scantronId]
     );
     const bowlerId = ins.insertId;
     expect(bowlerId).toBeGreaterThan(0);
+
+    await rawQuery(
+      "INSERT INTO guest_bowlers (eventId, bowlerId, guestId, suffix, guestName) VALUES (1, ?, ?, 'A', 'Delete Test Guest')",
+      [bowlerId, `${scantronId}A`]
+    );
+    await rawQuery(
+      "INSERT INTO contact_requests (eventId, bowlerId, phone, email, status) VALUES (1, ?, '5555555555', 'delete-test@example.com', 'pending')",
+      [bowlerId]
+    );
 
     const res = await caller.bowlers.delete({ id: bowlerId, actorRole: "EventDirector" });
     expect(res.success).toBe(true);
@@ -55,6 +65,11 @@ describe("multi-event support", () => {
     // The bowler row must be gone.
     const remaining = await rawQuery("SELECT id FROM bowlers WHERE id = ?", [bowlerId]);
     expect(remaining.length).toBe(0);
+
+    const guestRows = await rawQuery("SELECT id FROM guest_bowlers WHERE bowlerId = ?", [bowlerId]);
+    const contactRows = await rawQuery("SELECT id FROM contact_requests WHERE bowlerId = ?", [bowlerId]);
+    expect(guestRows.length).toBe(0);
+    expect(contactRows.length).toBe(0);
 
     // An audit row recording the deletion must exist.
     const audit = await rawQuery(
