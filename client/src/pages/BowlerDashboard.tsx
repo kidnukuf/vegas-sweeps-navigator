@@ -132,9 +132,10 @@ interface PassportBoxProps {
   qrDataUrl: string | null | undefined;
   tokenUsed: boolean;
   eligible: boolean;
+  under21?: boolean;
 }
 
-function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataUrl, tokenUsed, eligible }: PassportBoxProps) {
+function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataUrl, tokenUsed, eligible, under21 = false }: PassportBoxProps) {
   const [revealed, setRevealed] = useState(false);
   const [animating, setAnimating] = useState(false);
 
@@ -167,6 +168,11 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
       )}
 
       {/* QR code area */}
+      {under21 && (
+        <div className="w-full rounded-lg border border-red-400/70 bg-red-600/25 px-3 py-2 text-center text-base font-black tracking-wide text-red-100" role="status">
+          UNDER 21 — AGE STATUS
+        </div>
+      )}
       {!eligible ? (
         <div className="text-center py-5 px-4 rounded-xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)" }}>
           <p className="text-white font-semibold text-base leading-relaxed" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
@@ -791,6 +797,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           qrDataUrl={p.banquetQR}
           tokenUsed={Boolean(p.banquetUsed)}
           eligible={banquetEligible}
+          under21={Boolean((p as any).under21)}
         />
 
         {/* ── 9. Pool Party Passport ── */}
@@ -838,7 +845,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
               <span className="text-white/40 text-xs font-semibold tracking-widest uppercase">Guest Banquet Passes</span>
               <div className="flex-1 h-px bg-white/20" />
             </div>
-            {(p as any).guestBanquetQRs.map((g: { suffix: string; guestName?: string | null; qrDataUrl: string; used: boolean; disabled: boolean }) => (
+            {(p as any).guestBanquetQRs.map((g: { suffix: string; guestName?: string | null; qrDataUrl: string; used: boolean; disabled: boolean; under21?: boolean }) => (
               <PassportBox
                 key={`bq-${g.suffix}`}
                 title={g.guestName ? `${g.guestName} — Banquet Pass` : `Guest Banquet Pass ${g.suffix}`}
@@ -848,6 +855,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
                 qrDataUrl={g.used ? null : g.qrDataUrl}
                 tokenUsed={g.used}
                 eligible={!g.disabled}
+                under21={Boolean(g.under21)}
               />
             ))}
           </>

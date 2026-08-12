@@ -470,7 +470,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [editingBowler, setEditingBowler] = useState<Bowler | null>(null);
   const [editFields, setEditFields] = useState<Record<string, string>>({});
   const [showAllFields, setShowAllFields] = useState(false);
-  const [newGuestTicket, setNewGuestTicket] = useState({ name: "", poolParty: false, banquet: false });
+  const [newGuestTicket, setNewGuestTicket] = useState({ name: "", poolParty: false, banquet: false, under21: false });
   const [newDoorman, setNewDoorman] = useState({ designation: "", password: "" });
   const [testQr, setTestQr] = useState<{ qrDataUrl: string; tokenValue: string } | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -690,7 +690,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const createGuestTicket = trpc.bowlerAuth.createGuestTicket.useMutation({
     onSuccess: (result) => {
       toast.success(`Guest ticket ${result.guestId} created and synced to the Google Sheet.`);
-      setNewGuestTicket({ name: "", poolParty: false, banquet: false });
+      setNewGuestTicket({ name: "", poolParty: false, banquet: false, under21: false });
       void refetchEditingGuestTickets();
       void refetch();
     },
@@ -702,7 +702,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     setConfirmReset(false);
     setShowDeletePanel(false);
     setDeleteConfirmText("");
-    setNewGuestTicket({ name: "", poolParty: false, banquet: false });
+    setNewGuestTicket({ name: "", poolParty: false, banquet: false, under21: false });
   }, [editingBowler?.id]);
 
   const createDoorman = trpc.appAuth.createDoorman.useMutation({
@@ -2074,12 +2074,20 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   </div>
                   <button
                     type="button"
+                    onClick={() => setNewGuestTicket({ ...newGuestTicket, under21: !newGuestTicket.under21 })}
+                    className={`w-full rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${newGuestTicket.under21 ? "border-red-400 bg-red-500/20 text-red-100" : "border-white/15 bg-black/20 text-gray-400 hover:text-white"}`}
+                  >
+                    {newGuestTicket.under21 ? "✓ " : "+ "}Under 21 Guest
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => createGuestTicket.mutate({
                       token: edToken,
                       bowlerId: editingBowler.id as number,
                       guestName: newGuestTicket.name,
                       includePoolParty: newGuestTicket.poolParty,
                       includeBanquet: newGuestTicket.banquet,
+                      under21: newGuestTicket.under21,
                     })}
                     disabled={!newGuestTicket.name.trim() || (!newGuestTicket.poolParty && !newGuestTicket.banquet) || createGuestTicket.isPending}
                     className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

@@ -17,6 +17,7 @@ import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
 import { verifyStaffCookie } from "../_core/edAuth";
+import { formatPassportScannerName } from "../passportDisplay";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -151,6 +152,7 @@ async function getBowlerProfile(bowlerId: number) {
     tshirtPickupTime: string | null;
     poolPartyEnabled: number | null;
     poolPartyTime: string | null;
+    under21: number;
     // hotel
     hotelName: string | null;
     checkinDate: string | null;
@@ -179,7 +181,7 @@ async function getBowlerProfile(bowlerId: number) {
             b.laneNumber, b.squadTime, b.laneNumber2, b.squadTime2, b.laneToEvent,
             e.eventName, e.bowlingDate, b.tshirtSize,
             e.tshirtsProvided, e.tshirtPickupLocation, e.tshirtPickupTime,
-            e.poolPartyEnabled, e.poolPartyTime,
+            e.poolPartyEnabled, e.poolPartyTime, b.under21,
             h.hotelName, h.checkinDate, h.checkoutDate, h.roomType, h.confirmationCode,
             p.totalAmountDue, p.paid,
             b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
@@ -209,22 +211,22 @@ async function getBowlerProfile(bowlerId: number) {
     banquetQR = await QRCode.toDataURL(`${appOrigin}/scan/banquet/${row.banquetToken}`, { width: 300, margin: 2 });
   }
   // Fetch guest tokens (pool + banquet)
-  const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number; guestName: string | null; banquetToken: string | null; banquetUsed: number | null }>(
-    `SELECT suffix, token, used, disabled, guestName, banquetToken, banquetUsed FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+  const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number; guestName: string | null; banquetToken: string | null; banquetUsed: number | null; under21: number }>(
+    `SELECT suffix, token, used, disabled, guestName, banquetToken, banquetUsed, under21 FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
     [bowlerId]
   );
-  const guestPoolQRs: Array<{ suffix: string; guestName: string | null; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
-  const guestBanquetQRs: Array<{ suffix: string; guestName: string | null; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
+  const guestPoolQRs: Array<{ suffix: string; guestName: string | null; qrDataUrl: string; used: boolean; disabled: boolean; under21: boolean }> = [];
+  const guestBanquetQRs: Array<{ suffix: string; guestName: string | null; qrDataUrl: string; used: boolean; disabled: boolean; under21: boolean }> = [];
   for (const gt of guestTokenRows) {
     if (gt.disabled) continue;
     // pool token = the primary `token` only when it is an actual pool pass (not a -BQ banquet-only placeholder)
     if (row.poolPartyEnabled && gt.token && !gt.token.endsWith("-BQ")) {
       const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
-      guestPoolQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.used), disabled: false });
+      guestPoolQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.used), disabled: false, under21: Boolean(gt.under21) });
     }
     if (gt.banquetToken) {
       const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-banquet/${gt.banquetToken}`, { width: 300, margin: 2 });
-      guestBanquetQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.banquetUsed), disabled: false });
+      guestBanquetQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.banquetUsed), disabled: false, under21: Boolean(gt.under21) });
     }
   }
   return { ...row, poolPartyQR, banquetQR, guestPoolQRs, guestBanquetQRs };
@@ -712,15 +714,15 @@ export const bowlerAuthRouter = router({
     }))
     .query(async ({ input }) => {
       if (input.passportType === "guest-banquet") {
-        const rows = await rawQuery<{ id: number; suffix: string; banquetUsed: number; disabled: number; legalFirstName: string; legalLastName: string }>(
-          `SELECT g.id, g.suffix, g.banquetUsed, g.disabled, b.legalFirstName, b.legalLastName
+        const rows = await rawQuery<{ id: number; suffix: string; banquetUsed: number; disabled: number; under21: number; legalFirstName: string; legalLastName: string }>(
+          `SELECT g.id, g.suffix, g.banquetUsed, g.disabled, g.under21, b.legalFirstName, b.legalLastName
            FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.banquetToken = ? LIMIT 1`,
           [input.tokenValue]
         );
         if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
         const g = rows[0];
-        const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        const bowlerName = `${g.legalFirstName} ${g.legalLastName}${g.under21 ? " — UNDER 21" : ""}`;
         if (g.disabled) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
         if (g.banquetUsed) return { result: "used" as const, message: "Already Redeemed", bowlerName };
         return { result: "valid" as const, message: `Guest Banquet Pass ${g.suffix}`, bowlerName };
@@ -741,14 +743,14 @@ export const bowlerAuthRouter = router({
       }
       // Main pool / banquet
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
-      const rows = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; poolPartyToken: string | null; poolPartyUsed: number; banquetToken: string | null; banquetUsed: number }>(
-        `SELECT id, legalFirstName, legalLastName, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed
+      const rows = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; under21: number; poolPartyToken: string | null; poolPartyUsed: number; banquetToken: string | null; banquetUsed: number }>(
+        `SELECT id, legalFirstName, legalLastName, under21, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed
          FROM bowlers WHERE ${col} = ? LIMIT 1`,
         [input.tokenValue]
       );
       if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
       const b = rows[0];
-      const bowlerName = `${b.legalFirstName} ${b.legalLastName}`;
+      const bowlerName = `${b.legalFirstName} ${b.legalLastName}${input.passportType === "banquet" && b.under21 ? " — UNDER 21" : ""}`;
       const tokenValue = input.passportType === "pool" ? b.poolPartyToken : b.banquetToken;
       if (tokenValue === null) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
       const isUsed = input.passportType === "pool" ? Boolean(b.poolPartyUsed) : Boolean(b.banquetUsed);
@@ -767,10 +769,10 @@ export const bowlerAuthRouter = router({
       if (input.passportType === "guest-banquet") {
         const guestRows = await rawQuery<{
           id: number; suffix: string; banquetUsed: number; disabled: number;
-          guestName: string | null; legalFirstName: string; legalLastName: string; eventId: number | null;
+          guestName: string | null; under21: number; legalFirstName: string; legalLastName: string; eventId: number | null;
         }>(
           `SELECT g.id, g.suffix, g.banquetUsed, g.disabled,
-                  g.guestName, b.legalFirstName, b.legalLastName, b.eventId
+                  g.guestName, g.under21, b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g
            JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.banquetToken = ? LIMIT 1`,
@@ -780,7 +782,8 @@ export const bowlerAuthRouter = router({
           return { result: "invalid" as const, message: "Invalid QR Code — guest banquet token not found." };
         }
         const g = guestRows[0];
-        const bowlerName = g.guestName?.trim() || `${g.legalFirstName} ${g.legalLastName} (Guest ${g.suffix})`;
+        const guestName = g.guestName?.trim() || `${g.legalFirstName} ${g.legalLastName} (Guest ${g.suffix})`;
+        const bowlerName = formatPassportScannerName(guestName, Boolean(g.under21), true);
         if (g.disabled) {
           return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
         }
@@ -854,9 +857,9 @@ export const bowlerAuthRouter = router({
       const rows = await rawQuery<{
         id: number; legalFirstName: string; legalLastName: string;
         poolPartyToken: string | null; poolPartyUsed: number;
-        banquetToken: string | null; banquetUsed: number; eventId: number | null;
+        banquetToken: string | null; banquetUsed: number; under21: number; eventId: number | null;
       }>(
-        `SELECT id, legalFirstName, legalLastName, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed, eventId
+        `SELECT id, legalFirstName, legalLastName, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed, under21, eventId
          FROM bowlers WHERE ${col} = ? LIMIT 1`,
         [input.tokenValue]
       );
@@ -864,13 +867,18 @@ export const bowlerAuthRouter = router({
         return { result: "invalid" as const, message: "Invalid QR Code — token not found." };
       }
       const bowler = rows[0];
+      const bowlerName = formatPassportScannerName(
+        `${bowler.legalFirstName} ${bowler.legalLastName}`,
+        Boolean(bowler.under21),
+        input.passportType === "banquet"
+      );
       const isUsed = input.passportType === "pool" ? Boolean(bowler.poolPartyUsed) : Boolean(bowler.banquetUsed);
       const tokenValue = input.passportType === "pool" ? bowler.poolPartyToken : bowler.banquetToken;
       if (tokenValue === null) {
-        return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName: `${bowler.legalFirstName} ${bowler.legalLastName}` };
+        return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
       }
       if (isUsed) {
-        return { result: "used" as const, message: "Already Redeemed", bowlerName: `${bowler.legalFirstName} ${bowler.legalLastName}` };
+        return { result: "used" as const, message: "Already Redeemed", bowlerName };
       }
       // Mark as used
       await rawQuery(`UPDATE bowlers SET ${usedCol} = 1 WHERE id = ?`, [bowler.id]);
@@ -888,7 +896,7 @@ export const bowlerAuthRouter = router({
       return {
         result: "granted" as const,
         message: "Entry Granted",
-        bowlerName: `${bowler.legalFirstName} ${bowler.legalLastName}`,
+        bowlerName,
       };
     }),
 
@@ -964,9 +972,9 @@ export const bowlerAuthRouter = router({
       }
       const rows = await rawQuery<{
         id: number; guestId: string | null; guestName: string | null; suffix: string;
-        token: string; banquetToken: string | null; used: number; banquetUsed: number; disabled: number;
+        token: string; banquetToken: string | null; used: number; banquetUsed: number; disabled: number; under21: number;
       }>(
-        `SELECT id, guestId, guestName, suffix, token, banquetToken, used, banquetUsed, disabled
+        `SELECT id, guestId, guestName, suffix, token, banquetToken, used, banquetUsed, disabled, under21
          FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
         [input.bowlerId]
       );
@@ -988,6 +996,7 @@ export const bowlerAuthRouter = router({
       guestName: z.string().trim().min(2, "Enter the guest's full name.").max(120),
       includePoolParty: z.boolean(),
       includeBanquet: z.boolean(),
+      under21: z.boolean().optional().default(false),
     }).refine((value) => value.includePoolParty || value.includeBanquet, {
       message: "Select a banquet ticket, a pool party ticket, or both.",
       path: ["includePoolParty"],
@@ -1029,9 +1038,9 @@ export const bowlerAuthRouter = router({
       const banquetToken = input.includeBanquet ? `${guestId}-BQ` : null;
       await rawQuery(
         `INSERT INTO guest_pool_party_tokens
-           (bowlerId, guestId, guestName, eventId, suffix, token, used, banquetToken, banquetUsed, disabled)
-         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 0, 0)`,
-        [input.bowlerId, guestId, input.guestName, bowler.eventId, nextSuffix, poolToken, banquetToken]
+          (bowlerId, guestId, guestName, eventId, suffix, token, used, banquetToken, banquetUsed, under21, disabled)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 0, ?, 0)`,
+        [input.bowlerId, guestId, input.guestName, bowler.eventId, nextSuffix, poolToken, banquetToken, input.under21 ? 1 : 0]
       );
 
       // Rebuild both sets from the database so suffix A always writes to A's columns,

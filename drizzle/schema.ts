@@ -443,6 +443,7 @@ export const guestPoolPartyTokens = mysqlTable("guest_pool_party_tokens", {
   banquetToken: varchar("banquetToken", { length: 255 }), // guest banquet token (when extra banquet purchased)
   banquetUsed: boolean("banquetUsed").default(false).notNull(),
   banquetUsedAt: bigint("banquetUsedAt", { mode: "number" }),
+  under21: boolean("under21").default(false).notNull(),
   disabled: boolean("disabled").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

@@ -1821,6 +1821,10 @@ export const appRouter = router({
               String(row["Guest Name"] ?? row["guestName"] ?? row["guest_name"] ?? "").trim(),
               String(row["Additional Guest Name"] ?? row["additionalGuestName"] ?? row["additional_guest_name"] ?? "").trim(),
             ];
+            const guestUnder21Slots = [
+              ["Y", "YES", "TRUE", "1"].includes(String(row["Guest Under 21?"] ?? row["Guest Under 21"] ?? row["guestUnder21"] ?? "").trim().toUpperCase()),
+              ["Y", "YES", "TRUE", "1"].includes(String(row["Additional Guest Under 21?"] ?? row["Additional Guest Under 21"] ?? row["additionalGuestUnder21"] ?? "").trim().toUpperCase()),
+            ];
             const extraGuestFee = guestPoolPartyAmount;
             const totalAmountDue = parseFloat(String(row["Total Due"] ?? row["Total Amount"] ?? row["total"] ?? "0").replace(/[$,]/g, "")) || 0;
             const notes = String(row["Special Notes"] ?? row["notes"] ?? "").trim();
@@ -1883,6 +1887,7 @@ export const appRouter = router({
               // Blank BJ/BK cells intentionally leave ED-created guest tickets intact.
               for (let gi = 0; gi < namedGuestSlots.length; gi++) {
                 const guestName = namedGuestSlots[gi];
+                const guestUnder21 = guestUnder21Slots[gi] ?? false;
                 if (!guestName) continue;
                 const suffix = ["A", "B"][gi];
                 const guestId = `${existingScantronId}${suffix}`;
@@ -1890,9 +1895,9 @@ export const appRouter = router({
                 const banquetTok = `${guestId}-BQ`;
                 await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ? AND suffix = ?`, [bowlerId, suffix]);
                 await rawQuery(
-                  `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken, used, banquetUsed, disabled)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
-                  [bowlerId, input.eventId, guestId, guestName, suffix, poolTok, banquetTok]
+                  `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken, under21, used, banquetUsed, disabled)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
+                  [bowlerId, input.eventId, guestId, guestName, suffix, poolTok, banquetTok, guestUnder21 ? 1 : 0]
                 );
               }
               const existingGuestRows = await rawQuery<{ suffix: string; token: string; banquetToken: string | null }>(
@@ -1971,6 +1976,7 @@ export const appRouter = router({
                     const suffix = SUFFIXES[gi];
                     const guestId = `${scantronId}${suffix}`;
                     const guestName = namedGuestSlots[gi] || null;
+                    const guestUnder21 = guestUnder21Slots[gi] ?? false;
                     // BK may be filled while BJ is blank. Preserve its B suffix without
                     // creating an unused placeholder A record.
                     if (!guestName && gi >= poolGuestCount && gi >= banquetGuestCount) continue;
@@ -1981,8 +1987,8 @@ export const appRouter = router({
                     // `token` column is NOT NULL + unique; use pool token, else banquet token, else guestId
                     const primaryToken = poolTok ?? banquetTok ?? guestId;
                     await rawQuery(
-                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                      [bowlerId, input.eventId, guestId, guestName, suffix, primaryToken, banquetTok]
+                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken, under21) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                      [bowlerId, input.eventId, guestId, guestName, suffix, primaryToken, banquetTok, guestUnder21 ? 1 : 0]
                     );
                     if (poolTok) importGuestTokens.push({ suffix, token: poolTok });
                     if (banquetTok) importGuestBanquetTokens.push({ suffix, banquetToken: banquetTok });

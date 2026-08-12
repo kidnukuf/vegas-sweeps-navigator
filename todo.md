@@ -633,3 +633,9 @@
 - [x] Trace individual and bulk Event Director bowler deletion actions
 - [x] Permanently remove bowler records and dependent data in database transactions
 - [x] Validate that deleted bowlers cannot appear in app queries or operational tables
+
+## Under-21 Banquet QR Status
+- [x] Read the column L indicator during import and persist the bowler under-21 status
+- [x] Display Under 21 above affected bowler and guest Banquet QR codes in the Bowler Portal
+- [x] Validate under-21 labeling for imported and manually added guest passes
+- [x] Show the under-21 status in banquet door-scanner results for bowlers and guests

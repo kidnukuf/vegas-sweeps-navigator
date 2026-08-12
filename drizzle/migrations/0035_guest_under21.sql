@@ -1,0 +1,2 @@
+ALTER TABLE `guest_pool_party_tokens`
+  ADD COLUMN `under21` BOOLEAN NOT NULL DEFAULT FALSE;
