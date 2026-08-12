@@ -615,3 +615,7 @@
 - [x] Run automated tests and targeted Event Director, Bowler Portal, claim-code, QR, and sheet-sync workflow checks
 - [x] Fix verified audit findings and re-test all corrected flows
 - [x] Produce a coverage report that identifies any remaining app-only data or implementation limitations
+
+## Duplicate T-Shirt Pickup Display
+- [x] Remove T-shirt pickup from the Lane to Banquet squad-and-lane section
+- [x] Retain the Event Details T-shirt pickup row and verify the portal shows it once

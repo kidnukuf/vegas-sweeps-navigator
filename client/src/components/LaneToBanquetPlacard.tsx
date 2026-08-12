@@ -60,7 +60,7 @@ export function LaneToBanquetPlacard({
 
   const hasHotel = hotelName || confirmationCode || checkinDate || checkoutDate;
   const hasBanquet = banquetTable || banquetLocation || banquetTime;
-  const hasEvSteps = !!(ev && (ev.hotelCheckinDay || ev.hotelCheckinTime || ev.registrationDay || ev.registrationTime || ev.tshirtsProvided || ev.poolPartyEnabled || ev.banquetDay || ev.hotelCheckoutDay || ev.hotelCheckoutTime));
+  const hasEvSteps = !!(ev && (ev.hotelCheckinDay || ev.hotelCheckinTime || ev.registrationDay || ev.registrationTime || ev.poolPartyEnabled || ev.banquetDay || ev.hotelCheckoutDay || ev.hotelCheckoutTime));
   const hasInfo = laneToEvent || laneNumber || squadTime || laneNumber2 || squadTime2 || hasHotel || hasBanquet || hasEvSteps;
   if (!hasInfo) return null;
 
@@ -176,16 +176,6 @@ export function LaneToBanquetPlacard({
               </div>
             </div>
           )}
-
-          {ev?.tshirtsProvided ? (
-            <div className="flex items-center gap-3">
-              <span className="text-lg">👕</span>
-              <div>
-                <p className="text-white/75 text-xs">T-Shirt Pickup</p>
-                <p className="text-white font-semibold text-sm">{[ev?.tshirtPickupLocation, ev?.tshirtPickupTime].filter(Boolean).join(" · ") || "See your team captain"}</p>
-              </div>
-            </div>
-          ) : null}
 
           {ev?.poolPartyEnabled ? (
             <div className="flex items-center gap-3">
