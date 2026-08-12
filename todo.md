@@ -619,3 +619,7 @@
 ## Duplicate T-Shirt Pickup Display
 - [x] Remove T-shirt pickup from the Lane to Banquet squad-and-lane section
 - [x] Retain the Event Details T-shirt pickup row and verify the portal shows it once
+
+## Bowler Portal Guest Banquet Passes
+- [x] Display named Guest A and Guest B banquet QR codes beneath the bowler’s Banquet Dinner Passport
+- [x] Hide guest banquet pass cards when no imported guest ticket exists and validate redeemed-state labeling

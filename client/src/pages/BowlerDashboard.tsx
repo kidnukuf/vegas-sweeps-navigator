@@ -838,13 +838,13 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
               <span className="text-white/40 text-xs font-semibold tracking-widest uppercase">Guest Banquet Passes</span>
               <div className="flex-1 h-px bg-white/20" />
             </div>
-            {(p as any).guestBanquetQRs.map((g: { suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }) => (
+            {(p as any).guestBanquetQRs.map((g: { suffix: string; guestName?: string | null; qrDataUrl: string; used: boolean; disabled: boolean }) => (
               <PassportBox
                 key={`bq-${g.suffix}`}
-                title={`Guest Banquet Pass ${g.suffix}`}
+                title={g.guestName ? `${g.guestName} — Banquet Pass` : `Guest Banquet Pass ${g.suffix}`}
                 icon="🍽️"
-                subtitle={`Guest Banquet Dinner Entry — Pass ${g.suffix}`}
-                entranceFlow={`This is a guest banquet dinner pass. Present this QR code at the banquet hall entrance for your guest. One scan per pass — cannot be reused. Pass ID: ${p.scantronId}${g.suffix}`}
+                subtitle={g.guestName ? `Guest Banquet Dinner Entry — ${g.guestName}` : `Guest Banquet Dinner Entry — Pass ${g.suffix}`}
+                entranceFlow={`This is a guest banquet dinner pass. Present this QR code at the banquet hall entrance for ${g.guestName || `Guest ${g.suffix}`}. One scan per pass — cannot be reused. Pass ID: ${p.scantronId}${g.suffix}`}
                 qrDataUrl={g.used ? null : g.qrDataUrl}
                 tokenUsed={g.used}
                 eligible={!g.disabled}

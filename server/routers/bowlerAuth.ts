@@ -209,22 +209,22 @@ async function getBowlerProfile(bowlerId: number) {
     banquetQR = await QRCode.toDataURL(`${appOrigin}/scan/banquet/${row.banquetToken}`, { width: 300, margin: 2 });
   }
   // Fetch guest tokens (pool + banquet)
-  const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number; banquetToken: string | null; banquetUsed: number | null }>(
-    `SELECT suffix, token, used, disabled, banquetToken, banquetUsed FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+  const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number; guestName: string | null; banquetToken: string | null; banquetUsed: number | null }>(
+    `SELECT suffix, token, used, disabled, guestName, banquetToken, banquetUsed FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
     [bowlerId]
   );
-  const guestPoolQRs: Array<{ suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
-  const guestBanquetQRs: Array<{ suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
+  const guestPoolQRs: Array<{ suffix: string; guestName: string | null; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
+  const guestBanquetQRs: Array<{ suffix: string; guestName: string | null; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
   for (const gt of guestTokenRows) {
     if (gt.disabled) continue;
     // pool token = the primary `token` only when it is an actual pool pass (not a -BQ banquet-only placeholder)
     if (row.poolPartyEnabled && gt.token && !gt.token.endsWith("-BQ")) {
       const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
-      guestPoolQRs.push({ suffix: gt.suffix, qrDataUrl, used: Boolean(gt.used), disabled: false });
+      guestPoolQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.used), disabled: false });
     }
     if (gt.banquetToken) {
       const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-banquet/${gt.banquetToken}`, { width: 300, margin: 2 });
-      guestBanquetQRs.push({ suffix: gt.suffix, qrDataUrl, used: Boolean(gt.banquetUsed), disabled: false });
+      guestBanquetQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.banquetUsed), disabled: false });
     }
   }
   return { ...row, poolPartyQR, banquetQR, guestPoolQRs, guestBanquetQRs };
