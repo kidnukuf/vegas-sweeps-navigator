@@ -141,6 +141,12 @@ async function getBowlerProfile(bowlerId: number) {
     laneToEvent: string | null;
     eventName: string | null;
     bowlingDate: string | null;
+    tshirtSize: string | null;
+    tshirtsProvided: number | null;
+    tshirtPickupLocation: string | null;
+    tshirtPickupTime: string | null;
+    poolPartyEnabled: number | null;
+    poolPartyTime: string | null;
     // hotel
     hotelName: string | null;
     checkinDate: string | null;
@@ -167,7 +173,9 @@ async function getBowlerProfile(bowlerId: number) {
             b.isCapitain, b.captainVerified, b.teamId, b.centerId,
             t.teamName, t.teamCode, bc.centerName,
             b.laneNumber, b.squadTime, b.laneNumber2, b.squadTime2, b.laneToEvent,
-            e.eventName, e.bowlingDate,
+            e.eventName, e.bowlingDate, b.tshirtSize,
+            e.tshirtsProvided, e.tshirtPickupLocation, e.tshirtPickupTime,
+            e.poolPartyEnabled, e.poolPartyTime,
             h.hotelName, h.checkinDate, h.checkoutDate, h.roomType, h.confirmationCode,
             p.totalAmountDue, p.paid,
             b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
@@ -190,7 +198,7 @@ async function getBowlerProfile(bowlerId: number) {
   const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
   let poolPartyQR: string | null = null;
   let banquetQR: string | null = null;
-  if (row.poolPartyToken && !row.poolPartyUsed) {
+  if (row.poolPartyEnabled && row.poolPartyToken && !row.poolPartyUsed) {
     poolPartyQR = await QRCode.toDataURL(`${appOrigin}/scan/pool/${row.poolPartyToken}`, { width: 300, margin: 2 });
   }
   if (row.banquetToken && !row.banquetUsed) {
@@ -206,7 +214,7 @@ async function getBowlerProfile(bowlerId: number) {
   for (const gt of guestTokenRows) {
     if (gt.disabled) continue;
     // pool token = the primary `token` only when it is an actual pool pass (not a -BQ banquet-only placeholder)
-    if (gt.token && !gt.token.endsWith("-BQ")) {
+    if (row.poolPartyEnabled && gt.token && !gt.token.endsWith("-BQ")) {
       const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
       guestPoolQRs.push({ suffix: gt.suffix, qrDataUrl, used: Boolean(gt.used), disabled: false });
     }

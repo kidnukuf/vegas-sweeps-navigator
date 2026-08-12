@@ -417,7 +417,8 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
 
   // Eligibility: token present means eligible (null = disabled by Event Director)
   const banquetEligible = p.banquetToken !== null && p.banquetToken !== undefined;
-  const poolEligible = p.poolPartyToken !== null && p.poolPartyToken !== undefined;
+  const poolPartyEnabled = Boolean((p as any).poolPartyEnabled);
+  const poolEligible = poolPartyEnabled && p.poolPartyToken !== null && p.poolPartyToken !== undefined;
 
   return (
     <div className="bowler-portal-bg min-h-screen flex flex-col">
@@ -624,6 +625,16 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           <InfoRow icon="📍" label="Bowling Center" value={p.centerName ?? undefined} />
           <InfoRow icon="👥" label="Team" value={p.teamName ? `${p.teamName} (${p.teamCode})` : undefined} />
           <InfoRow icon="📆" label="Bowling Date" value={p.bowlingDate ?? undefined} />
+          {Boolean((p as any).tshirtsProvided) && (
+            <>
+              <InfoRow icon="👕" label="T-Shirt Size" value={(p as any).tshirtSize ?? "Not assigned"} />
+              <InfoRow
+                icon="📍"
+                label="T-Shirt Pickup"
+                value={[(p as any).tshirtPickupLocation, (p as any).tshirtPickupTime].filter(Boolean).join(" · ") || "See your team captain"}
+              />
+            </>
+          )}
           {isEDMode && (
             <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
               <p className="text-amber-400/70 text-xs font-semibold uppercase tracking-wider">ED: Edit Lane & Squad</p>
@@ -782,19 +793,21 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
         />
 
         {/* ── 9. Pool Party Passport ── */}
-        <PassportBox
-          title="Pool Party Passport"
-          icon="🏊"
-          subtitle="Funtime Team Challenge 2026 — Pool Party"
-          checkInTime="Pool Party — Check-in begins at 7:00 PM"
-          entranceFlow="Show this QR code to the pool party doorman. Your code will be scanned and marked as used — one scan per person. A wristband will be issued for re-entry. If you believe you should be eligible but don't see a QR code, please contact your team captain or the Event Director."
-          qrDataUrl={p.poolPartyQR}
-          tokenUsed={Boolean(p.poolPartyUsed)}
-          eligible={poolEligible}
-        />
+        {poolPartyEnabled && (
+          <PassportBox
+            title="Pool Party Passport"
+            icon="🏊"
+            subtitle={(p as any).eventName ? `${(p as any).eventName} — Pool Party` : "Pool Party"}
+            checkInTime={(p as any).poolPartyTime ? `Pool Party — Check-in begins ${(p as any).poolPartyTime}` : undefined}
+            entranceFlow="Show this QR code to the pool party doorman. Your code will be scanned and marked as used — one scan per person. A wristband will be issued for re-entry. If you believe you should be eligible but don't see a QR code, please contact your team captain or the Event Director."
+            qrDataUrl={p.poolPartyQR}
+            tokenUsed={Boolean(p.poolPartyUsed)}
+            eligible={poolEligible}
+          />
+        )}
 
         {/* ── 10. Guest Pool Party Passes (A, B, C...) ── */}
-        {Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
+        {poolPartyEnabled && Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
           <>
             <div className="flex items-center gap-3 mt-2">
               <div className="flex-1 h-px bg-white/20" />

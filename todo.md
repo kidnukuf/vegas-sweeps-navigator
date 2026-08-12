@@ -604,3 +604,8 @@
 - [x] Put event date, center, and team information above each individual cut-ready team card
 - [x] Give each of the four bowlers an evenly spaced QR-and-claim-code slot: two left and two right
 - [x] Validate the corrected printable coordinator packet layout
+
+## Bowler Portal Event Details
+- [x] Show imported T-shirt size together with the configured event pickup location
+- [x] Hide every pool-party detail and ticket element when pool party is disabled for the event
+- [x] Validate both enabled and disabled pool-party portal states
