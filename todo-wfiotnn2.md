@@ -18,4 +18,4 @@
 - [x] Add a secure workspace setup action that saves the sheet target and assigns the selected Event Director.
 - [x] Add a Create Event Workspace interface to the admin panel.
 - [x] Add workspace setup tests, run TypeScript and Vitest validation, and verify the interface.
-- [ ] Save a checkpoint and publish the Create Event Workspace feature.
+- [x] Save a checkpoint and publish the Create Event Workspace feature.
