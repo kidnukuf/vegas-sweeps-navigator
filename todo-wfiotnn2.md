@@ -34,6 +34,6 @@
 - [x] Create a scoped active-event registration-link dashboard with copy and distribution controls.
 - [x] Add tests for registration-link generation and active-event visibility.
 - [x] Verify the new dashboard view with a production build, 167 passing tests, TypeScript validation, and the Event Director portal availability check.
-- [ ] Save a checkpoint and publish the registration-link dashboard feature.
+- [x] Save a checkpoint and publish the registration-link dashboard feature.
 - [x] Add focused active-event filtering coverage for registration-link visibility.
 - [x] Verify the Registration Links tab and its copy/distribute controls through dedicated source-level dashboard coverage; live sign-in is required for interactive browser verification.
