@@ -25,3 +25,8 @@
 - [x] Add regression tests for event-neutral authentication presentation and multi-director event isolation.
 - [x] Run validation and verify the updated portal flow with a production build, 165 passing tests, TypeScript validation, and authentication-screen previews.
 - [x] Save a checkpoint and publish the event-neutral portal update.
+- [x] Locate and remove the remaining Group 3 test label from the unauthenticated entry experience.
+- [x] Add regression coverage and verify the corrected pre-authentication portal flow.
+- [ ] Save a checkpoint and publish the corrected pre-authentication portal flow.
+- [x] Recheck Bowler and Captain sign-in routes after the public-title fix and strengthen route-specific regression coverage.
+- [x] Add explicit regression assertions that Bowler and Captain pre-authentication routes do not render event names.

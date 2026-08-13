@@ -1,6 +1,5 @@
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import { trpc } from "@/lib/trpc";
 import { getBowlerToken, BOWLER_IS_CAPTAIN_KEY } from "./BowlerLogin";
 import {
   detectGroupSlug,
@@ -13,7 +12,6 @@ import AppFooter from "@/components/AppFooter";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { data: event } = trpc.event.active.useQuery();
   const brand = detectWebsiteBrand();
   const [juneGroup, setJuneGroup] = useState<number | null>(() => detectJuneGroupNumber());
 
@@ -182,12 +180,6 @@ export default function Home() {
           >
             Your Official Event Passport
           </h2>
-          {event && (
-            <p className="text-base mt-1" style={{ color: `${primaryColor}cc` }}>
-              {(event as Record<string, unknown>).eventName as string} •{" "}
-              {(event as Record<string, unknown>).bowlingDate as string}
-            </p>
-          )}
           <div className="mt-4 h-px w-64 mx-auto opacity-70"
             style={{ background: `linear-gradient(to right, transparent, ${primaryColor}, transparent)` }} />
         </div>
