@@ -100,7 +100,10 @@ export default function BowlerLogin() {
     const val = sessionStorage.getItem("selectedEventId");
     return val ? parseInt(val, 10) : null;
   });
-  const eventId = sessionEventId ?? (Number((groupEventData as any)?.id) || null);
+  const registrationEventId = Number(new URLSearchParams(search).get("event"));
+  const eventId = Number.isFinite(registrationEventId) && registrationEventId > 0
+    ? registrationEventId
+    : sessionEventId ?? (Number((groupEventData as any)?.id) || null);
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: eventId ?? 0 }, { enabled: tab === "signup" && !!eventId });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({

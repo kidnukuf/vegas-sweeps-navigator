@@ -59,7 +59,10 @@ export default function CaptainLogin() {
     const val = sessionStorage.getItem("selectedEventId");
     return val ? parseInt(val, 10) : null;
   });
-  const eventId: number = sessionEventId ?? (groupEventData as any)?.id ?? 0;
+  const registrationEventId = Number(new URLSearchParams(search).get("event"));
+  const eventId: number = Number.isFinite(registrationEventId) && registrationEventId > 0
+    ? registrationEventId
+    : sessionEventId ?? (groupEventData as any)?.id ?? 0;
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: Number(eventId) }, { enabled: tab === "signup" && Number(eventId) > 0 });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({

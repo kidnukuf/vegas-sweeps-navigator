@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { resolveAccessibleEventId } from "@/lib/eventAccess";
+import { createRegistrationLinks, createRegistrationMessage, getActiveRegistrationEvents } from "@/lib/registrationLinks";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
@@ -426,7 +427,7 @@ import { ED_HELP } from "@/lib/edHelpContent";
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "links" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
   // Company-scoped Event Director management
   const { data: edAccess } = trpc.edStaff.access.useQuery();
   const canManagePlatform = Boolean(edAccess?.canManagePlatform);
@@ -562,6 +563,30 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   }, [events, selectedEventId]);
   const workspaceQuery = trpc.edStaff.workspace.get.useQuery({ eventId: EVENT_ID }, { enabled: canManagePlatform && activeTab === "workspace" });
   const workspaceSheetId = (workspaceQuery.data as { sheetSpreadsheetId?: string } | undefined)?.sheetSpreadsheetId;
+  const activeRegistrationEvents = useMemo(
+    () => getActiveRegistrationEvents(events as Record<string, unknown>[]),
+    [events]
+  );
+  const copyRegistrationText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error("Copy was blocked. Select and copy the link manually.");
+    }
+  };
+  const shareRegistrationLinks = async (eventName: string, links: ReturnType<typeof createRegistrationLinks>) => {
+    const message = createRegistrationMessage(eventName, links);
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await (navigator as Navigator & { share: (data: ShareData) => Promise<void> }).share({ title: `${eventName} registration`, text: message });
+        return;
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
+      }
+    }
+    window.location.href = `mailto:?subject=${encodeURIComponent(`${eventName} registration links`)}&body=${encodeURIComponent(message)}`;
+  };
   const setupWorkspaceMut = trpc.edStaff.workspace.setup.useMutation({
     onSuccess: (result) => {
       toast.success("Event workspace saved and Event Director assigned.");
@@ -1176,7 +1201,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-2">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
-          {(["guide", "roster", "passports", "doormen", "workspace", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+          {(["guide", "links", "roster", "passports", "doormen", "workspace", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
             const newCount = tab === "support" ? ((supportMessages as any[]).filter((m: any) => m.status === "new").length + edNotifUnreadCount) : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
@@ -1191,6 +1216,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   : tab === "leads" ? `📣 Leads${newCount > 0 ? ` (${newCount})` : ""}`
                   : tab === "survey" ? "⭐ Survey"
                   : tab === "guide" ? "🧭 Guide"
+                  : tab === "links" ? "🔗 Registration Links"
                   : tab === "workspace" ? "🗂️ Workspace"
                   : tab === "staff" ? "👥 Staff Accounts"
                   : tab === "payouts" ? "🏆 Team Payouts"
@@ -1217,6 +1243,17 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <GuidedHelpPanel {...ED_HELP.adManagement} />
             <GuidedHelpPanel {...ED_HELP.surveyManagement} />
             <GuidedHelpPanel {...ED_HELP.postEventExport} />
+          </div>
+        )}
+        {activeTab === "links" && (
+          <div className="max-w-5xl space-y-5">
+            <div><p className="text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">Distribution center</p><h2 className="mt-1 text-2xl font-bold text-yellow-300">Active Event Registration Links</h2><p className="mt-2 text-sm text-gray-400">Copy or distribute the unique Bowler and Team Captain registration links for each active event you are permitted to manage.</p></div>
+            {activeRegistrationEvents.length === 0 ? <div className="rounded-2xl border border-white/10 bg-[#1a1a1a] p-6 text-sm text-gray-400">No active events are currently available in your assigned portfolio. Activate an event to make its registration links available here.</div> : <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{activeRegistrationEvents.map((event) => {
+              const eventId = Number(event.id);
+              const eventName = `${String(event.eventName)} · ${String(event.eventYear)}`;
+              const links = createRegistrationLinks(window.location.origin, eventId);
+              return <article key={eventId} className="rounded-2xl border border-cyan-500/25 bg-[#171717] p-5 shadow-xl"><div className="mb-4 flex items-start justify-between gap-3"><div><p className="text-lg font-bold text-white">{eventName}</p><p className="mt-1 text-xs font-semibold uppercase tracking-wider text-emerald-300">Active registration</p></div><button onClick={() => shareRegistrationLinks(eventName, links)} className="rounded-lg border border-cyan-400/35 px-3 py-2 text-xs font-bold text-cyan-200 hover:bg-cyan-500/10">Distribute</button></div><div className="space-y-3"><div><p className="mb-1 text-xs font-semibold text-gray-400">Bowler Registration</p><div className="flex gap-2"><input readOnly value={links.bowler} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-gray-300" /><button onClick={() => copyRegistrationText(links.bowler, "Bowler link")} className="rounded-lg bg-yellow-500 px-3 py-2 text-xs font-bold text-black hover:bg-yellow-400">Copy</button></div></div><div><p className="mb-1 text-xs font-semibold text-gray-400">Team Captain Registration</p><div className="flex gap-2"><input readOnly value={links.captain} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-gray-300" /><button onClick={() => copyRegistrationText(links.captain, "Captain link")} className="rounded-lg bg-yellow-500 px-3 py-2 text-xs font-bold text-black hover:bg-yellow-400">Copy</button></div></div></div><button onClick={() => copyRegistrationText(createRegistrationMessage(eventName, links), "Registration message")} className="mt-4 w-full rounded-lg border border-white/15 py-2 text-xs font-bold text-gray-200 hover:bg-white/5">Copy Both Links as a Message</button></article>;
+            })}</div>}
           </div>
         )}
         {activeTab === "workspace" && (
