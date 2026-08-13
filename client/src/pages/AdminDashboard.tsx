@@ -444,13 +444,14 @@ import { ED_HELP } from "@/lib/edHelpContent";
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "payouts">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
   // Company-scoped Event Director management
   const { data: edAccess } = trpc.edStaff.access.useQuery();
   const canManagePlatform = Boolean(edAccess?.canManagePlatform);
   const [newStaff, setNewStaff] = useState({ username: "", password: "", name: "", companyId: "", eventIds: [] as number[] });
   const [newCompany, setNewCompany] = useState({ name: "", slug: "" });
   const [companyByEvent, setCompanyByEvent] = useState<Record<number, string>>({});
+  const [workspaceForm, setWorkspaceForm] = useState({ spreadsheet: "", sheetTabName: "", sheetTabNickname: "", templateUrl: "", guideUrl: "", staffId: "" });
   const { data: companies = [], refetch: refetchCompanies } = trpc.companies.list.useQuery(undefined, { enabled: canManagePlatform });
   const { data: edStaffList = [], refetch: refetchStaff } = trpc.edStaff.listStaff.useQuery(undefined, { enabled: canManagePlatform });
   const createCompanyMut = trpc.companies.create.useMutation({
@@ -571,6 +572,29 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     () => (events as Record<string, unknown>[]).find((e) => Number(e.id) === EVENT_ID) ?? null,
     [events, EVENT_ID]
   );
+  const workspaceQuery = trpc.edStaff.workspace.get.useQuery({ eventId: EVENT_ID }, { enabled: canManagePlatform && activeTab === "workspace" });
+  const workspaceSheetId = (workspaceQuery.data as { sheetSpreadsheetId?: string } | undefined)?.sheetSpreadsheetId;
+  const setupWorkspaceMut = trpc.edStaff.workspace.setup.useMutation({
+    onSuccess: (result) => {
+      toast.success("Event workspace saved and Event Director assigned.");
+      workspaceQuery.refetch();
+      refetchEvents();
+      window.open(result.workspaceUrl, "_blank", "noopener,noreferrer");
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  useEffect(() => {
+    const workspace = workspaceQuery.data as any;
+    if (!workspace) return;
+    setWorkspaceForm((current) => ({
+      ...current,
+      spreadsheet: workspace.sheetSpreadsheetId ?? "",
+      sheetTabName: workspace.sheetTabName ?? "",
+      sheetTabNickname: workspace.sheetTabNickname ?? "",
+      templateUrl: workspace.sheetTemplateUrl ?? "",
+      guideUrl: workspace.onboardingGuideUrl ?? "",
+    }));
+  }, [workspaceQuery.data]);
   // Build grouped events map for the multi-brand dropdown
   // Groups events by groupSlug first (new model), falling back to groupId (legacy)
   const groupedEvents = useMemo(() => {
@@ -1164,7 +1188,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-2">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
-          {(["guide", "roster", "passports", "doormen", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+          {(["guide", "roster", "passports", "doormen", "workspace", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
             const newCount = tab === "support" ? ((supportMessages as any[]).filter((m: any) => m.status === "new").length + edNotifUnreadCount) : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
@@ -1179,6 +1203,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   : tab === "leads" ? `📣 Leads${newCount > 0 ? ` (${newCount})` : ""}`
                   : tab === "survey" ? "⭐ Survey"
                   : tab === "guide" ? "🧭 Guide"
+                  : tab === "workspace" ? "🗂️ Workspace"
                   : tab === "staff" ? "👥 Staff Accounts"
                   : tab === "payouts" ? "🏆 Team Payouts"
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -1204,6 +1229,26 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <GuidedHelpPanel {...ED_HELP.adManagement} />
             <GuidedHelpPanel {...ED_HELP.surveyManagement} />
             <GuidedHelpPanel {...ED_HELP.postEventExport} />
+          </div>
+        )}
+        {activeTab === "workspace" && (
+          <div className="max-w-3xl space-y-5">
+            {!canManagePlatform ? <div className="rounded-2xl border border-white/10 bg-[#1a1a1a] p-5 text-sm text-gray-400">Workspace setup is limited to the platform administrator and designated platform collaborators.</div> : <>
+              <div><p className="text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">Platform setup</p><h2 className="mt-1 text-2xl font-bold text-yellow-300">Create Event Workspace</h2><p className="mt-2 text-sm text-gray-400">Connect the selected event to its live Google Sheet, approved template, training guide, and Event Director portfolio.</p></div>
+              <div className="rounded-2xl border border-cyan-500/30 bg-[#1a1a1a] p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4"><div><p className="text-xs text-gray-500">Selected event</p><p className="font-semibold text-white">{String(activeEvent?.eventName ?? "Select an event")} · {String(activeEvent?.eventYear ?? "")}</p></div>{workspaceSheetId && <a href={`https://docs.google.com/spreadsheets/d/${workspaceSheetId}/edit`} target="_blank" rel="noreferrer" className="rounded-lg border border-cyan-500/40 px-3 py-2 text-xs font-bold text-cyan-200 hover:bg-cyan-500/10">Open current sheet ↗</a>}</div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="sm:col-span-2"><span className="mb-1 block text-xs font-semibold text-gray-300">Live Google Sheet URL or ID <b className="text-yellow-300">*</b></span><input value={workspaceForm.spreadsheet} onChange={(e) => setWorkspaceForm((current) => ({ ...current, spreadsheet: e.target.value }))} placeholder="https://docs.google.com/spreadsheets/d/..." className="w-full rounded-lg border border-white/20 bg-[#111] px-3 py-2.5 text-sm text-white" /></label>
+                  <label><span className="mb-1 block text-xs font-semibold text-gray-300">Worksheet tab <b className="text-yellow-300">*</b></span><input value={workspaceForm.sheetTabName} onChange={(e) => setWorkspaceForm((current) => ({ ...current, sheetTabName: e.target.value }))} placeholder="Roster 2026" className="w-full rounded-lg border border-white/20 bg-[#111] px-3 py-2.5 text-sm text-white" /></label>
+                  <label><span className="mb-1 block text-xs font-semibold text-gray-300">Internal tab nickname</span><input value={workspaceForm.sheetTabNickname} onChange={(e) => setWorkspaceForm((current) => ({ ...current, sheetTabNickname: e.target.value }))} placeholder="Main roster" className="w-full rounded-lg border border-white/20 bg-[#111] px-3 py-2.5 text-sm text-white" /></label>
+                  <label><span className="mb-1 block text-xs font-semibold text-gray-300">Template Sheet URL</span><input value={workspaceForm.templateUrl} onChange={(e) => setWorkspaceForm((current) => ({ ...current, templateUrl: e.target.value }))} placeholder="https://docs.google.com/..." className="w-full rounded-lg border border-white/20 bg-[#111] px-3 py-2.5 text-sm text-white" /></label>
+                  <label><span className="mb-1 block text-xs font-semibold text-gray-300">Onboarding Guide URL</span><input value={workspaceForm.guideUrl} onChange={(e) => setWorkspaceForm((current) => ({ ...current, guideUrl: e.target.value }))} placeholder="https://..." className="w-full rounded-lg border border-white/20 bg-[#111] px-3 py-2.5 text-sm text-white" /></label>
+                  <label className="sm:col-span-2"><span className="mb-1 block text-xs font-semibold text-gray-300">Assign Event Director</span><select value={workspaceForm.staffId} onChange={(e) => setWorkspaceForm((current) => ({ ...current, staffId: e.target.value }))} className="w-full rounded-lg border border-white/20 bg-[#111] px-3 py-2.5 text-sm text-white"><option value="">Keep current assignments</option>{(edStaffList as any[]).filter((staff) => Number(staff.companyId) === Number(activeEvent?.companyId) && staff.accessRole === "event_director").map((staff) => <option key={staff.id} value={String(staff.id)}>{staff.name} ({staff.username})</option>)}</select><span className="mt-1 block text-xs text-gray-500">Only directors from this event’s company appear. Selecting one adds this event without removing their other assignments.</span></label>
+                </div>
+                <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3 text-xs leading-relaxed text-yellow-100/80">Before saving, share the live Google Sheet with the platform’s service-account email as an Editor. This form stores the target and onboarding links; it never distributes the service-account JSON key.</div>
+                <button onClick={() => { if (!workspaceForm.spreadsheet.trim() || !workspaceForm.sheetTabName.trim()) return toast.error("Enter the live Google Sheet and its worksheet tab."); setupWorkspaceMut.mutate({ eventId: EVENT_ID, spreadsheet: workspaceForm.spreadsheet, sheetTabName: workspaceForm.sheetTabName, sheetTabNickname: workspaceForm.sheetTabNickname || undefined, templateUrl: workspaceForm.templateUrl || undefined, guideUrl: workspaceForm.guideUrl || undefined, staffId: workspaceForm.staffId ? Number(workspaceForm.staffId) : undefined }); }} disabled={setupWorkspaceMut.isPending || !activeEvent} className="rounded-lg bg-cyan-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50">{setupWorkspaceMut.isPending ? "Saving workspace…" : "Save & Open Event Workspace"}</button>
+              </div>
+            </>}
           </div>
         )}
         {activeTab === "roster" && (

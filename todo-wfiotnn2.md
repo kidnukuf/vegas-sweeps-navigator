@@ -11,3 +11,11 @@
 - [x] Add router-level tests that prove cross-company Event Director reads and writes are rejected.
 - [x] Complete a successful lower-memory TypeScript validation run.
 - [x] Save the final company-isolation checkpoint and publish the completed update.
+- [x] Verify and document how to preconfigure per-event Google Sheets for import, write-back, and exports.
+- [x] Recommend a secure onboarding approach for assigning prebuilt Google Sheets and guides to new Event Directors.
+- [x] Audit current workspace-related data and admin interfaces.
+- [x] Add workspace fields for a sheet template and Event Director onboarding guide.
+- [x] Add a secure workspace setup action that saves the sheet target and assigns the selected Event Director.
+- [x] Add a Create Event Workspace interface to the admin panel.
+- [x] Add workspace setup tests, run TypeScript and Vitest validation, and verify the interface.
+- [ ] Save a checkpoint and publish the Create Event Workspace feature.

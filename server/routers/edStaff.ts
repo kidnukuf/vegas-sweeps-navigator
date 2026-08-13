@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { rawExec, rawQuery } from "../db";
 import { publicProcedure, router } from "../_core/trpc";
-import { requirePlatformAdmin, resolveEdSession } from "../_core/edAuth";
+import { assertEventAccess, requirePlatformAdmin, resolveEdSession } from "../_core/edAuth";
 import { TRPCError } from "@trpc/server";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "fallback-secret";
@@ -19,6 +19,26 @@ async function validatePortfolio(companyId: number, eventIds: number[]) {
   const placeholders = eventIds.map(() => "?").join(",");
   const events = await rawQuery<{ id: number }>(`SELECT id FROM events WHERE companyId = ? AND id IN (${placeholders})`, [companyId, ...eventIds]);
   if (events.length !== eventIds.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Every assigned event must belong to the selected company." });
+}
+
+function normalizeSpreadsheetId(value: string) {
+  const trimmed = value.trim();
+  const urlMatch = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  const id = urlMatch?.[1] ?? trimmed;
+  if (!/^[a-zA-Z0-9_-]{20,}$/.test(id)) throw new TRPCError({ code: "BAD_REQUEST", message: "Enter a valid Google Sheet URL or spreadsheet ID." });
+  return id;
+}
+
+function optionalHttpUrl(value: string | undefined, label: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("Unsupported protocol");
+    return url.toString();
+  } catch {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `${label} must be a valid http(s) URL.` });
+  }
 }
 
 export const edStaffRouter = router({
@@ -102,5 +122,48 @@ export const edStaffRouter = router({
     await requirePlatformAdmin(ctx);
     await rawExec(`UPDATE ed_staff SET passwordHash = ? WHERE id = ?`, [await bcrypt.hash(input.newPassword, SALT_ROUNDS), input.staffId]);
     return { ok: true };
+  }),
+
+  workspace: router({
+    get: publicProcedure.input(z.object({ eventId: z.number().int().positive() })).query(async ({ input, ctx }) => {
+      await assertEventAccess(ctx, input.eventId);
+      const workspace = await rawQuery(`SELECT id, eventName, eventYear, companyId, sheetSpreadsheetId, sheetTabName, sheetTabNickname, sheetTemplateUrl, onboardingGuideUrl, workspaceConfiguredAt
+        FROM events WHERE id = ? LIMIT 1`, [input.eventId]);
+      if (!workspace[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+      const directors = await rawQuery(`SELECT s.id, s.name, s.username FROM ed_staff s
+        INNER JOIN event_director_assignments a ON a.staffId = s.id WHERE a.eventId = ? ORDER BY s.name`, [input.eventId]);
+      return { ...workspace[0], directors };
+    }),
+
+    setup: publicProcedure.input(z.object({
+      eventId: z.number().int().positive(),
+      spreadsheet: z.string().min(1),
+      sheetTabName: z.string().min(1).max(255),
+      sheetTabNickname: z.string().max(255).optional(),
+      templateUrl: z.string().optional(),
+      guideUrl: z.string().optional(),
+      staffId: z.number().int().positive().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      await requirePlatformAdmin(ctx);
+      const [event] = await rawQuery<{ id: number; companyId: number | null }>(`SELECT id, companyId FROM events WHERE id = ? LIMIT 1`, [input.eventId]);
+      if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+      if (!event.companyId) throw new TRPCError({ code: "BAD_REQUEST", message: "Assign this event to a company before creating its workspace." });
+
+      if (input.staffId) {
+        const [staff] = await rawQuery<{ id: number; companyId: number | null; accessRole: string }>(`SELECT id, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]);
+        if (!staff || staff.accessRole !== "event_director" || staff.companyId !== event.companyId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Choose an Event Director from the same company as this event." });
+        }
+        await rawExec(`INSERT IGNORE INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [input.staffId, input.eventId]);
+      }
+
+      const spreadsheetId = normalizeSpreadsheetId(input.spreadsheet);
+      const templateUrl = optionalHttpUrl(input.templateUrl, "Template URL");
+      const guideUrl = optionalHttpUrl(input.guideUrl, "Guide URL");
+      await rawExec(`UPDATE events SET sheetSpreadsheetId = ?, sheetTabName = ?, sheetTabNickname = ?, sheetTemplateUrl = ?, onboardingGuideUrl = ?, workspaceConfiguredAt = ?, workspaceConfiguredBy = ? WHERE id = ?`, [
+        spreadsheetId, input.sheetTabName.trim(), input.sheetTabNickname?.trim() || null, templateUrl, guideUrl, Date.now(), ctx.user?.id ?? null, input.eventId,
+      ]);
+      return { ok: true, spreadsheetId, workspaceUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` };
+    }),
   }),
 });

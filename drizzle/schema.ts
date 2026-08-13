@@ -130,8 +130,15 @@ export const events = mysqlTable("events", {
   sheetTabName: varchar("sheetTabName", { length: 255 }),
   // A human-readable nickname for the tab, shown alongside the actual tab name in the ED portal.
   sheetTabNickname: varchar("sheetTabNickname", { length: 255 }),
+  // The approved Google Sheet template source used to create this event workspace.
+  sheetTemplateUrl: text("sheetTemplateUrl"),
+  // A guide URL shown to the assigned Event Director as part of workspace onboarding.
+  onboardingGuideUrl: text("onboardingGuideUrl"),
   // Timestamp (ms) of the last successful write-back to the configured Google Sheet tab.
   sheetLastSyncedAt: bigint("sheetLastSyncedAt", { mode: "number" }),
+  // Audit metadata for the platform-level workspace setup action.
+  workspaceConfiguredAt: bigint("workspaceConfiguredAt", { mode: "number" }),
+  workspaceConfiguredBy: int("workspaceConfiguredBy"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
