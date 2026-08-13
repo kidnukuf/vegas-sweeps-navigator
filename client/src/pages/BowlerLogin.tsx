@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
+import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 
 // ─── Local storage keys ───────────────────────────────────────────────────────
@@ -100,9 +100,8 @@ export default function BowlerLogin() {
     const val = sessionStorage.getItem("selectedEventId");
     return val ? parseInt(val, 10) : null;
   });
-  const eventId: number = sessionEventId ?? (groupEventData as any)?.id ?? 1;
-  const currentEventName = (groupEventData as any)?.eventName as string | undefined;
-  const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId }, { enabled: tab === "signup" });
+  const eventId = sessionEventId ?? (Number((groupEventData as any)?.id) || null);
+  const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: eventId ?? 0 }, { enabled: tab === "signup" && !!eventId });
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
     onSuccess: (data) => {
@@ -130,7 +129,7 @@ export default function BowlerLogin() {
       localStorage.setItem(BOWLER_TOKEN_KEY, data.token);
       localStorage.setItem(BOWLER_ID_KEY, String(data.bowlerId));
       localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, data.isCapitain ? "1" : "0");
-      toast.success("Account created! Welcome to B.O.B. Roll-off Passport.");
+      toast.success("Account created successfully.");
       if (data.isCapitain) {
         navigate("/captain-confirmation");
       } else {
@@ -148,6 +147,7 @@ export default function BowlerLogin() {
 
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
+    if (!eventId) return toast.error("Open your event’s registration link to sign in.");
     if (!siFirst || !siLast || !siPass) return toast.error("Please fill in all fields.");
     if (!siToken) return toast.error("Please complete the security check.");
     signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId, turnstileToken: siToken });
@@ -155,6 +155,7 @@ export default function BowlerLogin() {
 
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    if (!eventId) return toast.error("Open your event’s registration link to create an account.");
     if (!suFirst || !suLast || !suPass) return toast.error("Please fill in all fields.");
     if (!suCenterId) return toast.error("Please select your bowling center.");
     if (suPass !== suPass2) return toast.error("Passwords do not match.");
@@ -185,26 +186,10 @@ export default function BowlerLogin() {
         >
           ← Home
         </button>
-        {(() => {
-          const groupSlug = detectGroupSlug();
-          const groupTheme = GROUP_THEMES[groupSlug];
-          const primaryColor = groupTheme.color;
-          const logoUrl = groupTheme.logoUrl ?? "/manus-storage/bob-logo_c7d62f79.jpg";
-          return (
-            <div className="flex items-center gap-2 bob-header-group cursor-default select-none">
-              <img
-                src={logoUrl}
-                alt={groupTheme.name}
-                className="w-10 h-10 rounded-xl object-cover"
-                style={{ filter: `drop-shadow(0 0 6px ${primaryColor}80)` }}
-              />
-              <div className="flex flex-col leading-tight">
-                <span className="bob-header-title font-bold text-white text-base tracking-wide" style={{ fontFamily: "'Orbitron', sans-serif" }}>{groupTheme.name}</span>
-                <span className="bob-header-subtitle text-xs font-semibold tracking-widest uppercase" style={{ color: primaryColor }}>{groupTheme.description}</span>
-              </div>
-            </div>
-          );
-        })()}
+        <div className="flex items-center gap-2 cursor-default select-none">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/15 text-xl">🎳</span>
+          <div className="flex flex-col leading-tight"><span className="font-bold text-white text-base tracking-wide" style={{ fontFamily: "'Orbitron', sans-serif" }}>Bowler Portal</span><span className="text-xs font-semibold tracking-widest uppercase text-amber-300">Secure Event Access</span></div>
+        </div>
         <div className="w-16" />
       </header>
 
@@ -223,12 +208,6 @@ export default function BowlerLogin() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
           Bowler Portal
         </h1>
-        {currentEventName && (
-          <div className="mb-3 px-4 py-2 rounded-full text-center text-sm font-bold"
-               style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.4)" }}>
-            📋 Registering for: {currentEventName}
-          </div>
-        )}
         <p className="text-white/85 text-center mb-8 max-w-sm">
           Sign in to view your event details, QR ticket, lane assignment, and more.
         </p>

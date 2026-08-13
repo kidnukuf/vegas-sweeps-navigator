@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
+import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
@@ -131,26 +131,7 @@ export default function CaptainLogin() {
         <button onClick={() => navigate("/")} className="text-sm text-gold-400 hover:text-gold-300 transition-colors">
           ← Back to Home
         </button>
-        {(() => {
-          const groupSlug = detectGroupSlug();
-          const groupTheme = GROUP_THEMES[groupSlug];
-          const primaryColor = groupTheme.color;
-          const logoUrl = groupTheme.logoUrl ?? "/manus-storage/bob-logo_c7d62f79.jpg";
-          return (
-            <div className="flex items-center gap-2 bob-header-group cursor-default select-none">
-              <img
-                src={logoUrl}
-                alt={groupTheme.name}
-                className="w-10 h-10 rounded-xl object-cover"
-                style={{ filter: `drop-shadow(0 0 6px ${primaryColor}80)` }}
-              />
-              <div className="flex flex-col leading-tight">
-                <span className="bob-header-title font-black text-white text-base tracking-widest uppercase" style={{ fontFamily: "'Orbitron', sans-serif" }}>{groupTheme.name}</span>
-                <span className="bob-header-subtitle text-xs font-semibold tracking-widest uppercase" style={{ color: primaryColor }}>{groupTheme.description}</span>
-              </div>
-            </div>
-          );
-        })()}
+        <div className="flex items-center gap-2 cursor-default select-none"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/15 text-xl">⭐</span><div className="flex flex-col leading-tight"><span className="font-black text-white text-base tracking-widest uppercase" style={{ fontFamily: "'Orbitron', sans-serif" }}>Team Captain Portal</span><span className="text-xs font-semibold tracking-widest uppercase text-amber-300">Secure Event Access</span></div></div>
         <div className="w-24" />
       </header>
 
@@ -165,13 +146,6 @@ export default function CaptainLogin() {
 
         <h1 className="captain-login-title">TEAM CAPTAIN</h1>
         <p className="captain-login-subtitle" style={{ color: 'rgba(255,255,255,0.9)' }}>Command your roster. Lead your team to Vegas.</p>
-
-        {/* Event info */}
-        {groupEventData && (
-          <div className="captain-event-pill">
-            🎳 {String((groupEventData as any).eventName ?? "")} · {(groupEventData as any).bowlingDate ? new Date(String((groupEventData as any).bowlingDate)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""}
-          </div>
-        )}
 
         {/* Auth card */}
         <div className="captain-auth-card">

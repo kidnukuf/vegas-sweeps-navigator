@@ -19,3 +19,9 @@
 - [x] Add a Create Event Workspace interface to the admin panel.
 - [x] Add workspace setup tests, run TypeScript and Vitest validation, and verify the interface.
 - [x] Save a checkpoint and publish the Create Event Workspace feature.
+- [x] Audit participant and Event Director authentication screens for fixed event branding.
+- [x] Remove fixed event titles from sign-in and sign-up screens while preserving event-specific context after authentication.
+- [x] Ensure authenticated Event Directors are routed to and can see only their assigned event portfolio.
+- [x] Add regression tests for event-neutral authentication presentation and multi-director event isolation.
+- [x] Run validation and verify the updated portal flow with a production build, 165 passing tests, TypeScript validation, and authentication-screen previews.
+- [ ] Save a checkpoint and publish the event-neutral portal update.

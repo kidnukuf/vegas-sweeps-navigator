@@ -89,7 +89,7 @@ export default function EdLogin() {
 
           <div className="mt-6 pt-6 border-t border-slate-700">
             <p className="text-center text-xs text-slate-500">
-              Funtime Team Challenge — Staff Access
+              Multi-Event Operations — Staff Access
             </p>
           </div>
         </div>
