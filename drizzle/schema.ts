@@ -9,6 +9,7 @@ import {
   boolean,
   decimal,
   json,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 
 // ─── USERS (auth accounts for all roles) ────────────────────────────────────
@@ -33,12 +34,31 @@ export const edStaff = mysqlTable("ed_staff", {
   username: varchar("username", { length: 64 }).notNull().unique(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   name: varchar("name", { length: 128 }).notNull(),
+  companyId: int("companyId"),
+  accessRole: mysqlEnum("accessRole", ["platform_admin", "event_director"]).default("event_director").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy"), // references users.id of the admin who created them
 });
 
 export type EdStaff = typeof edStaff.$inferSelect;
 export type InsertEdStaff = typeof edStaff.$inferInsert;
+
+// ─── COMPANIES & EVENT DIRECTOR PORTFOLIOS ───────────────────────────────────
+export const companies = mysqlTable("companies", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 96 }).notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const eventDirectorAssignments = mysqlTable("event_director_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  staffId: int("staffId").notNull(),
+  eventId: int("eventId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  staffEventUnique: uniqueIndex("event_director_assignments_staff_event_unique").on(table.staffId, table.eventId),
+}));
 
 // ─── EVENTS ─────────────────────────────────────────────────────────────────
 // --- EVENT GROUPS (brands: BOB, Valentine Funtime, June Funtime Roll-Off)
@@ -58,6 +78,7 @@ export type EventGroup = typeof eventGroups.$inferSelect;
 
 export const events = mysqlTable("events", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId"),
   groupId: int("groupId"),
   /** Slug matching GROUP_THEMES key: 'bob' | 'valentine' | 'june-group-1' ... 'june-group-4' */
   groupSlug: varchar("groupSlug", { length: 64 }).default("bob"),

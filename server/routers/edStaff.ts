@@ -1,156 +1,106 @@
-/**
- * ED Staff authentication router.
- * Allows non-Manus users to log in to the Admin Dashboard with a username + password.
- * The owner (Manus OAuth admin) can create and delete staff accounts.
- */
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { rawQuery } from "../db";
+import { rawExec, rawQuery } from "../db";
 import { publicProcedure, router } from "../_core/trpc";
-import { requireEdSession } from "../_core/edAuth";
+import { requirePlatformAdmin, resolveEdSession } from "../_core/edAuth";
 import { TRPCError } from "@trpc/server";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "fallback-secret";
 const STAFF_COOKIE = "ed_staff_token";
 const SALT_ROUNDS = 12;
 
-// ── Token helpers ────────────────────────────────────────────────────────────
-
-function signStaffToken(staffId: number): string {
+function signStaffToken(staffId: number) {
   return jwt.sign({ staffId, type: "ed_staff" }, JWT_SECRET, { expiresIn: "7d" });
 }
 
-function verifyStaffToken(token: string): { staffId: number } | null {
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    if (payload?.type !== "ed_staff" || !payload?.staffId) return null;
-    return { staffId: payload.staffId };
-  } catch {
-    return null;
-  }
+async function validatePortfolio(companyId: number, eventIds: number[]) {
+  if (!eventIds.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Assign at least one event to the Event Director." });
+  const placeholders = eventIds.map(() => "?").join(",");
+  const events = await rawQuery<{ id: number }>(`SELECT id FROM events WHERE companyId = ? AND id IN (${placeholders})`, [companyId, ...eventIds]);
+  if (events.length !== eventIds.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Every assigned event must belong to the selected company." });
 }
 
-// ── Router ───────────────────────────────────────────────────────────────────
-
 export const edStaffRouter = router({
+  access: publicProcedure.query(async ({ ctx }) => {
+    const session = await resolveEdSession(ctx);
+    return session ? { type: session.type, companyId: session.companyId ?? null, canManagePlatform: session.type === "owner" || session.type === "platform_admin" } : null;
+  }),
 
-  /** Log in with username + password. Sets an HTTP-only cookie. */
   login: publicProcedure
-    .input(z.object({
-      username: z.string().min(1),
-      password: z.string().min(1),
-      rememberMe: z.boolean().optional(),
-    }))
+    .input(z.object({ username: z.string().min(1), password: z.string().min(1), rememberMe: z.boolean().optional() }))
     .mutation(async ({ input, ctx }) => {
-      const rows = await rawQuery<{
-        id: number; username: string; passwordHash: string; name: string;
-      }>(
-        `SELECT id, username, passwordHash, name FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`,
-        [input.username]
+      const rows = await rawQuery<{ id: number; username: string; passwordHash: string; name: string; companyId: number | null; accessRole: "platform_admin" | "event_director" }>(
+        `SELECT id, username, passwordHash, name, companyId, accessRole FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`,
+        [input.username],
       );
       const staff = rows[0];
-      if (!staff) {
+      if (!staff || !(await bcrypt.compare(input.password, staff.passwordHash))) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid username or password." });
       }
-      const valid = await bcrypt.compare(input.password, staff.passwordHash);
-      if (!valid) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid username or password." });
-      }
-      const token = signStaffToken(staff.id);
-      // Set HTTP-only cookie (same pattern as bowler auth)
-      const res = (ctx as any)?.res;
-      if (res) {
-        res.cookie(STAFF_COOKIE, token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: input.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 30 days if remembered, else 7
-          path: "/",
-        });
-      }
-      return { token, staffId: staff.id, name: staff.name, username: staff.username };
+      (ctx as any).res?.cookie(STAFF_COOKIE, signStaffToken(staff.id), {
+        httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/",
+        maxAge: input.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000,
+      });
+      return { staffId: staff.id, name: staff.name, username: staff.username, companyId: staff.companyId, accessRole: staff.accessRole };
     }),
 
-  /** Return the currently logged-in staff member from cookie. */
-  me: publicProcedure
-    .query(async ({ ctx }) => {
-      const req = (ctx as any)?.req;
-      const cookieToken = req?.cookies?.[STAFF_COOKIE];
-      if (!cookieToken) return null;
-      const payload = verifyStaffToken(cookieToken);
-      if (!payload) return null;
-      const rows = await rawQuery<{ id: number; username: string; name: string }>(
-        `SELECT id, username, name FROM ed_staff WHERE id = ? LIMIT 1`,
-        [payload.staffId]
-      );
-      return rows[0] ?? null;
-    }),
+  me: publicProcedure.query(async ({ ctx }) => {
+    const session = await resolveEdSession(ctx);
+    if (!session?.staffId) return null;
+    const rows = await rawQuery<{ id: number; username: string; name: string; companyId: number | null; accessRole: string }>(
+      `SELECT id, username, name, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [session.staffId],
+    );
+    return rows[0] ?? null;
+  }),
 
-  /** Log out — clear the staff cookie. */
-  logout: publicProcedure
-    .mutation(async ({ ctx }) => {
-      const res = (ctx as any)?.res;
-      if (res) {
-        res.clearCookie(STAFF_COOKIE, { path: "/" });
-      }
-      return { ok: true };
-    }),
+  logout: publicProcedure.mutation(({ ctx }) => {
+    (ctx as any).res?.clearCookie(STAFF_COOKIE, { path: "/" });
+    return { ok: true };
+  }),
 
-  /** List all staff accounts. Owner-only. */
-  listStaff: publicProcedure
-    .query(async ({ ctx }) => {
-      await requireEdSession(ctx);
-      const rows = await rawQuery<{ id: number; username: string; name: string; createdAt: Date }>(
-        `SELECT id, username, name, createdAt FROM ed_staff ORDER BY name`
-      );
-      return rows;
-    }),
+  listStaff: publicProcedure.query(async ({ ctx }) => {
+    await requirePlatformAdmin(ctx);
+    return rawQuery(`SELECT s.id, s.username, s.name, s.companyId, s.accessRole, s.createdAt, c.name AS companyName
+      FROM ed_staff s LEFT JOIN companies c ON c.id = s.companyId ORDER BY c.name, s.name`);
+  }),
 
-  /** Create a new staff account. Owner-only. */
   createStaff: publicProcedure
-    .input(z.object({
-      username: z.string().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/, "Username may only contain letters, numbers, dots, hyphens, underscores"),
-      password: z.string().min(8, "Password must be at least 8 characters"),
-      name: z.string().min(1).max(128),
-    }))
+    .input(z.object({ username: z.string().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/), password: z.string().min(8), name: z.string().min(1).max(128), companyId: z.number().int().positive(), eventIds: z.array(z.number().int().positive()).min(1) }))
     .mutation(async ({ input, ctx }) => {
-      await requireEdSession(ctx);
-      // Check for duplicate username
-      const existing = await rawQuery<{ id: number }>(
-        `SELECT id FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`,
-        [input.username]
-      );
-      if (existing.length > 0) {
-        throw new TRPCError({ code: "CONFLICT", message: `Username "${input.username}" is already taken.` });
-      }
-      const hash = await bcrypt.hash(input.password, SALT_ROUNDS);
-      await rawQuery(
-        `INSERT INTO ed_staff (username, passwordHash, name, createdBy) VALUES (?, ?, ?, ?)`,
-        [input.username, hash, input.name, ctx.user?.id ?? null]
-      );
+      await requirePlatformAdmin(ctx);
+      const duplicate = await rawQuery<{ id: number }>(`SELECT id FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`, [input.username]);
+      if (duplicate[0]) throw new TRPCError({ code: "CONFLICT", message: "That username is already in use." });
+      const company = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
+      if (!company[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Company not found." });
+      await validatePortfolio(input.companyId, input.eventIds);
+      const result = await rawExec(`INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole, createdBy) VALUES (?, ?, ?, ?, 'event_director', ?)`, [input.username, await bcrypt.hash(input.password, SALT_ROUNDS), input.name, input.companyId, ctx.user?.id ?? null]);
+      for (const eventId of input.eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [result.insertId, eventId]);
+      return { ok: true, staffId: result.insertId };
+    }),
+
+  setAssignments: publicProcedure
+    .input(z.object({ staffId: z.number().int().positive(), eventIds: z.array(z.number().int().positive()).min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      await requirePlatformAdmin(ctx);
+      const staff = (await rawQuery<{ companyId: number | null; accessRole: string }>(`SELECT companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]))[0];
+      if (!staff?.companyId || staff.accessRole !== "event_director") throw new TRPCError({ code: "BAD_REQUEST", message: "This account is not a company-scoped Event Director." });
+      await validatePortfolio(staff.companyId, input.eventIds);
+      await rawExec(`DELETE FROM event_director_assignments WHERE staffId = ?`, [input.staffId]);
+      for (const eventId of input.eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [input.staffId, eventId]);
       return { ok: true };
     }),
 
-  /** Delete a staff account. Owner-only. */
-  deleteStaff: publicProcedure
-    .input(z.object({ staffId: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      await requireEdSession(ctx);
-      await rawQuery(`DELETE FROM ed_staff WHERE id = ?`, [input.staffId]);
-      return { ok: true };
-    }),
+  deleteStaff: publicProcedure.input(z.object({ staffId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    await requirePlatformAdmin(ctx);
+    await rawExec(`DELETE FROM event_director_assignments WHERE staffId = ?`, [input.staffId]);
+    await rawExec(`DELETE FROM ed_staff WHERE id = ?`, [input.staffId]);
+    return { ok: true };
+  }),
 
-  /** Change a staff member's password. Owner-only. */
-  resetStaffPassword: publicProcedure
-    .input(z.object({
-      staffId: z.number(),
-      newPassword: z.string().min(8, "Password must be at least 8 characters"),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      await requireEdSession(ctx);
-      const hash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
-      await rawQuery(`UPDATE ed_staff SET passwordHash = ? WHERE id = ?`, [hash, input.staffId]);
-      return { ok: true };
-    }),
+  resetStaffPassword: publicProcedure.input(z.object({ staffId: z.number().int().positive(), newPassword: z.string().min(8) })).mutation(async ({ input, ctx }) => {
+    await requirePlatformAdmin(ctx);
+    await rawExec(`UPDATE ed_staff SET passwordHash = ? WHERE id = ?`, [await bcrypt.hash(input.newPassword, SALT_ROUNDS), input.staffId]);
+    return { ok: true };
+  }),
 });

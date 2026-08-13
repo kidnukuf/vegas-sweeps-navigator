@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "drizzle/schema.ts",
+    "server/_core/edAuth.ts",
+    "server/routers/edStaff.ts",
+    "server/routers.ts",
+    "server/routers/prizePool.ts",
+    "server/routers/bowlerAuth.ts",
+    "server/companyAccess.test.ts",
+    "server/companyAccess.router.test.ts"
+  ],
+  "exclude": ["node_modules", "client"]
+}

@@ -23,7 +23,7 @@ import {
   getBowlerActiveToken, createCheckIn, issueWristband, getWristbandByBowler,
   denyWristband, writeAuditLog, getAuditLog, createImportSession,
   updateImportSession, getImportHistory, upsertHotelRecord, upsertPaymentRecord,
-  rawQuery, updateTeamStatus, getTeamById, recordSheetSync,
+  rawQuery, rawExec, updateTeamStatus, getTeamById, recordSheetSync,
 } from "./db";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -31,6 +31,7 @@ import QRCode from "qrcode";
 import { markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
 import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
+import { assertBowlerAccess, assertEventAccess, getAccessibleEvents, requireEdSession, requirePlatformAdmin } from "./_core/edAuth";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -82,17 +83,41 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── COMPANIES (platform owner and designated collaborators only) ─────────
+  companies: router({
+    list: publicProcedure.query(async ({ ctx }) => {
+      await requirePlatformAdmin(ctx);
+      return rawQuery(`SELECT c.id, c.name, c.slug, c.createdAt, COUNT(e.id) AS eventCount
+        FROM companies c LEFT JOIN events e ON e.companyId = c.id
+        GROUP BY c.id, c.name, c.slug, c.createdAt ORDER BY c.name`);
+    }),
+    create: publicProcedure.input(z.object({ name: z.string().min(2).max(255), slug: z.string().min(2).max(96).regex(/^[a-z0-9-]+$/) })).mutation(async ({ input, ctx }) => {
+      await requirePlatformAdmin(ctx);
+      const result = await rawExec(`INSERT INTO companies (name, slug) VALUES (?, ?)`, [input.name.trim(), input.slug.trim().toLowerCase()]);
+      return { ok: true, companyId: result.insertId };
+    }),
+    assignEvent: publicProcedure.input(z.object({ eventId: z.number().int().positive(), companyId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      await requirePlatformAdmin(ctx);
+      const company = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
+      if (!company[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Company not found." });
+      await rawExec(`UPDATE events SET companyId = ? WHERE id = ?`, [input.companyId, input.eventId]);
+      await rawExec(`DELETE FROM event_director_assignments WHERE eventId = ?`, [input.eventId]);
+      return { ok: true };
+    }),
+  }),
+
   // ─── EVENT ────────────────────────────────────────────────────────────────
   event: router({
     active: publicProcedure.query(async () => {
       return getActiveEvent();
     }),
-    list: publicProcedure.query(async () => {
-      return getAllEvents();
+    list: publicProcedure.query(async ({ ctx }) => {
+      return getAccessibleEvents(ctx);
     }),
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.id);
         return getEventById(input.id);
       }),
     create: publicProcedure
@@ -100,9 +125,17 @@ export const appRouter = router({
         eventName: z.string().min(1),
         eventYear: z.number().int(),
         actorId: z.number().optional(),
+        companyId: z.number().int().positive().optional(),
       }))
-      .mutation(async ({ input }) => {
-        const id = await createEvent(input.eventName, input.eventYear);
+      .mutation(async ({ input, ctx }) => {
+        const session = await requireEdSession(ctx);
+        const companyId = session.type === "staff" ? session.companyId : input.companyId;
+        if (!companyId) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose the company that owns this event." });
+        const company = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [companyId]);
+        if (!company[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Company not found." });
+        const created = await rawExec(`INSERT INTO events (eventName, eventYear, status, companyId) VALUES (?, ?, 'active', ?)`, [input.eventName, input.eventYear, companyId]);
+        const id = created.insertId;
+        if (session.type === "staff" && session.staffId) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [session.staffId, id]);
         await writeAuditLog({
           eventId: id,
           actorRole: "EventDirector",
@@ -121,7 +154,8 @@ export const appRouter = router({
         eventYear: z.number().int().optional(),
         actorId: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.id);
         await renameEvent(input.id, input.eventName, input.eventYear);
         await writeAuditLog({
           eventId: input.id,
@@ -137,8 +171,9 @@ export const appRouter = router({
 
     delete: publicProcedure
       .input(z.object({ eventId: z.number().int().positive() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { eventId } = input;
+        await assertEventAccess(ctx, eventId);
         // Verified against live DB tables (June 24 2026):
         // Exists: guest_pool_party_tokens, offline_sync_queue, payment_records, entry_tokens,
         //         checkIns, contact_requests, hotel_records, hotelRecords, auditLog, app_users,
@@ -162,6 +197,7 @@ export const appRouter = router({
         await rawQuery('DELETE FROM teams WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM leagues WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM bowlers WHERE eventId=?', [eventId]);
+        await rawQuery('DELETE FROM event_director_assignments WHERE eventId=?', [eventId]);
         await rawQuery('DELETE FROM events WHERE id=?', [eventId]);
         return { success: true };
       }),
@@ -248,7 +284,8 @@ export const appRouter = router({
     // Full set of event-customization fields driving the bowler/captain portals.
     getSettings: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.id);
         const rows = await rawQuery(
           `SELECT id, eventName, eventYear,
              hotelCheckinDay, hotelCheckinTime, registrationDay, registrationTime,
@@ -288,7 +325,8 @@ export const appRouter = router({
         sheetTabNickname: z.string().optional().nullable(),
         actorId: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.id);
         const fields: string[] = [];
         const values: unknown[] = [];
         const map: Record<string, unknown> = {
@@ -426,13 +464,15 @@ export const appRouter = router({
 
     adminList: publicProcedure
       .input(z.object({ eventId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
         return getAllBowlersForAdmin(input.eventId);
       }),
 
     stats: publicProcedure
       .input(z.object({ eventId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
         return getAdminStats(input.eventId);
       }),
 
@@ -443,7 +483,8 @@ export const appRouter = router({
         actorRole: z.string().optional(),
         actorId: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertBowlerAccess(ctx, input.id);
         const HOTEL_FIELDS = ["checkinDate","checkoutDate","roomType","roomNumber","roommateRequested","roommateFirstName","roommateLastName","roomAmount","confirmationCode"];
         const PAYMENT_FIELDS = ["banquetAmount","poolParty","totalAmountDue","paid"];
         const bowlerFields: Record<string, unknown> = {};
@@ -473,7 +514,8 @@ export const appRouter = router({
         id: z.number(),
         actorRole: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertBowlerAccess(ctx, input.id);
         await updateBowler(input.id, { passwordHash: null, registrationStatus: "pre_registered" });
         await writeAuditLog({
           actorRole: input.actorRole ?? "EventDirector",
@@ -487,8 +529,9 @@ export const appRouter = router({
 
     clearAll: publicProcedure
       .input(z.object({ eventId: z.number().int().positive() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { eventId } = input;
+        await assertEventAccess(ctx, eventId);
         const bowlerSubquery = 'SELECT id FROM bowlers WHERE eventId=?';
         await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId IN (${bowlerSubquery})`, [eventId]);
         await rawQuery(`DELETE FROM offline_sync_queue WHERE bowler_id IN (${bowlerSubquery})`, [eventId]);
@@ -641,7 +684,8 @@ export const appRouter = router({
         attendingBanquet: z.boolean().optional().default(false),
         attendingPoolParty: z.boolean().optional().default(false),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
         // 1. Resolve center
         const centerRows = await rawQuery(
           "SELECT id, centerCode, centerName FROM bowling_centers WHERE id = ? LIMIT 1",
@@ -1537,7 +1581,8 @@ export const appRouter = router({
         sheetSpreadsheetId: z.string().optional().nullable(),
         sheetTabName: z.string().optional().nullable(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
         // Auto-save the Google Sheet target for this event whenever the ED imports from a Google Sheet.
         // This ensures all subsequent write-backs (IDs, QR codes, contact info) go to the correct sheet,
         // regardless of which sheet was used previously. No hardcoded sheet IDs anywhere.

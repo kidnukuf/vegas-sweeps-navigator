@@ -18,6 +18,7 @@ import { toast } from "sonner";
 export interface EventWizardProps {
   mode: "create" | "edit";
   eventId?: number; // required in edit mode (and used after create)
+  companyId?: number;
   onClose: () => void;
   onSaved: (eventId: number) => void;
 }
@@ -287,7 +288,7 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
   );
 }
 
-export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProps) {
+export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: EventWizardProps) {
   const [step, setStep] = useState(0);
   const [s, setS] = useState<WizardState>(EMPTY);
   const set = <K extends keyof WizardState>(k: K, v: WizardState[K]) => setS((p) => ({ ...p, [k]: v }));
@@ -367,7 +368,7 @@ export function EventWizard({ mode, eventId, onClose, onSaved }: EventWizardProp
     try {
       let targetId = eventId;
       if (mode === "create") {
-        const res = await createMut.mutateAsync({ eventName: name, eventYear: year });
+        const res = await createMut.mutateAsync({ eventName: name, eventYear: year, companyId });
         targetId = res.id;
       }
       if (!targetId) { toast.error("Could not determine event id"); return; }

@@ -16,7 +16,7 @@ import { rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, writeAu
 import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
-import { verifyStaffCookie } from "../_core/edAuth";
+import { assertBowlerAccess, assertEventAccess, verifyStaffCookie } from "../_core/edAuth";
 import { formatPassportScannerName } from "../passportDisplay";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
@@ -909,6 +909,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
       await rawQuery(`UPDATE bowlers SET ${col} = NULL WHERE id = ?`, [input.bowlerId]);
       return { success: true };
@@ -922,6 +923,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
       const usedCol = input.passportType === "pool" ? "poolPartyUsed" : "banquetUsed";
       const newToken = uuidv4().replace(/-/g, "");
@@ -938,6 +940,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
       const existing = await rawQuery<{ suffix: string }>(
         `SELECT suffix FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
         [input.bowlerId]
@@ -970,6 +973,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
       const rows = await rawQuery<{
         id: number; guestId: string | null; guestName: string | null; suffix: string;
         token: string; banquetToken: string | null; used: number; banquetUsed: number; disabled: number; under21: number;
@@ -1007,6 +1011,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
 
       const [bowler] = await rawQuery<{
         id: number; eventId: number | null; scantronId: string | null;
@@ -1085,6 +1090,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
       await rawQuery(
         `UPDATE guest_pool_party_tokens SET disabled = 1 WHERE bowlerId = ? AND suffix = ?`,
         [input.bowlerId, input.suffix]
@@ -1100,6 +1106,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertBowlerAccess(ctx, input.bowlerId);
       await rawQuery(
         `UPDATE guest_pool_party_tokens SET disabled = 0 WHERE bowlerId = ? AND suffix = ?`,
         [input.bowlerId, input.suffix]
@@ -1116,6 +1123,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertEventAccess(ctx, input.eventId);
       const rows = await rawQuery<{
         id: number; legalFirstName: string; legalLastName: string; scantronId: string | null;
         centerName: string | null; teamName: string | null;
@@ -1204,6 +1212,7 @@ export const bowlerAuthRouter = router({
       if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
       }
+      await assertEventAccess(ctx, input.eventId);
       const rows = await rawQuery<{
         id: number; bowlerId: number; phone: string; email: string;
         status: string; createdAt: number; confirmedAt: number | null;
@@ -1238,6 +1247,7 @@ export const bowlerAuthRouter = router({
         id: number; bowlerId: number; phone: string; email: string; status: string;
       }>(`SELECT id, bowlerId, phone, email, status FROM contact_requests WHERE id = ? LIMIT 1`, [input.requestId]);
       if (!req) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found." });
+      await assertBowlerAccess(ctx, req.bowlerId);
       if (req.status !== "pending") throw new TRPCError({ code: "BAD_REQUEST", message: "Request is not pending." });
 
       // Update bowler phone + email in DB
@@ -1269,7 +1279,8 @@ export const bowlerAuthRouter = router({
    */
   edGetBowlerProfile: publicProcedure
     .input(z.object({ bowlerId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertBowlerAccess(ctx, input.bowlerId);
       const profile = await getBowlerProfile(input.bowlerId);
       if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
       return profile;

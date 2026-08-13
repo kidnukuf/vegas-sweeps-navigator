@@ -1,102 +1,112 @@
-/**
- * Shared ED authentication helpers.
- *
- * An "ED session" is valid when EITHER:
- *   1. The request carries a valid Manus OAuth session with role === "admin" (ctx.user), OR
- *   2. The request carries a valid ed_staff_token HTTP-only cookie (edStaff username/password login).
- *
- * Use `edStaffProcedure` in place of `protectedProcedure` for any procedure that should be
- * accessible to both the Manus owner and any edStaff account.
- */
+/** Company-scoped Event Director authorization helpers. */
 import jwt from "jsonwebtoken";
 import { parse as parseCookieHeader } from "cookie";
 import { TRPCError } from "@trpc/server";
-import { initTRPC } from "@trpc/server";
-import { router, publicProcedure } from "./trpc";
 import type { TrpcContext } from "./context";
 import { rawQuery } from "../db";
+import { ENV } from "./env";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "fallback-secret";
 const STAFF_COOKIE = "ed_staff_token";
 
 export interface EdSession {
-  /** "admin" = Manus OAuth owner; "staff" = edStaff username/password account */
-  type: "admin" | "staff";
+  type: "owner" | "platform_admin" | "staff";
   staffId?: number;
   staffName?: string;
   userId?: number;
+  companyId?: number | null;
 }
 
-/**
- * Read a cookie value by name.
- * Prefers req.cookies (cookie-parser middleware) and falls back to manual header parsing.
- */
 function getRawCookie(req: any, name: string): string | undefined {
-  // Prefer already-parsed cookies (cookie-parser middleware)
   if (req?.cookies?.[name]) return req.cookies[name];
-  // Fall back to manual parsing of the raw Cookie header
   const header = req?.headers?.cookie;
   if (!header) return undefined;
-  try {
-    return parseCookieHeader(header)[name];
-  } catch {
-    return undefined;
-  }
+  try { return parseCookieHeader(header)[name]; } catch { return undefined; }
 }
 
-/**
- * Verify the ed_staff_token cookie from the request.
- * Returns the staffId if valid, null otherwise.
- */
 export function verifyStaffCookie(req: any): { staffId: number } | null {
   try {
     const token = getRawCookie(req, STAFF_COOKIE);
     if (!token) return null;
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    if (payload?.type !== "ed_staff" || !payload?.staffId) return null;
-    return { staffId: payload.staffId };
-  } catch {
-    return null;
-  }
+    const payload = jwt.verify(token, JWT_SECRET) as { type?: string; staffId?: number };
+    return payload.type === "ed_staff" && payload.staffId ? { staffId: payload.staffId } : null;
+  } catch { return null; }
 }
 
-/**
- * Resolve the ED session from the tRPC context.
- * Returns an EdSession if the caller is authenticated as an ED admin or edStaff member.
- * Returns null if not authenticated.
- */
 export async function resolveEdSession(ctx: TrpcContext): Promise<EdSession | null> {
-  // Path 1: Manus OAuth admin
-  if (ctx.user?.role === "admin") {
-    return { type: "admin", userId: ctx.user.id };
+  // Only the configured Manus project owner has cross-company owner access.
+  if (ctx.user?.openId && ctx.user.openId === ENV.ownerOpenId) {
+    return { type: "owner", userId: ctx.user.id };
   }
-
-  // Path 2: edStaff cookie
-  const staffPayload = verifyStaffCookie(ctx.req);
-  if (staffPayload) {
-    const rows = await rawQuery<{ id: number; name: string }>(
-      `SELECT id, name FROM ed_staff WHERE id = ? LIMIT 1`,
-      [staffPayload.staffId]
-    );
-    if (rows[0]) {
-      return { type: "staff", staffId: rows[0].id, staffName: rows[0].name };
-    }
-  }
-
-  return null;
+  const cookie = verifyStaffCookie(ctx.req);
+  if (!cookie) return null;
+  const rows = await rawQuery<{ id: number; name: string; companyId: number | null; accessRole: "platform_admin" | "event_director" }>(
+    `SELECT id, name, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`,
+    [cookie.staffId],
+  );
+  const staff = rows[0];
+  if (!staff) return null;
+  return {
+    type: staff.accessRole === "platform_admin" ? "platform_admin" : "staff",
+    staffId: staff.id,
+    staffName: staff.name,
+    companyId: staff.companyId,
+  };
 }
 
-/**
- * Middleware that requires a valid ED session (Manus admin OR edStaff cookie).
- * Throws FORBIDDEN if neither is present.
- */
 export async function requireEdSession(ctx: TrpcContext): Promise<EdSession> {
   const session = await resolveEdSession(ctx);
-  if (!session) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Event Director access required. Please log in with your ED credentials.",
-    });
+  if (!session) throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required. Please log in with your ED credentials." });
+  return session;
+}
+
+export async function requirePlatformAdmin(ctx: TrpcContext): Promise<EdSession> {
+  const session = await requireEdSession(ctx);
+  if (session.type !== "owner" && session.type !== "platform_admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Platform administrator access required." });
   }
   return session;
+}
+
+export function canAccessAssignedEvent(session: EdSession, assignmentExists: boolean): boolean {
+  return session.type === "owner" || session.type === "platform_admin" || Boolean(session.staffId && session.companyId && assignmentExists);
+}
+
+/** Return only events available to the signed-in Event Director. */
+export async function getAccessibleEvents(ctx: TrpcContext): Promise<Record<string, unknown>[]> {
+  const session = await requireEdSession(ctx);
+  if (session.type === "owner" || session.type === "platform_admin") {
+    return rawQuery(`SELECT * FROM events ORDER BY id DESC`);
+  }
+  if (!session.staffId || !session.companyId) return [];
+  return rawQuery(
+    `SELECT e.* FROM events e
+     INNER JOIN event_director_assignments a ON a.eventId = e.id
+     WHERE a.staffId = ? AND e.companyId = ? ORDER BY e.id DESC`,
+    [session.staffId, session.companyId],
+  );
+}
+
+/** Block access unless the caller is a platform collaborator or assigned to this event in their own company. */
+export async function assertEventAccess(ctx: TrpcContext, eventId: number): Promise<EdSession> {
+  const session = await requireEdSession(ctx);
+  if (session.type === "owner" || session.type === "platform_admin") return session;
+  if (!session.staffId || !session.companyId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You are not assigned to this event." });
+  }
+  const matches = await rawQuery<{ id: number }>(
+    `SELECT e.id FROM events e INNER JOIN event_director_assignments a ON a.eventId = e.id
+     WHERE e.id = ? AND e.companyId = ? AND a.staffId = ? LIMIT 1`,
+    [eventId, session.companyId, session.staffId],
+  );
+  if (!canAccessAssignedEvent(session, Boolean(matches[0]))) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You are not assigned to this event." });
+  }
+  return session;
+}
+
+export async function assertBowlerAccess(ctx: TrpcContext, bowlerId: number): Promise<EdSession> {
+  const rows = await rawQuery<{ eventId: number }>(`SELECT eventId FROM bowlers WHERE id = ? LIMIT 1`, [bowlerId]);
+  if (!rows[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
+  return assertEventAccess(ctx, rows[0].eventId);
 }

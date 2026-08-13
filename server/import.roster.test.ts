@@ -3,6 +3,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { ENV } from "./_core/env";
 
 // Minimal CSV parser matching the client's behavior (handles quoted fields)
 function parseCSV(text: string): string[][] {
@@ -28,9 +29,19 @@ function parseCSV(text: string): string[][] {
   return rows.filter(r => r.some(c => c.trim()));
 }
 
-function createPublicContext(): TrpcContext {
+function createPlatformOwnerContext(): TrpcContext {
   return {
-    user: null,
+    user: {
+      id: 1,
+      openId: ENV.ownerOpenId,
+      email: "owner@example.test",
+      name: "Test Platform Owner",
+      loginMethod: "test",
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
   };
@@ -50,7 +61,7 @@ describe("import.process — real roster CSV", () => {
       return obj;
     });
 
-    const caller = appRouter.createCaller(createPublicContext());
+    const caller = appRouter.createCaller(createPlatformOwnerContext());
     const result = await caller.import.process({
       rows,
       sourceType: "csv",

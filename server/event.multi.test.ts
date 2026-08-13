@@ -2,11 +2,22 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { rawQuery, rawExec } from "./db";
+import { ENV } from "./_core/env";
 
-// Minimal public context (these procedures are publicProcedure).
+// Platform-owner context for Event Director procedures.
 function createCtx(): TrpcContext {
   return {
-    user: null,
+    user: {
+      id: 1,
+      openId: ENV.ownerOpenId,
+      email: "owner@example.test",
+      name: "Test Platform Owner",
+      loginMethod: "test",
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
   } as TrpcContext;
@@ -16,8 +27,9 @@ describe("multi-event support", () => {
   it("creates, lists, and renames an event", async () => {
     const caller = appRouter.createCaller(createCtx());
     const unique = `Test Event ${Date.now()}`;
+    const company = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Test Company ${Date.now()}`, `test-company-${Date.now()}`]);
 
-    const created = await caller.event.create({ eventName: unique, eventYear: 2099 });
+    const created = await caller.event.create({ eventName: unique, eventYear: 2099, companyId: company.insertId });
     expect(created.success).toBe(true);
     expect(created.id).toBeGreaterThan(0);
 
@@ -36,6 +48,7 @@ describe("multi-event support", () => {
 
     // cleanup
     await rawQuery("DELETE FROM events WHERE id = ?", [created.id]);
+    await rawQuery("DELETE FROM companies WHERE id = ?", [company.insertId]);
   });
 
   it("permanently deletes a bowler and audit-logs before removal", async () => {

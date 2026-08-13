@@ -445,11 +445,24 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"guide" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "payouts">("roster");
-  // ED Staff management
-  const [newStaff, setNewStaff] = useState({ username: "", password: "", name: "" });
-  const { data: edStaffList = [], refetch: refetchStaff } = trpc.edStaff.listStaff.useQuery();
+  // Company-scoped Event Director management
+  const { data: edAccess } = trpc.edStaff.access.useQuery();
+  const canManagePlatform = Boolean(edAccess?.canManagePlatform);
+  const [newStaff, setNewStaff] = useState({ username: "", password: "", name: "", companyId: "", eventIds: [] as number[] });
+  const [newCompany, setNewCompany] = useState({ name: "", slug: "" });
+  const [companyByEvent, setCompanyByEvent] = useState<Record<number, string>>({});
+  const { data: companies = [], refetch: refetchCompanies } = trpc.companies.list.useQuery(undefined, { enabled: canManagePlatform });
+  const { data: edStaffList = [], refetch: refetchStaff } = trpc.edStaff.listStaff.useQuery(undefined, { enabled: canManagePlatform });
+  const createCompanyMut = trpc.companies.create.useMutation({
+    onSuccess: () => { toast.success("Company created"); setNewCompany({ name: "", slug: "" }); refetchCompanies(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const assignEventCompanyMut = trpc.companies.assignEvent.useMutation({
+    onSuccess: () => { toast.success("Event company saved"); refetchEvents(); refetchCompanies(); },
+    onError: (e) => toast.error(e.message),
+  });
   const createStaffMut = trpc.edStaff.createStaff.useMutation({
-    onSuccess: () => { toast.success("Staff account created"); refetchStaff(); setNewStaff({ username: "", password: "", name: "" }); },
+    onSuccess: () => { toast.success("Event Director account created"); refetchStaff(); setNewStaff({ username: "", password: "", name: "", companyId: "", eventIds: [] }); },
     onError: (e) => toast.error(e.message),
   });
   const [resetStaffModal, setResetStaffModal] = useState<{ id: number; name: string } | null>(null);
@@ -1605,8 +1618,14 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
         {activeTab === "staff" && (
           <div className="max-w-2xl space-y-6">
-            <h2 className="text-xl font-bold text-yellow-400">👥 ED Staff Accounts</h2>
-            <p className="text-gray-400 text-sm">Create username/password accounts for staff who need access to this portal without a Manus account. Staff can log in at the same ED login screen using their username and password.</p>
+            <h2 className="text-xl font-bold text-yellow-400">👥 Company & Event Director Access</h2>
+            <p className="text-gray-400 text-sm">Companies own events. Each Event Director is assigned to one company and only the events they work, while platform collaborators retain setup access across all companies.</p>
+            {canManagePlatform && <div className="bg-[#1a1a1a] rounded-2xl border border-cyan-500/30 p-5 space-y-3">
+              <h3 className="text-sm font-semibold text-cyan-300">Company setup</h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><input value={newCompany.name} onChange={(e) => setNewCompany((v) => ({ ...v, name: e.target.value, slug: v.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }))} placeholder="Company name" className="px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm" /><input value={newCompany.slug} onChange={(e) => setNewCompany((v) => ({ ...v, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="company-slug" className="px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm font-mono" /></div>
+              <button onClick={() => { if (!newCompany.name.trim() || !newCompany.slug.trim()) return toast.error("Enter a company name and slug"); createCompanyMut.mutate({ name: newCompany.name.trim(), slug: newCompany.slug.trim() }); }} disabled={createCompanyMut.isPending} className="px-4 py-2 bg-cyan-700 text-white font-bold rounded-lg text-sm">Create Company</button>
+              {(events as any[]).map((event) => <div key={event.id} className="flex flex-wrap gap-2 items-center text-sm"><span className="flex-1 text-gray-300">{event.eventName} · {event.eventYear}</span><select value={companyByEvent[event.id] ?? String(event.companyId ?? "")} onChange={(e) => setCompanyByEvent((current) => ({ ...current, [event.id]: e.target.value }))} className="bg-[#111] border border-white/20 rounded px-2 py-1.5 text-white"><option value="">Assign company…</option>{(companies as any[]).map((company) => <option key={company.id} value={String(company.id)}>{company.name}</option>)}</select><button onClick={() => { const companyId = Number(companyByEvent[event.id] ?? event.companyId); if (!companyId) return toast.error("Choose a company"); assignEventCompanyMut.mutate({ eventId: Number(event.id), companyId }); }} className="px-3 py-1.5 bg-cyan-700 text-white rounded text-xs font-bold">Save</button></div>)}
+            </div>}
 
             {/* Create new staff account */}
             <div className="bg-[#1a1a1a] rounded-2xl border border-yellow-500/30 p-5 space-y-4">
@@ -1645,12 +1664,20 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   />
                 </div>
               </div>
+              <select value={newStaff.companyId} onChange={(e) => setNewStaff((current) => ({ ...current, companyId: e.target.value, eventIds: [] }))} className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm">
+                <option value="">Select the Event Director’s company…</option>
+                {(companies as any[]).map((company) => <option key={company.id} value={String(company.id)}>{company.name}</option>)}
+              </select>
+              {newStaff.companyId && <div className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-2"><p className="text-xs text-gray-300">Events this director may manage:</p>{(events as any[]).filter((event) => Number(event.companyId) === Number(newStaff.companyId)).map((event) => <label key={event.id} className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={newStaff.eventIds.includes(Number(event.id))} onChange={() => setNewStaff((current) => ({ ...current, eventIds: current.eventIds.includes(Number(event.id)) ? current.eventIds.filter((id) => id !== Number(event.id)) : [...current.eventIds, Number(event.id)] }))} className="accent-yellow-400" />{event.eventName} · {event.eventYear}</label>)}</div>}
               <button
                 onClick={() => {
                   if (!newStaff.name.trim()) return toast.error("Enter a name");
                   if (!newStaff.username.trim()) return toast.error("Enter a username");
                   if (newStaff.password.length < 8) return toast.error("Password must be at least 8 characters");
-                  createStaffMut.mutate({ name: newStaff.name.trim(), username: newStaff.username.trim(), password: newStaff.password });
+                  const companyId = Number(newStaff.companyId);
+                  if (!companyId) return toast.error("Select a company");
+                  if (!newStaff.eventIds.length) return toast.error("Assign at least one event");
+                  createStaffMut.mutate({ name: newStaff.name.trim(), username: newStaff.username.trim(), password: newStaff.password, companyId, eventIds: newStaff.eventIds });
                 }}
                 disabled={createStaffMut.isPending}
                 className="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-bold rounded-lg text-sm transition-all active:scale-95">
@@ -2298,6 +2325,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         <EventWizard
           mode={wizard.mode}
           eventId={wizard.eventId}
+          companyId={activeEvent?.companyId ? Number(activeEvent.companyId) : undefined}
           onClose={() => setWizard(null)}
           onSaved={(id) => {
             setWizard(null);
@@ -2339,7 +2367,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   const year = parseInt(eventModal.year, 10);
                   if (!name) { toast.error("Event name is required"); return; }
                   if (!Number.isFinite(year)) { toast.error("Valid year is required"); return; }
-                  if (eventModal.mode === "create") createEventMut.mutate({ eventName: name, eventYear: year });
+                  if (eventModal.mode === "create") createEventMut.mutate({ eventName: name, eventYear: year, companyId: activeEvent?.companyId ? Number(activeEvent.companyId) : undefined });
                   else if (eventModal.id) renameEventMut.mutate({ id: eventModal.id, eventName: name, eventYear: year });
                 }}
                 disabled={createEventMut.isPending || renameEventMut.isPending}
