@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { resolveAccessibleEventId } from "@/lib/eventAccess";
-import { createRegistrationLinks, createRegistrationMessage, getActiveRegistrationEvents } from "@/lib/registrationLinks";
+import { createRegistrationLinks, createRegistrationMessage, getActiveRegistrationEvents, type RegistrationLinkEvent } from "@/lib/registrationLinks";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
@@ -564,7 +564,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const workspaceQuery = trpc.edStaff.workspace.get.useQuery({ eventId: EVENT_ID }, { enabled: canManagePlatform && activeTab === "workspace" });
   const workspaceSheetId = (workspaceQuery.data as { sheetSpreadsheetId?: string } | undefined)?.sheetSpreadsheetId;
   const activeRegistrationEvents = useMemo(
-    () => getActiveRegistrationEvents(events as Record<string, unknown>[]),
+    () => getActiveRegistrationEvents(events as Array<RegistrationLinkEvent & Record<string, unknown>>),
     [events]
   );
   const copyRegistrationText = async (text: string, label: string) => {

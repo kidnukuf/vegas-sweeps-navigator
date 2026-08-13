@@ -639,3 +639,13 @@
 - [x] Display Under 21 above affected bowler and guest Banquet QR codes in the Bowler Portal
 - [x] Validate under-21 labeling for imported and manually added guest passes
 - [x] Show the under-21 status in banquet door-scanner results for bowlers and guests
+
+## Private Platform-Owner Dashboard
+- [x] Define the private owner access route and keep it separate from Event Director controls
+- [x] Consolidate cross-platform event validation for roster, Google Sheet, claim-code, QR/passport, and readiness status
+- [x] Add controlled owner-level event editing and direct navigation to underlying operational records
+- [x] Test authorization, readiness scoring, TypeScript validation, and owner-route rendering
+- [x] Secure access with the existing Manus owner login only
+- [x] Provide all-brand filtering for B.O.B., Vegas Valentine Funtime, and Funtime Team Challenge
+- [x] Protect event and bowler deletion with an explicit typed confirmation
+- [x] Publish the owner workspace

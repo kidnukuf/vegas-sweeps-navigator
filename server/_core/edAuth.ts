@@ -60,6 +60,19 @@ export async function requireEdSession(ctx: TrpcContext): Promise<EdSession> {
   return session;
 }
 
+export function isOwnerSession(session: EdSession): boolean {
+  return session.type === "owner";
+}
+
+/** Restricts private platform-owner tools to the configured Manus project owner. */
+export async function requireOwner(ctx: TrpcContext): Promise<EdSession> {
+  const session = await requireEdSession(ctx);
+  if (!isOwnerSession(session)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required." });
+  }
+  return session;
+}
+
 export async function requirePlatformAdmin(ctx: TrpcContext): Promise<EdSession> {
   const session = await requireEdSession(ctx);
   if (session.type !== "owner" && session.type !== "platform_admin") {

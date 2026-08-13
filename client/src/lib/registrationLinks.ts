@@ -6,6 +6,8 @@ export type RegistrationLinks = {
 export type RegistrationLinkEvent = {
   id: number | string;
   status: string | null | undefined;
+  eventName?: string | null;
+  eventYear?: number | string | null;
 };
 
 /** Returns only active, event-scoped records that are eligible for public registration distribution. */
