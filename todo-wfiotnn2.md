@@ -9,5 +9,5 @@
 - [x] Verify the sign-in interface, save a checkpoint, and publish the completed update.
 - [x] Apply event-scoped guards to all remaining Event Director passport and support mutations.
 - [x] Add router-level tests that prove cross-company Event Director reads and writes are rejected.
-- [ ] Complete a successful lower-memory TypeScript validation run.
-- [ ] Save the final company-isolation checkpoint and publish the completed update.
+- [x] Complete a successful lower-memory TypeScript validation run.
+- [x] Save the final company-isolation checkpoint and publish the completed update.
