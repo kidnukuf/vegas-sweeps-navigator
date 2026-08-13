@@ -24,4 +24,4 @@
 - [x] Ensure authenticated Event Directors are routed to and can see only their assigned event portfolio.
 - [x] Add regression tests for event-neutral authentication presentation and multi-director event isolation.
 - [x] Run validation and verify the updated portal flow with a production build, 165 passing tests, TypeScript validation, and authentication-screen previews.
-- [ ] Save a checkpoint and publish the event-neutral portal update.
+- [x] Save a checkpoint and publish the event-neutral portal update.
