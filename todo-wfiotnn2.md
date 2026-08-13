@@ -27,6 +27,6 @@
 - [x] Save a checkpoint and publish the event-neutral portal update.
 - [x] Locate and remove the remaining Group 3 test label from the unauthenticated entry experience.
 - [x] Add regression coverage and verify the corrected pre-authentication portal flow.
-- [ ] Save a checkpoint and publish the corrected pre-authentication portal flow.
+- [x] Save a checkpoint and publish the corrected pre-authentication portal flow.
 - [x] Recheck Bowler and Captain sign-in routes after the public-title fix and strengthen route-specific regression coverage.
 - [x] Add explicit regression assertions that Bowler and Captain pre-authentication routes do not render event names.
