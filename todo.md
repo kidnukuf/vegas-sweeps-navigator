@@ -663,3 +663,8 @@
 ## Cassie Davis Event Director Assignment
 - [x] Assign Cassie Davis to the active Group 3 test event
 - [x] Verify the assignment while retaining her platform-administrator access
+
+## Owner Portal Event Director Filter
+- [x] Include assigned Event Director data in the owner event overview
+- [x] Add an Event Director selector that filters the owner event table
+- [x] Test the Cassie Davis filter and publish the Owner Portal enhancement

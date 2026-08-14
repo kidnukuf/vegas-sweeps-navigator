@@ -3,6 +3,7 @@ import { z } from "zod";
 import { deleteBowler, rawExec, rawQuery, writeAuditLog } from "../db";
 import { requireOwner } from "../_core/edAuth";
 import { publicProcedure, router } from "../_core/trpc";
+import { groupEventDirectors } from "../ownerDirectorAssignments";
 import { assessOwnerReadiness } from "../ownerDashboardLogic";
 
 const optionalText = z.string().max(2_000).optional().nullable();
@@ -74,6 +75,13 @@ type OverviewRow = {
   assignedDirectors: number | string;
 };
 
+type DirectorAssignmentRow = {
+  eventId: number | string;
+  staffId: number | string;
+  name: string | null;
+  username: string | null;
+};
+
 const asNumber = (value: number | string | null | undefined) => Number(value ?? 0);
 const cleanText = (value: string | null | undefined) => value?.trim() || null;
 
@@ -102,6 +110,13 @@ export const ownerDashboardRouter = router({
                 e.sheetLastSyncedAt, e.banquetLocation, e.banquetTime
        ORDER BY FIELD(e.status, 'active', 'planning', 'completed'), e.eventYear DESC, e.id DESC`
     );
+    const directorRows = await rawQuery<DirectorAssignmentRow>(
+      `SELECT eda.eventId, s.id AS staffId, s.name, s.username
+       FROM event_director_assignments eda
+       JOIN ed_staff s ON s.id = eda.staffId
+       ORDER BY s.name, s.username`
+    );
+    const directorsByEvent = groupEventDirectors(directorRows);
     return rows.map((row) => {
       const metrics = {
         bowlers: asNumber(row.bowlers),
@@ -116,7 +131,12 @@ export const ownerDashboardRouter = router({
         hasBanquetDetails: Boolean(row.banquetLocation?.trim() && row.banquetTime?.trim()),
         assignedDirectors: asNumber(row.assignedDirectors),
       };
-      return { ...row, ...metrics, readiness: assessOwnerReadiness(metrics) };
+      return {
+        ...row,
+        directors: directorsByEvent[Number(row.id)] ?? [],
+        ...metrics,
+        readiness: assessOwnerReadiness(metrics),
+      };
     });
   }),
 
