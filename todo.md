@@ -653,4 +653,4 @@
 ## Owner Route Repair
 - [x] Diagnose why the live /owner URL redirects to the Bowler login screen
 - [x] Correct the production owner-dashboard route and access behavior
-- [ ] Validate the live owner URL after publication
+- [x] Validate the live owner URL after publication
