@@ -649,3 +649,8 @@
 - [x] Provide all-brand filtering for B.O.B., Vegas Valentine Funtime, and Funtime Team Challenge
 - [x] Protect event and bowler deletion with an explicit typed confirmation
 - [x] Publish the owner workspace
+
+## Owner Route Repair
+- [x] Diagnose why the live /owner URL redirects to the Bowler login screen
+- [x] Correct the production owner-dashboard route and access behavior
+- [ ] Validate the live owner URL after publication
