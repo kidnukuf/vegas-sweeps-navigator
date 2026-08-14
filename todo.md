@@ -654,3 +654,8 @@
 - [x] Diagnose why the live /owner URL redirects to the Bowler login screen
 - [x] Correct the production owner-dashboard route and access behavior
 - [x] Validate the live owner URL after publication
+
+## Dedicated Owner Portal
+- [x] Present the private /owner workspace as the dedicated Owner Portal
+- [x] Retain all approved all-brand validation, direct event/bowler editing, and typed deletion protections
+- [x] Validate the owner-only portal entry workflow and publish the refinement
