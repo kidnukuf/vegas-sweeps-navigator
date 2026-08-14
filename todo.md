@@ -659,3 +659,7 @@
 - [x] Present the private /owner workspace as the dedicated Owner Portal
 - [x] Retain all approved all-brand validation, direct event/bowler editing, and typed deletion protections
 - [x] Validate the owner-only portal entry workflow and publish the refinement
+
+## Cassie Davis Event Director Assignment
+- [x] Assign Cassie Davis to the active Group 3 test event
+- [x] Verify the assignment while retaining her platform-administrator access
