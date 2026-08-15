@@ -668,3 +668,28 @@
 - [x] Include assigned Event Director data in the owner event overview
 - [x] Add an Event Director selector that filters the owner event table
 - [x] Test the Cassie Davis filter and publish the Owner Portal enhancement
+
+## bowlvegas.com Domain Connection
+- [x] Inspect the Cloudflare zone and existing bowlvegas.com DNS records
+- [x] Identify the application domain target and preserve unrelated DNS records
+- [x] Obtain confirmation before changing DNS routing
+- [x] Connect www.bowlvegas.com and verify the live shared application response
+- [x] Bind www.bowlvegas.com as an additional domain for the same B.O.B., Funtime, and Valentine application
+- [x] Resolve Cloudflare Error 1014 on the bare domain with a permanent redirect to the active www custom domain
+- [x] Verify the platform custom-domain status against the Cloudflare configuration
+- [x] Redirect the bare bowlvegas.com domain to the active www.bowlvegas.com custom domain
+
+## Primary Domain Redirect
+- [x] Add path-preserving redirects for the B.O.B., Funtime, Vegas Valentine, and legacy project domains to www.bowlvegas.com
+- [x] Preserve URL paths and query strings through every redirect
+- [ ] Verify all legacy domain redirects and retain local development access
+
+## Cloudflare Agent Setup
+- [x] Review Cloudflare’s official agent setup guidance for the approved integration method
+- [x] Configure the applicable Cloudflare integration and verify its zone access
+
+## Public Platform Landing Page
+- [x] Explain the bowler journey from claim code to passport access
+- [x] Explain the Event Director workflow from event setup through live operations
+- [x] Add clear public navigation to Bowler, Captain, and Event Director entry points
+- [ ] Test the responsive public landing page and publish it

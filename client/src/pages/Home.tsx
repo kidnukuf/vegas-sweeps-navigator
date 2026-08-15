@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { ArrowRight, ClipboardCheck, ShieldCheck, Smartphone, TicketCheck, UsersRound, WifiOff } from "lucide-react";
 import { getBowlerToken, BOWLER_IS_CAPTAIN_KEY } from "./BowlerLogin";
 import {
   detectGroupSlug,
@@ -13,6 +14,7 @@ import AppFooter from "@/components/AppFooter";
 export default function Home() {
   const [, setLocation] = useLocation();
   const brand = detectWebsiteBrand();
+  const isPrimaryDomain = typeof window !== "undefined" && ["www.bowlvegas.com", "bowlvegas.com"].includes(window.location.hostname.toLowerCase());
   const [juneGroup, setJuneGroup] = useState<number | null>(() => detectJuneGroupNumber());
 
   // For funtimeteamchallenge.com, require group selection before showing portal
@@ -33,6 +35,8 @@ export default function Home() {
     : "/manus-storage/bg-bowlers-orleans-bound_c7329b96.jpg";
   const primaryColor = groupTheme.color;
   const accentColor = groupTheme.accent;
+  const publicTitle = isPrimaryDomain ? "Bowl Vegas" : groupTheme.name;
+  const publicSubtitle = isPrimaryDomain ? "Event operations in one place" : "Your Official Event Passport";
 
   // ── Group selector screen for funtimeteamchallenge.com ──────────────────────
   if (needsGroupSelect) {
@@ -117,7 +121,16 @@ export default function Home() {
         <div className="text-center mb-10">
           {/* App logo / Banner */}
           <div className="flex justify-center mb-4">
-            {isValentine ? (
+            {isPrimaryDomain ? (
+              <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-[2rem] border border-cyan-300/50 bg-slate-950/80 shadow-2xl shadow-cyan-300/20">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(34,211,238,0.34),transparent_44%),radial-gradient(circle_at_15%_85%,rgba(250,204,21,0.24),transparent_40%)]" />
+                <div className="relative text-center" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                  <p className="text-xs font-bold tracking-[0.35em] text-cyan-200">BOWL</p>
+                  <p className="mt-1 text-4xl font-black tracking-tight text-amber-300">VEGAS</p>
+                  <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70">Navigator</p>
+                </div>
+              </div>
+            ) : isValentine ? (
               // Valentine: show both images stacked — banner on top, logo below
               <div className="flex flex-col items-center gap-3">
                 <img
@@ -172,14 +185,19 @@ export default function Home() {
               filter: `drop-shadow(0 0 30px ${primaryColor}99)`,
             }}
           >
-            {groupTheme.name}
+            {publicTitle}
           </h1>
           <h2
             className="text-lg md:text-xl font-semibold mb-2"
             style={{ color: isValentine ? "#ff69b4" : isJune ? "#d4af37" : "#67e8f9", textShadow: `0 0 16px ${primaryColor}99` }}
           >
-            Your Official Event Passport
+            {publicSubtitle}
           </h2>
+          {isPrimaryDomain && (
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/75 md:text-base">
+              Registration, team coordination, QR event passes, and live check-in tools for traveling bowling events.
+            </p>
+          )}
           <div className="mt-4 h-px w-64 mx-auto opacity-70"
             style={{ background: `linear-gradient(to right, transparent, ${primaryColor}, transparent)` }} />
         </div>
@@ -273,6 +291,35 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        <section className="w-full max-w-4xl rounded-3xl border border-cyan-300/15 bg-slate-950/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-md md:p-8" aria-labelledby="how-it-works-title">
+          <div className="mb-6 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">How it works</p>
+            <h2 id="how-it-works-title" className="mt-2 text-2xl font-black text-white md:text-3xl">Everything you need for event week.</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">The platform gives each role a clear starting point while the event team keeps rosters, access, and live operations synchronized.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5"><TicketCheck className="h-6 w-6 text-amber-300" /><h3 className="mt-4 font-bold text-white">1. Claim & sign up</h3><p className="mt-2 text-sm leading-relaxed text-slate-300">Bowlers use their claim code to create secure access to their event profile.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5"><Smartphone className="h-6 w-6 text-cyan-300" /><h3 className="mt-4 font-bold text-white">2. Carry your passport</h3><p className="mt-2 text-sm leading-relaxed text-slate-300">View squad, lanes, T-shirt information, and QR passes for eligible event activities.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5"><UsersRound className="h-6 w-6 text-fuchsia-300" /><h3 className="mt-4 font-bold text-white">3. Keep teams aligned</h3><p className="mt-2 text-sm leading-relaxed text-slate-300">Captains can check their roster and guide team members through completion.</p></div>
+          </div>
+        </section>
+
+        <section className="mt-6 w-full max-w-4xl overflow-hidden rounded-3xl border border-amber-300/20 bg-gradient-to-br from-amber-300/[0.11] via-slate-950/80 to-cyan-300/[0.08] p-5 shadow-2xl shadow-black/20 md:p-8" aria-labelledby="director-workflow-title">
+          <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">For Event Directors</p>
+              <h2 id="director-workflow-title" className="mt-2 text-2xl font-black text-white md:text-3xl">Plan, validate, and run the event from one system.</h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-200">Event Directors work from the secured Director Portal. It is separate from bowler sign-up and is built for event setup, roster correction, and live operations.</p>
+              <button onClick={() => setLocation("/ed")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 transition-transform duration-150 hover:brightness-110 active:scale-[0.97]">Open Event Director Portal <ArrowRight className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4"><ClipboardCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" /><div><h3 className="font-semibold text-white">Prepare the roster</h3><p className="mt-1 text-sm text-slate-300">Create the event, choose the exact Google Sheet tab, review center matches, and issue IDs and claim codes.</p></div></div>
+              <div className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" /><div><h3 className="font-semibold text-white">Validate access</h3><p className="mt-1 text-sm text-slate-300">Confirm QR passes, guest tickets, banquet eligibility, and age-status information before event week.</p></div></div>
+              <div className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4"><WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-fuchsia-300" /><div><h3 className="font-semibold text-white">Operate reliably on site</h3><p className="mt-1 text-sm text-slate-300">Export the offline scanner workflow for venue connectivity gaps, then bring used scans back into the event record.</p></div></div>
+            </div>
+          </div>
+        </section>
 
         {/* Footer */}
         <div className="mt-8 text-center text-white/30 text-xs">
