@@ -682,7 +682,7 @@
 ## Primary Domain Redirect
 - [x] Add path-preserving redirects for the B.O.B., Funtime, Vegas Valentine, and legacy project domains to www.bowlvegas.com
 - [x] Preserve URL paths and query strings through every redirect
-- [ ] Verify all legacy domain redirects and retain local development access
+- [x] Verify all legacy domain redirects and retain local development access
 
 ## Cloudflare Agent Setup
 - [x] Review Cloudflare’s official agent setup guidance for the approved integration method
@@ -692,4 +692,4 @@
 - [x] Explain the bowler journey from claim code to passport access
 - [x] Explain the Event Director workflow from event setup through live operations
 - [x] Add clear public navigation to Bowler, Captain, and Event Director entry points
-- [ ] Test the responsive public landing page and publish it
+- [x] Test the responsive public landing page and publish it
