@@ -710,4 +710,11 @@
 ## Owner Operations Authorization Repair
 - [x] Diagnose why owner operations require Event Director credentials
 - [x] Correct the owner-only authorization path for event and director administration
-- [ ] Add regression coverage and verify the live owner session can load the controls
+- [x] Add regression coverage for the owner authorization path
+- [ ] Confirm the live owner session can load the controls
+
+## Owner Event Director Portal Launcher
+- [x] Add an owner-only all-events dropdown for Event Director workspace access
+- [x] Open the selected event in the Event Director portal with an explicit event context
+- [x] Test selected-event URL generation and owner authorization
+- [ ] Confirm selected-event navigation from the live owner session

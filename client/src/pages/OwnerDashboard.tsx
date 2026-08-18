@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { createEventDirectorWorkspacePath } from "@/lib/ownerNavigation";
 
 type Readiness = { level: "ready" | "attention" | "blocked"; issues: string[] };
 type EventDirector = { staffId: number; name: string; username: string };
@@ -181,6 +182,7 @@ export default function OwnerDashboard() {
   const [brand, setBrand] = useState("all");
   const [directorId, setDirectorId] = useState("all");
   const [search, setSearch] = useState("");
+  const [eventDirectorPortalEventId, setEventDirectorPortalEventId] = useState("");
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [editingBowlerId, setEditingBowlerId] = useState<number | null>(null);
   const [confirming, setConfirming] = useState<"event" | "bowler" | null>(null);
@@ -223,6 +225,14 @@ export default function OwnerDashboard() {
     window.history.replaceState({}, "", `/owner?eventId=${eventId}`);
     window.setTimeout(() => document.getElementById("owner-event-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   };
+  const openEventDirectorPortal = () => {
+    const eventId = Number(eventDirectorPortalEventId);
+    if (!Number.isInteger(eventId) || eventId <= 0) {
+      toast.error("Choose an event to open in the Event Director Portal.");
+      return;
+    }
+    window.location.assign(createEventDirectorWorkspacePath(eventId));
+  };
   const doDelete = () => {
     if (confirming === "event" && selectedEventId) deleteEvent.mutate({ eventId: selectedEventId, confirmation: "DELETE EVENT" });
     if (confirming === "bowler" && editingBowlerId) deleteBowler.mutate({ bowlerId: editingBowlerId, confirmation: "DELETE BOWLER" });
@@ -232,7 +242,7 @@ export default function OwnerDashboard() {
   return <div className="min-h-screen bg-[#080b14] text-slate-100 selection:bg-amber-300 selection:text-slate-950">
     <div className="pointer-events-none fixed inset-0 overflow-hidden"><div className="absolute -top-48 left-1/4 h-[28rem] w-[28rem] rounded-full bg-amber-400/10 blur-[120px]" /><div className="absolute right-0 top-1/3 h-[24rem] w-[24rem] rounded-full bg-sky-500/10 blur-[110px]" /></div>
     <main className="relative mx-auto max-w-[1600px] px-4 py-6 md:px-8 md:py-10">
-      <header className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><button onClick={() => navigate("/")} className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition hover:text-white"><ArrowLeft className="h-4 w-4" />Exit owner portal</button><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl border border-amber-300/25 bg-amber-300/10"><ShieldCheck className="h-6 w-6 text-amber-300" /></span><div><p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-300">Dedicated private portal</p><h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Owner Portal</h1></div></div><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Your private command center for creating, validating, correcting, and controlling every event across B.O.B., Vegas Valentine Funtime, and Funtime Team Challenge. Access is tied to your Manus owner account: {user?.name ?? "Owner"}.</p><div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-xs font-bold text-amber-200">OWNER ONLY</span><span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2.5 py-1 text-xs font-bold text-sky-200">ALL BRANDS</span><span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-xs font-bold text-emerald-200">DIRECT EDITING</span></div></div><div className="flex flex-wrap gap-2"><Button onClick={() => document.getElementById("owner-operations")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="bg-amber-300 text-slate-950 hover:bg-amber-200"><CalendarPlus className="mr-2 h-4 w-4" />Manage events & directors</Button><Button variant="outline" onClick={() => { overview.refetch(); operations.refetch(); }} disabled={overview.isFetching || operations.isFetching} className="border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/[0.08] hover:text-white"><RefreshCw className={`mr-2 h-4 w-4 ${(overview.isFetching || operations.isFetching) ? "animate-spin" : ""}`} />Run readiness check</Button></div></header>
+      <header className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><button onClick={() => navigate("/")} className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition hover:text-white"><ArrowLeft className="h-4 w-4" />Exit owner portal</button><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl border border-amber-300/25 bg-amber-300/10"><ShieldCheck className="h-6 w-6 text-amber-300" /></span><div><p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-300">Dedicated private portal</p><h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Owner Portal</h1></div></div><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Your private command center for creating, validating, correcting, and controlling every event across B.O.B., Vegas Valentine Funtime, and Funtime Team Challenge. Access is tied to your Manus owner account: {user?.name ?? "Owner"}.</p><div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-xs font-bold text-amber-200">OWNER ONLY</span><span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2.5 py-1 text-xs font-bold text-sky-200">ALL BRANDS</span><span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-xs font-bold text-emerald-200">DIRECT EDITING</span></div></div><div className="flex w-full flex-col gap-2 lg:w-auto"><div className="rounded-xl border border-sky-300/20 bg-sky-300/[0.07] p-3"><p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-200">Open Event Director Portal</p><div className="flex flex-col gap-2 sm:flex-row"><select aria-label="Select event for Event Director Portal" className="h-10 min-w-0 rounded-md border border-sky-300/25 bg-slate-950 px-3 text-sm text-white sm:min-w-64" value={eventDirectorPortalEventId} onChange={(event) => setEventDirectorPortalEventId(event.target.value)}><option value="">Choose any event…</option>{rows.map((event) => <option key={event.id} value={event.id}>{event.eventName} · {event.eventYear} · {event.status}</option>)}</select><Button onClick={openEventDirectorPortal} disabled={!eventDirectorPortalEventId} className="bg-sky-300 text-slate-950 hover:bg-sky-200"><ExternalLink className="mr-2 h-4 w-4" />Open</Button></div></div><div className="flex flex-wrap gap-2"><Button onClick={() => document.getElementById("owner-operations")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="bg-amber-300 text-slate-950 hover:bg-amber-200"><CalendarPlus className="mr-2 h-4 w-4" />Manage events & directors</Button><Button variant="outline" onClick={() => { overview.refetch(); operations.refetch(); }} disabled={overview.isFetching || operations.isFetching} className="border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/[0.08] hover:text-white"><RefreshCw className={`mr-2 h-4 w-4 ${(overview.isFetching || operations.isFetching) ? "animate-spin" : ""}`} />Run readiness check</Button></div></div></header>
 
       <section className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[
         { label: "Events", value: overviewStats.events, icon: ClipboardPenLine, className: "text-white" },

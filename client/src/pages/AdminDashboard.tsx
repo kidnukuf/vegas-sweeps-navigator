@@ -540,6 +540,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   // ─── Active event selection (multi-event support) ──────────────────────────
   const SELECTED_EVENT_KEY = "vsn_selected_event_id";
   const [selectedEventId, setSelectedEventId] = useState<number>(() => {
+    const requested = Number(new URLSearchParams(window.location.search).get("eventId"));
+    if (Number.isInteger(requested) && requested > 0) return requested;
     const saved = Number(localStorage.getItem(SELECTED_EVENT_KEY));
     return Number.isFinite(saved) && saved > 0 ? saved : 1;
   });
