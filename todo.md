@@ -706,3 +706,8 @@
 - [x] Diagnose why the live Owner Portal is not displaying the new owner operations controls
 - [x] Correct the live route, asset, or authorization condition that hides the controls
 - [x] Verify the published Owner Portal exposes event creation and Event Director administration
+
+## Owner Operations Authorization Repair
+- [x] Diagnose why owner operations require Event Director credentials
+- [x] Correct the owner-only authorization path for event and director administration
+- [ ] Add regression coverage and verify the live owner session can load the controls

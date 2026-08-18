@@ -17,6 +17,13 @@ export interface EdSession {
   companyId?: number | null;
 }
 
+type ManusUserIdentity = { id: number; openId: string; role: "user" | "admin" } | null | undefined;
+
+/** The configured Manus owner and an application-level administrator are both trusted owner identities. */
+export function isManusOwnerUser(user: ManusUserIdentity): boolean {
+  return Boolean(user && (user.openId === ENV.ownerOpenId || user.role === "admin"));
+}
+
 function getRawCookie(req: any, name: string): string | undefined {
   if (req?.cookies?.[name]) return req.cookies[name];
   const header = req?.headers?.cookie;
@@ -34,9 +41,10 @@ export function verifyStaffCookie(req: any): { staffId: number } | null {
 }
 
 export async function resolveEdSession(ctx: TrpcContext): Promise<EdSession | null> {
-  // Only the configured Manus project owner has cross-company owner access.
-  if (ctx.user?.openId && ctx.user.openId === ENV.ownerOpenId) {
-    return { type: "owner", userId: ctx.user.id };
+  // The configured Manus owner and the app's explicit admin role have cross-company owner access.
+  const manusUser = ctx.user;
+  if (isManusOwnerUser(manusUser) && manusUser) {
+    return { type: "owner", userId: manusUser.id };
   }
   const cookie = verifyStaffCookie(ctx.req);
   if (!cookie) return null;

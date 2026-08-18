@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAccessAssignedEvent, isOwnerSession, type EdSession } from "./_core/edAuth";
+import { canAccessAssignedEvent, isManusOwnerUser, isOwnerSession, type EdSession } from "./_core/edAuth";
 
 describe("company-scoped Event Director access", () => {
   it("allows the platform owner and Cassie's platform-administrator role across all events", () => {
@@ -24,5 +24,10 @@ describe("company-scoped Event Director access", () => {
     expect(isOwnerSession({ type: "owner", userId: 1 })).toBe(true);
     expect(isOwnerSession({ type: "platform_admin", staffId: 30001, staffName: "Cassie Davis" })).toBe(false);
     expect(isOwnerSession({ type: "staff", staffId: 20, staffName: "Director A", companyId: 7 })).toBe(false);
+  });
+
+  it("recognizes the application-level Manus admin as an owner when the configured open ID is unavailable", () => {
+    expect(isManusOwnerUser({ id: 1, openId: "current-manus-session", role: "admin" })).toBe(true);
+    expect(isManusOwnerUser({ id: 2, openId: "standard-manus-session", role: "user" })).toBe(false);
   });
 });
