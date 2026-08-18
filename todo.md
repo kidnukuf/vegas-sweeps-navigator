@@ -693,3 +693,11 @@
 - [x] Explain the Event Director workflow from event setup through live operations
 - [x] Add clear public navigation to Bowler, Captain, and Event Director entry points
 - [x] Test the responsive public landing page and publish it
+
+## Owner Portal Operations
+- [x] Confirm the default workflow for unassigned directors, staged event setup, and owner workspace access
+- [x] Add owner-controlled event creation with all required configuration fields
+- [x] Add secure creation and maintenance of Event Director login credentials
+- [x] Add owner-controlled Event Director assignment to one or more events
+- [x] Add direct owner navigation into any selected event workspace
+- [x] Test authorization, credential handling, event assignments, and event navigation

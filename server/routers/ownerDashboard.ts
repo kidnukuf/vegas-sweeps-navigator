@@ -1,10 +1,12 @@
 import { TRPCError } from "@trpc/server";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { deleteBowler, rawExec, rawQuery, writeAuditLog } from "../db";
 import { requireOwner } from "../_core/edAuth";
 import { publicProcedure, router } from "../_core/trpc";
 import { groupEventDirectors } from "../ownerDirectorAssignments";
 import { assessOwnerReadiness } from "../ownerDashboardLogic";
+import { normalizeEventIds, portfolioMatchesCompany } from "../ownerOperationsLogic";
 
 const optionalText = z.string().max(2_000).optional().nullable();
 
@@ -50,6 +52,33 @@ const bowlerEditorInput = z.object({
   notes: optionalText,
 });
 
+const ownerEventCreateInput = z.object({
+  eventName: z.string().trim().min(1).max(255),
+  eventYear: z.number().int().min(2020).max(2100),
+  companyId: z.number().int().positive(),
+  groupSlug: z.string().trim().min(1).max(64),
+  startDate: optionalText,
+  endDate: optionalText,
+  bowlingDate: optionalText,
+  squadTime: optionalText,
+  sheetSpreadsheetId: optionalText,
+  sheetTabName: optionalText,
+  sheetTabNickname: optionalText,
+});
+
+const ownerDirectorCreateInput = z.object({
+  name: z.string().trim().min(1).max(128),
+  username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, dots, underscores, or hyphens."),
+  password: z.string().min(8).max(128),
+  companyId: z.number().int().positive(),
+  eventIds: z.array(z.number().int().positive()).default([]),
+});
+
+const ownerDirectorAssignmentsInput = z.object({
+  staffId: z.number().int().positive(),
+  eventIds: z.array(z.number().int().positive()).default([]),
+});
+
 type OverviewRow = {
   id: number;
   companyName: string | null;
@@ -85,7 +114,90 @@ type DirectorAssignmentRow = {
 const asNumber = (value: number | string | null | undefined) => Number(value ?? 0);
 const cleanText = (value: string | null | undefined) => value?.trim() || null;
 
+async function validateOwnerPortfolio(companyId: number, eventIds: number[]) {
+  const normalizedEventIds = normalizeEventIds(eventIds);
+  if (!normalizedEventIds.length) return normalizedEventIds;
+  const placeholders = normalizedEventIds.map(() => "?").join(",");
+  const portfolio = await rawQuery<{ id: number; companyId: number | null }>(
+    `SELECT id, companyId FROM events WHERE id IN (${placeholders})`,
+    normalizedEventIds,
+  );
+  if (portfolio.length !== normalizedEventIds.length || !portfolioMatchesCompany(portfolio.map((event) => event.companyId), companyId)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Every selected event must belong to this Event Director's company." });
+  }
+  return normalizedEventIds;
+}
+
 export const ownerDashboardRouter = router({
+  operationsData: publicProcedure.query(async ({ ctx }) => {
+    await requireOwner(ctx);
+    const [companies, groups, directors, events] = await Promise.all([
+      rawQuery<{ id: number; name: string; slug: string }>(`SELECT id, name, slug FROM companies ORDER BY name`),
+      rawQuery<{ id: number; name: string; slug: string }>(`SELECT id, name, slug FROM event_groups ORDER BY name`),
+      rawQuery<{ id: number; name: string; username: string; companyId: number; companyName: string | null }>(
+        `SELECT s.id, s.name, s.username, s.companyId, c.name AS companyName
+         FROM ed_staff s LEFT JOIN companies c ON c.id = s.companyId
+         WHERE s.accessRole = 'event_director' ORDER BY c.name, s.name, s.username`
+      ),
+      rawQuery<{ id: number; eventName: string; eventYear: number; companyId: number | null; status: string }>(
+        `SELECT id, eventName, eventYear, companyId, status FROM events ORDER BY eventYear DESC, id DESC`
+      ),
+    ]);
+    const assignments = await rawQuery<{ staffId: number; eventId: number }>(`SELECT staffId, eventId FROM event_director_assignments`);
+    const eventIdsByDirector = assignments.reduce<Record<number, number[]>>((groupsByDirector, assignment) => {
+      (groupsByDirector[assignment.staffId] ??= []).push(assignment.eventId);
+      return groupsByDirector;
+    }, {});
+    return { companies, groups, events, directors: directors.map((director) => ({ ...director, eventIds: eventIdsByDirector[director.id] ?? [] })) };
+  }),
+
+  createEvent: publicProcedure.input(ownerEventCreateInput).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const [company] = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
+    if (!company) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company for the event." });
+    const [group] = await rawQuery<{ id: number }>(`SELECT id FROM event_groups WHERE slug = ? LIMIT 1`, [input.groupSlug]);
+    const created = await rawExec(
+      `INSERT INTO events (companyId, groupId, groupSlug, eventName, eventYear, status, startDate, endDate, bowlingDate, squadTime, sheetSpreadsheetId, sheetTabName, sheetTabNickname)
+       VALUES (?, ?, ?, ?, ?, 'planning', ?, ?, ?, ?, ?, ?, ?)`,
+      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, cleanText(input.startDate), cleanText(input.endDate), cleanText(input.bowlingDate), cleanText(input.squadTime), cleanText(input.sheetSpreadsheetId), cleanText(input.sheetTabName), cleanText(input.sheetTabNickname)]
+    );
+    await writeAuditLog({ eventId: created.insertId, actorRole: "Owner", actorId: session.userId, action: "owner_create_event", targetId: created.insertId, targetType: "event", details: `Owner created planning event ${input.eventName.trim()} (${input.eventYear})` });
+    return { success: true, eventId: created.insertId };
+  }),
+
+  createDirector: publicProcedure.input(ownerDirectorCreateInput).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const [company] = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
+    if (!company) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company for the Event Director." });
+    const [duplicate] = await rawQuery<{ id: number }>(`SELECT id FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`, [input.username]);
+    if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "That Event Director username is already in use." });
+    const eventIds = await validateOwnerPortfolio(input.companyId, input.eventIds);
+    const result = await rawExec(`INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole, createdBy) VALUES (?, ?, ?, ?, 'event_director', ?)`, [input.username.trim(), await bcrypt.hash(input.password, 12), input.name.trim(), input.companyId, session.userId ?? null]);
+    for (const eventId of eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [result.insertId, eventId]);
+    await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_create_event_director", targetId: result.insertId, targetType: "ed_staff", details: `Owner created Event Director ${input.name.trim()} (${input.username.trim()}) with ${eventIds.length} event assignment(s)` });
+    return { success: true, staffId: result.insertId };
+  }),
+
+  setDirectorAssignments: publicProcedure.input(ownerDirectorAssignmentsInput).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const [director] = await rawQuery<{ id: number; name: string; companyId: number | null; accessRole: string }>(`SELECT id, name, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]);
+    if (!director || director.accessRole !== "event_director" || !director.companyId) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company-scoped Event Director." });
+    const eventIds = await validateOwnerPortfolio(director.companyId, input.eventIds);
+    await rawExec(`DELETE FROM event_director_assignments WHERE staffId = ?`, [input.staffId]);
+    for (const eventId of eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [input.staffId, eventId]);
+    await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_set_event_director_assignments", targetId: input.staffId, targetType: "ed_staff", details: `Owner set ${eventIds.length} event assignment(s) for ${director.name}` });
+    return { success: true };
+  }),
+
+  resetDirectorPassword: publicProcedure.input(z.object({ staffId: z.number().int().positive(), password: z.string().min(8).max(128) })).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const [director] = await rawQuery<{ name: string; accessRole: string }>(`SELECT name, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]);
+    if (!director || director.accessRole !== "event_director") throw new TRPCError({ code: "NOT_FOUND", message: "Event Director not found." });
+    await rawExec(`UPDATE ed_staff SET passwordHash = ? WHERE id = ?`, [await bcrypt.hash(input.password, 12), input.staffId]);
+    await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_reset_event_director_password", targetId: input.staffId, targetType: "ed_staff", details: `Owner reset the password for ${director.name}` });
+    return { success: true };
+  }),
+
   overview: publicProcedure.query(async ({ ctx }) => {
     await requireOwner(ctx);
     const rows = await rawQuery<OverviewRow>(
