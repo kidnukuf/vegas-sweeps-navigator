@@ -16,7 +16,8 @@ import { rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, writeAu
 import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
-import { assertBowlerAccess, assertEventAccess, verifyStaffCookie } from "../_core/edAuth";
+import { assertBowlerAccess, assertEventAccess, resolveEdSession } from "../_core/edAuth";
+import type { TrpcContext } from "../_core/context";
 import { formatPassportScannerName } from "../passportDisplay";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
@@ -32,6 +33,15 @@ function verifyToken(token: string) {
   } catch {
     return null;
   }
+}
+
+/** Accept the legacy Event Director token or the authenticated staff/owner session. */
+async function requireEventDirectorToolAccess(ctx: TrpcContext, token: string): Promise<void> {
+  const payload = verifyToken(token);
+  if (payload?.role === "EventDirector") return;
+  const session = await resolveEdSession(ctx);
+  if (session) return;
+  throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
 }
 
 // ─── Cloudflare Turnstile server-side verification ────────────────────────────
@@ -904,11 +914,7 @@ export const bowlerAuthRouter = router({
   disablePassport: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), passportType: z.enum(["pool", "banquet"]) }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
       await rawQuery(`UPDATE bowlers SET ${col} = NULL WHERE id = ?`, [input.bowlerId]);
@@ -918,11 +924,7 @@ export const bowlerAuthRouter = router({
   enablePassport: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), passportType: z.enum(["pool", "banquet"]) }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
       const usedCol = input.passportType === "pool" ? "poolPartyUsed" : "banquetUsed";
@@ -935,11 +937,7 @@ export const bowlerAuthRouter = router({
   addGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
       const existing = await rawQuery<{ suffix: string }>(
         `SELECT suffix FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
@@ -968,11 +966,7 @@ export const bowlerAuthRouter = router({
   listGuestTickets: publicProcedure
     .input(z.object({ token: z.string().optional().default(""), bowlerId: z.number() }))
     .query(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
       const rows = await rawQuery<{
         id: number; guestId: string | null; guestName: string | null; suffix: string;
@@ -1006,11 +1000,7 @@ export const bowlerAuthRouter = router({
       path: ["includePoolParty"],
     }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
 
       const [bowler] = await rawQuery<{
@@ -1085,11 +1075,7 @@ export const bowlerAuthRouter = router({
   disableGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), suffix: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
       await rawQuery(
         `UPDATE guest_pool_party_tokens SET disabled = 1 WHERE bowlerId = ? AND suffix = ?`,
@@ -1101,11 +1087,7 @@ export const bowlerAuthRouter = router({
   enableGuestPass: publicProcedure
     .input(z.object({ token: z.string(), bowlerId: z.number(), suffix: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
       await rawQuery(
         `UPDATE guest_pool_party_tokens SET disabled = 0 WHERE bowlerId = ? AND suffix = ?`,
@@ -1118,11 +1100,7 @@ export const bowlerAuthRouter = router({
   getPassportStatus: publicProcedure
     .input(z.object({ token: z.string(), eventId: z.number() }))
     .query(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertEventAccess(ctx, input.eventId);
       const rows = await rawQuery<{
         id: number; legalFirstName: string; legalLastName: string; scantronId: string | null;
@@ -1207,11 +1185,7 @@ export const bowlerAuthRouter = router({
   listContactRequests: publicProcedure
     .input(z.object({ token: z.string(), eventId: z.number() }))
     .query(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       await assertEventAccess(ctx, input.eventId);
       const rows = await rawQuery<{
         id: number; bowlerId: number; phone: string; email: string;
@@ -1238,11 +1212,7 @@ export const bowlerAuthRouter = router({
   confirmContactRequest: publicProcedure
     .input(z.object({ token: z.string(), requestId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const payload = verifyToken(input.token);
-      const staffCookie = verifyStaffCookie(ctx.req);
-      if (!staffCookie && (!payload || payload.role !== "EventDirector")) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-      }
+      await requireEventDirectorToolAccess(ctx, input.token);
       const [req] = await rawQuery<{
         id: number; bowlerId: number; phone: string; email: string; status: string;
       }>(`SELECT id, bowlerId, phone, email, status FROM contact_requests WHERE id = ? LIMIT 1`, [input.requestId]);

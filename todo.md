@@ -718,3 +718,8 @@
 - [x] Open the selected event in the Event Director portal with an explicit event context
 - [x] Test selected-event URL generation and owner authorization
 - [ ] Confirm selected-event navigation from the live owner session
+
+## Owner Direct Event Director Access
+- [x] Allow the active Manus owner session to enter a selected Event Director workspace without ED credentials
+- [x] Keep Event Director credential requirements in place for all non-owner users
+- [x] Test direct owner entry routing and publish the authorization adjustment

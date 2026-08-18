@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { resolveAccessibleEventId } from "@/lib/eventAccess";
 import { createRegistrationLinks, createRegistrationMessage, getActiveRegistrationEvents, type RegistrationLinkEvent } from "@/lib/registrationLinks";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
@@ -2708,6 +2709,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 }
 export default function AdminDashboard() {
   const [isAuthed, setIsAuthed] = useState(() => !!getEdToken());
-  if (!isAuthed) return <EdLoginGate onAuth={() => setIsAuthed(true)} />;
-  return <AdminDashboardInner onSignOut={() => { clearEdToken(); setIsAuthed(false); }} />;
+  const { loading: ownerAuthLoading, isAuthenticated, user } = useAuth();
+  const isOwnerSession = Boolean(isAuthenticated && user?.role === "admin");
+  if (ownerAuthLoading) return <div className="min-h-screen grid place-items-center bg-[#070d16] text-gray-300">Loading secure workspace…</div>;
+  if (!isAuthed && !isOwnerSession) return <EdLoginGate onAuth={() => setIsAuthed(true)} />;
+  return <AdminDashboardInner onSignOut={() => {
+    if (isOwnerSession) { window.location.assign("/owner"); return; }
+    clearEdToken();
+    setIsAuthed(false);
+  }} />;
 }
