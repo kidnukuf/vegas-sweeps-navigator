@@ -701,3 +701,8 @@
 - [x] Add owner-controlled Event Director assignment to one or more events
 - [x] Add direct owner navigation into any selected event workspace
 - [x] Test authorization, credential handling, event assignments, and event navigation
+
+## Owner Portal Visibility Repair
+- [x] Diagnose why the live Owner Portal is not displaying the new owner operations controls
+- [x] Correct the live route, asset, or authorization condition that hides the controls
+- [ ] Verify the published Owner Portal exposes event creation and Event Director administration
