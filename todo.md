@@ -756,3 +756,8 @@
 - [x] Add owner-only contact management controls in the Owner Portal
 - [x] Display a matched recipient coordinator’s phone and email on the introduction page
 - [x] Test coordinator contact authorization, output, and publish the feature
+
+## Bowl Vegas SSL Repair
+- [x] Inspect Cloudflare DNS, edge SSL, and custom-domain certificate status for www.bowlvegas.com
+- [x] Confirm the managed www.bowlvegas.com certificate is now active and the TLS routing is healthy
+- [x] Verify secure production access to the Bowl Vegas application and Event Director route
