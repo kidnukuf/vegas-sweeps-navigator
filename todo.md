@@ -728,3 +728,8 @@
 - [x] Inspect Cassie Davis’s current Event Director account and assignments
 - [x] Restore her active Event Director login credentials for Bowl Vegas
 - [x] Verify sign-in readiness and active event access
+
+## Cassie Davis Production Login Repair
+- [x] Reproduce Cassie Davis’s sign-in against the deployed Bowl Vegas Event Director endpoint
+- [x] Confirm the deployed authentication and event-access path needs no credential or routing correction
+- [x] Verify that Cassie can sign in and open her assigned event
