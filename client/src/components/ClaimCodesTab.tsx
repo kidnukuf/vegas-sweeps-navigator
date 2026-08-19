@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
+import { CLAIM_CODE_INTRODUCTION_URL } from "@/lib/claimCodeLinks";
 
 /**
  * ClaimCodesTab — Event Director tool to generate, view, look up, and reissue
@@ -102,7 +103,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
   }, [rows]);
 
   const eventTitle = eventDetails?.name || "B.O.B. Roll-Off";
-  const signUpUrl = "https://www.bobrolloffpassport.com/bowler-login";
+  const signUpUrl = CLAIM_CODE_INTRODUCTION_URL;
   const eventDateWindow = useMemo(() => {
     const start = eventDetails?.startDate?.trim();
     const end = eventDetails?.endDate?.trim();
@@ -128,7 +129,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           .map(
             (m) => `
             <div class="card">
-              <img src="${qr(m.code)}" alt="${m.code}" />
+              <img src="${qr(signUpUrl)}" alt="Open Bowl Vegas introduction" />
               <div class="info">
                 <div class="name">${m.firstName} ${m.lastName}</div>
                 <div class="center">${m.center || ""}</div>

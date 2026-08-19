@@ -32,6 +32,7 @@ import EdLogin from "./pages/EdLogin";
 import EDStaffLogin from "./pages/EDStaffLogin";
 import MasterSheetImport from "./pages/MasterSheetImport";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import GetStarted from "./pages/GetStarted";
 import { VideoSplash } from "./components/VideoSplash";
 import { useLocation } from "wouter";
 
@@ -127,6 +128,7 @@ function Router() {
       <Route path="/captain-dashboard" component={CaptainDashboard} />
       <Route path="/captain" component={CaptainDashboard} />
       <Route path="/captain-confirmation" component={CaptainConfirmation} />
+      <Route path="/get-started" component={GetStarted} />
       <Route path="/scan/:type/:token" component={ScanPassport} />
       <Route path="/doorman-tablet" component={DoormanTablet} />
       <Route path="/offline-door" component={OfflineDoor} />

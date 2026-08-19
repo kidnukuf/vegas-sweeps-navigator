@@ -733,3 +733,9 @@
 - [x] Reproduce Cassie Davis’s sign-in against the deployed Bowl Vegas Event Director endpoint
 - [x] Confirm the deployed authentication and event-access path needs no credential or routing correction
 - [x] Verify that Cassie can sign in and open her assigned event
+
+## Claim-Code QR Introduction Page
+- [x] Create a bowler-and-captain introduction page explaining app purpose and next steps
+- [x] Preserve a clear path from the introduction page into bowler or captain sign-up
+- [x] Point newly generated printable claim-code QR cards to the introduction page
+- [x] Test the QR destination and publish the updated printable card flow
