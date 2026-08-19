@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
-import { CLAIM_CODE_INTRODUCTION_URL } from "@/lib/claimCodeLinks";
+import { getClaimCodeIntroductionUrl } from "@/lib/claimCodeLinks";
 
 /**
  * ClaimCodesTab — Event Director tool to generate, view, look up, and reissue
@@ -103,7 +103,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
   }, [rows]);
 
   const eventTitle = eventDetails?.name || "B.O.B. Roll-Off";
-  const signUpUrl = CLAIM_CODE_INTRODUCTION_URL;
+  const signUpUrl = getClaimCodeIntroductionUrl(eventId);
   const eventDateWindow = useMemo(() => {
     const start = eventDetails?.startDate?.trim();
     const end = eventDetails?.endDate?.trim();

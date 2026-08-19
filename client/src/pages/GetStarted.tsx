@@ -1,6 +1,7 @@
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { ArrowRight, CheckCircle2, Crown, QrCode, ShieldCheck, Ticket, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
 
 const steps = [
   {
@@ -24,6 +25,16 @@ const steps = [
 ];
 
 export default function GetStarted() {
+  const search = useSearch();
+  const eventId = Number(new URLSearchParams(search).get("event"));
+  const hasEvent = Number.isInteger(eventId) && eventId > 0;
+  const introductionEvent = trpc.event.introduction.useQuery(
+    { eventId },
+    { enabled: hasEvent },
+  );
+  const eventName = introductionEvent.data?.eventName?.trim();
+  const eventSuffix = hasEvent ? `&event=${eventId}` : "";
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#040914] text-white">
       <section className="relative isolate border-b border-cyan-300/15 bg-[radial-gradient(circle_at_16%_10%,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_85%_0%,rgba(250,204,21,0.18),transparent_28%)]">
@@ -39,13 +50,13 @@ export default function GetStarted() {
               <ShieldCheck className="h-3.5 w-3.5" /> Start here after scanning your claim-code card
             </p>
             <h1 className="max-w-3xl text-4xl font-black tracking-tight text-white sm:text-6xl">
-              Your event. <span className="text-cyan-300">One simple passport.</span>
+              {eventName ? <><span className="text-cyan-300">{eventName}.</span> One simple passport.</> : <>Your event. <span className="text-cyan-300">One simple passport.</span></>}
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
-              Bowl Vegas keeps your event information, Bowler ID, and eligible event passes in one place. Your printed claim code is the first step to activating your personal portal.
+              {eventName ? <>Welcome to <strong className="text-white">{eventName}</strong>. </> : null}Bowl Vegas keeps your event information, Bowler ID, and eligible event passes in one place. Your printed claim code is the first step to activating your personal portal.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/bowler-login?tab=signup">
+              <Link href={`/bowler-login?tab=signup${eventSuffix}`}>
                 <Button size="lg" className="w-full bg-cyan-300 px-6 font-bold text-slate-950 hover:bg-cyan-200 sm:w-auto">
                   I’m a bowler <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

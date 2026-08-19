@@ -122,6 +122,15 @@ export const appRouter = router({
         await assertEventAccess(ctx, input.id);
         return getEventById(input.id);
       }),
+    introduction: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const rows = await rawQuery<{ id: number; eventName: string; eventYear: number; startDate: string | null; endDate: string | null }>(
+          `SELECT id, eventName, eventYear, startDate, endDate FROM events WHERE id = ? LIMIT 1`,
+          [input.eventId],
+        );
+        return rows[0] ?? null;
+      }),
     create: publicProcedure
       .input(z.object({
         eventName: z.string().min(1),

@@ -739,3 +739,8 @@
 - [x] Preserve a clear path from the introduction page into bowler or captain sign-up
 - [x] Point newly generated printable claim-code QR cards to the introduction page
 - [x] Test the QR destination and publish the updated printable card flow
+
+## Event-Aware Claim-Code QR Introduction
+- [x] Include the source event in printable claim-code QR destinations
+- [x] Display the specific event name on the introduction page
+- [x] Test event-specific QR links and publish the update
