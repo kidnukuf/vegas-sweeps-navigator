@@ -26,14 +26,28 @@ const steps = [
 
 export default function GetStarted() {
   const search = useSearch();
-  const eventId = Number(new URLSearchParams(search).get("event"));
+  const searchParams = new URLSearchParams(search);
+  const eventId = Number(searchParams.get("event"));
+  const claimCode = searchParams.get("claimCode")?.trim().toUpperCase() ?? "";
   const hasEvent = Number.isInteger(eventId) && eventId > 0;
   const introductionEvent = trpc.event.introduction.useQuery(
-    { eventId },
+    { eventId, claimCode: claimCode || undefined },
     { enabled: hasEvent },
   );
   const eventName = introductionEvent.data?.eventName?.trim();
-  const eventSuffix = hasEvent ? `&event=${eventId}` : "";
+  const eventDateWindow = (() => {
+    const start = introductionEvent.data?.startDate?.trim();
+    const end = introductionEvent.data?.endDate?.trim();
+    if (start && end) return start === end ? start : `${start} – ${end}`;
+    return start || end || "";
+  })();
+  const coordinatorNames = introductionEvent.data?.coordinatorNames?.split(" | ").filter(Boolean) ?? [];
+  const recipientCoordinatorName = introductionEvent.data?.recipientCoordinatorName?.trim();
+  const directorNames = introductionEvent.data?.directorNames?.split(" | ").filter(Boolean) ?? [];
+  const signUpParams = new URLSearchParams({ tab: "signup" });
+  if (hasEvent) signUpParams.set("event", String(eventId));
+  if (claimCode) signUpParams.set("claimCode", claimCode);
+  const bowlerSignUpHref = `/bowler-login?${signUpParams.toString()}`;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#040914] text-white">
@@ -52,11 +66,13 @@ export default function GetStarted() {
             <h1 className="max-w-3xl text-4xl font-black tracking-tight text-white sm:text-6xl">
               {eventName ? <><span className="text-cyan-300">{eventName}.</span> One simple passport.</> : <>Your event. <span className="text-cyan-300">One simple passport.</span></>}
             </h1>
+            {eventDateWindow ? <p className="mt-4 inline-flex rounded-full border border-cyan-200/30 bg-cyan-300/10 px-3 py-1.5 text-sm font-semibold text-cyan-100">Event window: {eventDateWindow}</p> : null}
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
               {eventName ? <>Welcome to <strong className="text-white">{eventName}</strong>. </> : null}Bowl Vegas keeps your event information, Bowler ID, and eligible event passes in one place. Your printed claim code is the first step to activating your personal portal.
             </p>
+            {claimCode ? <p className="mt-4 rounded-xl border border-yellow-200/30 bg-yellow-300/10 px-4 py-3 text-sm text-yellow-50">Your claim code <strong className="font-mono tracking-wider text-yellow-200">{claimCode}</strong> is ready and will be entered for you when you continue.</p> : null}
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href={`/bowler-login?tab=signup${eventSuffix}`}>
+              <Link href={bowlerSignUpHref}>
                 <Button size="lg" className="w-full bg-cyan-300 px-6 font-bold text-slate-950 hover:bg-cyan-200 sm:w-auto">
                   I’m a bowler <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -112,11 +128,21 @@ export default function GetStarted() {
         </div>
       </section>
 
+      {(coordinatorNames.length > 0 || directorNames.length > 0) ? <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
+        <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-6 sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Event contact guide</p>
+          <h2 className="mt-3 text-2xl font-black">Know who can help before event week.</h2>
+          {recipientCoordinatorName ? <p className="mt-4 leading-7 text-slate-200">Your team coordinator is <strong className="text-white">{recipientCoordinatorName}</strong>.</p> : coordinatorNames.length > 0 ? <p className="mt-4 leading-7 text-slate-200">Your league and center coordinator{coordinatorNames.length > 1 ? " team includes" : " is"}: <strong className="text-white">{coordinatorNames.join(", ")}</strong>.</p> : null}
+          {directorNames.length > 0 ? <p className="mt-3 leading-7 text-slate-300">For app or registration questions, your Event Director{directorNames.length > 1 ? " team is" : " is"}: <strong className="text-white">{directorNames.join(", ")}</strong>. Your team captain is the primary point of contact for teammate questions.</p> : null}
+          <p className="mt-3 text-sm text-slate-400">Ask your captain or coordinator for their preferred contact method during league night.</p>
+        </div>
+      </section> : null}
+
       <section className="mx-auto max-w-6xl px-5 py-16 text-center sm:px-8">
         <h2 className="text-3xl font-black">Ready to activate your passport?</h2>
         <p className="mx-auto mt-3 max-w-xl text-slate-300">Have your printed claim code nearby, then select the option that matches your role.</p>
         <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/bowler-login?tab=signup"><Button className="bg-yellow-300 font-bold text-slate-950 hover:bg-yellow-200">Create my bowler account</Button></Link>
+          <Link href={bowlerSignUpHref}><Button className="bg-yellow-300 font-bold text-slate-950 hover:bg-yellow-200">Create my bowler account</Button></Link>
           <Link href="/captain-login"><Button variant="outline" className="border-cyan-300/50 text-cyan-200 hover:bg-cyan-300/10 hover:text-cyan-100">Team captain sign-in</Button></Link>
         </div>
       </section>

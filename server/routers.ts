@@ -123,11 +123,25 @@ export const appRouter = router({
         return getEventById(input.id);
       }),
     introduction: publicProcedure
-      .input(z.object({ eventId: z.number().int().positive() }))
+      .input(z.object({ eventId: z.number().int().positive(), claimCode: z.string().trim().min(1).max(64).optional() }))
       .query(async ({ input }) => {
-        const rows = await rawQuery<{ id: number; eventName: string; eventYear: number; startDate: string | null; endDate: string | null }>(
-          `SELECT id, eventName, eventYear, startDate, endDate FROM events WHERE id = ? LIMIT 1`,
-          [input.eventId],
+        const claimCode = input.claimCode?.trim().toUpperCase() ?? "";
+        const rows = await rawQuery<{
+          id: number; eventName: string; eventYear: number; startDate: string | null; endDate: string | null;
+          coordinatorNames: string | null; recipientCoordinatorName: string | null; directorNames: string | null;
+        }>(
+          `SELECT e.id, e.eventName, e.eventYear, e.startDate, e.endDate,
+             (SELECT GROUP_CONCAT(DISTINCT NULLIF(TRIM(t.coordinatorName), '') ORDER BY t.coordinatorName SEPARATOR ' | ')
+              FROM teams t WHERE t.eventId = e.id) AS coordinatorNames,
+             (SELECT NULLIF(TRIM(t.coordinatorName), '')
+              FROM bowler_claim_codes cc
+              INNER JOIN bowlers b ON b.id = cc.bowlerId
+              LEFT JOIN teams t ON t.id = b.teamId
+              WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorName,
+             (SELECT GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ' | ')
+              FROM event_director_assignments a INNER JOIN ed_staff s ON s.id = a.staffId WHERE a.eventId = e.id) AS directorNames
+           FROM events e WHERE e.id = ? LIMIT 1`,
+          [claimCode, input.eventId],
         );
         return rows[0] ?? null;
       }),

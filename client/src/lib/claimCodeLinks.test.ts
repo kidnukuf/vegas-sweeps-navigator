@@ -9,4 +9,8 @@ describe("claim-code print QR destination", () => {
   it("includes the source event identifier in printable QR links", () => {
     expect(getClaimCodeIntroductionUrl(1980003)).toBe("https://www.bowlvegas.com/get-started?event=1980003");
   });
+
+  it("carries the printed recipient claim code into the sign-up journey", () => {
+    expect(getClaimCodeIntroductionUrl(1980003, " bob-4z9 ")).toBe("https://www.bowlvegas.com/get-started?event=1980003&claimCode=BOB-4Z9");
+  });
 });

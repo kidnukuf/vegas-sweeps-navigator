@@ -82,7 +82,7 @@ export default function BowlerLogin() {
   const [suPass2, setSuPass2] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suToken, setSuToken] = useState("");
-  const [suClaimCode, setSuClaimCode] = useState("");
+  const [suClaimCode, setSuClaimCode] = useState(() => new URLSearchParams(search).get("claimCode")?.trim().toUpperCase() ?? "");
   const [suCenterId, setSuCenterId] = useState<number | null>(null);
   const [suCenterName, setSuCenterName] = useState<string>("");
   const [showCenterPicker, setShowCenterPicker] = useState(false);

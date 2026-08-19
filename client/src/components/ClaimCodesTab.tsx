@@ -129,7 +129,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           .map(
             (m) => `
             <div class="card">
-              <img src="${qr(signUpUrl)}" alt="Open Bowl Vegas introduction" />
+              <img src="${qr(getClaimCodeIntroductionUrl(eventId, m.code))}" alt="Open Bowl Vegas introduction" />
               <div class="info">
                 <div class="name">${m.firstName} ${m.lastName}</div>
                 <div class="center">${m.center || ""}</div>
@@ -177,11 +177,16 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     const activeTeams = Array.from(teams.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
     const doc = new jsPDF({ unit: "pt", format: "letter" });
-    const signUpQr = await QRCode.toDataURL(signUpUrl, {
-      width: 160,
-      margin: 1,
-      color: { dark: "#000000", light: "#FFFFFF" },
-    });
+    const signUpQrs = new Map<string, string>();
+    for (const member of centerMembers) {
+      if (!signUpQrs.has(member.code)) {
+        signUpQrs.set(member.code, await QRCode.toDataURL(getClaimCodeIntroductionUrl(eventId, member.code), {
+          width: 160,
+          margin: 1,
+          color: { dark: "#000000", light: "#FFFFFF" },
+        }));
+      }
+    }
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 24;
@@ -260,7 +265,8 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           doc.setDrawColor(220);
           doc.setLineWidth(0.35);
           doc.line(memberX, memberY, memberX + bowlerColumnWidth, memberY);
-          doc.addImage(signUpQr, "PNG", memberX + 2, memberY + 4, 27, 27);
+          const signUpQr = signUpQrs.get(member.code);
+          if (signUpQr) doc.addImage(signUpQr, "PNG", memberX + 2, memberY + 4, 27, 27);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(7.7);
           doc.text(`${member.firstName} ${member.lastName}`, memberX + 33, memberY + 13, { maxWidth: bowlerColumnWidth - 35 });

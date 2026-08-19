@@ -744,3 +744,9 @@
 - [x] Include the source event in printable claim-code QR destinations
 - [x] Display the specific event name on the introduction page
 - [x] Test event-specific QR links and publish the update
+
+## Personalized Claim-Code Introduction
+- [x] Display the event date window beside the event name
+- [x] Carry the recipient claim code through the QR link and prefill sign-up
+- [x] Display the assigned coordinator’s contact information for the event
+- [x] Test personalized QR links and publish the guidance update
