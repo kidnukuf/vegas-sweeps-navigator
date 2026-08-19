@@ -761,3 +761,8 @@
 - [x] Inspect Cloudflare DNS, edge SSL, and custom-domain certificate status for www.bowlvegas.com
 - [x] Confirm the managed www.bowlvegas.com certificate is now active and the TLS routing is healthy
 - [x] Verify secure production access to the Bowl Vegas application and Event Director route
+
+## Cassie Shared Link Repair
+- [x] Inspect the exact shared Event Director URL and its redirects
+- [x] Confirm no current stale domain or route behavior affects the shared link
+- [x] Verify the exact URL reaches the Event Director login page from a clean public session
