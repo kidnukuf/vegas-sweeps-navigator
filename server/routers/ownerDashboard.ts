@@ -7,6 +7,7 @@ import { publicProcedure, router } from "../_core/trpc";
 import { groupEventDirectors } from "../ownerDirectorAssignments";
 import { assessOwnerReadiness } from "../ownerDashboardLogic";
 import { normalizeEventIds, portfolioMatchesCompany } from "../ownerOperationsLogic";
+import { normalizeCoordinatorContactDetails } from "../coordinatorContactLogic";
 
 const optionalText = z.string().max(2_000).optional().nullable();
 
@@ -77,6 +78,13 @@ const ownerDirectorCreateInput = z.object({
 const ownerDirectorAssignmentsInput = z.object({
   staffId: z.number().int().positive(),
   eventIds: z.array(z.number().int().positive()).default([]),
+});
+
+const coordinatorContactInput = z.object({
+  eventId: z.number().int().positive(),
+  coordinatorName: z.string().trim().min(1).max(255),
+  phone: z.string().max(32).optional().nullable(),
+  email: z.string().email().or(z.literal("")).optional().nullable(),
 });
 
 type OverviewRow = {
@@ -195,6 +203,44 @@ export const ownerDashboardRouter = router({
     if (!director || director.accessRole !== "event_director") throw new TRPCError({ code: "NOT_FOUND", message: "Event Director not found." });
     await rawExec(`UPDATE ed_staff SET passwordHash = ? WHERE id = ?`, [await bcrypt.hash(input.password, 12), input.staffId]);
     await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_reset_event_director_password", targetId: input.staffId, targetType: "ed_staff", details: `Owner reset the password for ${director.name}` });
+    return { success: true };
+  }),
+
+  listCoordinatorContacts: publicProcedure
+    .input(z.object({ eventId: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      await requireOwner(ctx);
+      return rawQuery<{ coordinatorName: string; phone: string | null; email: string | null }>(
+        `SELECT source.coordinatorName, contact.phone, contact.email
+         FROM (
+           SELECT DISTINCT TRIM(coordinatorName) AS coordinatorName
+           FROM teams WHERE eventId = ? AND coordinatorName IS NOT NULL AND TRIM(coordinatorName) <> ''
+           UNION
+           SELECT coordinatorName FROM event_coordinator_contacts WHERE eventId = ?
+         ) source
+         LEFT JOIN event_coordinator_contacts contact ON contact.eventId = ? AND contact.coordinatorName = source.coordinatorName
+         ORDER BY source.coordinatorName`,
+        [input.eventId, input.eventId, input.eventId],
+      );
+    }),
+
+  saveCoordinatorContact: publicProcedure.input(coordinatorContactInput).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const [event] = await rawQuery<{ id: number }>(`SELECT id FROM events WHERE id = ? LIMIT 1`, [input.eventId]);
+    if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+    const coordinatorName = input.coordinatorName.trim();
+    const contact = normalizeCoordinatorContactDetails(input.phone, input.email);
+    if (!contact.phone && !contact.email) {
+      await rawExec(`DELETE FROM event_coordinator_contacts WHERE eventId = ? AND coordinatorName = ?`, [input.eventId, coordinatorName]);
+    } else {
+      await rawExec(
+        `INSERT INTO event_coordinator_contacts (eventId, coordinatorName, phone, email)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email)`,
+        [input.eventId, coordinatorName, contact.phone, contact.email],
+      );
+    }
+    await writeAuditLog({ eventId: input.eventId, actorRole: "Owner", actorId: session.userId, action: "owner_save_coordinator_contact", targetType: "event_coordinator_contact", details: `Owner saved contact details for coordinator ${coordinatorName}` });
     return { success: true };
   }),
 
@@ -366,6 +412,7 @@ export const ownerDashboardRouter = router({
       await rawExec(`DELETE FROM wristbands WHERE eventId = ?`, [input.eventId]);
       await rawExec(`DELETE FROM app_users WHERE eventId = ?`, [input.eventId]);
       await rawExec(`DELETE FROM event_director_assignments WHERE eventId = ?`, [input.eventId]);
+      await rawExec(`DELETE FROM event_coordinator_contacts WHERE eventId = ?`, [input.eventId]);
       await rawExec(`DELETE FROM teams WHERE eventId = ?`, [input.eventId]);
       await rawExec(`DELETE FROM leagues WHERE eventId = ?`, [input.eventId]);
       await rawExec(`DELETE FROM bowlers WHERE eventId = ?`, [input.eventId]);

@@ -144,6 +144,24 @@ export const events = mysqlTable("events", {
 
 export type Event = typeof events.$inferSelect;
 
+// ─── EVENT COORDINATOR CONTACTS ──────────────────────────────────────────────
+// Owner-managed contact details for imported team/center coordinator names.
+// Contacts are scoped to an event so a coordinator can use different details
+// for different event programs without affecting historical events.
+export const eventCoordinatorContacts = mysqlTable("event_coordinator_contacts", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  coordinatorName: varchar("coordinatorName", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  email: varchar("email", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  eventCoordinatorUnique: uniqueIndex("event_coordinator_contacts_event_name_unique").on(table.eventId, table.coordinatorName),
+}));
+
+export type EventCoordinatorContact = typeof eventCoordinatorContacts.$inferSelect;
+
 // ─── BOWLING CENTERS ─────────────────────────────────────────────────────────
 export const bowlingCenters = mysqlTable("bowling_centers", {
   id: int("id").autoincrement().primaryKey(),

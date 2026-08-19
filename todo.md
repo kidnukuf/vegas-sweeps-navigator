@@ -750,3 +750,9 @@
 - [x] Carry the recipient claim code through the QR link and prefill sign-up
 - [x] Display the assigned coordinator’s contact information for the event
 - [x] Test personalized QR links and publish the guidance update
+
+## Coordinator Contact Management
+- [x] Add coordinator phone and email storage scoped to an event
+- [x] Add owner-only contact management controls in the Owner Portal
+- [x] Display a matched recipient coordinator’s phone and email on the introduction page
+- [x] Test coordinator contact authorization, output, and publish the feature

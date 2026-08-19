@@ -43,6 +43,9 @@ export default function GetStarted() {
   })();
   const coordinatorNames = introductionEvent.data?.coordinatorNames?.split(" | ").filter(Boolean) ?? [];
   const recipientCoordinatorName = introductionEvent.data?.recipientCoordinatorName?.trim();
+  const recipientCoordinatorPhone = introductionEvent.data?.recipientCoordinatorPhone?.trim();
+  const recipientCoordinatorEmail = introductionEvent.data?.recipientCoordinatorEmail?.trim();
+  const hasRecipientCoordinatorContact = Boolean(recipientCoordinatorPhone || recipientCoordinatorEmail);
   const directorNames = introductionEvent.data?.directorNames?.split(" | ").filter(Boolean) ?? [];
   const signUpParams = new URLSearchParams({ tab: "signup" });
   if (hasEvent) signUpParams.set("event", String(eventId));
@@ -128,13 +131,14 @@ export default function GetStarted() {
         </div>
       </section>
 
-      {(coordinatorNames.length > 0 || directorNames.length > 0) ? <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
+      {(coordinatorNames.length > 0 || directorNames.length > 0 || hasRecipientCoordinatorContact) ? <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/5 p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Event contact guide</p>
           <h2 className="mt-3 text-2xl font-black">Know who can help before event week.</h2>
           {recipientCoordinatorName ? <p className="mt-4 leading-7 text-slate-200">Your team coordinator is <strong className="text-white">{recipientCoordinatorName}</strong>.</p> : coordinatorNames.length > 0 ? <p className="mt-4 leading-7 text-slate-200">Your league and center coordinator{coordinatorNames.length > 1 ? " team includes" : " is"}: <strong className="text-white">{coordinatorNames.join(", ")}</strong>.</p> : null}
+          {hasRecipientCoordinatorContact ? <div className="mt-4 flex flex-wrap gap-2">{recipientCoordinatorPhone ? <a href={`tel:${recipientCoordinatorPhone}`} className="rounded-lg border border-cyan-200/35 bg-cyan-300/10 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/20">Call {recipientCoordinatorPhone}</a> : null}{recipientCoordinatorEmail ? <a href={`mailto:${recipientCoordinatorEmail}`} className="rounded-lg border border-cyan-200/35 bg-cyan-300/10 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/20">Email coordinator</a> : null}</div> : null}
           {directorNames.length > 0 ? <p className="mt-3 leading-7 text-slate-300">For app or registration questions, your Event Director{directorNames.length > 1 ? " team is" : " is"}: <strong className="text-white">{directorNames.join(", ")}</strong>. Your team captain is the primary point of contact for teammate questions.</p> : null}
-          <p className="mt-3 text-sm text-slate-400">Ask your captain or coordinator for their preferred contact method during league night.</p>
+          <p className="mt-3 text-sm text-slate-400">{hasRecipientCoordinatorContact ? "Use the coordinator contact above for event questions, or ask your captain for help." : "Ask your captain or coordinator for their preferred contact method during league night."}</p>
         </div>
       </section> : null}
 

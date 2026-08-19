@@ -128,7 +128,7 @@ export const appRouter = router({
         const claimCode = input.claimCode?.trim().toUpperCase() ?? "";
         const rows = await rawQuery<{
           id: number; eventName: string; eventYear: number; startDate: string | null; endDate: string | null;
-          coordinatorNames: string | null; recipientCoordinatorName: string | null; directorNames: string | null;
+          coordinatorNames: string | null; recipientCoordinatorName: string | null; recipientCoordinatorPhone: string | null; recipientCoordinatorEmail: string | null; directorNames: string | null;
         }>(
           `SELECT e.id, e.eventName, e.eventYear, e.startDate, e.endDate,
              (SELECT GROUP_CONCAT(DISTINCT NULLIF(TRIM(t.coordinatorName), '') ORDER BY t.coordinatorName SEPARATOR ' | ')
@@ -138,10 +138,22 @@ export const appRouter = router({
               INNER JOIN bowlers b ON b.id = cc.bowlerId
               LEFT JOIN teams t ON t.id = b.teamId
               WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorName,
+             (SELECT ecc.phone
+              FROM bowler_claim_codes cc
+              INNER JOIN bowlers b ON b.id = cc.bowlerId
+              LEFT JOIN teams t ON t.id = b.teamId
+              LEFT JOIN event_coordinator_contacts ecc ON ecc.eventId = e.id AND ecc.coordinatorName = t.coordinatorName
+              WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorPhone,
+             (SELECT ecc.email
+              FROM bowler_claim_codes cc
+              INNER JOIN bowlers b ON b.id = cc.bowlerId
+              LEFT JOIN teams t ON t.id = b.teamId
+              LEFT JOIN event_coordinator_contacts ecc ON ecc.eventId = e.id AND ecc.coordinatorName = t.coordinatorName
+              WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorEmail,
              (SELECT GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ' | ')
               FROM event_director_assignments a INNER JOIN ed_staff s ON s.id = a.staffId WHERE a.eventId = e.id) AS directorNames
            FROM events e WHERE e.id = ? LIMIT 1`,
-          [claimCode, input.eventId],
+          [claimCode, claimCode, claimCode, input.eventId],
         );
         return rows[0] ?? null;
       }),
