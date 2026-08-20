@@ -815,4 +815,4 @@
 - [x] Reproduce Cassie’s complete new-event creation transaction with her Event Director session
 - [x] Identify the missing company context as the exact create-event blocker
 - [x] Allow an unassigned platform administrator to create an event and add transaction-level regression coverage
-- [ ] Verify Cassie can save a new event with a selected shared-sheet tab
+- [x] Verify Cassie can create, set the 10 Event tab, and remove a temporary event in production
