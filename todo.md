@@ -805,3 +805,8 @@
 - [x] Inspect the missing Google credential check that blocks Cassie’s event setup
 - [x] Reuse the existing shared Google connection for Cassie’s event creation
 - [x] Verify the shared credential status and selected-tab event creation workflow
+
+## Persistent Cassie Credential Gate Repair
+- [x] Identify the exact remaining no-credentials warning in Cassie’s event-creation flow
+- [x] Remove the shared-credential block while retaining tab selection enforcement
+- [x] Verify the refreshed wizard now uses the shared connection and selected-tab workflow

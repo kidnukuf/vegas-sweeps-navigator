@@ -536,8 +536,10 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
 
           {steps[step].key === "sheet" && (
             <div className="space-y-5">
-              {/* ── In-app Google Credentials (no Manus Secrets needed) ── */}
-              <GoogleCredsPanel />
+              <div className="rounded-lg border border-green-500/40 bg-green-500/5 p-4 text-sm text-gray-300 space-y-2">
+                <p className="font-semibold text-green-400">✅ Shared Google Sheet connection</p>
+                <p>The app’s shared service account is already connected for this Event Director workflow. You do not need to upload, replace, or manage Google credentials.</p>
+              </div>
 
               <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm text-gray-300 space-y-2">
                 <p className="font-semibold text-white">📊 Google Sheet — Import &amp; Write-Back</p>
