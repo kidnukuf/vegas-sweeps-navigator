@@ -783,3 +783,8 @@
 - [x] Create recoverable backups of all destination tabs
 - [x] Obtain final approval before overwriting destination tab contents
 - [x] Replace approved destination contents with 10 Event and verify the result
+
+## Post-Update Scanner and QR Verification
+- [x] Confirm Cassie’s assigned event references the intended updated sheet tab
+- [x] Reproduce offline scanner build and QR-validation data requests
+- [x] Confirm no remaining JSON/reference error in the Event Director scanner-test path
