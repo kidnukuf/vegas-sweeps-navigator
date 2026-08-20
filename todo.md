@@ -771,3 +771,9 @@
 - [x] Inspect the live JSON/reference error during the Event Director build workflow
 - [x] Preserve the selected event in scanner links and surface the actual data-load error without changing event data
 - [x] Verify Cassie’s scanner dataset and offline bundle build paths for her assigned event
+
+## Shared Google Sheet Event Workflow
+- [x] Inspect Cassie’s Group 3 Google Sheet URL and configured tab
+- [x] Reconnect Cassie’s event to the correct shared Google Sheet tab
+- [x] Add a shared-sheet default for future event setup while requiring a selected event tab
+- [x] Test selected-tab read validation and saved write-back targeting behavior

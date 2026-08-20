@@ -144,6 +144,17 @@ export const events = mysqlTable("events", {
 
 export type Event = typeof events.$inferSelect;
 
+// ─── SHARED GOOGLE SHEET DEFAULT ────────────────────────────────────────────
+// The single approved source spreadsheet for new event workspaces. Each event
+// still stores its own required tab name so reads and write-backs stay scoped.
+export const sharedSheetDefaults = mysqlTable("shared_sheet_defaults", {
+  id: int("id").autoincrement().primaryKey(),
+  spreadsheetId: varchar("spreadsheetId", { length: 255 }).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SharedSheetDefault = typeof sharedSheetDefaults.$inferSelect;
+
 // ─── EVENT COORDINATOR CONTACTS ──────────────────────────────────────────────
 // Owner-managed contact details for imported team/center coordinator names.
 // Contacts are scoped to an event so a coordinator can use different details

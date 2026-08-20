@@ -748,7 +748,7 @@ export const masterSheetRouter = router({
 
       // Load all bowlers for this event indexed by scantronId
       const dbBowlers = await rawQuery(
-        `SELECT b.scantronId, b.legalFirstName, b.legalLastName, b.firstName, b.lastName, b.laneNumber
+        `SELECT b.scantronId, b.legalFirstName, b.legalLastName, b.laneNumber
          FROM bowlers b
          WHERE b.eventId = ?`,
         [eventId]
@@ -756,8 +756,6 @@ export const masterSheetRouter = router({
         scantronId: string | null;
         legalFirstName: string | null;
         legalLastName: string | null;
-        firstName: string | null;
-        lastName: string | null;
         laneNumber: number | null;
       }>;
 
@@ -807,15 +805,14 @@ export const masterSheetRouter = router({
 
         const issues: string[] = [];
 
-        // Compare names (use legalFirstName/legalLastName if available, fall back to firstName/lastName)
-        const dbFirst = (dbRow.legalFirstName ?? dbRow.firstName ?? "").trim().toLowerCase();
-        const dbLast  = (dbRow.legalLastName  ?? dbRow.lastName  ?? "").trim().toLowerCase();
+        const dbFirst = (dbRow.legalFirstName ?? "").trim().toLowerCase();
+        const dbLast  = (dbRow.legalLastName ?? "").trim().toLowerCase();
 
         if (sheetFirst && dbFirst && sheetFirst !== dbFirst) {
-          issues.push(`First name: sheet="${(row[COLS.FIRST_NAME] ?? "").toString().trim()}" db="${dbRow.legalFirstName ?? dbRow.firstName ?? ""}"`);
+          issues.push(`First name: sheet="${(row[COLS.FIRST_NAME] ?? "").toString().trim()}" db="${dbRow.legalFirstName ?? ""}"`);
         }
         if (sheetLast && dbLast && sheetLast !== dbLast) {
-          issues.push(`Last name: sheet="${(row[COLS.LAST_NAME] ?? "").toString().trim()}" db="${dbRow.legalLastName ?? dbRow.lastName ?? ""}"`);
+          issues.push(`Last name: sheet="${(row[COLS.LAST_NAME] ?? "").toString().trim()}" db="${dbRow.legalLastName ?? ""}"`);
         }
         if (sheetLaneNum !== null && dbRow.laneNumber !== null && sheetLaneNum !== dbRow.laneNumber) {
           issues.push(`Lane: sheet=${sheetLaneNum} db=${dbRow.laneNumber}`);
@@ -828,8 +825,8 @@ export const masterSheetRouter = router({
             sheetFirstName: (row[COLS.FIRST_NAME] ?? "").toString().trim(),
             sheetLastName:  (row[COLS.LAST_NAME]  ?? "").toString().trim(),
             sheetLane: sheetLaneNum,
-            dbFirstName: dbRow.legalFirstName ?? dbRow.firstName ?? null,
-            dbLastName:  dbRow.legalLastName  ?? dbRow.lastName  ?? null,
+            dbFirstName: dbRow.legalFirstName ?? null,
+            dbLastName:  dbRow.legalLastName ?? null,
             dbLane: dbRow.laneNumber,
             issues,
           });

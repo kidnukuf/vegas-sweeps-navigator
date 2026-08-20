@@ -23,6 +23,7 @@ type OperationsData = {
   groups: Array<{ id: number; name: string; slug: string }>;
   events: Array<{ id: number; eventName: string; eventYear: number; companyId: number | null; status: string }>;
   directors: Array<{ id: number; name: string; username: string; companyId: number; companyName: string | null; eventIds: number[] }>;
+  sharedSheet: { spreadsheetId: string } | null;
 };
 
 const BRAND_LABELS: Record<string, string> = {
@@ -149,7 +150,7 @@ function BowlerEditor({ bowler, onSaved, onDelete }: { bowler: Record<string, an
 function OwnerOperationsPanel({ data, onChanged, onOpenEvent }: { data: OperationsData; onChanged: () => void; onOpenEvent: (eventId: number) => void }) {
   const [showEventCreate, setShowEventCreate] = useState(false);
   const [showDirectorCreate, setShowDirectorCreate] = useState(false);
-  const [eventDraft, setEventDraft] = useState({ eventName: "", eventYear: String(new Date().getFullYear()), companyId: "", groupSlug: "bob", startDate: "", endDate: "", bowlingDate: "", squadTime: "", sheetSpreadsheetId: "", sheetTabName: "", sheetTabNickname: "" });
+  const [eventDraft, setEventDraft] = useState({ eventName: "", eventYear: String(new Date().getFullYear()), companyId: "", groupSlug: "bob", startDate: "", endDate: "", bowlingDate: "", squadTime: "", sheetSpreadsheetId: data.sharedSheet?.spreadsheetId ?? "", sheetTabName: "", sheetTabNickname: "" });
   const [directorDraft, setDirectorDraft] = useState({ name: "", username: "", password: "", companyId: "", eventIds: [] as number[] });
   const [selectedDirectorId, setSelectedDirectorId] = useState("");
   const [assignmentIds, setAssignmentIds] = useState<number[]>([]);
@@ -158,6 +159,7 @@ function OwnerOperationsPanel({ data, onChanged, onOpenEvent }: { data: Operatio
   const createDirector = trpc.ownerDashboard.createDirector.useMutation({ onSuccess: () => { toast.success("Event Director credentials created"); setShowDirectorCreate(false); setDirectorDraft((current) => ({ ...current, name: "", username: "", password: "", eventIds: [] })); onChanged(); }, onError: (error) => toast.error(error.message) });
   const setAssignments = trpc.ownerDashboard.setDirectorAssignments.useMutation({ onSuccess: () => { toast.success("Event Director assignments saved"); onChanged(); }, onError: (error) => toast.error(error.message) });
   const resetDirectorPassword = trpc.ownerDashboard.resetDirectorPassword.useMutation({ onSuccess: () => { toast.success("Event Director password reset"); setResetPassword(""); }, onError: (error) => toast.error(error.message) });
+  const setSharedSheet = trpc.ownerDashboard.setSharedSheetDefault.useMutation({ onSuccess: () => { toast.success("Shared Google Sheet saved"); onChanged(); }, onError: (error) => toast.error(error.message) });
   const selectedDirector = data.directors.find((director) => director.id === Number(selectedDirectorId));
   const selectedDirectorEvents = data.events.filter((event) => event.companyId === selectedDirector?.companyId);
   const createDirectorEvents = data.events.filter((event) => event.companyId === Number(directorDraft.companyId));
@@ -168,6 +170,8 @@ function OwnerOperationsPanel({ data, onChanged, onOpenEvent }: { data: Operatio
       <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-300">Owner operations</p><h2 className="mt-1 text-xl font-semibold text-white">Create, assign, and open</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">Create a planning event, issue a director credential, assign the director to the right company events, and open any event from this portal.</p></div>
       <div className="flex flex-wrap gap-2"><Button onClick={() => { setShowEventCreate((shown) => !shown); setShowDirectorCreate(false); }} className="bg-amber-300 text-slate-950 hover:bg-amber-200"><CalendarPlus className="mr-2 h-4 w-4" />Create event</Button><Button onClick={() => { setShowDirectorCreate((shown) => !shown); setShowEventCreate(false); }} variant="outline" className="border-sky-300/30 bg-sky-300/10 text-sky-100 hover:bg-sky-300/20 hover:text-white"><UserPlus className="mr-2 h-4 w-4" />Add Event Director</Button></div>
     </div>
+
+    <div className="border-b border-cyan-300/15 bg-cyan-300/[0.035] p-5"><div className="flex flex-col gap-3 lg:flex-row lg:items-end"><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-200">Shared Google Sheet</p><p className="mt-1 text-sm leading-6 text-slate-400">New events use this spreadsheet automatically. Select a distinct required tab for every event so imports and write-backs stay scoped to that event.</p><Input className={`mt-3 ${inputClass}`} value={eventDraft.sheetSpreadsheetId} onChange={(event) => setEventDraft({ ...eventDraft, sheetSpreadsheetId: event.target.value })} placeholder="Google Sheet URL or spreadsheet ID" /></div><Button disabled={!eventDraft.sheetSpreadsheetId.trim() || setSharedSheet.isPending} onClick={() => setSharedSheet.mutate({ spreadsheet: eventDraft.sheetSpreadsheetId })} className="bg-cyan-300 text-slate-950 hover:bg-cyan-200">{setSharedSheet.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save shared sheet</Button></div></div>
 
     {showEventCreate && <form onSubmit={(event) => { event.preventDefault(); createEvent.mutate({ ...eventDraft, eventYear: Number(eventDraft.eventYear), companyId: Number(eventDraft.companyId) }); }} className="border-b border-white/10 bg-white/[0.025] p-5">
       <div className="mb-4"><h3 className="font-semibold text-white">Create a planning event</h3><p className="mt-1 text-sm text-slate-400">Enter the core setup now. The detailed owner editor opens immediately after creation.</p></div>
@@ -180,8 +184,8 @@ function OwnerOperationsPanel({ data, onChanged, onOpenEvent }: { data: Operatio
         <Field label="End date"><Input className={inputClass} value={eventDraft.endDate} onChange={(event) => setEventDraft({ ...eventDraft, endDate: event.target.value })} placeholder="MM/DD/YYYY" /></Field>
         <Field label="Bowling date"><Input className={inputClass} value={eventDraft.bowlingDate} onChange={(event) => setEventDraft({ ...eventDraft, bowlingDate: event.target.value })} placeholder="MM/DD/YYYY" /></Field>
         <Field label="Squad time"><Input className={inputClass} value={eventDraft.squadTime} onChange={(event) => setEventDraft({ ...eventDraft, squadTime: event.target.value })} placeholder="e.g. 9:00 AM" /></Field>
-        <Field label="Google Sheet ID or URL"><Input className={inputClass} value={eventDraft.sheetSpreadsheetId} onChange={(event) => setEventDraft({ ...eventDraft, sheetSpreadsheetId: event.target.value })} placeholder="Optional until import setup" /></Field>
-        <Field label="Sheet tab"><Input className={inputClass} value={eventDraft.sheetTabName} onChange={(event) => setEventDraft({ ...eventDraft, sheetTabName: event.target.value })} placeholder="Optional until import setup" /></Field>
+        <Field label="Shared Google Sheet"><Input className={inputClass} value={data.sharedSheet?.spreadsheetId ?? eventDraft.sheetSpreadsheetId} readOnly /></Field>
+        <Field label="Sheet tab"><Input required className={inputClass} value={eventDraft.sheetTabName} onChange={(event) => setEventDraft({ ...eventDraft, sheetTabName: event.target.value })} placeholder="e.g. 4 Event" /></Field>
         <Field label="Sheet tab label"><Input className={inputClass} value={eventDraft.sheetTabNickname} onChange={(event) => setEventDraft({ ...eventDraft, sheetTabNickname: event.target.value })} placeholder="Optional" /></Field>
       </div>
       <div className="mt-5 flex justify-end"><Button type="submit" disabled={createEvent.isPending} className="bg-amber-300 text-slate-950 hover:bg-amber-200">{createEvent.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarPlus className="mr-2 h-4 w-4" />}Create and open event</Button></div>

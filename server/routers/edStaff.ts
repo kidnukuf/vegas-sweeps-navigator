@@ -158,6 +158,12 @@ export const edStaffRouter = router({
       }
 
       const spreadsheetId = normalizeSpreadsheetId(input.spreadsheet);
+      const [sharedSheet] = await rawQuery<{ spreadsheetId: string }>(
+        `SELECT spreadsheetId FROM shared_sheet_defaults ORDER BY id ASC LIMIT 1`
+      );
+      if (sharedSheet && spreadsheetId !== sharedSheet.spreadsheetId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This event must use the shared Google Sheet. Choose the event's tab within that sheet instead." });
+      }
       const templateUrl = optionalHttpUrl(input.templateUrl, "Template URL");
       const guideUrl = optionalHttpUrl(input.guideUrl, "Guide URL");
       await rawExec(`UPDATE events SET sheetSpreadsheetId = ?, sheetTabName = ?, sheetTabNickname = ?, sheetTemplateUrl = ?, onboardingGuideUrl = ?, workspaceConfiguredAt = ?, workspaceConfiguredBy = ? WHERE id = ?`, [

@@ -8,6 +8,7 @@ import { groupEventDirectors } from "../ownerDirectorAssignments";
 import { assessOwnerReadiness } from "../ownerDashboardLogic";
 import { normalizeEventIds, portfolioMatchesCompany } from "../ownerOperationsLogic";
 import { normalizeCoordinatorContactDetails } from "../coordinatorContactLogic";
+import { normalizeSpreadsheetId, resolveSharedSheetTarget } from "../sharedSheetLogic";
 
 const optionalText = z.string().max(2_000).optional().nullable();
 
@@ -119,6 +120,8 @@ type DirectorAssignmentRow = {
   username: string | null;
 };
 
+type SharedSheetDefaultRow = { id: number; spreadsheetId: string };
+
 const asNumber = (value: number | string | null | undefined) => Number(value ?? 0);
 const cleanText = (value: string | null | undefined) => value?.trim() || null;
 
@@ -136,10 +139,17 @@ async function validateOwnerPortfolio(companyId: number, eventIds: number[]) {
   return normalizedEventIds;
 }
 
+async function getSharedSheetDefault() {
+  const [sharedSheet] = await rawQuery<SharedSheetDefaultRow>(
+    `SELECT id, spreadsheetId FROM shared_sheet_defaults ORDER BY id ASC LIMIT 1`
+  );
+  return sharedSheet ?? null;
+}
+
 export const ownerDashboardRouter = router({
   operationsData: publicProcedure.query(async ({ ctx }) => {
     await requireOwner(ctx);
-    const [companies, groups, directors, events] = await Promise.all([
+    const [companies, groups, directors, events, sharedSheet] = await Promise.all([
       rawQuery<{ id: number; name: string; slug: string }>(`SELECT id, name, slug FROM companies ORDER BY name`),
       rawQuery<{ id: number; name: string; slug: string }>(`SELECT id, name, slug FROM event_groups ORDER BY name`),
       rawQuery<{ id: number; name: string; username: string; companyId: number; companyName: string | null }>(
@@ -150,24 +160,52 @@ export const ownerDashboardRouter = router({
       rawQuery<{ id: number; eventName: string; eventYear: number; companyId: number | null; status: string }>(
         `SELECT id, eventName, eventYear, companyId, status FROM events ORDER BY eventYear DESC, id DESC`
       ),
+      getSharedSheetDefault(),
     ]);
     const assignments = await rawQuery<{ staffId: number; eventId: number }>(`SELECT staffId, eventId FROM event_director_assignments`);
     const eventIdsByDirector = assignments.reduce<Record<number, number[]>>((groupsByDirector, assignment) => {
       (groupsByDirector[assignment.staffId] ??= []).push(assignment.eventId);
       return groupsByDirector;
     }, {});
-    return { companies, groups, events, directors: directors.map((director) => ({ ...director, eventIds: eventIdsByDirector[director.id] ?? [] })) };
+    return { companies, groups, events, sharedSheet: sharedSheet ? { spreadsheetId: sharedSheet.spreadsheetId } : null, directors: directors.map((director) => ({ ...director, eventIds: eventIdsByDirector[director.id] ?? [] })) };
   }),
+
+  setSharedSheetDefault: publicProcedure
+    .input(z.object({ spreadsheet: z.string().trim().min(1).max(2_000) }))
+    .mutation(async ({ input, ctx }) => {
+      const session = await requireOwner(ctx);
+      const spreadsheetId = normalizeSpreadsheetId(input.spreadsheet);
+      if (!spreadsheetId) throw new TRPCError({ code: "BAD_REQUEST", message: "Provide a valid Google Sheet URL or spreadsheet ID." });
+      const sharedSheet = await getSharedSheetDefault();
+      if (sharedSheet) {
+        await rawExec(`UPDATE shared_sheet_defaults SET spreadsheetId = ? WHERE id = ?`, [spreadsheetId, sharedSheet.id]);
+      } else {
+        await rawExec(`INSERT INTO shared_sheet_defaults (spreadsheetId) VALUES (?)`, [spreadsheetId]);
+      }
+      await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_set_shared_google_sheet", targetType: "shared_sheet_defaults", details: `Owner set the shared Google Sheet to ${spreadsheetId}` });
+      return { success: true, spreadsheetId };
+    }),
 
   createEvent: publicProcedure.input(ownerEventCreateInput).mutation(async ({ input, ctx }) => {
     const session = await requireOwner(ctx);
     const [company] = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
     if (!company) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company for the event." });
     const [group] = await rawQuery<{ id: number }>(`SELECT id FROM event_groups WHERE slug = ? LIMIT 1`, [input.groupSlug]);
+    const sharedSheet = await getSharedSheetDefault();
+    let sheetTarget: { spreadsheetId: string | null; sheetTabName: string | null };
+    try {
+      sheetTarget = resolveSharedSheetTarget({
+        requestedSpreadsheetId: input.sheetSpreadsheetId,
+        sheetTabName: input.sheetTabName,
+        sharedSpreadsheetId: sharedSheet?.spreadsheetId,
+      });
+    } catch (error) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Invalid Google Sheet configuration." });
+    }
     const created = await rawExec(
       `INSERT INTO events (companyId, groupId, groupSlug, eventName, eventYear, status, startDate, endDate, bowlingDate, squadTime, sheetSpreadsheetId, sheetTabName, sheetTabNickname)
        VALUES (?, ?, ?, ?, ?, 'planning', ?, ?, ?, ?, ?, ?, ?)`,
-      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, cleanText(input.startDate), cleanText(input.endDate), cleanText(input.bowlingDate), cleanText(input.squadTime), cleanText(input.sheetSpreadsheetId), cleanText(input.sheetTabName), cleanText(input.sheetTabNickname)]
+      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, cleanText(input.startDate), cleanText(input.endDate), cleanText(input.bowlingDate), cleanText(input.squadTime), sheetTarget.spreadsheetId, sheetTarget.sheetTabName, cleanText(input.sheetTabNickname)]
     );
     await writeAuditLog({ eventId: created.insertId, actorRole: "Owner", actorId: session.userId, action: "owner_create_event", targetId: created.insertId, targetType: "event", details: `Owner created planning event ${input.eventName.trim()} (${input.eventYear})` });
     return { success: true, eventId: created.insertId };
