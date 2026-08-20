@@ -66,9 +66,9 @@ const EMPTY: WizardState = {
   hotelCheckoutTime: "",
   surveyEnabled: false,
   showHotelInfoCard: true,
-  // Pre-fill the permanent Google Sheet ID — the same sheet is used for all events;
-  // only the tab name changes per event.
-  sheetSpreadsheetId: "1ka-FknfQyi8gATtszurGUoOiBstSBYtxE4HqV-inqxM",
+  // The configured shared master sheet loads automatically for new events.
+  // The Event Director must choose the tab used for imports and write-backs.
+  sheetSpreadsheetId: "",
   sheetTabName: "",
   sheetTabNickname: "",
 };
@@ -292,6 +292,7 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
   const [step, setStep] = useState(0);
   const [s, setS] = useState<WizardState>(EMPTY);
   const set = <K extends keyof WizardState>(k: K, v: WizardState[K]) => setS((p) => ({ ...p, [k]: v }));
+  const sharedSheetQuery = trpc.event.getSharedSheetDefault.useQuery(undefined, { enabled: mode === "create" });
 
   const settingsQuery = trpc.event.getSettings.useQuery(
     { id: eventId ?? 0 },
@@ -326,6 +327,15 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
       });
     }
   }, [mode, settingsQuery.data]);
+
+  useEffect(() => {
+    const sharedSpreadsheetId = sharedSheetQuery.data?.spreadsheetId;
+    if (mode === "create" && sharedSpreadsheetId) {
+      setS((current) => current.sheetSpreadsheetId === sharedSpreadsheetId
+        ? current
+        : { ...current, sheetSpreadsheetId: sharedSpreadsheetId });
+    }
+  }, [mode, sharedSheetQuery.data?.spreadsheetId]);
 
   const createMut = trpc.event.create.useMutation();
   const updateMut = trpc.event.updateSettings.useMutation();
@@ -364,6 +374,15 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
     const year = parseInt(s.eventYear, 10);
     if (!name) { toast.error("Event name is required"); setStep(0); return; }
     if (!Number.isFinite(year)) { toast.error("Valid year is required"); setStep(0); return; }
+    if (mode === "create" && !s.sheetSpreadsheetId.trim()) {
+      toast.error("The shared Google Sheet is still loading. Please try again in a moment.");
+      return;
+    }
+    if (mode === "create" && !s.sheetTabName.trim()) {
+      toast.error("Choose the Google Sheet tab this event will read from and write back to.");
+      setStep(steps.findIndex((item) => item.key === "sheet"));
+      return;
+    }
 
     try {
       let targetId = eventId;
@@ -536,7 +555,7 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
                       {s.sheetTabNickname && <span className="text-yellow-400 ml-1">— {s.sheetTabNickname}</span>}
                     </p>
                   )}
-                  <p className="text-gray-500 text-xs mt-2">Set automatically when you import from a Google Sheets URL. Override below if needed.</p>
+                  <p className="text-gray-500 text-xs mt-2">New events use the shared master Google Sheet. Select the tab this event will read from and write back to.</p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-gray-600/40 bg-gray-800/30 p-3 text-sm">
@@ -545,14 +564,15 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
               )}
 
               <div>
-                <label className={labelCls}>Spreadsheet URL or ID <span className="text-gray-500 font-normal">(optional override)</span></label>
+                <label className={labelCls}>Shared Master Google Sheet</label>
                 <input
-                  className={inputCls}
+                  className={`${inputCls} opacity-70 cursor-not-allowed`}
                   value={s.sheetSpreadsheetId}
+                  readOnly={mode === "create"}
                   onChange={(e) => set("sheetSpreadsheetId", e.target.value)}
-                  placeholder="Paste full Google Sheets URL or just the spreadsheet ID"
+                  placeholder={sharedSheetQuery.isLoading ? "Loading shared Google Sheet…" : "No shared Google Sheet configured"}
                 />
-                <p className="mt-1 text-xs text-gray-400">You can paste the full URL — the app extracts the ID automatically.</p>
+                <p className="mt-1 text-xs text-gray-400">This shared sheet is used by every new event. The tab selected below controls all imports and Google Sheet write-backs for this event.</p>
               </div>
               {/* ── Tab Picker ── */}
               <SheetTabPicker

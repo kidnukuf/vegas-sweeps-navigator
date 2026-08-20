@@ -794,3 +794,9 @@
 - [x] Verify distinct feedback for accepted under-21 scans
 - [x] Verify denial feedback for invalid and already-used QR scans
 - [x] Correct missing offline scanner sounds and color flashes and publish the update
+
+## Cassie Shared-Sheet New Event Workflow
+- [x] Default Cassie’s new events to the shared multi-tab master Google Sheet
+- [x] Require her to choose the exact event tab before saving the event workspace
+- [x] Persist the selected tab for all imports and Google Sheet write-backs
+- [x] Test the Event Director new-event read/write tab workflow

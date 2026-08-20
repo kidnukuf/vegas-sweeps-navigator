@@ -33,6 +33,7 @@ import { markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
 import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
 import { assertBowlerAccess, assertEventAccess, getAccessibleEvents, requireEdSession, requirePlatformAdmin } from "./_core/edAuth";
+import { resolveSharedSheetTarget } from "./sharedSheetLogic";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -335,6 +336,12 @@ export const appRouter = router({
         ) as Record<string, unknown>[];
         return rows[0] ?? null;
       }),
+    getSharedSheetDefault: publicProcedure.query(async () => {
+      const [sharedSheet] = await rawQuery<{ spreadsheetId: string }>(
+        "SELECT spreadsheetId FROM shared_sheet_defaults ORDER BY id ASC LIMIT 1"
+      );
+      return sharedSheet ? { spreadsheetId: sharedSheet.spreadsheetId } : null;
+    }),
     updateSettings: publicProcedure
       .input(z.object({
         id: z.number(),
@@ -364,6 +371,25 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         await assertEventAccess(ctx, input.id);
+        const hasSheetUpdate = input.sheetSpreadsheetId !== undefined || input.sheetTabName !== undefined;
+        let resolvedSheet: { spreadsheetId: string | null; sheetTabName: string | null } | null = null;
+        if (hasSheetUpdate) {
+          const [sharedSheet] = await rawQuery<{ spreadsheetId: string }>(
+            "SELECT spreadsheetId FROM shared_sheet_defaults ORDER BY id ASC LIMIT 1"
+          );
+          try {
+            resolvedSheet = resolveSharedSheetTarget({
+              requestedSpreadsheetId: input.sheetSpreadsheetId,
+              sheetTabName: input.sheetTabName,
+              sharedSpreadsheetId: sharedSheet?.spreadsheetId,
+            });
+          } catch (error) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: error instanceof Error ? error.message : "Choose the Google Sheet tab for this event.",
+            });
+          }
+        }
         const fields: string[] = [];
         const values: unknown[] = [];
         const map: Record<string, unknown> = {
@@ -386,8 +412,8 @@ export const appRouter = router({
           surveyEnabled: input.surveyEnabled,
           surveyOpen: input.surveyOpen,
           showHotelInfoCard: input.showHotelInfoCard,
-          sheetSpreadsheetId: input.sheetSpreadsheetId,
-          sheetTabName: input.sheetTabName,
+          sheetSpreadsheetId: resolvedSheet?.spreadsheetId ?? input.sheetSpreadsheetId,
+          sheetTabName: resolvedSheet?.sheetTabName ?? input.sheetTabName,
           sheetTabNickname: input.sheetTabNickname,
         };
         for (const [key, val] of Object.entries(map)) {

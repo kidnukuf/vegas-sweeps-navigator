@@ -13,6 +13,14 @@ describe("shared sheet event routing", () => {
     expect(() => resolveSharedSheetTarget({ sharedSpreadsheetId: sharedId, sheetTabName: "" })).toThrow("Choose the Google Sheet tab");
   });
 
+  it("uses the selected tab as the persistent shared-sheet target for a new event", () => {
+    expect(resolveSharedSheetTarget({
+      requestedSpreadsheetId: `https://docs.google.com/spreadsheets/d/${sharedId}/edit`,
+      sharedSpreadsheetId: sharedId,
+      sheetTabName: "10 Event",
+    })).toEqual({ spreadsheetId: sharedId, sheetTabName: "10 Event" });
+  });
+
   it("rejects attempts to route a new event to a different sheet", () => {
     expect(() => resolveSharedSheetTarget({ sharedSpreadsheetId: sharedId, requestedSpreadsheetId: "another-sheet", sheetTabName: "4 Event" })).toThrow("shared Google Sheet");
   });
