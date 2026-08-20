@@ -34,6 +34,7 @@ import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
 import { assertBowlerAccess, assertEventAccess, getAccessibleEvents, requireEdSession, requirePlatformAdmin } from "./_core/edAuth";
 import { resolveSharedSheetTarget } from "./sharedSheetLogic";
+import { resolveGoogleCredentialStatus } from "./googleCredsLogic";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -2458,14 +2459,12 @@ export const appRouter = router({
     // Returns whether credentials are saved (never returns the raw JSON)
     status: publicProcedure.query(async () => {
       const { getAppSetting } = await import('./googleSheets');
-      const raw = await getAppSetting('google_service_account_json');
-      if (!raw) return { saved: false, clientEmail: null };
-      try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        return { saved: true, clientEmail: (parsed.client_email as string) ?? null };
-      } catch {
-        return { saved: true, clientEmail: null };
-      }
+      const savedCredentialJson = await getAppSetting('google_service_account_json');
+      // The shared master sheet can be connected through the deployment-level
+      // service account, even when an in-app credential has not been saved.
+      // Event Directors must see that shared connection as available rather
+      // than being told to create a second credential set.
+      return resolveGoogleCredentialStatus(savedCredentialJson, process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
     }),
     // Save the service account JSON (ED pastes the full JSON)
     save: publicProcedure

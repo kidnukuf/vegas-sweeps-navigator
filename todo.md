@@ -800,3 +800,8 @@
 - [x] Require her to choose the exact event tab before saving the event workspace
 - [x] Persist the selected tab for all imports and Google Sheet write-backs
 - [x] Test the Event Director new-event read/write tab workflow
+
+## Cassie Shared Credential Repair
+- [x] Inspect the missing Google credential check that blocks Cassie’s event setup
+- [x] Reuse the existing shared Google connection for Cassie’s event creation
+- [x] Verify the shared credential status and selected-tab event creation workflow
