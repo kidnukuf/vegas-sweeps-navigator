@@ -20,14 +20,17 @@ import { DoorConsole } from "@/components/door/DoorConsole";
 import { Button } from "@/components/ui/button";
 import { startSyncService } from "@/lib/offlineDoorSync";
 import { getMeta, type ReentryZone } from "@/lib/offlineDoorDb";
+import { resolveOfflineDoorEventId } from "@/lib/offlineDoorNavigation";
 
 type View = "console" | "A" | "B";
 
 export default function OfflineDoor() {
   const [view, setView] = useState<View>("console");
   const [eventId] = useState<number>(() => {
-    const saved = Number(localStorage.getItem("vsn_selected_event_id"));
-    return Number.isFinite(saved) && saved > 0 ? saved : 1;
+    return resolveOfflineDoorEventId(
+      window.location.search,
+      localStorage.getItem("vsn_selected_event_id")
+    );
   });
   const [hasData, setHasData] = useState(false);
 

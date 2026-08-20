@@ -101,6 +101,9 @@ export function DoorConsole({ eventId }: { eventId: number }) {
     setLoading(true);
     try {
       const data = await fetchDataset(eventId, nextMode);
+      if (!data || !Number.isFinite(data.eventId)) {
+        throw new Error("The scanner data response did not include a valid event reference.");
+      }
       await loadDataset({
         eventId: data.eventId,
         mode: data.mode,
@@ -116,8 +119,10 @@ export function DoorConsole({ eventId }: { eventId: number }) {
       const meta = await getMeta();
       setHasPin(Boolean(meta?.pinHash));
       toast.success(`Loaded ${data.guestCount} ${nextMode === "banquet" ? "banquet" : "pool party"} passes + ${data.reentryCount} re-entry codes`);
-    } catch {
-      toast.error("Could not load data. Connect to the internet and try again.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "An unexpected scanner data error occurred.";
+      console.error("[Offline Door] Could not load scanner data", { eventId, mode: nextMode, error });
+      toast.error(`Could not load ${nextMode} scanner data for event ${eventId}: ${detail}`);
     } finally {
       setLoading(false);
     }

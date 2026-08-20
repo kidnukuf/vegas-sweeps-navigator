@@ -1646,7 +1646,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               <h3 className="text-sm font-semibold text-cyan-400 mb-1">📡 Offline Door Scanner (Banquet + Pool Party)</h3>
               <p className="text-gray-500 text-xs mb-4">No WiFi or mobile signal at the venue? Open the offline scanner on one laptop, load the data once while you still have internet, then scan all night with zero connection. Every scan is saved on the laptop and uploads automatically when the signal returns. This replaces the old Windows offline package — no install, no setup files.</p>
               <div className="flex gap-3 flex-wrap">
-                <a href="/offline-door" target="_blank" rel="noopener noreferrer"
+                <a href={`/offline-door?eventId=${EVENT_ID}`} target="_blank" rel="noopener noreferrer"
                   className="px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2">
                   Open Offline Door Scanner →
                 </a>

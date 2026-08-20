@@ -766,3 +766,8 @@
 - [x] Inspect the exact shared Event Director URL and its redirects
 - [x] Confirm no current stale domain or route behavior affects the shared link
 - [x] Verify the exact URL reaches the Event Director login page from a clean public session
+
+## Event Director Scanner-Build Repair
+- [x] Inspect the live JSON/reference error during the Event Director build workflow
+- [x] Preserve the selected event in scanner links and surface the actual data-load error without changing event data
+- [x] Verify Cassie’s scanner dataset and offline bundle build paths for her assigned event
