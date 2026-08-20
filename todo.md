@@ -777,3 +777,9 @@
 - [x] Reconnect Cassie’s event to the correct shared Google Sheet tab
 - [x] Add a shared-sheet default for future event setup while requiring a selected event tab
 - [x] Test selected-tab read validation and saved write-back targeting behavior
+
+## Shared Sheet Tab Replacement
+- [x] Confirm 10 Event as the source tab and inspect tabs 1, 2, 4, 5, 6, 7, 8, and 9 Event
+- [x] Create recoverable backups of all destination tabs
+- [x] Obtain final approval before overwriting destination tab contents
+- [x] Replace approved destination contents with 10 Event and verify the result
