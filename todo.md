@@ -810,3 +810,9 @@
 - [x] Identify the exact remaining no-credentials warning in Cassie’s event-creation flow
 - [x] Remove the shared-credential block while retaining tab selection enforcement
 - [x] Verify the refreshed wizard now uses the shared connection and selected-tab workflow
+
+## Cassie Event Creation Transaction Repair
+- [x] Reproduce Cassie’s complete new-event creation transaction with her Event Director session
+- [x] Identify the missing company context as the exact create-event blocker
+- [x] Allow an unassigned platform administrator to create an event and add transaction-level regression coverage
+- [ ] Verify Cassie can save a new event with a selected shared-sheet tab

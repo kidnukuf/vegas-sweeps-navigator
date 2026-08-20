@@ -51,6 +51,20 @@ describe("multi-event support", () => {
     await rawQuery("DELETE FROM companies WHERE id = ?", [company.insertId]);
   });
 
+  it("allows a platform administrator to create an unassigned event when their existing event has no company", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    const unique = `Unassigned Admin Event ${Date.now()}`;
+
+    const created = await caller.event.create({ eventName: unique, eventYear: 2099 });
+    expect(created.success).toBe(true);
+
+    const rows = await rawQuery<{ companyId: number | null }>("SELECT companyId FROM events WHERE id = ?", [created.id]);
+    expect(rows[0]?.companyId ?? null).toBeNull();
+
+    await rawQuery("DELETE FROM auditLog WHERE action = 'create_event' AND targetId = ?", [created.id]);
+    await rawQuery("DELETE FROM events WHERE id = ?", [created.id]);
+  });
+
   it("permanently deletes a bowler and audit-logs before removal", async () => {
     const caller = appRouter.createCaller(createCtx());
     const scantronId = `9${String(Date.now()).slice(-9)}`;
