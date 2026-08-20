@@ -40,10 +40,13 @@ describe("Event Director workspace setup", () => {
     const staff = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`workspace-director-${stamp}`, "test-hash", "Workspace Director", company.insertId]);
 
     try {
+      const [sharedSheet] = await rawQuery<{ spreadsheetId: string }>("SELECT spreadsheetId FROM shared_sheet_defaults ORDER BY id ASC LIMIT 1");
+      expect(sharedSheet?.spreadsheetId).toBeTruthy();
+      const spreadsheetId = sharedSheet.spreadsheetId;
       const caller = appRouter.createCaller(platformOwnerContext());
       const result = await caller.edStaff.workspace.setup({
         eventId: event.insertId,
-        spreadsheet: "https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit",
+        spreadsheet: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
         sheetTabName: "Roster 2099",
         sheetTabNickname: "Main roster",
         templateUrl: "https://docs.google.com/spreadsheets/d/template-2099",
@@ -52,13 +55,13 @@ describe("Event Director workspace setup", () => {
       });
 
       expect(result.ok).toBe(true);
-      expect(result.spreadsheetId).toBe("1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789");
+      expect(result.spreadsheetId).toBe(spreadsheetId);
       const [saved] = await rawQuery<{ sheetSpreadsheetId: string; sheetTabName: string; sheetTemplateUrl: string; onboardingGuideUrl: string }>("SELECT sheetSpreadsheetId, sheetTabName, sheetTemplateUrl, onboardingGuideUrl FROM events WHERE id = ?", [event.insertId]);
-      expect(saved).toMatchObject({ sheetSpreadsheetId: "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789", sheetTabName: "Roster 2099", sheetTemplateUrl: "https://docs.google.com/spreadsheets/d/template-2099", onboardingGuideUrl: "https://example.com/event-guide" });
+      expect(saved).toMatchObject({ sheetSpreadsheetId: spreadsheetId, sheetTabName: "Roster 2099", sheetTemplateUrl: "https://docs.google.com/spreadsheets/d/template-2099", onboardingGuideUrl: "https://example.com/event-guide" });
       const assignments = await rawQuery<{ staffId: number }>("SELECT staffId FROM event_director_assignments WHERE eventId = ? AND staffId = ?", [event.insertId, staff.insertId]);
       expect(assignments).toHaveLength(1);
       const directorWorkspace = await appRouter.createCaller(assignedDirectorContext(staff.insertId)).edStaff.workspace.get({ eventId: event.insertId });
-      expect(directorWorkspace).toMatchObject({ sheetSpreadsheetId: "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789", sheetTabName: "Roster 2099", onboardingGuideUrl: "https://example.com/event-guide" });
+      expect(directorWorkspace).toMatchObject({ sheetSpreadsheetId: spreadsheetId, sheetTabName: "Roster 2099", onboardingGuideUrl: "https://example.com/event-guide" });
     } finally {
       await rawQuery("DELETE FROM event_director_assignments WHERE staffId = ?", [staff.insertId]);
       await rawQuery("DELETE FROM ed_staff WHERE id = ?", [staff.insertId]);

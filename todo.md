@@ -788,3 +788,9 @@
 - [x] Confirm Cassie’s assigned event references the intended updated sheet tab
 - [x] Reproduce offline scanner build and QR-validation data requests
 - [x] Confirm no remaining JSON/reference error in the Event Director scanner-test path
+
+## Scanner Audio and Visual Feedback
+- [x] Verify feedback for accepted adult (21+) scans
+- [x] Verify distinct feedback for accepted under-21 scans
+- [x] Verify denial feedback for invalid and already-used QR scans
+- [x] Correct missing offline scanner sounds and color flashes and publish the update

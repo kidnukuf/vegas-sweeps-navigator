@@ -14,6 +14,7 @@
  */
 
 import { loadDoorGuests, ensureReentryPool, getEventById, type DoorMode } from "./db";
+import { OFFLINE_SCAN_FEEDBACK } from "./offlineScannerFeedback";
 
 function makeReentryToken(eventId: number, mode: DoorMode, zone: string, index: number): string {
   const m = mode === "banquet" ? "BQ" : "PP";
@@ -38,6 +39,7 @@ export async function generateOfflineBundle(
     teamName: string | null;
     entitlementType: string;
     alreadyUsedAtLoad: boolean;
+    under21: boolean;
   }> = {};
   for (const g of guests) {
     tokenMap[g.token] = {
@@ -46,6 +48,7 @@ export async function generateOfflineBundle(
       teamName: g.teamName,
       entitlementType: g.entitlementType,
       alreadyUsedAtLoad: g.alreadyUsedAtLoad,
+      under21: g.under21,
     };
   }
 
@@ -84,6 +87,8 @@ export async function generateOfflineBundle(
     --amber-bg: #78350f;
     --blue: #3b82f6;
     --blue-bg: #1e3a5f;
+    --cyan: #22d3ee;
+    --cyan-bg: #164e63;
     --radius: 12px;
   }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
@@ -124,8 +129,9 @@ export async function generateOfflineBundle(
     transition: border-color .15s, background .15s; overflow: hidden; position: relative;
   }
   .lane.admit { border-color: var(--green); background: var(--green-bg); }
+  .lane.under21 { border-color: var(--cyan); background: var(--cyan-bg); }
   .lane.deny  { border-color: var(--red);   background: var(--red-bg); }
-  .lane.used  { border-color: var(--amber); background: var(--amber-bg); }
+  .lane.used  { border-color: var(--red); background: var(--red-bg); }
   .lane.notfound { border-color: #6b21a8; background: #3b0764; }
 
   .lane-header {
@@ -160,6 +166,7 @@ export async function generateOfflineBundle(
   }
   .log-entry { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
   .log-entry.admit { color: var(--green); }
+  .log-entry.under21 { color: var(--cyan); }
   .log-entry.deny  { color: var(--red); }
   .log-entry.used  { color: var(--amber); }
   .log-entry.notfound { color: #a855f7; }
@@ -213,6 +220,19 @@ export async function generateOfflineBundle(
 
   @keyframes flash-in { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
   .flash-in { animation: flash-in .15s ease-out; }
+
+  /* Full-screen outcome feedback: green = 21+, cyan = accepted under 21, red = no entry. */
+  #screenFlash { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  #screenFlash.show { display:flex; animation: screen-flash .8s ease-out; }
+  #screenFlash.adult { background:rgba(34,197,94,.44); color:var(--green); }
+  #screenFlash.under21 { background:rgba(34,211,238,.48); color:var(--cyan); }
+  #screenFlash.denied { background:rgba(239,68,68,.52); color:var(--red); }
+  #screenFlash .flash-card { border:4px solid currentColor; border-radius:24px; background:rgba(8,15,28,.94); padding:28px 42px; max-width:82vw; text-align:center; box-shadow:0 0 90px currentColor; }
+  #screenFlash .flash-label { font-size:clamp(2.5rem,8vw,6.5rem); font-weight:900; letter-spacing:.03em; line-height:1; }
+  #screenFlash .flash-name { margin-top:12px; font-size:clamp(1.1rem,3vw,2rem); font-weight:700; color:#fff; }
+  #screenFlash .flash-detail { margin-top:7px; font-size:1rem; color:#cbd5e1; }
+  @keyframes screen-flash { 0% { opacity:0; } 12%, 65% { opacity:1; } 100% { opacity:0; } }
+  @media (prefers-reduced-motion: reduce) { #screenFlash.show { animation:none; } }
 </style>
 </head>
 <body>
@@ -259,11 +279,14 @@ export async function generateOfflineBundle(
       <div class="lane-idle">Ready to Scan</div>
       <div style="font-size:.85rem;color:var(--muted)">Scanner B — click input to focus</div>
     </div>
-    <div class="lane-input-row">
+  <div class="lane-input-row">
       <input class="lane-input" id="laneBInput" placeholder="Manual entry or scanner input…" autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
   </div>
 </div>
+
+<!-- Full-screen color-coded scan outcome feedback -->
+<div id="screenFlash" aria-live="assertive" aria-atomic="true"><div class="flash-card"><div class="flash-label"></div><div class="flash-name"></div><div class="flash-detail"></div></div></div>
 
 <!-- Log panel -->
 <div class="log-panel" id="logPanel">
@@ -328,6 +351,7 @@ const MODE        = ${JSON.stringify(mode)};
 const EVENT_NAME  = ${JSON.stringify(eventName)};
 const STORAGE_KEY = ${JSON.stringify(storageKey)};
 const SCAN_LOG_KEY = ${JSON.stringify(scanLogKey)};
+const FEEDBACK = ${JSON.stringify(OFFLINE_SCAN_FEEDBACK)};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE
@@ -431,6 +455,59 @@ async function processScan(rawToken, lane) {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 const flashTimers = { A: null, B: null };
+let screenFlashTimer = null;
+let audioContext = null;
+
+function feedbackKind(decision) {
+  if (decision.result === 'admitted') return decision.under21 ? 'under21' : 'adult';
+  if (decision.result === 'reentry_admitted') return 'adult';
+  return 'denied';
+}
+
+function playTone(frequency, start, duration, type, gain) {
+  const oscillator = audioContext.createOscillator();
+  const volume = audioContext.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  volume.gain.setValueAtTime(0.0001, start);
+  volume.gain.exponentialRampToValueAtTime(gain, start + .015);
+  volume.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  oscillator.connect(volume).connect(audioContext.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration + .02);
+}
+
+function playFeedback(kind) {
+  try {
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return;
+    audioContext = audioContext || new AudioCtor();
+    if (audioContext.state === 'suspended') audioContext.resume();
+    const now = audioContext.currentTime;
+    if (kind === 'adult') {
+      playTone(880, now, .13, 'sine', .13);
+      playTone(1175, now + .15, .18, 'sine', .13);
+    } else if (kind === 'under21') {
+      playTone(523, now, .12, 'triangle', .14);
+      playTone(659, now + .14, .12, 'triangle', .14);
+      playTone(784, now + .28, .18, 'triangle', .14);
+    } else {
+      playTone(180, now, .20, 'sawtooth', .17);
+      playTone(145, now + .25, .28, 'sawtooth', .17);
+    }
+  } catch (e) { console.warn('Scanner audio unavailable', e); }
+}
+
+function flashScreen(kind, decision) {
+  const el = document.getElementById('screenFlash');
+  const config = FEEDBACK[kind];
+  el.className = 'show ' + config.flashClass;
+  el.querySelector('.flash-label').textContent = config.label;
+  el.querySelector('.flash-name').textContent = decision.displayName || '';
+  el.querySelector('.flash-detail').textContent = decision.detail || '';
+  if (screenFlashTimer) clearTimeout(screenFlashTimer);
+  screenFlashTimer = setTimeout(() => { el.className = ''; }, kind === 'denied' ? 1900 : 1500);
+}
 
 function updateStats() {
   document.getElementById('statAdmit').textContent = statAdmit;
@@ -445,10 +522,12 @@ function showResult(lane, decision) {
   const countEl = document.getElementById('lane' + lane + 'Count');
 
   // Clear previous flash class
-  el.classList.remove('admit', 'deny', 'used', 'notfound');
+  el.classList.remove('admit', 'under21', 'deny', 'used', 'notfound');
 
   let cls = 'deny';
-  if (decision.result === 'admitted' || decision.result === 'reentry_admitted') cls = 'admit';
+  const kind = feedbackKind(decision);
+  if (kind === 'adult') cls = 'admit';
+  else if (kind === 'under21') cls = 'under21';
   else if (decision.result === 'denied_used') cls = 'used';
   else if (decision.result === 'denied_notfound') cls = 'notfound';
 
@@ -467,6 +546,8 @@ function showResult(lane, decision) {
   else if (decision.result === 'denied_used') { statUsed++; }
   else { statDeny++; }
   updateStats();
+  playFeedback(kind);
+  flashScreen(kind, decision);
 
   // Log entry
   const logEl = document.getElementById('logPanel');
@@ -480,7 +561,7 @@ function showResult(lane, decision) {
   if (flashTimers[lane]) clearTimeout(flashTimers[lane]);
   const delay = decision.admit ? 2200 : 4000;
   flashTimers[lane] = setTimeout(() => {
-    el.classList.remove('admit', 'deny', 'used', 'notfound');
+    el.classList.remove('admit', 'under21', 'deny', 'used', 'notfound');
     body.innerHTML = '<div class="lane-idle">Ready to Scan</div><div style="font-size:.85rem;color:var(--muted)">Scanner ' + lane + '</div>';
   }, delay);
 }

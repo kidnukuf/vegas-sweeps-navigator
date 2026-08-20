@@ -502,6 +502,7 @@ export type DoorGuestRow = {
   displayName: string;
   teamNumber: string | null;
   teamName: string | null;
+  under21: boolean;
   entitlementType: "bowler" | "guest";
   guestSuffix: string | null;
   alreadyUsedAtLoad: boolean;
@@ -529,10 +530,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     const bowlerRows = await rawQuery<{
       token: string; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null; banquetUsed: number;
-      bowlerId: number; laneNumber: number | null;
+      bowlerId: number; laneNumber: number | null; under21: number;
     }>(
       `SELECT b.banquetToken AS token, b.legalFirstName, b.legalLastName,
-              t.teamCode, t.teamName, b.banquetUsed, b.id AS bowlerId, b.laneNumber
+              t.teamCode, t.teamName, b.banquetUsed, b.id AS bowlerId, b.laneNumber, b.under21
        FROM bowlers b
        LEFT JOIN teams t ON t.id = b.teamId
        WHERE b.eventId = ? AND b.banquetToken IS NOT NULL AND b.banquetToken <> ''`,
@@ -544,6 +545,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         displayName: `${r.legalFirstName} ${r.legalLastName}`.trim(),
         teamNumber: r.teamCode ?? null,
         teamName: r.teamName ?? null,
+        under21: Boolean(r.under21),
         entitlementType: "bowler",
         guestSuffix: null,
         alreadyUsedAtLoad: Boolean(r.banquetUsed),
@@ -558,10 +560,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
       token: string; suffix: string; banquetUsed: number; disabled: number;
       guestName: string | null; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null;
-      bowlerId: number; laneNumber: number | null;
+      bowlerId: number; laneNumber: number | null; under21: number;
     }>(
       `SELECT g.banquetToken AS token, g.suffix, g.banquetUsed, g.disabled,
-              g.guestName, b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
+              g.guestName, b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber, g.under21
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
@@ -574,6 +576,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         displayName: r.guestName?.trim() || `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
         teamNumber: r.teamCode ?? null,
         teamName: r.teamName ?? null,
+        under21: Boolean(r.under21),
         entitlementType: "guest",
         guestSuffix: r.suffix,
         alreadyUsedAtLoad: Boolean(r.banquetUsed),
@@ -588,10 +591,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
     const bowlerRows = await rawQuery<{
       token: string; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null; poolPartyUsed: number;
-      bowlerId: number; laneNumber: number | null;
+      bowlerId: number; laneNumber: number | null; under21: number;
     }>(
       `SELECT b.poolPartyToken AS token, b.legalFirstName, b.legalLastName,
-              t.teamCode, t.teamName, b.poolPartyUsed, b.id AS bowlerId, b.laneNumber
+              t.teamCode, t.teamName, b.poolPartyUsed, b.id AS bowlerId, b.laneNumber, b.under21
        FROM bowlers b
        LEFT JOIN teams t ON t.id = b.teamId
        WHERE b.eventId = ? AND b.poolPartyToken IS NOT NULL AND b.poolPartyToken <> ''`,
@@ -603,6 +606,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         displayName: `${r.legalFirstName} ${r.legalLastName}`.trim(),
         teamNumber: r.teamCode ?? null,
         teamName: r.teamName ?? null,
+        under21: Boolean(r.under21),
         entitlementType: "bowler",
         guestSuffix: null,
         alreadyUsedAtLoad: Boolean(r.poolPartyUsed),
@@ -617,10 +621,10 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
       token: string; suffix: string; used: number; disabled: number;
       guestName: string | null; legalFirstName: string; legalLastName: string;
       teamCode: string | null; teamName: string | null;
-      bowlerId: number; laneNumber: number | null;
+      bowlerId: number; laneNumber: number | null; under21: number;
     }>(
       `SELECT g.token AS token, g.suffix, g.used, g.disabled,
-              g.guestName, b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber
+              g.guestName, b.legalFirstName, b.legalLastName, t.teamCode, t.teamName, b.id AS bowlerId, b.laneNumber, g.under21
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
@@ -633,6 +637,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
         displayName: r.guestName?.trim() || `${r.legalFirstName} ${r.legalLastName} (Guest ${r.suffix})`.trim(),
         teamNumber: r.teamCode ?? null,
         teamName: r.teamName ?? null,
+        under21: Boolean(r.under21),
         entitlementType: "guest",
         guestSuffix: r.suffix,
         alreadyUsedAtLoad: Boolean(r.used),
