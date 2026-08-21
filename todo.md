@@ -821,3 +821,8 @@
 - [x] Reproduce Cassie’s current production sign-in and Event Director session gate
 - [x] Refresh the portal after staff login so it reads the newly issued secure ED session
 - [x] Verify the clean-session production login endpoint and event-creation access
+
+## Event Director Login Clarity
+- [x] Show the active signed-in Event Director name in the dashboard
+- [x] Add self-service login troubleshooting guidance on the Event Director login screen
+- [x] Test and publish the clarified Event Director login experience

@@ -142,6 +142,10 @@ function EdLoginGate({ onAuth }: { onAuth: () => void }) {
             />
             <span className="text-gray-400 text-sm">Remember this device for 30 days</span>
           </label>
+          <details className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-400">
+            <summary className="cursor-pointer font-semibold text-amber-200">Having trouble signing in?</summary>
+            <p className="mt-2 leading-5">Confirm you are using the Event Director username and password provided by your platform owner. If the portal returns to this screen after sign-in, close the browser completely, reopen <span className="text-white">/ed</span>, and try once more. If it still fails, share the exact on-screen message with the platform owner.</p>
+          </details>
         </form>
 
         <p className="text-center text-gray-700 text-xs mt-4">
@@ -431,6 +435,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [activeTab, setActiveTab] = useState<"guide" | "links" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
   // Company-scoped Event Director management
   const { data: edAccess } = trpc.edStaff.access.useQuery();
+  const { data: signedInStaff } = trpc.edStaff.me.useQuery();
   const canManagePlatform = Boolean(edAccess?.canManagePlatform);
   const [newStaff, setNewStaff] = useState({ username: "", password: "", name: "", companyId: "", eventIds: [] as number[] });
   const [newCompany, setNewCompany] = useState({ name: "", slug: "" });
@@ -1004,6 +1009,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               <h1 className="text-xl font-black truncate" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 20px rgba(255,215,0,0.5)" }}>
                 🎯 EVENT DIRECTOR
               </h1>
+              <span className="hidden rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-200 sm:inline-flex">
+                Signed in as {signedInStaff?.name ?? (edAccess?.type === "owner" ? "Platform Owner" : "Event Director")}
+              </span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
