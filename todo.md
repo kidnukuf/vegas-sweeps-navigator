@@ -816,3 +816,8 @@
 - [x] Identify the missing company context as the exact create-event blocker
 - [x] Allow an unassigned platform administrator to create an event and add transaction-level regression coverage
 - [x] Verify Cassie can create, set the 10 Event tab, and remove a temporary event in production
+
+## Cassie Event Director Session Repair
+- [x] Reproduce Cassie’s current production sign-in and Event Director session gate
+- [x] Refresh the portal after staff login so it reads the newly issued secure ED session
+- [x] Verify the clean-session production login endpoint and event-creation access

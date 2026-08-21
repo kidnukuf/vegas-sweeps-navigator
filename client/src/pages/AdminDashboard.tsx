@@ -2712,7 +2712,7 @@ export default function AdminDashboard() {
   const { loading: ownerAuthLoading, isAuthenticated, user } = useAuth();
   const isOwnerSession = Boolean(isAuthenticated && user?.role === "admin");
   if (ownerAuthLoading) return <div className="min-h-screen grid place-items-center bg-[#070d16] text-gray-300">Loading secure workspace…</div>;
-  if (!isAuthed && !isOwnerSession) return <EdLoginGate onAuth={() => setIsAuthed(true)} />;
+  if (!isAuthed && !isOwnerSession) return <EdLoginGate onAuth={() => window.location.reload()} />;
   return <AdminDashboardInner onSignOut={() => {
     if (isOwnerSession) { window.location.assign("/owner"); return; }
     clearEdToken();
