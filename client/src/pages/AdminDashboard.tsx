@@ -2719,7 +2719,20 @@ export default function AdminDashboard() {
   const [isAuthed, setIsAuthed] = useState(() => !!getEdToken());
   const { loading: ownerAuthLoading, isAuthenticated, user } = useAuth();
   const isOwnerSession = Boolean(isAuthenticated && user?.role === "admin");
+  const { data: serverEdAccess, isLoading: serverEdAccessLoading } = trpc.edStaff.access.useQuery(undefined, {
+    enabled: isAuthed && !isOwnerSession,
+  });
+
+  useEffect(() => {
+    if (isAuthed && !isOwnerSession && serverEdAccess === null) {
+      clearEdToken();
+      setIsAuthed(false);
+    }
+  }, [isAuthed, isOwnerSession, serverEdAccess]);
+
   if (ownerAuthLoading) return <div className="min-h-screen grid place-items-center bg-[#070d16] text-gray-300">Loading secure workspace…</div>;
+  if (isAuthed && !isOwnerSession && serverEdAccessLoading) return <div className="min-h-screen grid place-items-center bg-[#070d16] text-gray-300">Verifying secure Event Director session…</div>;
+  if (isAuthed && !isOwnerSession && !serverEdAccess) return <EdLoginGate onAuth={() => window.location.reload()} />;
   if (!isAuthed && !isOwnerSession) return <EdLoginGate onAuth={() => window.location.reload()} />;
   return <AdminDashboardInner onSignOut={() => {
     if (isOwnerSession) { window.location.assign("/owner"); return; }

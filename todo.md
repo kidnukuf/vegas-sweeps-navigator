@@ -826,3 +826,8 @@
 - [x] Show the active signed-in Event Director name in the dashboard
 - [x] Add self-service login troubleshooting guidance on the Event Director login screen
 - [x] Test and publish the clarified Event Director login experience
+
+## Event Director Session Synchronization
+- [x] Detect when a stale browser token exists without a valid server Event Director session
+- [x] Return stale sessions to the Event Director sign-in screen before any event mutation
+- [x] Verify Cassie’s event creation works after a clean server-backed sign-in
