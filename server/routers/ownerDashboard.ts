@@ -6,7 +6,7 @@ import { requireOwner } from "../_core/edAuth";
 import { publicProcedure, router } from "../_core/trpc";
 import { groupEventDirectors } from "../ownerDirectorAssignments";
 import { assessOwnerReadiness } from "../ownerDashboardLogic";
-import { normalizeEventIds, portfolioMatchesCompany } from "../ownerOperationsLogic";
+import { getOwnedEventIds, normalizeEventIds, portfolioMatchesCompany } from "../ownerOperationsLogic";
 import { normalizeCoordinatorContactDetails } from "../coordinatorContactLogic";
 import { normalizeSpreadsheetId, resolveSharedSheetTarget } from "../sharedSheetLogic";
 
@@ -162,7 +162,16 @@ export const ownerDashboardRouter = router({
       ),
       getSharedSheetDefault(),
     ]);
-    return { companies, groups, events, sharedSheet: sharedSheet ? { spreadsheetId: sharedSheet.spreadsheetId } : null, directors: directors.map((director) => ({ ...director, eventIds: events.filter((event) => event.createdByStaffId === director.id).map((event) => event.id) })) };
+    return {
+      companies,
+      groups,
+      events,
+      sharedSheet: sharedSheet ? { spreadsheetId: sharedSheet.spreadsheetId } : null,
+      directors: directors.map((director) => {
+        const eventIds = getOwnedEventIds(events, director.id);
+        return { ...director, eventIds, eventCount: eventIds.length };
+      }),
+    };
   }),
 
   setSharedSheetDefault: publicProcedure

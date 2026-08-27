@@ -872,3 +872,9 @@
 - [x] Confirm Cassie Davis’s current scoped Event Director role and Group 3 event ownership
 - [x] Verify live Event Director sign-in and Group 3 workspace loading (792-bowler roster loaded)
 - [x] Confirm Cassie cannot access another Event Director’s event workspace; an attempted local selection of another event resolved back to Group 3 test
+
+## Owner Portal Event Director Portfolio Table
+- [x] Extend the owner-only operations data with an event count for every Event Director
+- [x] Add a responsive Owner Portal table listing each Event Director and owned-event count
+- [x] Update stale Owner Portal assignment wording to creator-owned event wording
+- [x] Add regression coverage and verify the table in the Owner Portal (38 files / 206 tests)
