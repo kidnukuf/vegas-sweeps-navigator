@@ -546,16 +546,18 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
   // ─── Active event selection (multi-event support) ──────────────────────────
   const SELECTED_EVENT_KEY = "vsn_selected_event_id";
-  const [selectedEventId, setSelectedEventId] = useState<number>(() => {
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(() => {
     const requested = Number(new URLSearchParams(window.location.search).get("eventId"));
     if (Number.isInteger(requested) && requested > 0) return requested;
     const saved = Number(localStorage.getItem(SELECTED_EVENT_KEY));
-    return Number.isFinite(saved) && saved > 0 ? saved : 1;
+    return Number.isFinite(saved) && saved > 0 ? saved : null;
   });
-  const EVENT_ID = selectedEventId;
-  const selectEvent = (id: number) => {
-    setSelectedEventId(id);
-    localStorage.setItem(SELECTED_EVENT_KEY, String(id));
+  const EVENT_ID = selectedEventId ?? 0;
+  const selectEvent = (id: number | null) => {
+    const accessibleId = Number.isInteger(id) && Number(id) > 0 ? Number(id) : null;
+    setSelectedEventId(accessibleId);
+    if (accessibleId) localStorage.setItem(SELECTED_EVENT_KEY, String(accessibleId));
+    else localStorage.removeItem(SELECTED_EVENT_KEY);
   };
 
   const { data: events = [], refetch: refetchEvents } = trpc.event.list.useQuery();
@@ -565,10 +567,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     [events, EVENT_ID]
   );
   useEffect(() => {
-    const nextEventId = resolveAccessibleEventId(selectedEventId, events as { id: number | string }[]);
-    if (!nextEventId || nextEventId === selectedEventId) return;
-    setSelectedEventId(nextEventId);
-    localStorage.setItem(SELECTED_EVENT_KEY, String(nextEventId));
+    const nextEventId = resolveAccessibleEventId(selectedEventId ?? 0, events as { id: number | string }[]);
+    if (nextEventId === selectedEventId) return;
+    selectEvent(nextEventId);
   }, [events, selectedEventId]);
   const workspaceQuery = trpc.edStaff.workspace.get.useQuery({ eventId: EVENT_ID }, { enabled: canManagePlatform && activeTab === "workspace" });
   const workspaceSheetId = (workspaceQuery.data as { sheetSpreadsheetId?: string } | undefined)?.sheetSpreadsheetId;
@@ -708,10 +709,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     onError: (e) => toast.error(e.message),
   });
 
-  const { data: bowlers = [], isLoading, refetch } = trpc.bowlers.adminList.useQuery({ eventId: EVENT_ID });
-  const { data: stats } = trpc.bowlers.stats.useQuery({ eventId: EVENT_ID });
-  const { data: auditLog = [] } = trpc.audit.list.useQuery({ eventId: EVENT_ID, limit: 200 });
-  const { data: doormen = [], refetch: refetchDoormen } = trpc.appAuth.listDoormen.useQuery({ eventId: EVENT_ID });
+  const { data: bowlers = [], isLoading, refetch } = trpc.bowlers.adminList.useQuery({ eventId: EVENT_ID }, { enabled: Boolean(activeEvent) });
+  const { data: stats } = trpc.bowlers.stats.useQuery({ eventId: EVENT_ID }, { enabled: Boolean(activeEvent) });
+  const { data: auditLog = [] } = trpc.audit.list.useQuery({ eventId: EVENT_ID, limit: 200 }, { enabled: Boolean(activeEvent) });
+  const { data: doormen = [], refetch: refetchDoormen } = trpc.appAuth.listDoormen.useQuery({ eventId: EVENT_ID }, { enabled: Boolean(activeEvent) });
   const unmatchedBowlers = useMemo(() => (bowlers as Bowler[]).filter((b) => b.registrationStatus === "unmatched"), [bowlers]);
 
   const resetBowlerPassword = trpc.bowlers.resetPassword.useMutation({
@@ -1184,9 +1185,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   <span className="text-yellow-400/70 text-base font-normal ml-2">({String(activeEvent.sheetTabNickname)})</span>
                 )}
               </>
-            ) : `Event #${EVENT_ID}`}
+            ) : "No event yet"}
           </span>
-          <span className="text-xs text-gray-500">All data below is scoped to this event</span>
+          <span className="text-xs text-gray-500">{activeEvent ? "All data below is scoped to this event" : "Create an event to begin your Event Director workspace"}</span>
         </div>
       </div>
 
@@ -1288,7 +1289,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
           </div>
         )}
         {activeTab === "roster" && (
-          <div>
+          !activeEvent ? <div className="mx-auto max-w-2xl rounded-2xl border border-yellow-500/30 bg-[#1a1a1a] p-8 text-center shadow-xl"><div className="text-4xl">🗓️</div><h2 className="mt-4 text-2xl font-bold text-yellow-300">No events yet</h2><p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-gray-400">Your Event Director account is ready. You do not have access to anyone else’s event. Create your first event to begin importing a roster and managing that event.</p><button onClick={() => setWizard({ mode: "create" })} className="mt-6 rounded-lg bg-yellow-500 px-5 py-3 text-sm font-bold text-black transition-colors hover:bg-yellow-400">＋ Create Your First Event</button></div> : <div>
             {/* Help flip-card for Roster */}
             <div className="relative mb-4">
               <button onClick={() => toggleHelp("roster")} className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/10 text-gray-500 hover:text-yellow-400 hover:border-yellow-500/40 text-xs font-bold transition-all z-10">?</button>

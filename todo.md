@@ -861,3 +861,9 @@
 - [x] Preserve Owner Portal platform-wide event and Event Director management access
 - [x] Convert current non-owner Event Directors, including Cassie Davis, to the scoped creator model without losing existing access
 - [x] Add and run regression tests for isolated creation, direct-link rejection, and owner cross-event access (38 files / 205 tests); verify Cassie’s local Event Director session shows Group 3 test
+
+## Scoped Creator Empty-Portfolio Verification
+- [x] Create a temporary Event Director account without any event ownership
+- [x] Replace the empty-portfolio fallback Event #1 dashboard with a no-events state
+- [ ] Verify the account’s Event Director portal has an empty event list and no fallback event workspace
+- [ ] Remove the temporary account after verification
