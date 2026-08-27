@@ -47,6 +47,22 @@ export const edStaffRouter = router({
     return session ? { type: session.type, companyId: session.companyId ?? null, canManagePlatform: session.type === "owner" || session.type === "platform_admin" } : null;
   }),
 
+  legacyAccess: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const payload = jwt.verify(input.token, JWT_SECRET) as { userId?: number; appRole?: string };
+        if (!Number.isInteger(payload.userId) || payload.appRole !== "EventDirector") return null;
+        const rows = await rawQuery<{ id: number; designation: string }>(
+          `SELECT id, designation FROM app_users WHERE id = ? AND appRole = 'EventDirector' AND active = true LIMIT 1`,
+          [payload.userId],
+        );
+        return rows[0] ? { type: "legacy" as const, userId: rows[0].id, designation: rows[0].designation } : null;
+      } catch {
+        return null;
+      }
+    }),
+
   login: publicProcedure
     .input(z.object({ username: z.string().min(1), password: z.string().min(1), rememberMe: z.boolean().optional() }))
     .mutation(async ({ input, ctx }) => {

@@ -421,8 +421,8 @@ export default function MasterSheetImport() {
             </div>
           )}
           {/* Bulk Sync QR Codes */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
+            <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
               <Button
                 onClick={() => {
                   if (!activeEvent?.sheetSpreadsheetId) {
@@ -437,7 +437,7 @@ export default function MasterSheetImport() {
                   bulkSyncMutation.mutate({ eventId, sheetTabOverride: sheetTabOverride || undefined });
                 }}
                 disabled={bulkSyncMutation.isPending || !activeEvent?.sheetSpreadsheetId}
-                className="bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold"
+                className="w-full min-w-0 justify-center whitespace-normal break-words px-3 py-3 text-center text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 sm:w-auto"
               >
                 {bulkSyncMutation.isPending ? "⏳ Syncing QR codes..." : "📤 Bulk Sync QR Codes to Sheet"}
               </Button>
@@ -462,15 +462,15 @@ export default function MasterSheetImport() {
           </div>
 
           {/* Regenerate Missing Tokens */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
+            <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
               <Button
                 onClick={() => {
                   setRegenResult(null);
                   regenMutation.mutate({ eventId });
                 }}
                 disabled={regenMutation.isPending}
-                className="bg-amber-700 hover:bg-amber-600 text-sm font-semibold"
+                className="w-full min-w-0 justify-center whitespace-normal break-words px-3 py-3 text-center text-sm font-semibold bg-amber-700 hover:bg-amber-600 sm:w-auto"
               >
                 {regenMutation.isPending ? "⏳ Generating tokens..." : "🔑 Regenerate Missing Tokens"}
               </Button>
@@ -495,8 +495,8 @@ export default function MasterSheetImport() {
           </div>
 
           {/* Generate Missing Claim Codes */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
+            <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
               <Button
                 onClick={() => {
                   if (!activeEvent?.sheetSpreadsheetId) {
@@ -515,7 +515,7 @@ export default function MasterSheetImport() {
                   });
                 }}
                 disabled={generateMissingClaimCodesMutation.isPending || !activeEvent?.sheetSpreadsheetId}
-                className="bg-violet-700 hover:bg-violet-600 text-sm font-semibold"
+                className="w-full min-w-0 justify-center whitespace-normal break-words px-3 py-3 text-center text-sm font-semibold bg-violet-700 hover:bg-violet-600 sm:w-auto"
               >
                 {generateMissingClaimCodesMutation.isPending ? "⏳ Generating claim codes..." : "🎟️ Generate Missing Claim Codes"}
               </Button>
@@ -536,12 +536,12 @@ export default function MasterSheetImport() {
           </div>
 
           {/* Validate Sheet vs DB */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
+            <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
               <Button
                 onClick={handleValidate}
                 disabled={validateQuery.isFetching || !activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName}
-                className="bg-sky-700 hover:bg-sky-600 text-sm font-semibold"
+                className="w-full min-w-0 justify-center whitespace-normal break-words px-3 py-3 text-center text-sm font-semibold bg-sky-700 hover:bg-sky-600 sm:w-auto"
               >
                 {validateQuery.isFetching ? "🔍 Validating..." : "🔍 Validate Sheet vs Database"}
               </Button>
@@ -612,12 +612,12 @@ export default function MasterSheetImport() {
           </div>
 
           {/* Sort Sheet Rows */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
+            <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
               <Button
                 onClick={() => sortSheetRowsMutation.mutate({ eventId })}
                 disabled={sortSheetRowsMutation.isPending}
-                className="bg-violet-700 hover:bg-violet-600 text-sm font-semibold"
+                className="w-full min-w-0 justify-center whitespace-normal break-words px-3 py-3 text-center text-sm font-semibold bg-violet-700 hover:bg-violet-600 sm:w-auto"
               >
                 {sortSheetRowsMutation.isPending ? "⏳ Sorting rows..." : "🔄 Sort Rows by Center & Team #"}
               </Button>
@@ -628,12 +628,12 @@ export default function MasterSheetImport() {
           </div>
 
           {/* Verify Tab Headers */}
-          <div className="mb-6">
-              <div className="flex items-center gap-3 mb-3">
+          <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
+              <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <Button
                   onClick={handleVerifyHeaders}
                   disabled={verifyState === "loading" || !activeEvent?.sheetSpreadsheetId || !activeEvent?.sheetTabName}
-                  className={`text-sm font-semibold ${
+                  className={`w-full min-w-0 justify-center whitespace-normal break-words px-3 py-3 text-center text-sm font-semibold sm:w-auto ${
                     verifyState === "ok"
                       ? "bg-green-700 hover:bg-green-600"
                       : verifyState === "error"

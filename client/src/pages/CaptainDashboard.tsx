@@ -15,6 +15,7 @@ import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
 import AdRotator from "@/components/AdRotator";
+import PortalSignInRequired from "@/components/PortalSignInRequired";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -231,6 +232,10 @@ export default function CaptainDashboard() {
   function handleLogout() {
     clearBowlerSession();
     navigate("/captain-login");
+  }
+
+  if (!token) {
+    return <PortalSignInRequired portal="Team Captain" />;
   }
 
   if (teamQuery.isLoading) {

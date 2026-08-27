@@ -29,6 +29,7 @@ import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanq
 import AdRotator from "@/components/AdRotator";
 import SurveyDialog from "@/components/SurveyDialog";
 import AppDownloadPrompt from "@/components/AppDownloadPrompt";
+import PortalSignInRequired from "@/components/PortalSignInRequired";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -389,6 +390,10 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
   function handleLogout() {
     clearBowlerSession();
     navigate("/bowler-login");
+  }
+
+  if (!isEDMode && !token) {
+    return <PortalSignInRequired portal="Bowler" />;
   }
 
   if (profileQuery.isLoading) {

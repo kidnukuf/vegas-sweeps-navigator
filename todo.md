@@ -826,3 +826,20 @@
 - [x] Show the active signed-in Event Director name in the dashboard
 - [x] Add self-service login troubleshooting guidance on the Event Director login screen
 - [x] Test and publish the clarified Event Director login experience
+
+## Production Maintenance Notice Repair
+- [x] Inspect the live Bowl Vegas maintenance response and deployment status; confirmed www.bowlvegas.com returns a Cloudflare 503 while the production app process is running
+- [ ] Restore the removed www.bowlvegas.com custom-domain binding in the project domain settings
+- [ ] Correct the outage cause without altering event data
+- [ ] Verify the public site and Event Director route are available
+
+## Protected Portal Sign-In Enforcement
+- [x] Audit direct route access to the Event Director portal and all Bowler Portal protected pages
+- [x] Require a valid Event Director or Bowler session before protected portal data and actions render
+- [x] Preserve public landing, registration, and personalized claim-code introduction routes
+- [x] Add regression tests for unauthenticated portal access and run the full validation suite (38 files / 204 tests)
+
+## Mobile Sheet Sync Layout Repair
+- [x] Inspect the Sheet Sync action-card markup and responsive styles
+- [x] Align every action button to the same framed card width as its description on mobile
+- [x] Verify the Sheet Sync section at a narrow mobile viewport without horizontal overhang

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 import { normalizeSquadTime } from "@/lib/squadTime";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import PortalSignInRequired from "@/components/PortalSignInRequired";
 
 const BOWLER_TOKEN_KEY = "vsn_bowler_token";
 
@@ -59,6 +60,10 @@ export default function CaptainConfirmation() {
       return;
     }
     submitMutation.mutate({ token, phone: phone || undefined, email: email || undefined });
+  }
+
+  if (!token) {
+    return <PortalSignInRequired portal="Team Captain" />;
   }
 
   if (step === "contact") {

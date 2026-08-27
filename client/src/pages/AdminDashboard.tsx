@@ -428,6 +428,7 @@ import SurveyResultsTab from "@/components/SurveyResultsTab";
 import SurveyControlsCard from "@/components/SurveyControlsCard";
 import GuidedHelpPanel from "@/components/GuidedHelpPanel";
 import { ED_HELP } from "@/lib/edHelpContent";
+import { hasVerifiedEventDirectorAccess, isLegacyEventDirectorSessionCandidate } from "@/lib/portalAccess";
 
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
@@ -2716,14 +2717,33 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   );
 }
 export default function AdminDashboard() {
-  const [isAuthed, setIsAuthed] = useState(() => !!getEdToken());
   const { loading: ownerAuthLoading, isAuthenticated, user } = useAuth();
   const isOwnerSession = Boolean(isAuthenticated && user?.role === "admin");
-  if (ownerAuthLoading) return <div className="min-h-screen grid place-items-center bg-[#070d16] text-gray-300">Loading secure workspace…</div>;
-  if (!isAuthed && !isOwnerSession) return <EdLoginGate onAuth={() => window.location.reload()} />;
+  const storedEdToken = getEdToken();
+  const staffAccessQuery = trpc.edStaff.access.useQuery(undefined, { retry: false });
+  const legacyAccessQuery = trpc.edStaff.legacyAccess.useQuery(
+    { token: storedEdToken ?? "" },
+    { enabled: isLegacyEventDirectorSessionCandidate(storedEdToken), retry: false },
+  );
+  const staffLogout = trpc.edStaff.logout.useMutation();
+  const hasVerifiedAccess = hasVerifiedEventDirectorAccess({
+    isOwnerSession,
+    staffAccess: staffAccessQuery.data,
+    legacyAccess: legacyAccessQuery.data,
+  });
+
+  useEffect(() => {
+    if (ownerAuthLoading || staffAccessQuery.isLoading || legacyAccessQuery.isLoading || hasVerifiedAccess) return;
+    clearEdToken();
+  }, [hasVerifiedAccess, legacyAccessQuery.isLoading, ownerAuthLoading, staffAccessQuery.isLoading]);
+
+  if (ownerAuthLoading || staffAccessQuery.isLoading || legacyAccessQuery.isLoading) {
+    return <div className="min-h-screen grid place-items-center bg-[#070d16] text-gray-300">Checking secure Event Director access…</div>;
+  }
+  if (!hasVerifiedAccess) return <EdLoginGate onAuth={() => window.location.reload()} />;
   return <AdminDashboardInner onSignOut={() => {
     if (isOwnerSession) { window.location.assign("/owner"); return; }
     clearEdToken();
-    setIsAuthed(false);
+    staffLogout.mutate(undefined, { onSettled: () => window.location.assign("/ed") });
   }} />;
 }

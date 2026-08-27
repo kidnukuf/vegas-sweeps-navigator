@@ -18,6 +18,7 @@ import { normalizeSquadTime } from "@/lib/squadTime";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import AppFooter from "@/components/AppFooter";
 import AppDownloadPrompt from "@/components/AppDownloadPrompt";
+import PortalSignInRequired from "@/components/PortalSignInRequired";
 
 // ─── PWA install popup types ──────────────────────────────────────────────────
 interface BeforeInstallPromptEvent extends Event {
@@ -63,6 +64,10 @@ export default function BowlerConfirmation() {
       return;
     }
     submitMutation.mutate({ token, phone: phone || undefined, email: email || undefined });
+  }
+
+  if (!token) {
+    return <PortalSignInRequired portal="Bowler" />;
   }
 
   // ── Step 1: Contact Info ────────────────────────────────────────────────────
