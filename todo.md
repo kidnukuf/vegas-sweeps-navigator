@@ -843,3 +843,8 @@
 - [x] Inspect the Sheet Sync action-card markup and responsive styles
 - [x] Align every action button to the same framed card width as its description on mobile
 - [x] Verify the Sheet Sync section at a narrow mobile viewport without horizontal overhang
+
+## Event Director Session Synchronization
+- [x] Detect when a stale browser token exists without a valid server Event Director session
+- [x] Return stale sessions to the Event Director sign-in screen before any event mutation
+- [x] Verify Cassie’s event creation works after a clean server-backed sign-in
