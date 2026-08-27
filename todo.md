@@ -865,5 +865,5 @@
 ## Scoped Creator Empty-Portfolio Verification
 - [x] Create a temporary Event Director account without any event ownership
 - [x] Replace the empty-portfolio fallback Event #1 dashboard with a no-events state
-- [ ] Verify the account’s Event Director portal has an empty event list and no fallback event workspace
-- [ ] Remove the temporary account after verification
+- [x] Verify the account’s Event Director portal has an empty event list and no fallback event workspace in production
+- [x] Remove the temporary account after verification
