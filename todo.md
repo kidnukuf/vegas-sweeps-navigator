@@ -829,9 +829,9 @@
 
 ## Production Maintenance Notice Repair
 - [x] Inspect the live Bowl Vegas maintenance response and deployment status; confirmed www.bowlvegas.com returns a Cloudflare 503 while the production app process is running
-- [ ] Restore the removed www.bowlvegas.com custom-domain binding in the project domain settings
-- [ ] Correct the outage cause without altering event data
-- [ ] Verify the public site and Event Director route are available
+- [x] Restore the removed www.bowlvegas.com custom-domain binding in the project domain settings
+- [x] Correct the outage cause without altering event data
+- [x] Verify the public site and Event Director route are available; www.bowlvegas.com and /ed now return HTTP 200 with valid TLS
 
 ## Protected Portal Sign-In Enforcement
 - [x] Audit direct route access to the Event Director portal and all Bowler Portal protected pages
