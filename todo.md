@@ -867,3 +867,8 @@
 - [x] Replace the empty-portfolio fallback Event #1 dashboard with a no-events state
 - [x] Verify the account’s Event Director portal has an empty event list and no fallback event workspace in production
 - [x] Remove the temporary account after verification
+
+## Cassie Davis Scoped Access Verification
+- [x] Confirm Cassie Davis’s current scoped Event Director role and Group 3 event ownership
+- [x] Verify live Event Director sign-in and Group 3 workspace loading (792-bowler roster loaded)
+- [x] Confirm Cassie cannot access another Event Director’s event workspace; an attempted local selection of another event resolved back to Group 3 test
