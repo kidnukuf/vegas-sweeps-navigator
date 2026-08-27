@@ -1,28 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { canAccessAssignedEvent, isManusOwnerUser, isOwnerSession, type EdSession } from "./_core/edAuth";
 
-describe("company-scoped Event Director access", () => {
-  it("allows the platform owner and Cassie's platform-administrator role across all events", () => {
+describe("scoped Event Director access", () => {
+  it("allows only the platform owner across all events", () => {
     const owner: EdSession = { type: "owner", userId: 1 };
-    const cassie: EdSession = { type: "platform_admin", staffId: 30001, staffName: "Cassie Davis" };
+    const cassie: EdSession = { type: "staff", staffId: 30001, staffName: "Cassie Davis" };
     expect(canAccessAssignedEvent(owner, false)).toBe(true);
-    expect(canAccessAssignedEvent(cassie, false)).toBe(true);
+    expect(canAccessAssignedEvent(cassie, false)).toBe(false);
+    expect(canAccessAssignedEvent(cassie, true)).toBe(true);
   });
 
-  it("requires a same-company event assignment for a standard Event Director", () => {
+  it("requires an event relationship for a standard Event Director", () => {
     const director: EdSession = { type: "staff", staffId: 20, staffName: "Director A", companyId: 7 };
     expect(canAccessAssignedEvent(director, true)).toBe(true);
     expect(canAccessAssignedEvent(director, false)).toBe(false);
   });
 
-  it("rejects an Event Director with no company assignment", () => {
+  it("allows an unassigned Event Director to access only their own event", () => {
     const unassigned: EdSession = { type: "staff", staffId: 20, staffName: "Unassigned", companyId: null };
-    expect(canAccessAssignedEvent(unassigned, true)).toBe(false);
+    expect(canAccessAssignedEvent(unassigned, true)).toBe(true);
+    expect(canAccessAssignedEvent(unassigned, false)).toBe(false);
   });
 
   it("reserves the private owner dashboard boundary for the configured Manus owner", () => {
     expect(isOwnerSession({ type: "owner", userId: 1 })).toBe(true);
-    expect(isOwnerSession({ type: "platform_admin", staffId: 30001, staffName: "Cassie Davis" })).toBe(false);
+    expect(isOwnerSession({ type: "staff", staffId: 30001, staffName: "Cassie Davis" })).toBe(false);
     expect(isOwnerSession({ type: "staff", staffId: 20, staffName: "Director A", companyId: 7 })).toBe(false);
   });
 

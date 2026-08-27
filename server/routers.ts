@@ -169,15 +169,14 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const session = await requireEdSession(ctx);
         const companyId = session.type === "staff" ? session.companyId : input.companyId ?? null;
-        if (session.type === "staff" && !companyId) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Your Event Director account must be assigned to a company before creating an event." });
-        }
         if (companyId) {
           const company = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [companyId]);
           if (!company[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Company not found." });
         }
-        const created = await rawExec(`INSERT INTO events (eventName, eventYear, status, companyId) VALUES (?, ?, 'active', ?)`, [input.eventName, input.eventYear, companyId]);
+        const created = await rawExec(`INSERT INTO events (eventName, eventYear, status, companyId, createdByStaffId) VALUES (?, ?, 'active', ?, ?)`, [input.eventName, input.eventYear, companyId, session.staffId ?? null]);
         const id = created.insertId;
+        // Keep the legacy assignment record for owner reporting while creator ownership
+        // remains the sole Event Director authorization boundary.
         if (session.type === "staff" && session.staffId) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [session.staffId, id]);
         await writeAuditLog({
           eventId: id,

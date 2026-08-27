@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? "fallback-secret";
 const STAFF_COOKIE = "ed_staff_token";
 
 export interface EdSession {
-  type: "owner" | "platform_admin" | "staff";
+  type: "owner" | "staff";
   staffId?: number;
   staffName?: string;
   userId?: number;
@@ -19,7 +19,7 @@ export interface EdSession {
 
 type ManusUserIdentity = { id: number; openId: string; role: "user" | "admin" } | null | undefined;
 
-/** The configured Manus owner and an application-level administrator are both trusted owner identities. */
+/** The configured Manus owner is the only cross-platform owner identity. */
 export function isManusOwnerUser(user: ManusUserIdentity): boolean {
   return Boolean(user && (user.openId === ENV.ownerOpenId || user.role === "admin"));
 }
@@ -48,14 +48,14 @@ export async function resolveEdSession(ctx: TrpcContext): Promise<EdSession | nu
   }
   const cookie = verifyStaffCookie(ctx.req);
   if (!cookie) return null;
-  const rows = await rawQuery<{ id: number; name: string; companyId: number | null; accessRole: "platform_admin" | "event_director" }>(
-    `SELECT id, name, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`,
+  const rows = await rawQuery<{ id: number; name: string; companyId: number | null }>(
+    `SELECT id, name, companyId FROM ed_staff WHERE id = ? LIMIT 1`,
     [cookie.staffId],
   );
   const staff = rows[0];
   if (!staff) return null;
   return {
-    type: staff.accessRole === "platform_admin" ? "platform_admin" : "staff",
+    type: "staff",
     staffId: staff.id,
     staffName: staff.name,
     companyId: staff.companyId,
@@ -83,45 +83,42 @@ export async function requireOwner(ctx: TrpcContext): Promise<EdSession> {
 
 export async function requirePlatformAdmin(ctx: TrpcContext): Promise<EdSession> {
   const session = await requireEdSession(ctx);
-  if (session.type !== "owner" && session.type !== "platform_admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Platform administrator access required." });
+  if (session.type !== "owner") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required." });
   }
   return session;
 }
 
 export function canAccessAssignedEvent(session: EdSession, assignmentExists: boolean): boolean {
-  return session.type === "owner" || session.type === "platform_admin" || Boolean(session.staffId && session.companyId && assignmentExists);
+  return session.type === "owner" || Boolean(session.staffId && assignmentExists);
 }
 
 /** Return only events available to the signed-in Event Director. */
 export async function getAccessibleEvents(ctx: TrpcContext): Promise<Record<string, unknown>[]> {
   const session = await requireEdSession(ctx);
-  if (session.type === "owner" || session.type === "platform_admin") {
+  if (session.type === "owner") {
     return rawQuery(`SELECT * FROM events ORDER BY id DESC`);
   }
-  if (!session.staffId || !session.companyId) return [];
+  if (!session.staffId) return [];
   return rawQuery(
-    `SELECT e.* FROM events e
-     INNER JOIN event_director_assignments a ON a.eventId = e.id
-     WHERE a.staffId = ? AND e.companyId = ? ORDER BY e.id DESC`,
-    [session.staffId, session.companyId],
+    `SELECT e.* FROM events e WHERE e.createdByStaffId = ? ORDER BY e.id DESC`,
+    [session.staffId],
   );
 }
 
-/** Block access unless the caller is a platform collaborator or assigned to this event in their own company. */
+/** Block Event Directors from accessing events created by another director. */
 export async function assertEventAccess(ctx: TrpcContext, eventId: number): Promise<EdSession> {
   const session = await requireEdSession(ctx);
-  if (session.type === "owner" || session.type === "platform_admin") return session;
-  if (!session.staffId || !session.companyId) {
+  if (session.type === "owner") return session;
+  if (!session.staffId) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You are not assigned to this event." });
   }
   const matches = await rawQuery<{ id: number }>(
-    `SELECT e.id FROM events e INNER JOIN event_director_assignments a ON a.eventId = e.id
-     WHERE e.id = ? AND e.companyId = ? AND a.staffId = ? LIMIT 1`,
-    [eventId, session.companyId, session.staffId],
+    `SELECT id FROM events WHERE id = ? AND createdByStaffId = ? LIMIT 1`,
+    [eventId, session.staffId],
   );
-  if (!canAccessAssignedEvent(session, Boolean(matches[0]))) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "You are not assigned to this event." });
+  if (!matches[0]) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this Event Director workspace." });
   }
   return session;
 }

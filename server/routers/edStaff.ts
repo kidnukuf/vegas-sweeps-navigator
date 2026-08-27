@@ -44,7 +44,7 @@ function optionalHttpUrl(value: string | undefined, label: string) {
 export const edStaffRouter = router({
   access: publicProcedure.query(async ({ ctx }) => {
     const session = await resolveEdSession(ctx);
-    return session ? { type: session.type, companyId: session.companyId ?? null, canManagePlatform: session.type === "owner" || session.type === "platform_admin" } : null;
+    return session ? { type: session.type, companyId: session.companyId ?? null, canManagePlatform: session.type === "owner" } : null;
   }),
 
   legacyAccess: publicProcedure
@@ -102,16 +102,17 @@ export const edStaffRouter = router({
   }),
 
   createStaff: publicProcedure
-    .input(z.object({ username: z.string().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/), password: z.string().min(8), name: z.string().min(1).max(128), companyId: z.number().int().positive(), eventIds: z.array(z.number().int().positive()).min(1) }))
+    .input(z.object({ username: z.string().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/), password: z.string().min(8), name: z.string().min(1).max(128), companyId: z.number().int().positive().optional(), eventIds: z.array(z.number().int().positive()).default([]) }))
     .mutation(async ({ input, ctx }) => {
       await requirePlatformAdmin(ctx);
       const duplicate = await rawQuery<{ id: number }>(`SELECT id FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`, [input.username]);
       if (duplicate[0]) throw new TRPCError({ code: "CONFLICT", message: "That username is already in use." });
-      const company = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
-      if (!company[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Company not found." });
-      await validatePortfolio(input.companyId, input.eventIds);
-      const result = await rawExec(`INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole, createdBy) VALUES (?, ?, ?, ?, 'event_director', ?)`, [input.username, await bcrypt.hash(input.password, SALT_ROUNDS), input.name, input.companyId, ctx.user?.id ?? null]);
-      for (const eventId of input.eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [result.insertId, eventId]);
+      if (input.eventIds.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Event Directors can access only events they create. Do not assign existing events when creating an account." });
+      if (input.companyId) {
+        const company = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
+        if (!company[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Company not found." });
+      }
+      const result = await rawExec(`INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole, createdBy) VALUES (?, ?, ?, ?, 'event_director', ?)`, [input.username, await bcrypt.hash(input.password, SALT_ROUNDS), input.name, input.companyId ?? null, ctx.user?.id ?? null]);
       return { ok: true, staffId: result.insertId };
     }),
 
@@ -119,12 +120,7 @@ export const edStaffRouter = router({
     .input(z.object({ staffId: z.number().int().positive(), eventIds: z.array(z.number().int().positive()).min(1) }))
     .mutation(async ({ input, ctx }) => {
       await requirePlatformAdmin(ctx);
-      const staff = (await rawQuery<{ companyId: number | null; accessRole: string }>(`SELECT companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]))[0];
-      if (!staff?.companyId || staff.accessRole !== "event_director") throw new TRPCError({ code: "BAD_REQUEST", message: "This account is not a company-scoped Event Director." });
-      await validatePortfolio(staff.companyId, input.eventIds);
-      await rawExec(`DELETE FROM event_director_assignments WHERE staffId = ?`, [input.staffId]);
-      for (const eventId of input.eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [input.staffId, eventId]);
-      return { ok: true };
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Event Directors can access only events they create. Owner access remains available for every event." });
     }),
 
   deleteStaff: publicProcedure.input(z.object({ staffId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
@@ -158,20 +154,11 @@ export const edStaffRouter = router({
       sheetTabNickname: z.string().max(255).optional(),
       templateUrl: z.string().optional(),
       guideUrl: z.string().optional(),
-      staffId: z.number().int().positive().optional(),
     })).mutation(async ({ input, ctx }) => {
       await requirePlatformAdmin(ctx);
       const [event] = await rawQuery<{ id: number; companyId: number | null }>(`SELECT id, companyId FROM events WHERE id = ? LIMIT 1`, [input.eventId]);
       if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
       if (!event.companyId) throw new TRPCError({ code: "BAD_REQUEST", message: "Assign this event to a company before creating its workspace." });
-
-      if (input.staffId) {
-        const [staff] = await rawQuery<{ id: number; companyId: number | null; accessRole: string }>(`SELECT id, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]);
-        if (!staff || staff.accessRole !== "event_director" || staff.companyId !== event.companyId) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Choose an Event Director from the same company as this event." });
-        }
-        await rawExec(`INSERT IGNORE INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [input.staffId, input.eventId]);
-      }
 
       const spreadsheetId = normalizeSpreadsheetId(input.spreadsheet);
       const [sharedSheet] = await rawQuery<{ spreadsheetId: string }>(

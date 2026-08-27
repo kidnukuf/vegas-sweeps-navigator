@@ -13,15 +13,15 @@ function staffContext(staffId: number): TrpcContext {
   };
 }
 
-describe("company Event Director router isolation", () => {
-  it("returns only assigned events and rejects another company’s read or write", async () => {
+describe("creator-owned Event Director router isolation", () => {
+  it("returns only the director’s own event and rejects another director’s read or write", async () => {
     const stamp = Date.now();
     const companyA = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Company A ${stamp}`, `company-a-${stamp}`]);
     const companyB = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Company B ${stamp}`, `company-b-${stamp}`]);
-    const eventA = await rawExec("INSERT INTO events (companyId, eventName, eventYear, status) VALUES (?, ?, ?, 'active')", [companyA.insertId, `A ${stamp}`, 2099]);
+    const staff = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`director-${stamp}`, "test-hash", "Company A Director", companyA.insertId]);
+    const eventA = await rawExec("INSERT INTO events (companyId, createdByStaffId, eventName, eventYear, status) VALUES (?, ?, ?, ?, 'active')", [companyA.insertId, staff.insertId, `A ${stamp}`, 2099]);
     const eventB = await rawExec("INSERT INTO events (companyId, eventName, eventYear, status) VALUES (?, ?, ?, 'active')", [companyB.insertId, `B ${stamp}`, 2099]);
     const bowlerB = await rawExec("INSERT INTO bowlers (eventId, legalFirstName, legalLastName, scantronId, registrationStatus) VALUES (?, ?, ?, ?, 'pre_registered')", [eventB.insertId, "Blocked", "Bowler", `${String(stamp).slice(-10)}`]);
-    const staff = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`director-${stamp}`, "test-hash", "Company A Director", companyA.insertId]);
     await rawExec("INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)", [staff.insertId, eventA.insertId]);
 
     try {

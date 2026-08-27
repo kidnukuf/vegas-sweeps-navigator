@@ -79,6 +79,9 @@ export type EventGroup = typeof eventGroups.$inferSelect;
 export const events = mysqlTable("events", {
   id: int("id").autoincrement().primaryKey(),
   companyId: int("companyId"),
+  // The Event Director who created this event. Only that director may operate it;
+  // the Manus project owner retains cross-event access.
+  createdByStaffId: int("createdByStaffId"),
   groupId: int("groupId"),
   /** Slug matching GROUP_THEMES key: 'bob' | 'valentine' | 'june-group-1' ... 'june-group-4' */
   groupSlug: varchar("groupSlug", { length: 64 }).default("bob"),

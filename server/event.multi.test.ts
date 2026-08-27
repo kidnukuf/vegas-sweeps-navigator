@@ -3,6 +3,7 @@ import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { rawQuery, rawExec } from "./db";
 import { ENV } from "./_core/env";
+import jwt from "jsonwebtoken";
 
 // Platform-owner context for Event Director procedures.
 function createCtx(): TrpcContext {
@@ -19,6 +20,15 @@ function createCtx(): TrpcContext {
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+  } as TrpcContext;
+}
+
+function createStaffCtx(staffId: number): TrpcContext {
+  const token = jwt.sign({ staffId, type: "ed_staff" }, process.env.JWT_SECRET ?? "fallback-secret");
+  return {
+    user: null,
+    req: { protocol: "https", headers: {}, cookies: { ed_staff_token: token } } as unknown as TrpcContext["req"],
     res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
   } as TrpcContext;
 }
@@ -63,6 +73,31 @@ describe("multi-event support", () => {
 
     await rawQuery("DELETE FROM auditLog WHERE action = 'create_event' AND targetId = ?", [created.id]);
     await rawQuery("DELETE FROM events WHERE id = ?", [created.id]);
+  });
+
+  it("self-assigns a new Event Director event and blocks that director from another event workspace", async () => {
+    const unique = Date.now();
+    const staff = await rawExec(
+      "INSERT INTO ed_staff (username, passwordHash, name, accessRole) VALUES (?, ?, ?, 'event_director')",
+      [`scoped-${unique}`, "not-used-in-this-test", `Scoped Director ${unique}`],
+    );
+    const caller = appRouter.createCaller(createStaffCtx(staff.insertId));
+    const own = await caller.event.create({ eventName: `Scoped Event ${unique}`, eventYear: 2099 });
+    const other = await rawExec(
+      "INSERT INTO events (eventName, eventYear, status) VALUES (?, 2099, 'planning')",
+      [`Other Event ${unique}`],
+    );
+
+    const ownership = await rawQuery<{ createdByStaffId: number | null }>("SELECT createdByStaffId FROM events WHERE id = ?", [own.id]);
+    expect(Number(ownership[0]?.createdByStaffId)).toBe(staff.insertId);
+    const visible = await caller.event.list();
+    expect((visible as Record<string, unknown>[]).map((event) => Number(event.id))).toEqual([own.id]);
+    await expect(caller.event.getById({ id: other.insertId })).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    await rawQuery("DELETE FROM auditLog WHERE action = 'create_event' AND targetId = ?", [own.id]);
+    await rawQuery("DELETE FROM event_director_assignments WHERE eventId IN (?, ?)", [own.id, other.insertId]);
+    await rawQuery("DELETE FROM events WHERE id IN (?, ?)", [own.id, other.insertId]);
+    await rawQuery("DELETE FROM ed_staff WHERE id = ?", [staff.insertId]);
   });
 
   it("permanently deletes a bowler and audit-logs before removal", async () => {

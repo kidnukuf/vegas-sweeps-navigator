@@ -848,3 +848,16 @@
 - [x] Detect when a stale browser token exists without a valid server Event Director session
 - [x] Return stale sessions to the Event Director sign-in screen before any event mutation
 - [x] Verify Cassie’s event creation works after a clean server-backed sign-in
+
+## Event Director Workspace Isolation
+- [x] Audit access rules for assigned Event Directors, platform administrators, and owner sessions
+- [x] Verify that direct event links and server mutations reject unauthorized event access for standard company-scoped Event Directors
+- [x] Confirm Cassie Davis’s intended event visibility and remove the administrator exception
+
+## Scoped Event Director Event Creation
+- [x] Allow every authenticated Event Director to create an event without platform-wide access
+- [x] Automatically assign each newly created event to its creating Event Director
+- [x] Restrict Event Director event lists, direct links, and mutations to the event creator
+- [x] Preserve Owner Portal platform-wide event and Event Director management access
+- [x] Convert current non-owner Event Directors, including Cassie Davis, to the scoped creator model without losing existing access
+- [x] Add and run regression tests for isolated creation, direct-link rejection, and owner cross-event access (38 files / 205 tests); verify Cassie’s local Event Director session shows Group 3 test

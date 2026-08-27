@@ -72,7 +72,7 @@ const ownerDirectorCreateInput = z.object({
   name: z.string().trim().min(1).max(128),
   username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, dots, underscores, or hyphens."),
   password: z.string().min(8).max(128),
-  companyId: z.number().int().positive(),
+  companyId: z.number().int().positive().optional(),
   eventIds: z.array(z.number().int().positive()).default([]),
 });
 
@@ -152,22 +152,17 @@ export const ownerDashboardRouter = router({
     const [companies, groups, directors, events, sharedSheet] = await Promise.all([
       rawQuery<{ id: number; name: string; slug: string }>(`SELECT id, name, slug FROM companies ORDER BY name`),
       rawQuery<{ id: number; name: string; slug: string }>(`SELECT id, name, slug FROM event_groups ORDER BY name`),
-      rawQuery<{ id: number; name: string; username: string; companyId: number; companyName: string | null }>(
+      rawQuery<{ id: number; name: string; username: string; companyId: number | null; companyName: string | null }>(
         `SELECT s.id, s.name, s.username, s.companyId, c.name AS companyName
          FROM ed_staff s LEFT JOIN companies c ON c.id = s.companyId
          WHERE s.accessRole = 'event_director' ORDER BY c.name, s.name, s.username`
       ),
-      rawQuery<{ id: number; eventName: string; eventYear: number; companyId: number | null; status: string }>(
-        `SELECT id, eventName, eventYear, companyId, status FROM events ORDER BY eventYear DESC, id DESC`
+      rawQuery<{ id: number; eventName: string; eventYear: number; companyId: number | null; createdByStaffId: number | null; status: string }>(
+        `SELECT id, eventName, eventYear, companyId, createdByStaffId, status FROM events ORDER BY eventYear DESC, id DESC`
       ),
       getSharedSheetDefault(),
     ]);
-    const assignments = await rawQuery<{ staffId: number; eventId: number }>(`SELECT staffId, eventId FROM event_director_assignments`);
-    const eventIdsByDirector = assignments.reduce<Record<number, number[]>>((groupsByDirector, assignment) => {
-      (groupsByDirector[assignment.staffId] ??= []).push(assignment.eventId);
-      return groupsByDirector;
-    }, {});
-    return { companies, groups, events, sharedSheet: sharedSheet ? { spreadsheetId: sharedSheet.spreadsheetId } : null, directors: directors.map((director) => ({ ...director, eventIds: eventIdsByDirector[director.id] ?? [] })) };
+    return { companies, groups, events, sharedSheet: sharedSheet ? { spreadsheetId: sharedSheet.spreadsheetId } : null, directors: directors.map((director) => ({ ...director, eventIds: events.filter((event) => event.createdByStaffId === director.id).map((event) => event.id) })) };
   }),
 
   setSharedSheetDefault: publicProcedure
@@ -213,26 +208,21 @@ export const ownerDashboardRouter = router({
 
   createDirector: publicProcedure.input(ownerDirectorCreateInput).mutation(async ({ input, ctx }) => {
     const session = await requireOwner(ctx);
-    const [company] = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
-    if (!company) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company for the Event Director." });
+    if (input.eventIds.length) throw new TRPCError({ code: "BAD_REQUEST", message: "New Event Directors begin with no event access and can manage only events they create." });
+    if (input.companyId) {
+      const [company] = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
+      if (!company) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company for the Event Director." });
+    }
     const [duplicate] = await rawQuery<{ id: number }>(`SELECT id FROM ed_staff WHERE LOWER(username) = LOWER(?) LIMIT 1`, [input.username]);
     if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "That Event Director username is already in use." });
-    const eventIds = await validateOwnerPortfolio(input.companyId, input.eventIds);
-    const result = await rawExec(`INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole, createdBy) VALUES (?, ?, ?, ?, 'event_director', ?)`, [input.username.trim(), await bcrypt.hash(input.password, 12), input.name.trim(), input.companyId, session.userId ?? null]);
-    for (const eventId of eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [result.insertId, eventId]);
-    await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_create_event_director", targetId: result.insertId, targetType: "ed_staff", details: `Owner created Event Director ${input.name.trim()} (${input.username.trim()}) with ${eventIds.length} event assignment(s)` });
+    const result = await rawExec(`INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole, createdBy) VALUES (?, ?, ?, ?, 'event_director', ?)`, [input.username.trim(), await bcrypt.hash(input.password, 12), input.name.trim(), input.companyId ?? null, session.userId ?? null]);
+    await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_create_event_director", targetId: result.insertId, targetType: "ed_staff", details: `Owner created scoped Event Director ${input.name.trim()} (${input.username.trim()})` });
     return { success: true, staffId: result.insertId };
   }),
 
   setDirectorAssignments: publicProcedure.input(ownerDirectorAssignmentsInput).mutation(async ({ input, ctx }) => {
-    const session = await requireOwner(ctx);
-    const [director] = await rawQuery<{ id: number; name: string; companyId: number | null; accessRole: string }>(`SELECT id, name, companyId, accessRole FROM ed_staff WHERE id = ? LIMIT 1`, [input.staffId]);
-    if (!director || director.accessRole !== "event_director" || !director.companyId) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company-scoped Event Director." });
-    const eventIds = await validateOwnerPortfolio(director.companyId, input.eventIds);
-    await rawExec(`DELETE FROM event_director_assignments WHERE staffId = ?`, [input.staffId]);
-    for (const eventId of eventIds) await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [input.staffId, eventId]);
-    await writeAuditLog({ actorRole: "Owner", actorId: session.userId, action: "owner_set_event_director_assignments", targetId: input.staffId, targetType: "ed_staff", details: `Owner set ${eventIds.length} event assignment(s) for ${director.name}` });
-    return { success: true };
+    await requireOwner(ctx);
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Event Directors can access only events they create. The Owner Portal can open every event directly." });
   }),
 
   resetDirectorPassword: publicProcedure.input(z.object({ staffId: z.number().int().positive(), password: z.string().min(8).max(128) })).mutation(async ({ input, ctx }) => {
