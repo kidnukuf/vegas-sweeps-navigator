@@ -8,6 +8,7 @@ import { groupEventDirectors } from "../ownerDirectorAssignments";
 import { assessOwnerReadiness } from "../ownerDashboardLogic";
 import { getOwnedEventIds, normalizeEventIds, portfolioMatchesCompany } from "../ownerOperationsLogic";
 import { normalizeCoordinatorContactDetails } from "../coordinatorContactLogic";
+import { canOwnerRecordFinalImport, canOwnerRecordInitialImport } from "./coordinator.logic";
 import { normalizeSpreadsheetId, resolveSharedSheetTarget } from "../sharedSheetLogic";
 
 const optionalText = z.string().max(2_000).optional().nullable();
@@ -278,6 +279,64 @@ export const ownerDashboardRouter = router({
       );
     }
     await writeAuditLog({ eventId: input.eventId, actorRole: "Owner", actorId: session.userId, action: "owner_save_coordinator_contact", targetType: "event_coordinator_contact", details: `Owner saved contact details for coordinator ${coordinatorName}` });
+    return { success: true };
+  }),
+
+  coordinatorHandoffs: publicProcedure.query(async ({ ctx }) => {
+    await requireOwner(ctx);
+    return rawQuery(
+      `SELECT s.id, s.eventId, s.centerId, s.leagueSession, s.status, s.sourceType, s.submittedAt, s.edReviewedAt,
+              s.readyForInitialImportAt, s.initialImportedAt, s.readyForFinalImportAt, s.finalImportedAt, s.updatedAt,
+              e.eventName, e.eventYear, bc.centerName, a.firstName, a.lastName, a.email, a.centerPhone, a.centerExtension,
+              COUNT(b.id) AS rowCount,
+              SUM(CASE WHEN b.validationStatus = 'needs_correction' THEN 1 ELSE 0 END) AS errorRowCount,
+              SUM(CASE WHEN b.validationStatus = 'warning' THEN 1 ELSE 0 END) AS warningRowCount
+       FROM coordinator_submissions s
+       JOIN events e ON e.id = s.eventId
+       JOIN coordinator_accounts a ON a.id = s.coordinatorAccountId
+       LEFT JOIN bowling_centers bc ON bc.id = s.centerId
+       LEFT JOIN coordinator_bowlers b ON b.submissionId = s.id
+       GROUP BY s.id, s.eventId, s.centerId, s.leagueSession, s.status, s.sourceType, s.submittedAt, s.edReviewedAt,
+                s.readyForInitialImportAt, s.initialImportedAt, s.readyForFinalImportAt, s.finalImportedAt, s.updatedAt,
+                e.eventName, e.eventYear, bc.centerName, a.firstName, a.lastName, a.email, a.centerPhone, a.centerExtension
+       ORDER BY FIELD(s.status, 'ready_for_owner_initial_import', 'ready_for_owner_final_import', 'submitted_for_ed_review', 'submitted_for_final_ed_review', 'initial_imported', 'final_imported'), s.updatedAt DESC`
+    );
+  }),
+
+  coordinatorHandoffDetail: publicProcedure.input(z.object({ submissionId: z.string().uuid() })).query(async ({ input, ctx }) => {
+    await requireOwner(ctx);
+    const submissions = await rawQuery(
+      `SELECT s.*, e.eventName, e.eventYear, bc.centerName, a.firstName, a.lastName, a.email, a.centerPhone, a.centerExtension, a.mobilePhone, a.preferredContactMethod
+       FROM coordinator_submissions s JOIN events e ON e.id = s.eventId JOIN coordinator_accounts a ON a.id = s.coordinatorAccountId
+       LEFT JOIN bowling_centers bc ON bc.id = s.centerId WHERE s.id = ? LIMIT 1`,
+      [input.submissionId],
+    );
+    const submission = submissions[0];
+    if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Coordinator submission not found." });
+    const rows = await rawQuery(`SELECT id, sourceRowNumber, data, validationStatus, validationDetails, updatedAt FROM coordinator_bowlers WHERE submissionId = ? ORDER BY sourceRowNumber ASC`, [input.submissionId]);
+    const audit = await rawQuery(`SELECT * FROM coordinator_audit_log WHERE submissionId = ? ORDER BY createdAt DESC LIMIT 300`, [input.submissionId]);
+    return { submission, rows, audit };
+  }),
+
+  recordInitialImportHandoff: publicProcedure.input(z.object({ submissionId: z.string().uuid(), note: z.string().trim().max(1_000).optional(), confirmation: z.literal("RECORD INITIAL HANDOFF") })).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const submissions = await rawQuery<{ id: string; eventId: number; status: string }>(`SELECT id, eventId, status FROM coordinator_submissions WHERE id = ? LIMIT 1`, [input.submissionId]);
+    const submission = submissions[0];
+    if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Coordinator submission not found." });
+    if (!canOwnerRecordInitialImport(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "Only an Event Director-approved initial roster can be recorded as handed off." });
+    await rawExec(`UPDATE coordinator_submissions SET status = 'initial_imported', initialImportedAt = NOW() WHERE id = ?`, [submission.id]);
+    await rawExec(`INSERT INTO coordinator_audit_log (id, eventId, submissionId, actorType, actorId, action, newValue) VALUES (?, ?, ?, 'owner', ?, 'owner_initial_handoff_recorded', ?)`, [crypto.randomUUID(), submission.eventId, submission.id, session.userId ? String(session.userId) : null, input.note?.trim() || "Initial import handoff recorded. No automatic app or Google Sheet write was performed."]);
+    return { success: true };
+  }),
+
+  recordFinalImportHandoff: publicProcedure.input(z.object({ submissionId: z.string().uuid(), note: z.string().trim().max(1_000).optional(), confirmation: z.literal("RECORD FINAL HANDOFF") })).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const submissions = await rawQuery<{ id: string; eventId: number; status: string }>(`SELECT id, eventId, status FROM coordinator_submissions WHERE id = ? LIMIT 1`, [input.submissionId]);
+    const submission = submissions[0];
+    if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Coordinator submission not found." });
+    if (!canOwnerRecordFinalImport(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "Only an Event Director-approved final roster can be recorded as handed off." });
+    await rawExec(`UPDATE coordinator_submissions SET status = 'final_imported', finalImportedAt = NOW() WHERE id = ?`, [submission.id]);
+    await rawExec(`INSERT INTO coordinator_audit_log (id, eventId, submissionId, actorType, actorId, action, newValue) VALUES (?, ?, ?, 'owner', ?, 'owner_final_handoff_recorded', ?)`, [crypto.randomUUID(), submission.eventId, submission.id, session.userId ? String(session.userId) : null, input.note?.trim() || "Final import handoff recorded. No automatic app or Google Sheet write was performed."]);
     return { success: true };
   }),
 

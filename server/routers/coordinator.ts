@@ -10,9 +10,11 @@ import { COORDINATOR_COOKIE, requireCoordinatorSession, resolveCoordinatorSessio
 import {
   canCoordinatorEditSubmission,
   canEdMarkReadyForInitialImport,
+  canEdMarkReadyForFinalImport,
   hasRosterReadinessErrors,
   isInvitationRedeemable,
   isLeagueSessionAllowed,
+  isPostInitialImportStatus,
   summarizeCoordinatorRows,
   validateCoordinatorRosterRow,
 } from "./coordinator.logic";
@@ -224,11 +226,11 @@ export const coordinatorRouter = router({
       if (existing[0] && !canCoordinatorEditSubmission(existing[0].status)) throw new TRPCError({ code: "FORBIDDEN", message: "This submission is in Event Director or Owner review and cannot be edited right now." });
       if (existing[0] && (existing[0].eventId !== scope.eventId || existing[0].centerId !== scope.centerId)) throw new TRPCError({ code: "FORBIDDEN", message: "An existing roster must stay within its original coordinator scope." });
       const validatedRows = input.rows.map((row) => validateCoordinatorRosterRow(row, { centerName: scope.centerName, leagueSession: input.leagueSession }));
-      if (!existing[0]) {
-        await rawExec(`INSERT INTO coordinator_submissions (id, eventId, centerId, coordinatorAccountId, leagueSession, sourceType, status) VALUES (?, ?, ?, ?, ?, ?, 'draft')`, [id, scope.eventId, scope.centerId, coordinator.id, input.leagueSession.trim(), input.sourceType]);
-      } else {
-        await rawExec(`UPDATE coordinator_submissions SET leagueSession = ?, sourceType = ?, status = 'draft' WHERE id = ?`, [input.leagueSession.trim(), input.sourceType, id]);
-      }
+	      if (!existing[0]) {
+	        await rawExec(`INSERT INTO coordinator_submissions (id, eventId, centerId, coordinatorAccountId, leagueSession, sourceType, status) VALUES (?, ?, ?, ?, ?, ?, 'draft')`, [id, scope.eventId, scope.centerId, coordinator.id, input.leagueSession.trim(), input.sourceType]);
+	      } else {
+	        await rawExec(`UPDATE coordinator_submissions SET leagueSession = ?, sourceType = ?, status = ? WHERE id = ?`, [input.leagueSession.trim(), input.sourceType, isPostInitialImportStatus(existing[0].status) ? "draft_after_initial_import" : "draft", id]);
+	      }
       await replaceSubmissionRows(id, validatedRows);
       const summary = summarizeCoordinatorRows(validatedRows);
       await audit({ eventId: scope.eventId, submissionId: id, actorType: "coordinator", actorId: String(coordinator.id), action: "draft_saved", newValue: JSON.stringify(summary) });
@@ -244,12 +246,13 @@ export const coordinatorRouter = router({
       const submission = submissions[0];
       if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Coordinator submission not found." });
       if (!canCoordinatorEditSubmission(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This submission is not available for resubmission." });
-      const rows = await getSubmissionRows(submission.id);
-      const { validated, summary } = submissionSummary(rows, { centerName: submission.centerName, leagueSession: submission.leagueSession });
-      if (hasRosterReadinessErrors(validated)) throw new TRPCError({ code: "BAD_REQUEST", message: "Correct the highlighted minimum roster information and ensure every team has a captain before submitting for review." });
-      await rawExec(`UPDATE coordinator_submissions SET status = 'submitted_for_ed_review', submittedAt = NOW() WHERE id = ?`, [submission.id]);
-      await audit({ eventId: submission.eventId, submissionId: submission.id, actorType: "coordinator", actorId: String(coordinator.id), action: "submitted_for_ed_review", newValue: JSON.stringify(summary) });
-      return { ok: true, summary };
+	      const rows = await getSubmissionRows(submission.id);
+	      const { validated, summary } = submissionSummary(rows, { centerName: submission.centerName, leagueSession: submission.leagueSession });
+	      if (hasRosterReadinessErrors(validated)) throw new TRPCError({ code: "BAD_REQUEST", message: "Correct the highlighted minimum roster information and ensure every team has a captain before submitting for review." });
+	      const finalReview = isPostInitialImportStatus(submission.status);
+	      await rawExec(`UPDATE coordinator_submissions SET status = ?, submittedAt = NOW() WHERE id = ?`, [finalReview ? "submitted_for_final_ed_review" : "submitted_for_ed_review", submission.id]);
+	      await audit({ eventId: submission.eventId, submissionId: submission.id, actorType: "coordinator", actorId: String(coordinator.id), action: finalReview ? "submitted_for_final_ed_review" : "submitted_for_ed_review", newValue: JSON.stringify(summary) });
+	      return { ok: true, summary, reviewStage: finalReview ? "final" : "initial" };
     }),
     listForEvent: publicProcedure.input(z.object({ eventId: z.number().int().positive() })).query(async ({ input, ctx }) => {
       await assertEventAccess(ctx, input.eventId);
@@ -279,7 +282,7 @@ export const coordinatorRouter = router({
     }),
     correctRow: publicProcedure.input(z.object({ submissionId: z.string().uuid(), coordinatorBowlerId: z.string().uuid(), patch: z.record(z.string(), z.unknown()) })).mutation(async ({ input, ctx }) => {
       const submission = await getEdSubmission(input.submissionId, ctx);
-      if (["initial_imported", "ready_for_owner_final_import", "final_imported"].includes(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This submission is locked for Owner import processing." });
+      if (["ready_for_owner_initial_import", "ready_for_owner_final_import", "final_imported"].includes(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This submission is locked for Owner import processing." });
       const centerRows = submission.centerId ? await rawQuery<{ centerName: string }>(`SELECT centerName FROM bowling_centers WHERE id = ? LIMIT 1`, [submission.centerId]) : [];
       const existingRows = await rawQuery<SubmissionRow>(`SELECT id, sourceRowNumber, data, validationStatus, validationDetails FROM coordinator_bowlers WHERE id = ? AND submissionId = ? LIMIT 1`, [input.coordinatorBowlerId, submission.id]);
       const existing = existingRows[0];
@@ -293,9 +296,10 @@ export const coordinatorRouter = router({
     }),
     requestCoordinatorFollowUp: publicProcedure.input(z.object({ submissionId: z.string().uuid(), note: z.string().trim().min(1).max(1_000) })).mutation(async ({ input, ctx }) => {
       const submission = await getEdSubmission(input.submissionId, ctx);
-      if (["initial_imported", "ready_for_owner_final_import", "final_imported"].includes(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This submission is locked for Owner import processing." });
-      await rawExec(`UPDATE coordinator_submissions SET status = 'needs_coordinator_follow_up' WHERE id = ?`, [submission.id]);
-      await audit({ eventId: submission.eventId, submissionId: submission.id, actorType: "event_director", action: "coordinator_follow_up_requested", newValue: input.note });
+      if (["ready_for_owner_initial_import", "ready_for_owner_final_import", "final_imported"].includes(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This submission is locked for Owner import processing." });
+      const finalFollowUp = isPostInitialImportStatus(submission.status);
+      await rawExec(`UPDATE coordinator_submissions SET status = ? WHERE id = ?`, [finalFollowUp ? "needs_coordinator_final_follow_up" : "needs_coordinator_follow_up", submission.id]);
+      await audit({ eventId: submission.eventId, submissionId: submission.id, actorType: "event_director", action: finalFollowUp ? "coordinator_final_follow_up_requested" : "coordinator_follow_up_requested", newValue: input.note });
       return { ok: true };
     }),
     markReadyForInitialImport: publicProcedure.input(z.object({ submissionId: z.string().uuid() })).mutation(async ({ input, ctx }) => {
@@ -307,6 +311,17 @@ export const coordinatorRouter = router({
       if (hasRosterReadinessErrors(validated)) throw new TRPCError({ code: "BAD_REQUEST", message: "This roster still needs minimum-field corrections or a captain for every team." });
       await rawExec(`UPDATE coordinator_submissions SET status = 'ready_for_owner_initial_import', readyForInitialImportAt = NOW(), edReviewedAt = NOW() WHERE id = ?`, [submission.id]);
       await audit({ eventId: submission.eventId, submissionId: submission.id, actorType: "event_director", action: "ready_for_owner_initial_import", newValue: JSON.stringify(summary) });
+      return { ok: true, summary };
+    }),
+    markReadyForFinalImport: publicProcedure.input(z.object({ submissionId: z.string().uuid() })).mutation(async ({ input, ctx }) => {
+      const submission = await getEdSubmission(input.submissionId, ctx);
+      if (!canEdMarkReadyForFinalImport(submission.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This submission is not ready for final Owner import review." });
+      const centerRows = submission.centerId ? await rawQuery<{ centerName: string }>(`SELECT centerName FROM bowling_centers WHERE id = ? LIMIT 1`, [submission.centerId]) : [];
+      const rows = await getSubmissionRows(submission.id);
+      const { validated, summary } = submissionSummary(rows, { centerName: centerRows[0]?.centerName ?? null, leagueSession: submission.leagueSession });
+      if (hasRosterReadinessErrors(validated)) throw new TRPCError({ code: "BAD_REQUEST", message: "This roster still needs minimum-field corrections or a captain for every team." });
+      await rawExec(`UPDATE coordinator_submissions SET status = 'ready_for_owner_final_import', readyForFinalImportAt = NOW(), edReviewedAt = NOW() WHERE id = ?`, [submission.id]);
+      await audit({ eventId: submission.eventId, submissionId: submission.id, actorType: "event_director", action: "ready_for_owner_final_import", newValue: JSON.stringify(summary) });
       return { ok: true, summary };
     }),
   }),

@@ -179,7 +179,7 @@ export function isInvitationRedeemable(invitation: { redeemedAt?: Date | string 
   return !invitation.redeemedAt && !invitation.revokedAt && new Date(invitation.expiresAt).getTime() > now.getTime();
 }
 
-const coordinatorEditableStatuses = new Set(["draft", "needs_coordinator_follow_up"]);
+const coordinatorEditableStatuses = new Set(["draft", "needs_coordinator_follow_up", "initial_imported", "draft_after_initial_import", "needs_coordinator_final_follow_up"]);
 
 export function canCoordinatorEditSubmission(status: string | null | undefined): boolean {
   return !status || coordinatorEditableStatuses.has(status);
@@ -191,6 +191,22 @@ export function canSubmitForEdReview(status: string | null | undefined): boolean
 
 export function canEdMarkReadyForInitialImport(status: string | null | undefined): boolean {
   return status === "submitted_for_ed_review" || status === "needs_coordinator_follow_up" || status === "draft";
+}
+
+export function isPostInitialImportStatus(status: string | null | undefined): boolean {
+  return ["initial_imported", "draft_after_initial_import", "needs_coordinator_final_follow_up", "submitted_for_final_ed_review"].includes(status ?? "");
+}
+
+export function canEdMarkReadyForFinalImport(status: string | null | undefined): boolean {
+  return status === "submitted_for_final_ed_review" || status === "needs_coordinator_final_follow_up" || status === "draft_after_initial_import";
+}
+
+export function canOwnerRecordInitialImport(status: string | null | undefined): boolean {
+  return status === "ready_for_owner_initial_import";
+}
+
+export function canOwnerRecordFinalImport(status: string | null | undefined): boolean {
+  return status === "ready_for_owner_final_import";
 }
 
 export function isAffirmativeCaptain(value: string | null | undefined): boolean {

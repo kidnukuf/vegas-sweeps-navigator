@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   canCoordinatorEditSubmission,
   canEdMarkReadyForInitialImport,
+  canEdMarkReadyForFinalImport,
+  canOwnerRecordFinalImport,
+  canOwnerRecordInitialImport,
   hasRosterReadinessErrors,
   isInvitationRedeemable,
   isLeagueSessionAllowed,
+  isPostInitialImportStatus,
   summarizeCoordinatorRows,
   validateCoordinatorRosterRow,
 } from "./coordinator.logic";
 import { coordinatorRouter } from "./coordinator";
+import { ownerDashboardRouter } from "./ownerDashboard";
 
 const scopedRow = {
   firstName: "Avery",
@@ -23,6 +28,7 @@ const scopedRow = {
 describe("Coordinator Package workflow guards", () => {
   it("registers the coordinator router with the roster and audit procedures", () => {
     expect(coordinatorRouter).toBeDefined();
+    expect(ownerDashboardRouter).toBeDefined();
   });
 
   it("treats expired, redeemed, and revoked invitations as unusable", () => {
@@ -68,5 +74,17 @@ describe("Coordinator Package workflow guards", () => {
     expect(canCoordinatorEditSubmission("ready_for_owner_initial_import")).toBe(false);
     expect(canEdMarkReadyForInitialImport("submitted_for_ed_review")).toBe(true);
     expect(canEdMarkReadyForInitialImport("final_imported")).toBe(false);
+  });
+
+  it("separates Owner initial handoff, coordinator enrichment, final ED review, and final Owner handoff", () => {
+    expect(canOwnerRecordInitialImport("ready_for_owner_initial_import")).toBe(true);
+    expect(canOwnerRecordInitialImport("submitted_for_ed_review")).toBe(false);
+    expect(canCoordinatorEditSubmission("initial_imported")).toBe(true);
+    expect(isPostInitialImportStatus("initial_imported")).toBe(true);
+    expect(isPostInitialImportStatus("draft_after_initial_import")).toBe(true);
+    expect(canEdMarkReadyForFinalImport("submitted_for_final_ed_review")).toBe(true);
+    expect(canEdMarkReadyForFinalImport("ready_for_owner_initial_import")).toBe(false);
+    expect(canOwnerRecordFinalImport("ready_for_owner_final_import")).toBe(true);
+    expect(canOwnerRecordFinalImport("initial_imported")).toBe(false);
   });
 });

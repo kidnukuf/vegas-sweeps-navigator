@@ -953,7 +953,7 @@
 - [x] Add secure Event Director invitation, coordinator account, session, scope, draft submission, and Event Director review backend foundation
 - [x] Smoke-test the registered coordinator access endpoint against the running service
 - [x] Build Event Director invitations, coordinator signup/login, scoped roster intake, audit, and readiness workflows
-- [ ] Build Owner-only initial/final import handoff and app-generated data controls
+- [x] Build Owner-only initial/final import handoff and app-generated data controls
 - [x] Build role-scoped communication inboxes, contact actions, and center bulletin boards
 - [x] Build Owner-controlled local-offer management with sponsorship disclosures and reporting
 - [ ] Add comprehensive authorization and workflow tests
@@ -974,6 +974,11 @@
 - [x] Add Owner-only event/center-scoped local-offer management with sponsorship disclosure and safe display
 - [x] Add authenticated Bowler/Captain board interfaces plus ED and Owner oversight
 - [x] Add focused bulletin-board and local-offer authorization tests
+
+## Active Owner Import Handoff Vertical Slice
+- [x] Add Owner-only queue, review, status transitions, and immutable audit entries for coordinator submissions
+- [x] Add owner dashboard controls for initial and final import handoff without automatic app or Google Sheet writes
+- [x] Add focused Owner-only handoff authorization and submission transition tests
 
 ## Deferred Owner Portal Advertising Prospecting
 - [ ] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location
