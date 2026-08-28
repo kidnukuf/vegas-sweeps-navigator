@@ -1,5 +1,6 @@
 import {
   int,
+  index,
   bigint,
   mysqlEnum,
   mysqlTable,
@@ -358,6 +359,31 @@ export const localEventOffers = mysqlTable("local_event_offers", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+// ─── OWNER ADVERTISING PROSPECTING ───────────────────────────────────────────
+// Factual prospect research only. These records do not contain attendee data or
+// advertising performance claims, and are visible exclusively through Owner routes.
+export const advertisingProspects = mysqlTable("advertising_prospects", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  category: varchar("category", { length: 100 }),
+  address: text("address"),
+  phone: varchar("phone", { length: 32 }),
+  website: text("website"),
+  contactRoute: text("contactRoute"),
+  fitRationale: text("fitRationale"),
+  ethicalPositioning: text("ethicalPositioning"),
+  sourceUrl: text("sourceUrl"),
+  researchStatus: varchar("researchStatus", { length: 32 }).default("research_ready").notNull(),
+  ownerNotes: text("ownerNotes"),
+  contactedAt: timestamp("contactedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  eventStatusIndex: index("advertising_prospects_event_status_idx").on(table.eventId, table.researchStatus),
+  eventBusinessUnique: uniqueIndex("advertising_prospects_event_business_unique").on(table.eventId, table.businessName),
+}));
 
 // ─── BOWLING CENTERS ─────────────────────────────────────────────────────────
 export const bowlingCenters = mysqlTable("bowling_centers", {

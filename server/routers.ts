@@ -14,6 +14,7 @@ import { ownerDashboardRouter } from "./routers/ownerDashboard";
 import { coordinatorRouter } from "./routers/coordinator";
 import { communicationsRouter } from "./routers/communications";
 import { bulletinRouter } from "./routers/bulletin";
+import { advertisingProspectsRouter } from "./routers/advertisingProspects";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -59,6 +60,7 @@ export const appRouter = router({
   coordinator: coordinatorRouter,
   communications: communicationsRouter,
   bulletin: bulletinRouter,
+  advertisingProspects: advertisingProspectsRouter,
   system: systemRouter,
   emailInvitation: emailInvitationRouter,
 

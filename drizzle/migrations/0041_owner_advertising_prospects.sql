@@ -1,0 +1,21 @@
+CREATE TABLE `advertising_prospects` (
+  `id` varchar(64) NOT NULL,
+  `eventId` int NOT NULL,
+  `businessName` varchar(255) NOT NULL,
+  `category` varchar(100) NULL,
+  `address` text NULL,
+  `phone` varchar(32) NULL,
+  `website` text NULL,
+  `contactRoute` text NULL,
+  `fitRationale` text NULL,
+  `ethicalPositioning` text NULL,
+  `sourceUrl` text NULL,
+  `researchStatus` varchar(32) NOT NULL DEFAULT 'research_ready',
+  `ownerNotes` text NULL,
+  `contactedAt` timestamp NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `advertising_prospects_event_business_unique` (`eventId`, `businessName`),
+  KEY `advertising_prospects_event_status_idx` (`eventId`, `researchStatus`)
+);

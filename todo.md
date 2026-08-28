@@ -981,5 +981,11 @@
 - [x] Add focused Owner-only handoff authorization and submission transition tests
 
 ## Deferred Owner Portal Advertising Prospecting
-- [ ] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location
-- [ ] Add an Owner Portal prospecting workspace with factual contact research, sales-call positioning, and no exaggerated claims
+- [x] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location
+- [x] Add an Owner Portal prospecting workspace with factual contact research, sales-call positioning, and no exaggerated claims
+
+## Active Owner Advertising Prospecting Workspace
+- [x] Add reviewed non-destructive prospect records for event-specific research, outreach status, notes, and source provenance
+- [x] Load verified active-event local prospects with public contact routes and ethical sales-positioning guidance
+- [x] Build an Owner-only event prospecting workspace with filters, research status, activity notes, and source links
+- [x] Validate Owner-only access, prospect presentation, and data-source provenance before publishing
