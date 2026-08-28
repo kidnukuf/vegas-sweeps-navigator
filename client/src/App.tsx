@@ -34,6 +34,7 @@ import MasterSheetImport from "./pages/MasterSheetImport";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import GetStarted from "./pages/GetStarted";
 import CoordinatorImport from "./pages/CoordinatorImport";
+import CoordinatorPortal from "./pages/CoordinatorPortal";
 import { VideoSplash } from "./components/VideoSplash";
 import { useLocation } from "wouter";
 
@@ -139,6 +140,7 @@ function Router() {
       <Route path="/setup-guide" component={OperatorSetupGuide} />
       <Route path="/admin/master-sheet" component={MasterSheetImport} />
       <Route path="/admin/coordinator-import" component={CoordinatorImport} />
+      <Route path="/coordinator" component={CoordinatorPortal} />
       <Route path="/admin/staff-login" component={EDStaffLogin} />
       <Route path="/owner" component={OwnerDashboard} />
       <Route path="/404" component={NotFound} />
