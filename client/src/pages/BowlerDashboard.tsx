@@ -30,6 +30,7 @@ import AdRotator from "@/components/AdRotator";
 import SurveyDialog from "@/components/SurveyDialog";
 import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
+import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -755,10 +756,19 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
                 </div>
               )}
             </div>
-          )}
-        </div>
+	          )}
+	        </div>
 
-        {/* ══════════════════════════════════════════════════════════════════════
+	        {!isEDMode && (
+	          <CommunicationsPanel
+	            eventId={bowlerEventId}
+	            participantToken={token}
+	            preferredTargetType="coordinator"
+	            primaryActionLabel="Contact My Coordinator"
+	          />
+	        )}
+
+	        {/* ══════════════════════════════════════════════════════════════════════
             QR PASSPORT SECTION — always at the bottom
         ══════════════════════════════════════════════════════════════════════ */}
         <div className="pt-2">

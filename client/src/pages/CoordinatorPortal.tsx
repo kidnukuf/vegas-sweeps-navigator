@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 
 type RosterRow = Record<string, string>;
 
@@ -139,7 +140,8 @@ export default function CoordinatorPortal() {
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-5"><button disabled={!isEditable || !scopeId || !leagueSession || saveDraft.isPending} onClick={save} className="rounded-lg bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 disabled:opacity-50">{saveDraft.isPending ? "Saving…" : "Save roster draft"}</button>{selectedSubmissionId && <button disabled={!isEditable || submitForReview.isPending} onClick={() => submitForReview.mutate({ submissionId: selectedSubmissionId })} className="rounded-lg border border-emerald-400/60 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-100 disabled:opacity-50">{submitForReview.isPending ? "Submitting…" : "Submit for ED review"}</button>}<p className="text-xs text-slate-400">Your Event Director sees the roster and validation notes; email and phone gaps are warnings rather than an automatic block.</p></div>
         {(saveDraft.error || submitForReview.error) && <p className="mt-3 rounded-lg border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-100">{saveDraft.error?.message ?? submitForReview.error?.message}</p>}
         {activeSubmission.data && <section className="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-4"><h3 className="font-bold">Current review summary</h3><div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4"><Metric label="Bowlers" value={activeSubmission.data.summary.rowCount} /><Metric label="Teams" value={activeSubmission.data.summary.teamCount} /><Metric label="Contact warnings" value={activeSubmission.data.summary.warningCount} /><Metric label="Corrections needed" value={activeSubmission.data.summary.errorCount} /></div>{activeSubmission.data.audit?.[0] && <p className="mt-4 text-xs text-slate-400">Latest activity: {(activeSubmission.data.audit[0] as any).action?.replaceAll("_", " ")} on {new Date((activeSubmission.data.audit[0] as any).createdAt).toLocaleString()}.</p>}</section>}
-      </section></div>}</section></main>;
+        <CommunicationsPanel eventId={(activeScope as any)?.eventId} preferredTargetType="event_director" primaryActionLabel="Contact My Event Director" className="mt-6" />
+	      </section></div>}</section></main>;
 }
 
 function RosterTableRow({ row, index, editable, onChange, onRemove }: { row: RosterRow; index: number; editable: boolean; onChange: (index: number, key: keyof RosterRow, value: string) => void; onRemove: () => void }) {

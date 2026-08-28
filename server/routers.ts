@@ -12,6 +12,7 @@ import { prizePoolRouter } from "./routers/prizePool";
 import { emailInvitationRouter } from "./routers/emailInvitation";
 import { ownerDashboardRouter } from "./routers/ownerDashboard";
 import { coordinatorRouter } from "./routers/coordinator";
+import { communicationsRouter } from "./routers/communications";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -55,6 +56,7 @@ export const appRouter = router({
   masterSheet: masterSheetRouter,
   ownerDashboard: ownerDashboardRouter,
   coordinator: coordinatorRouter,
+  communications: communicationsRouter,
   system: systemRouter,
   emailInvitation: emailInvitationRouter,
 

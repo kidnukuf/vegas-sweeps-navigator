@@ -964,6 +964,11 @@
 - [x] Add Event Director roster detail review, correction, invitation center scope, and immutable audit timeline
 - [x] Add focused coordinator invitation, scope isolation, roster validation, and readiness workflow tests
 
+## Active Role-Scoped Communications Vertical Slice
+- [x] Add server-enforced actor identity, hierarchy authorization, participant threads, and message delivery
+- [x] Add role-appropriate inboxes and required Contact My controls across Bowler, Captain, Coordinator, and Event Director portals
+- [x] Add focused role-scoped communication authorization and visibility tests
+
 ## Deferred Owner Portal Advertising Prospecting
 - [ ] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location
 - [ ] Add an Owner Portal prospecting workspace with factual contact research, sales-call positioning, and no exaggerated claims

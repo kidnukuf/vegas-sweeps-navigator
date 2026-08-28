@@ -16,6 +16,7 @@ import {
 import AppFooter from "@/components/AppFooter";
 import EventWizard from "@/components/EventWizard";
 import EDBowlerView from "@/components/EDBowlerView";
+import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -433,7 +434,7 @@ import { hasVerifiedEventDirectorAccess, isLegacyEventDirectorSessionCandidate }
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "links" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "links" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "messages" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
   // Company-scoped Event Director management
   const { data: edAccess } = trpc.edStaff.access.useQuery();
   const { data: signedInStaff } = trpc.edStaff.me.useQuery();
@@ -1216,7 +1217,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       <div className="bg-[#111] border-b border-white/10 px-2">
         <div className="max-w-7xl mx-auto flex flex-wrap gap-0">
-          {(["guide", "links", "roster", "passports", "doormen", "workspace", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support"] as const).map((tab) => {
+          {(["guide", "links", "roster", "passports", "doormen", "workspace", "staff", "payouts", "scan", "codes", "ads", "leads", "survey", "qrtest", "audit", "unmatched", "support", "messages"] as const).map((tab) => {
             const newCount = tab === "support" ? ((supportMessages as any[]).filter((m: any) => m.status === "new").length + edNotifUnreadCount) : tab === "leads" ? (adLeadCount ?? 0) : 0;
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); setAdminScanResult(null); stopAdminScanner(); }}
@@ -2462,6 +2463,17 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               <button onClick={() => setEventModal(null)} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Role-scoped Communication Inbox Tab ── */}
+      {activeTab === "messages" && (
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <CommunicationsPanel
+            eventId={EVENT_ID || undefined}
+            preferredTargetType="owner"
+            primaryActionLabel="Contact Owner"
+          />
         </div>
       )}
 

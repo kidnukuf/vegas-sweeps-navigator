@@ -16,6 +16,7 @@ import AppFooter from "@/components/AppFooter";
 import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
 import AdRotator from "@/components/AdRotator";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
+import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -648,11 +649,18 @@ export default function CaptainDashboard() {
             <li className="flex items-start gap-2"><span className="text-amber-400 flex-shrink-0">→</span> Arrive at Lane {p.laneNumber ?? "TBD"} by {normalizeSquadTime(p.squadTime) || "squad time"} on bowling day</li>
             <li className="flex items-start gap-2"><span className="text-cyan-400 flex-shrink-0">→</span> Practice starts <strong className="text-white">10 minutes before</strong> squad time — ensure your team is on the lanes early</li>
             <li className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">→</span> Side pots &amp; brackets are at the <strong className="text-white">front desk</strong> — see the desk before your squad begins</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 flex-shrink-0">→</span> Contact your Event Director for any roster changes or issues</li>
-          </ul>
-        </div>
+	            <li className="flex items-start gap-2"><span className="text-amber-400 flex-shrink-0">→</span> Contact your Event Director for any roster changes or issues</li>
+	          </ul>
+	        </div>
 
-      </div>
+	        <CommunicationsPanel
+	          eventId={captainEventId}
+	          participantToken={token}
+	          preferredTargetType="coordinator"
+	          primaryActionLabel="Contact My Coordinator"
+	        />
+
+	      </div>
 
       <AppFooter />
     </div>
