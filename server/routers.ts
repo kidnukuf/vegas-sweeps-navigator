@@ -11,6 +11,7 @@ import { edStaffRouter } from "./routers/edStaff";
 import { prizePoolRouter } from "./routers/prizePool";
 import { emailInvitationRouter } from "./routers/emailInvitation";
 import { ownerDashboardRouter } from "./routers/ownerDashboard";
+import { coordinatorRouter } from "./routers/coordinator";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -53,6 +54,7 @@ export function generateScantronId(cc: string, ll: string, ee: string, tt: strin
 export const appRouter = router({
   masterSheet: masterSheetRouter,
   ownerDashboard: ownerDashboardRouter,
+  coordinator: coordinatorRouter,
   system: systemRouter,
   emailInvitation: emailInvitationRouter,
 

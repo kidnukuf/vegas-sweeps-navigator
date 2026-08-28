@@ -176,6 +176,189 @@ export const eventCoordinatorContacts = mysqlTable("event_coordinator_contacts",
 
 export type EventCoordinatorContact = typeof eventCoordinatorContacts.$inferSelect;
 
+// ─── COORDINATOR PACKAGE ─────────────────────────────────────────────────────
+export const coordinatorInvitations = mysqlTable("coordinator_invitations", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId"),
+  leagueSessions: json("leagueSessions"),
+  recipientName: varchar("recipientName", { length: 255 }),
+  recipientEmail: varchar("recipientEmail", { length: 320 }),
+  codeHash: varchar("codeHash", { length: 255 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  redeemedAt: timestamp("redeemedAt"),
+  revokedAt: timestamp("revokedAt"),
+  replacementForId: varchar("replacementForId", { length: 64 }),
+  createdByStaffId: int("createdByStaffId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const coordinatorAccounts = mysqlTable("coordinator_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  firstName: varchar("firstName", { length: 100 }),
+  lastName: varchar("lastName", { length: 100 }),
+  centerPhone: varchar("centerPhone", { length: 32 }),
+  centerExtension: varchar("centerExtension", { length: 20 }),
+  mobilePhone: varchar("mobilePhone", { length: 32 }),
+  preferredContactMethod: varchar("preferredContactMethod", { length: 32 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastLoginAt: timestamp("lastLoginAt"),
+});
+
+export const coordinatorScopes = mysqlTable("coordinator_scopes", {
+  id: int("id").autoincrement().primaryKey(),
+  coordinatorAccountId: int("coordinatorAccountId").notNull(),
+  invitationId: varchar("invitationId", { length: 64 }),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId"),
+  leagueSessions: json("leagueSessions"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const coordinatorSubmissions = mysqlTable("coordinator_submissions", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId"),
+  coordinatorAccountId: int("coordinatorAccountId").notNull(),
+  leagueSession: varchar("leagueSession", { length: 100 }),
+  status: varchar("status", { length: 48 }).default("draft").notNull(),
+  sourceType: varchar("sourceType", { length: 20 }),
+  submittedAt: timestamp("submittedAt"),
+  edReviewedAt: timestamp("edReviewedAt"),
+  readyForInitialImportAt: timestamp("readyForInitialImportAt"),
+  initialImportedAt: timestamp("initialImportedAt"),
+  readyForFinalImportAt: timestamp("readyForFinalImportAt"),
+  finalImportedAt: timestamp("finalImportedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const coordinatorBowlers = mysqlTable("coordinator_bowlers", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  submissionId: varchar("submissionId", { length: 64 }).notNull(),
+  sourceRowNumber: int("sourceRowNumber"),
+  data: json("data").notNull(),
+  validationStatus: varchar("validationStatus", { length: 20 }).default("draft").notNull(),
+  validationDetails: json("validationDetails"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const coordinatorAuditLog = mysqlTable("coordinator_audit_log", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  submissionId: varchar("submissionId", { length: 64 }),
+  coordinatorBowlerId: varchar("coordinatorBowlerId", { length: 64 }),
+  actorType: varchar("actorType", { length: 32 }).notNull(),
+  actorId: varchar("actorId", { length: 64 }),
+  action: varchar("action", { length: 64 }).notNull(),
+  fieldName: varchar("fieldName", { length: 100 }),
+  previousValue: text("previousValue"),
+  newValue: text("newValue"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── ROLE-SCOPED COMMUNICATION ───────────────────────────────────────────────
+export const communicationThreads = mysqlTable("communication_threads", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId"),
+  centerId: int("centerId"),
+  leagueSession: varchar("leagueSession", { length: 100 }),
+  teamId: int("teamId"),
+  threadType: varchar("threadType", { length: 40 }).notNull(),
+  createdByActorType: varchar("createdByActorType", { length: 32 }).notNull(),
+  createdByActorId: varchar("createdByActorId", { length: 64 }).notNull(),
+  lastMessageAt: timestamp("lastMessageAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const communicationParticipants = mysqlTable("communication_participants", {
+  id: int("id").autoincrement().primaryKey(),
+  threadId: varchar("threadId", { length: 64 }).notNull(),
+  actorType: varchar("actorType", { length: 32 }).notNull(),
+  actorId: varchar("actorId", { length: 64 }).notNull(),
+  participantRole: varchar("participantRole", { length: 32 }).default("participant").notNull(),
+  lastReadAt: timestamp("lastReadAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  threadActorUnique: uniqueIndex("communication_participants_thread_actor_unique").on(table.threadId, table.actorType, table.actorId),
+}));
+
+export const communicationMessages = mysqlTable("communication_messages", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  threadId: varchar("threadId", { length: 64 }).notNull(),
+  senderActorType: varchar("senderActorType", { length: 32 }).notNull(),
+  senderActorId: varchar("senderActorId", { length: 64 }).notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── CENTER BULLETIN BOARD & OWNER-APPROVED LOCAL OFFERS ────────────────────
+export const centerBulletinPosts = mysqlTable("center_bulletin_posts", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId").notNull(),
+  parentPostId: varchar("parentPostId", { length: 64 }),
+  authorActorType: varchar("authorActorType", { length: 32 }).notNull(),
+  authorActorId: varchar("authorActorId", { length: 64 }).notNull(),
+  body: text("body").notNull(),
+  isPinned: boolean("isPinned").default(false).notNull(),
+  isHidden: boolean("isHidden").default(false).notNull(),
+  isDeleted: boolean("isDeleted").default(false).notNull(),
+  lockedAt: timestamp("lockedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const centerBulletinReports = mysqlTable("center_bulletin_reports", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  postId: varchar("postId", { length: 64 }),
+  localOfferId: varchar("localOfferId", { length: 64 }),
+  reporterActorType: varchar("reporterActorType", { length: 32 }).notNull(),
+  reporterActorId: varchar("reporterActorId", { length: 64 }).notNull(),
+  category: varchar("category", { length: 40 }).notNull(),
+  note: text("note"),
+  status: varchar("status", { length: 32 }).default("open").notNull(),
+  resolvedByActorId: varchar("resolvedByActorId", { length: 64 }),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const centerBulletinAuditLog = mysqlTable("center_bulletin_audit_log", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId").notNull(),
+  postId: varchar("postId", { length: 64 }),
+  actorType: varchar("actorType", { length: 32 }).notNull(),
+  actorId: varchar("actorId", { length: 64 }),
+  action: varchar("action", { length: 48 }).notNull(),
+  previousValue: text("previousValue"),
+  newValue: text("newValue"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const localEventOffers = mysqlTable("local_event_offers", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId"),
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  category: varchar("category", { length: 80 }),
+  description: text("description"),
+  offerText: text("offerText"),
+  contactUrl: text("contactUrl"),
+  contactPhone: varchar("contactPhone", { length: 32 }),
+  startsAt: timestamp("startsAt"),
+  endsAt: timestamp("endsAt"),
+  isSponsored: boolean("isSponsored").default(false).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdByOwnerId: int("createdByOwnerId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 // ─── BOWLING CENTERS ─────────────────────────────────────────────────────────
 export const bowlingCenters = mysqlTable("bowling_centers", {
   id: int("id").autoincrement().primaryKey(),

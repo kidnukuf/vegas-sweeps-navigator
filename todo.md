@@ -946,3 +946,18 @@
 - [x] Define a clearly labeled local-offers area for relevant event-location businesses
 - [x] Restrict offers to Owner-approved, event/center-scoped placements without participant data sharing
 - [x] Specify offer management, removal, reporting, and sponsorship disclosure requirements
+
+## Coordinator Package Build
+- [ ] Map existing authentication, event, center, bowler, captain, import, and claim-code models to the approved coordinator package schema
+- [x] Add secure coordinator, audit, communication, bulletin-board, and local-offer schema with a reviewed migration
+- [x] Add secure Event Director invitation, coordinator account, session, scope, draft submission, and Event Director review backend foundation
+- [ ] Build Event Director invitations, coordinator signup/login, scoped roster intake, audit, and readiness workflows
+- [ ] Build Owner-only initial/final import handoff and app-generated data controls
+- [ ] Build role-scoped communication inboxes, contact actions, and center bulletin boards
+- [ ] Build Owner-controlled local-offer management with sponsorship disclosures and reporting
+- [ ] Add comprehensive authorization and workflow tests
+- [ ] Verify all portals on desktop and mobile, then publish
+
+## Deferred Owner Portal Advertising Prospecting
+- [ ] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location
+- [ ] Add an Owner Portal prospecting workspace with factual contact research, sales-call positioning, and no exaggerated claims
