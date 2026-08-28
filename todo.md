@@ -948,9 +948,10 @@
 - [x] Specify offer management, removal, reporting, and sponsorship disclosure requirements
 
 ## Coordinator Package Build
-- [ ] Map existing authentication, event, center, bowler, captain, import, and claim-code models to the approved coordinator package schema
+- [x] Map existing authentication, event, center, bowler, captain, import, and claim-code models to the approved coordinator package schema
 - [x] Add secure coordinator, audit, communication, bulletin-board, and local-offer schema with a reviewed migration
 - [x] Add secure Event Director invitation, coordinator account, session, scope, draft submission, and Event Director review backend foundation
+- [x] Smoke-test the registered coordinator access endpoint against the running service
 - [ ] Build Event Director invitations, coordinator signup/login, scoped roster intake, audit, and readiness workflows
 - [ ] Build Owner-only initial/final import handoff and app-generated data controls
 - [ ] Build role-scoped communication inboxes, contact actions, and center bulletin boards
