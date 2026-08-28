@@ -878,3 +878,16 @@
 - [x] Add a responsive Owner Portal table listing each Event Director and owned-event count
 - [x] Update stale Owner Portal assignment wording to creator-owned event wording
 - [x] Add regression coverage and verify the table in the Owner Portal (38 files / 206 tests)
+
+## Supplied Content Review and Integration
+- [x] Review the supplied text and determine its audience and appropriate app placement
+- [x] Revise the supplied content by retaining the established 10-digit ID format and clarifying the no-write safeguards
+- [x] Add the revised content to the protected Event Director Coordinator Import page and verify it renders correctly
+
+## Coordinator File to MASTER_PASTE Export
+- [x] Review the supplied Coordinator Import specification, existing import interface, roster fixture, and current Bowler ID tests
+- [x] Resolve the supplied one-digit league-code ID example by retaining the established CC + LL + EE + TT + BB format
+- [x] Build the standalone Event Director Coordinator Import workflow without app, QR, door, authentication-record, or Google Sheet writes
+- [x] Support CSV, XLSX, and pasted grids with coordinator header aliases and pre-export validation
+- [x] Export the exact MASTER_PASTE, ERRORS, and SUMMARY Excel workbook tabs
+- [x] Test aliases, dual-squad merging, third-squad errors, stable IDs, and blank protected columns (39 files / 211 tests)

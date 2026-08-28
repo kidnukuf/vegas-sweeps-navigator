@@ -1167,6 +1167,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </DropdownMenuContent>
             </DropdownMenu>
             <button onClick={() => setLocation("/import")} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-semibold transition-colors">📥 Import Data</button>
+            <button onClick={() => setLocation("/admin/coordinator-import")} className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 rounded-lg text-sm font-semibold transition-colors">🗂️ Coordinator Import</button>
             <button onClick={() => setLocation("/admin/master-sheet")} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-semibold transition-colors">📊 Sheet Sync</button>
             <button onClick={() => setLocation("/seating-chart")} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">🪑 Seating Chart</button>
           </div>
