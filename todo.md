@@ -896,3 +896,31 @@
 - [x] Review the current preview payload and identify parsed-row and error-row table fields
 - [x] Add separate parsed MASTER_PASTE and error tables before the download action
 - [x] Verify the tables are readable and responsive before publishing (TypeScript and focused Coordinator Import tests pass)
+
+## Coordinator Package Scope Review
+- [x] Inspect the example coordinator sheet and current data intake workflow
+- [x] Design the coordinator-facing intake, special-request, multiple-league, and claim-code handoff experience
+- [x] Define the printable coordinator packet content and launch communications
+- [x] Gather final implementation decisions before building the coordinator package
+
+## Coordinator Template and Early Claim-Code Direction
+- [x] Support both an in-app coordinator form and a familiar downloadable sheet/CSV template for low-friction rollout
+- [x] Keep all app-generated fields out of coordinator-facing templates and reserve them for the master sheet
+- [x] Design claim-code issuance to occur as soon as an Event Director approves the basic roster
+- [x] Define a staged coordinator input model: collect minimum roster data first, then allow later completion of all additional information
+
+## Coordinator Invitation, Accounts, and Oversight
+- [x] Require Event Director-issued, one-time coordinator invitation codes
+- [x] Require invited coordinators to create a profile using email as username and a password
+- [x] Give the Event Director live visibility into coordinator-entered data plus editing and audit capability
+- [x] Define a 72-hour invitation expiration with Event Director reissue/revocation and center/league scope
+
+## Coordinator Role Separation and Owner Import Handoff
+- [x] Limit coordinators to providing and completing their own event/center/league data
+- [x] Require Event Directors to audit, edit, and prepare coordinator data for the final handoff
+- [x] Reserve final app import and app-generated data creation for the Owner Portal
+- [x] Confirm the minimum roster threshold, 72-hour invitation wording, and Event Director handling of all special requests
+
+## Coordinator Package Implementation Specification
+- [x] Write the final approved implementation-ready specification
+- [ ] Deliver the specification for explicit authorization before coordinator-system development
