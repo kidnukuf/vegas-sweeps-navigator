@@ -923,4 +923,26 @@
 
 ## Coordinator Package Implementation Specification
 - [x] Write the final approved implementation-ready specification
-- [ ] Deliver the specification for explicit authorization before coordinator-system development
+- [x] Deliver the specification for explicit authorization before coordinator-system development
+
+## Coordinator Signup Communication Details
+- [x] Require coordinator first and last name during profile creation
+- [x] Require a center phone number and extension during profile creation
+- [x] Offer optional mobile number and preferred direct-contact method
+- [x] Display coordinator communication details to the authorized Event Director
+
+## Role-Scoped Communication Hierarchy
+- [x] Define Bowler-to-Captain, Captain-to-Coordinator, Coordinator-to-Event-Director, and Event-Director-to-Owner contact paths
+- [x] Specify participant-only thread access, Event Director coordinator-communication oversight, and Owner-wide communication oversight
+- [x] Add role-appropriate “Contact my…” controls across Bowler, Captain, Coordinator, Event Director, and Owner portals
+- [x] Define the Owner, Event Director, and Coordinator ability to initiate messages to their permitted downstream roles
+
+## Center-Scoped Event Bulletin Board
+- [x] Define a Bowlers and Captains bulletin board limited to attendees from the same event and center
+- [x] Specify post, reply, reporting, moderation, and oversight requirements
+- [x] Add the bulletin board to the final implementation specification before build authorization
+
+## Local Business Offers on Center Bulletin Boards
+- [x] Define a clearly labeled local-offers area for relevant event-location businesses
+- [x] Restrict offers to Owner-approved, event/center-scoped placements without participant data sharing
+- [x] Specify offer management, removal, reporting, and sponsorship disclosure requirements
