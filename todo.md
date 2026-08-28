@@ -956,8 +956,8 @@
 - [x] Build Owner-only initial/final import handoff and app-generated data controls
 - [x] Build role-scoped communication inboxes, contact actions, and center bulletin boards
 - [x] Build Owner-controlled local-offer management with sponsorship disclosures and reporting
-- [ ] Add comprehensive authorization and workflow tests
-- [ ] Verify all portals on desktop and mobile, then publish
+- [x] Add comprehensive authorization and workflow tests
+- [x] Verify all portals on desktop and mobile, then publish
 
 ## Active Coordinator Roster & Audit Vertical Slice
 - [x] Add scoped coordinator roster entry with minimum and completion fields, paste support, draft save, and submission status
