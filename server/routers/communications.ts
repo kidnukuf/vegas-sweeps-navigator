@@ -14,7 +14,8 @@ const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const tokenInput = z.string().min(1).max(2_000).optional();
 const actorTypes = ["bowler", "captain", "coordinator", "event_director", "owner"] as const;
 
-type Actor = CommunicationActor & { eventId?: number | null; centerId?: number | null; teamId?: number | null; label: string };
+export type ResolvedCommunicationActor = CommunicationActor & { eventId?: number | null; centerId?: number | null; teamId?: number | null; label: string };
+type Actor = ResolvedCommunicationActor;
 type ThreadRow = { id: string; eventId: number | null; centerId: number | null; threadType: string; lastMessageAt: Date | null; createdAt: Date };
 type ParticipantRow = { threadId: string; actorType: CommunicationActorType; actorId: string };
 
@@ -26,7 +27,7 @@ function verifyParticipantToken(token?: string) {
   } catch { return null; }
 }
 
-async function resolveActor(ctx: TrpcContext, participantToken?: string): Promise<Actor> {
+export async function resolveCommunicationActor(ctx: TrpcContext, participantToken?: string): Promise<Actor> {
   const ed = await resolveEdSession(ctx);
   if (ed?.type === "owner") return { actorType: "owner", actorId: ctx.user?.openId ?? ENV.ownerOpenId, label: "Owner" };
   if (ed?.type === "staff" && ed.staffId) {
@@ -128,7 +129,7 @@ function typeLabel(actorType: CommunicationActorType) {
 
 export const communicationsRouter = router({
   contactOptions: publicProcedure.input(z.object({ eventId: z.number().int().positive(), participantToken: tokenInput })).query(async ({ input, ctx }) => {
-    const actor = await resolveActor(ctx, input.participantToken);
+    const actor = await resolveCommunicationActor(ctx, input.participantToken);
     const options: Array<{ actorType: CommunicationActorType; actorId: string; label: string; subtitle: string }> = [];
     if (actor.actorType === "bowler" || actor.actorType === "captain") {
       if (actor.eventId !== input.eventId) throw new TRPCError({ code: "FORBIDDEN", message: "You can view contacts only for your current event." });
@@ -173,7 +174,7 @@ export const communicationsRouter = router({
     return options;
   }),
   startThread: publicProcedure.input(z.object({ eventId: z.number().int().positive(), targetActorType: z.enum(actorTypes), targetActorId: z.string().min(1).max(64), participantToken: tokenInput })).mutation(async ({ input, ctx }) => {
-    const actor = await resolveActor(ctx, input.participantToken);
+    const actor = await resolveCommunicationActor(ctx, input.participantToken);
     const target = await resolveTarget(input.targetActorType, input.targetActorId, input.eventId);
     if (actor.actorType === "event_director") await assertEventAccess(ctx, input.eventId);
     await assertRelationship(actor, target, input.eventId);
@@ -190,7 +191,7 @@ export const communicationsRouter = router({
     return { threadId: id, created: true, target };
   }),
   listThreads: publicProcedure.input(z.object({ eventId: z.number().int().positive(), participantToken: tokenInput })).query(async ({ input, ctx }) => {
-    const actor = await resolveActor(ctx, input.participantToken);
+    const actor = await resolveCommunicationActor(ctx, input.participantToken);
     if (actor.actorType === "event_director") await assertEventAccess(ctx, input.eventId);
     if ((actor.actorType === "bowler" || actor.actorType === "captain") && actor.eventId !== input.eventId) throw new TRPCError({ code: "FORBIDDEN", message: "You can view messages only for your current event." });
     if (actor.actorType === "coordinator" && !actor.scopePairs?.some((scope) => scope.eventId === input.eventId)) throw new TRPCError({ code: "FORBIDDEN", message: "This event is outside your coordinator scope." });
@@ -205,13 +206,13 @@ export const communicationsRouter = router({
     return candidates.map((thread) => ({ ...thread, participants: participants.filter((participant) => participant.threadId === thread.id).map(({ actorType, actorId }) => ({ actorType, actorId })), lastMessage: lastMessages.find((message) => message.threadId === thread.id) ?? null })).filter((thread) => actorScopeAllowsThread(actor, thread));
   }),
   messages: publicProcedure.input(z.object({ threadId: z.string().uuid(), participantToken: tokenInput })).query(async ({ input, ctx }) => {
-    const actor = await resolveActor(ctx, input.participantToken);
+    const actor = await resolveCommunicationActor(ctx, input.participantToken);
     const thread = await loadThread(input.threadId);
     if (!actorScopeAllowsThread(actor, thread)) throw new TRPCError({ code: "FORBIDDEN", message: "You are not authorized to view this message thread." });
     return rawQuery(`SELECT id, senderActorType, senderActorId, body, createdAt FROM communication_messages WHERE threadId = ? ORDER BY createdAt ASC, id ASC LIMIT 1000`, [input.threadId]);
   }),
   sendMessage: publicProcedure.input(z.object({ threadId: z.string().uuid(), body: z.string().trim().min(1).max(2_000), participantToken: tokenInput })).mutation(async ({ input, ctx }) => {
-    const actor = await resolveActor(ctx, input.participantToken);
+    const actor = await resolveCommunicationActor(ctx, input.participantToken);
     const thread = await loadThread(input.threadId);
     if (!canSendToThread(actor, thread)) throw new TRPCError({ code: "FORBIDDEN", message: "Only thread participants can send a message. Start a new authorized contact thread instead." });
     if (!isSafeMessageBody(input.body)) throw new TRPCError({ code: "BAD_REQUEST", message: "Messages must be between 1 and 2,000 characters." });

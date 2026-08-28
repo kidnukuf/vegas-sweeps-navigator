@@ -17,6 +17,7 @@ import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanq
 import AdRotator from "@/components/AdRotator";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
+import { CenterBulletinBoard } from "@/components/CenterBulletinBoard";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -658,6 +659,12 @@ export default function CaptainDashboard() {
 	          participantToken={token}
 	          preferredTargetType="coordinator"
 	          primaryActionLabel="Contact My Coordinator"
+	        />
+
+	        <CenterBulletinBoard
+	          eventId={captainEventId}
+	          centerId={(p as any).centerId}
+	          participantToken={token}
 	        />
 
 	      </div>

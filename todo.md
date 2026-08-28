@@ -954,8 +954,8 @@
 - [x] Smoke-test the registered coordinator access endpoint against the running service
 - [x] Build Event Director invitations, coordinator signup/login, scoped roster intake, audit, and readiness workflows
 - [ ] Build Owner-only initial/final import handoff and app-generated data controls
-- [ ] Build role-scoped communication inboxes, contact actions, and center bulletin boards
-- [ ] Build Owner-controlled local-offer management with sponsorship disclosures and reporting
+- [x] Build role-scoped communication inboxes, contact actions, and center bulletin boards
+- [x] Build Owner-controlled local-offer management with sponsorship disclosures and reporting
 - [ ] Add comprehensive authorization and workflow tests
 - [ ] Verify all portals on desktop and mobile, then publish
 
@@ -968,6 +968,12 @@
 - [x] Add server-enforced actor identity, hierarchy authorization, participant threads, and message delivery
 - [x] Add role-appropriate inboxes and required Contact My controls across Bowler, Captain, Coordinator, and Event Director portals
 - [x] Add focused role-scoped communication authorization and visibility tests
+
+## Active Center Bulletin Board & Local Offers Vertical Slice
+- [x] Add same-event, same-center board posting, replies, reports, moderation, and audit authorization
+- [x] Add Owner-only event/center-scoped local-offer management with sponsorship disclosure and safe display
+- [x] Add authenticated Bowler/Captain board interfaces plus ED and Owner oversight
+- [x] Add focused bulletin-board and local-offer authorization tests
 
 ## Deferred Owner Portal Advertising Prospecting
 - [ ] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location

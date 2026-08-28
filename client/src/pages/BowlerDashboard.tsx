@@ -31,6 +31,7 @@ import SurveyDialog from "@/components/SurveyDialog";
 import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
+import { CenterBulletinBoard } from "@/components/CenterBulletinBoard";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -765,6 +766,13 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
 	            participantToken={token}
 	            preferredTargetType="coordinator"
 	            primaryActionLabel="Contact My Coordinator"
+	          />
+	        )}
+	        {!isEDMode && (
+	          <CenterBulletinBoard
+	            eventId={bowlerEventId}
+	            centerId={(p as any).centerId}
+	            participantToken={token}
 	          />
 	        )}
 
