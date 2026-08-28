@@ -891,3 +891,8 @@
 - [x] Support CSV, XLSX, and pasted grids with coordinator header aliases and pre-export validation
 - [x] Export the exact MASTER_PASTE, ERRORS, and SUMMARY Excel workbook tabs
 - [x] Test aliases, dual-squad merging, third-squad errors, stable IDs, and blank protected columns (39 files / 211 tests)
+
+## Coordinator Import Pre-Download Table Preview
+- [x] Review the current preview payload and identify parsed-row and error-row table fields
+- [x] Add separate parsed MASTER_PASTE and error tables before the download action
+- [x] Verify the tables are readable and responsive before publishing (TypeScript and focused Coordinator Import tests pass)
