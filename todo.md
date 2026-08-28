@@ -952,12 +952,17 @@
 - [x] Add secure coordinator, audit, communication, bulletin-board, and local-offer schema with a reviewed migration
 - [x] Add secure Event Director invitation, coordinator account, session, scope, draft submission, and Event Director review backend foundation
 - [x] Smoke-test the registered coordinator access endpoint against the running service
-- [ ] Build Event Director invitations, coordinator signup/login, scoped roster intake, audit, and readiness workflows
+- [x] Build Event Director invitations, coordinator signup/login, scoped roster intake, audit, and readiness workflows
 - [ ] Build Owner-only initial/final import handoff and app-generated data controls
 - [ ] Build role-scoped communication inboxes, contact actions, and center bulletin boards
 - [ ] Build Owner-controlled local-offer management with sponsorship disclosures and reporting
 - [ ] Add comprehensive authorization and workflow tests
 - [ ] Verify all portals on desktop and mobile, then publish
+
+## Active Coordinator Roster & Audit Vertical Slice
+- [x] Add scoped coordinator roster entry with minimum and completion fields, paste support, draft save, and submission status
+- [x] Add Event Director roster detail review, correction, invitation center scope, and immutable audit timeline
+- [x] Add focused coordinator invitation, scope isolation, roster validation, and readiness workflow tests
 
 ## Deferred Owner Portal Advertising Prospecting
 - [ ] After Coordinator Package completion, research 10–15 relevant local advertising prospects within 15 miles of each event location
