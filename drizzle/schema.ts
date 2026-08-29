@@ -248,6 +248,21 @@ export const coordinatorBowlers = mysqlTable("coordinator_bowlers", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const coordinatorSubmissionArtifacts = mysqlTable("coordinator_submission_artifacts", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  submissionId: varchar("submissionId", { length: 64 }).notNull(),
+  artifactType: varchar("artifactType", { length: 32 }).notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  storageKey: varchar("storageKey", { length: 512 }).notNull(),
+  contentType: varchar("contentType", { length: 128 }).notNull(),
+  byteSize: int("byteSize").notNull(),
+  mappingSummary: json("mappingSummary"),
+  createdByCoordinatorAccountId: int("createdByCoordinatorAccountId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  submissionArtifactIndex: index("coordinator_artifacts_submission_type_idx").on(table.submissionId, table.artifactType),
+}));
+
 export const coordinatorAuditLog = mysqlTable("coordinator_audit_log", {
   id: varchar("id", { length: 64 }).primaryKey(),
   eventId: int("eventId").notNull(),

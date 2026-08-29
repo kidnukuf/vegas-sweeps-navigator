@@ -7,6 +7,8 @@ import { publicProcedure, router } from "../_core/trpc";
 import { rawExec, rawQuery } from "../db";
 import { assertEventAccess } from "../_core/edAuth";
 import { COORDINATOR_COOKIE, requireCoordinatorSession, resolveCoordinatorSession, signCoordinatorCookie } from "../_core/coordinatorAuth";
+import { storageGetSignedUrl, storagePut } from "../storage";
+import { MASTER_PASTE_HEADERS, MASTER_PASTE_PROTECTED_HEADERS } from "../../shared/coordinatorImport";
 import {
   canCoordinatorEditSubmission,
   canEdMarkReadyForInitialImport,
@@ -34,10 +36,21 @@ const invitationInput = z.object({
   closingSignature: z.string().trim().max(500).optional(),
 });
 const rosterRowsInput = z.array(z.record(z.string(), z.unknown())).min(1).max(2_000);
+const MAX_COORDINATOR_SOURCE_BYTES = 10 * 1024 * 1024;
+const sourceArtifactInput = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  contentType: z.string().trim().min(1).max(128),
+  byteSize: z.number().int().positive().max(MAX_COORDINATOR_SOURCE_BYTES),
+  base64: z.string().min(1).max(14_000_000),
+  recognizedHeaders: z.array(z.string().max(255)).max(200).default([]),
+  ignoredHeaders: z.array(z.string().max(255)).max(200).default([]),
+  appControlledHeaders: z.array(z.string().max(255)).max(200).default([]),
+});
 
 type CoordinatorScope = { id: number; eventId: number; centerId: number | null; centerName: string | null; leagueSessions: unknown };
 type SubmissionRow = { id: string; sourceRowNumber: number; data: Record<string, unknown>; validationStatus: string; validationDetails: unknown };
 type SubmissionRecord = { id: string; eventId: number; centerId: number | null; coordinatorAccountId: number; leagueSession: string | null; status: string };
+type ArtifactRecord = { id: string; submissionId: string; artifactType: string; fileName: string; storageKey: string; contentType: string; byteSize: number; mappingSummary: unknown; createdAt: Date };
 
 function parseJson(value: unknown): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
@@ -86,6 +99,69 @@ async function replaceSubmissionRows(submissionId: string, validatedRows: Return
       values,
     );
   }
+}
+
+function safeArtifactFileName(fileName: string) {
+  return fileName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_+/g, "_").slice(0, 180) || "coordinator-roster";
+}
+
+function parsedMasterCsv(rows: ReturnType<typeof validateCoordinatorRosterRow>[], coordinatorName: string) {
+  const toMasterRow = (row: ReturnType<typeof validateCoordinatorRosterRow>) => {
+    const data = row.data;
+    const result: Record<string, string> = Object.fromEntries(MASTER_PASTE_HEADERS.map((header) => [header, ""]));
+    result["Phone"] = data.phone ?? "";
+    result["Email"] = data.email ?? "";
+    result["Squad Day & Time"] = data.leagueSession ?? "";
+    result["Lane #"] = data.lane ?? "";
+    result["Center"] = data.center ?? "";
+    result["Coordinator"] = coordinatorName;
+    result["Team #"] = data.teamNumber ?? "";
+    result["Captain"] = data.captain ?? "";
+    result["First Name"] = data.firstName ?? "";
+    result["Last Name"] = data.lastName ?? "";
+    result["Under 21?"] = data.under21 ?? "";
+    result["Sanction #"] = data.sanctionNumber ?? "";
+    result["# Games"] = data.games ?? "";
+    result["Best Avg"] = data.bestAverage ?? "";
+    result["Team Name"] = data.teamName ?? "";
+    result["T-Shirt Size"] = data.shirtSize ?? "";
+    result["Hotel Confirmation"] = data.hotelConfirmation ?? "";
+    result["Check In"] = data.hotelCheckIn ?? "";
+    result["Check Out"] = data.hotelCheckOut ?? "";
+    result["Roommate First Name"] = data.roommateName ?? "";
+    MASTER_PASTE_PROTECTED_HEADERS.forEach((header) => { result[header] = ""; });
+    return result;
+  };
+  const quote = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  return [MASTER_PASTE_HEADERS.join(","), ...rows.map((row) => MASTER_PASTE_HEADERS.map((header) => quote(toMasterRow(row)[header] ?? "")).join(","))].join("\r\n");
+}
+
+async function storeSubmissionArtifacts({ submissionId, eventId, coordinatorId, coordinatorName, source, rows }: {
+  submissionId: string; eventId: number; coordinatorId: number; coordinatorName: string; source: z.infer<typeof sourceArtifactInput>; rows: ReturnType<typeof validateCoordinatorRosterRow>[];
+}) {
+  const sourceBytes = Buffer.from(source.base64, "base64");
+  if (!sourceBytes.length || sourceBytes.length !== source.byteSize || sourceBytes.length > MAX_COORDINATOR_SOURCE_BYTES) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "The uploaded source file could not be verified. Please choose a file no larger than 10 MB." });
+  }
+  const sourceStored = await storagePut(`coordinator-submissions/${submissionId}/source/${safeArtifactFileName(source.fileName)}`, sourceBytes, source.contentType);
+  const parsedFileName = `${safeArtifactFileName(source.fileName).replace(/\.[^.]+$/, "") || "coordinator-roster"}-app-parsed.csv`;
+  const parsedCsv = parsedMasterCsv(rows, coordinatorName);
+  const parsedStored = await storagePut(`coordinator-submissions/${submissionId}/parsed/${parsedFileName}`, parsedCsv, "text/csv;charset=utf-8");
+  const mappingSummary = JSON.stringify({ sourceRows: rows.length, recognizedHeaders: source.recognizedHeaders, ignoredHeaders: source.ignoredHeaders, appControlledHeaders: source.appControlledHeaders, protectedFieldsBlank: true });
+  await rawExec(
+    `INSERT INTO coordinator_submission_artifacts (id, submissionId, artifactType, fileName, storageKey, contentType, byteSize, mappingSummary, createdByCoordinatorAccountId)
+     VALUES (?, ?, 'original_source', ?, ?, ?, ?, ?, ?), (?, ?, 'app_parsed_csv', ?, ?, 'text/csv;charset=utf-8', ?, ?, ?)`,
+    [uuidv4(), submissionId, source.fileName, sourceStored.key, source.contentType, sourceBytes.length, mappingSummary, coordinatorId, uuidv4(), submissionId, parsedFileName, parsedStored.key, Buffer.byteLength(parsedCsv), mappingSummary, coordinatorId],
+  );
+  await audit({ eventId, submissionId, actorType: "coordinator", actorId: String(coordinatorId), action: "source_and_parsed_files_attached", newValue: JSON.stringify({ sourceFileName: source.fileName, parsedFileName, sourceRows: rows.length }) });
+}
+
+async function artifactMetadata(submissionId: string) {
+  return rawQuery<ArtifactRecord>(
+    `SELECT id, submissionId, artifactType, fileName, storageKey, contentType, byteSize, mappingSummary, createdAt
+     FROM coordinator_submission_artifacts WHERE submissionId = ? ORDER BY createdAt DESC`,
+    [submissionId],
+  );
 }
 
 async function getSubmissionRows(submissionId: string): Promise<SubmissionRow[]> {
@@ -223,7 +299,7 @@ export const coordinatorRouter = router({
       const auditRows = await rawQuery(`SELECT * FROM coordinator_audit_log WHERE submissionId = ? ORDER BY createdAt DESC LIMIT 100`, [submission.id]);
       return { submission, rows, summary, audit: auditRows };
     }),
-    saveDraft: publicProcedure.input(z.object({ scopeId: z.number().int().positive(), submissionId: z.string().uuid().optional(), leagueSession: z.string().trim().min(1).max(100), sourceType: z.enum(["web_form", "xlsx", "csv"]), rows: rosterRowsInput })).mutation(async ({ input, ctx }) => {
+    saveDraft: publicProcedure.input(z.object({ scopeId: z.number().int().positive(), submissionId: z.string().uuid().optional(), leagueSession: z.string().trim().min(1).max(100), sourceType: z.enum(["web_form", "xlsx", "csv", "google_sheet"]), rows: rosterRowsInput, sourceArtifact: sourceArtifactInput.optional() })).mutation(async ({ input, ctx }) => {
       const coordinator = await requireCoordinatorSession(ctx);
       const scope = await getCoordinatorScope(coordinator.id, input.scopeId);
       if (!isLeagueSessionAllowed(parseArray(scope.leagueSessions), input.leagueSession)) throw new TRPCError({ code: "FORBIDDEN", message: "This league session is outside your assigned coordinator scope." });
@@ -237,11 +313,21 @@ export const coordinatorRouter = router({
 	        await rawExec(`INSERT INTO coordinator_submissions (id, eventId, centerId, coordinatorAccountId, leagueSession, sourceType, status) VALUES (?, ?, ?, ?, ?, ?, 'draft')`, [id, scope.eventId, scope.centerId, coordinator.id, input.leagueSession.trim(), input.sourceType]);
 	      } else {
 	        await rawExec(`UPDATE coordinator_submissions SET leagueSession = ?, sourceType = ?, status = ? WHERE id = ?`, [input.leagueSession.trim(), input.sourceType, isPostInitialImportStatus(existing[0].status) ? "draft_after_initial_import" : "draft", id]);
-	      }
+      }
       await replaceSubmissionRows(id, validatedRows);
       const summary = summarizeCoordinatorRows(validatedRows);
+      if (input.sourceArtifact) {
+        await storeSubmissionArtifacts({
+          submissionId: id,
+          eventId: scope.eventId,
+          coordinatorId: coordinator.id,
+          coordinatorName: `${coordinator.firstName ?? ""} ${coordinator.lastName ?? ""}`.trim() || coordinator.email,
+          source: input.sourceArtifact,
+          rows: validatedRows,
+        });
+      }
       await audit({ eventId: scope.eventId, submissionId: id, actorType: "coordinator", actorId: String(coordinator.id), action: "draft_saved", newValue: JSON.stringify(summary) });
-      return { ok: true, submissionId: id, summary };
+      return { ok: true, submissionId: id, summary, artifactsAttached: Boolean(input.sourceArtifact) };
     }),
     submitForEdReview: publicProcedure.input(z.object({ submissionId: z.string().uuid() })).mutation(async ({ input, ctx }) => {
       const coordinator = await requireCoordinatorSession(ctx);
@@ -285,7 +371,24 @@ export const coordinatorRouter = router({
          WHERE l.submissionId = ? ORDER BY l.createdAt DESC LIMIT 200`,
         [submission.id],
       );
-      return { submission, rows, summary, audit: auditRows };
+      const artifacts = (await artifactMetadata(submission.id)).map(({ storageKey: _storageKey, ...artifact }) => artifact);
+      return { submission, rows, summary, audit: auditRows, artifacts };
+    }),
+    artifactDownload: publicProcedure.input(z.object({ artifactId: z.string().uuid() })).query(async ({ input, ctx }) => {
+      const rows = await rawQuery<ArtifactRecord & { eventId: number; coordinatorAccountId: number }>(
+        `SELECT a.id, a.submissionId, a.artifactType, a.fileName, a.storageKey, a.contentType, a.byteSize, a.mappingSummary, a.createdAt, s.eventId, s.coordinatorAccountId
+         FROM coordinator_submission_artifacts a JOIN coordinator_submissions s ON s.id = a.submissionId WHERE a.id = ? LIMIT 1`,
+        [input.artifactId],
+      );
+      const artifact = rows[0];
+      if (!artifact) throw new TRPCError({ code: "NOT_FOUND", message: "Coordinator import file not found." });
+      const coordinator = await resolveCoordinatorSession(ctx);
+      if (coordinator) {
+        if (coordinator.id !== artifact.coordinatorAccountId) throw new TRPCError({ code: "FORBIDDEN", message: "This coordinator import file is outside your account." });
+      } else {
+        await assertEventAccess(ctx, artifact.eventId);
+      }
+      return { fileName: artifact.fileName, contentType: artifact.contentType, url: await storageGetSignedUrl(artifact.storageKey) };
     }),
     correctRow: publicProcedure.input(z.object({ submissionId: z.string().uuid(), coordinatorBowlerId: z.string().uuid(), patch: z.record(z.string(), z.unknown()) })).mutation(async ({ input, ctx }) => {
       const submission = await getEdSubmission(input.submissionId, ctx);

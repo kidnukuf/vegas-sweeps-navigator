@@ -1012,3 +1012,11 @@
 - [x] Diagnose why a first coordinator invitation redemption does not visibly enter the signed-in workspace
 - [x] Repair coordinator signup success state and explain a redeemed-code retry without weakening single-use security
 - [x] Add a focused successful-redemption regression test, then validate and publish
+
+## Active Coordinator Spreadsheet Intake
+- [x] Remove sample data from the downloadable clean coordinator CSV template
+- [x] Add CSV and spreadsheet file parsing with header-based mapping into the coordinator roster fields for Event Director audit
+- [x] Show mapped-row counts, recognized columns, and import warnings before a coordinator saves the roster draft
+- [x] Preserve the untouched coordinator-uploaded file and expose it only to that coordinator, assigned Event Director, and Owner
+- [x] Provide Event Directors the corresponding app-parsed roster file and comparison view without automatic app or Google Sheet writes
+- [x] Add focused mapping tests and validate the coordinator intake interface before publishing

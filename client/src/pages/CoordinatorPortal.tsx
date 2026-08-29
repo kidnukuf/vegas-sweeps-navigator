@@ -1,10 +1,14 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import * as XLSX from "xlsx";
 import { trpc } from "@/lib/trpc";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { refreshCoordinatorWorkspace } from "@/lib/coordinatorSession";
+import { mapCoordinatorSourceMatrix, sourceMatrixToCsv, type MappedCoordinatorSource } from "@shared/coordinatorRosterMapping";
 
 type RosterRow = Record<string, string>;
+type SourceArtifact = { fileName: string; contentType: string; byteSize: number; base64: string; recognizedHeaders: string[]; ignoredHeaders: string[]; appControlledHeaders: string[] };
+type ImportedWorksheet = { name: string; matrix: string[][] };
 
 const shell = "min-h-screen bg-[#071018] px-4 py-8 text-slate-100 sm:px-8";
 const input = "w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-cyan-400";
@@ -32,17 +36,16 @@ function parseCsvLine(line: string): string[] {
   return cells;
 }
 
-function parsePastedCsv(value: string): RosterRow[] {
-  const lines = value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
-  const keys = parseCsvLine(lines[0]).map((item) => item.trim().toLowerCase().replace(/[^a-z0-9]/g, ""));
-  const aliases: Record<string, keyof RosterRow> = { firstname: "firstName", lastname: "lastName", captain: "captain", iscaptain: "captain", email: "email", emailaddress: "email", phone: "phone", phonenumber: "phone", teamnumber: "teamNumber", teamname: "teamName", notes: "notes", request: "notes" };
-  return lines.slice(1).map((line) => {
-    const cells = parseCsvLine(line);
-    const row = blankRow();
-    keys.forEach((key, index) => { const target = aliases[key]; if (target) row[target] = cells[index] ?? ""; });
-    return row;
-  }).filter((row) => Object.values(row).some((value) => value.trim() && value !== "No"));
+function matrixFromPastedGrid(value: string) {
+  const delimiter = value.includes("\t") ? "\t" : ",";
+  return value.split(/\r?\n/).filter((line) => line.trim()).map((line) => delimiter === "\t" ? line.split("\t").map((cell) => cell.trim()) : parseCsvLine(line));
+}
+
+function base64FromBytes(bytes: Uint8Array) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let start = 0; start < bytes.length; start += chunkSize) binary += String.fromCharCode(...bytes.subarray(start, start + chunkSize));
+  return btoa(binary);
 }
 
 function statusLabel(status?: string) {
@@ -72,10 +75,18 @@ export default function CoordinatorPortal() {
   const [loadedSubmissionId, setLoadedSubmissionId] = useState<string | undefined>();
   const [rows, setRows] = useState<RosterRow[]>([blankRow()]);
   const [pasteText, setPasteText] = useState("");
+  const [sourceType, setSourceType] = useState<"web_form" | "csv" | "xlsx" | "google_sheet">("web_form");
+  const [sourceArtifact, setSourceArtifact] = useState<SourceArtifact | undefined>();
+  const [mapping, setMapping] = useState<MappedCoordinatorSource | undefined>();
+  const [importedWorksheets, setImportedWorksheets] = useState<ImportedWorksheet[]>([]);
+  const [selectedWorksheet, setSelectedWorksheet] = useState("");
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeSubmission = trpc.coordinator.submissions.getMine.useQuery({ submissionId: selectedSubmissionId ?? "00000000-0000-4000-8000-000000000000" }, { enabled: Boolean(selectedSubmissionId) });
   const saveDraft = trpc.coordinator.submissions.saveDraft.useMutation({
     onSuccess: async (result) => {
       setSelectedSubmissionId(result.submissionId);
+      if (result.artifactsAttached) setSourceArtifact(undefined);
       await Promise.all([utils.coordinator.submissions.listMine.invalidate(), utils.coordinator.submissions.getMine.invalidate()]);
     },
   });
@@ -118,15 +129,51 @@ export default function CoordinatorPortal() {
   }, [activeSubmission.data, loadedSubmissionId]);
 
   const updateRow = (index: number, key: keyof RosterRow, value: string) => setRows((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, [key]: value } : row));
-  const startNewRoster = () => { setSelectedSubmissionId(undefined); setLoadedSubmissionId(undefined); setRows([blankRow()]); setPasteText(""); };
+  const startNewRoster = () => { setSelectedSubmissionId(undefined); setLoadedSubmissionId(undefined); setRows([blankRow()]); setPasteText(""); setSourceType("web_form"); setSourceArtifact(undefined); setMapping(undefined); setImportedWorksheets([]); setSelectedWorksheet(""); };
   const openSubmission = (id: string) => { setLoadedSubmissionId(undefined); setSelectedSubmissionId(id); };
   const save = () => {
     if (!scopeId || !leagueSession) return;
-    saveDraft.mutate({ scopeId: Number(scopeId), submissionId: selectedSubmissionId, leagueSession, sourceType: pasteText ? "csv" : "web_form", rows });
+    saveDraft.mutate({ scopeId: Number(scopeId), submissionId: selectedSubmissionId, leagueSession, sourceType, rows, sourceArtifact });
   };
-  const importPaste = () => { const imported = parsePastedCsv(pasteText); if (imported.length) setRows(imported); };
+  const applyMappedSource = (mapped: MappedCoordinatorSource, artifact?: Omit<SourceArtifact, "recognizedHeaders" | "ignoredHeaders" | "appControlledHeaders">, type: "csv" | "xlsx" | "google_sheet" = "csv") => {
+    if (!mapped.rows.length) return;
+    setRows(mapped.rows.map((row) => ({ ...blankRow(), ...row })));
+    setMapping(mapped);
+    setSourceType(type);
+    setSourceArtifact(artifact ? { ...artifact, recognizedHeaders: mapped.recognizedHeaders, ignoredHeaders: mapped.ignoredHeaders, appControlledHeaders: mapped.appControlledHeaders } : undefined);
+  };
+  const importPaste = () => {
+    const matrix = matrixFromPastedGrid(pasteText);
+    const mapped = mapCoordinatorSourceMatrix(matrix);
+    const snapshot = sourceMatrixToCsv(matrix);
+    const bytes = new TextEncoder().encode(snapshot);
+    applyMappedSource(mapped, { fileName: "pasted-coordinator-roster.csv", contentType: "text/csv;charset=utf-8", byteSize: bytes.length, base64: base64FromBytes(bytes) }, "csv");
+  };
+  const applyWorksheet = (worksheetName: string, worksheets = importedWorksheets, artifact = sourceArtifact) => {
+    const worksheet = worksheets.find((item) => item.name === worksheetName);
+    if (!worksheet || !artifact) return;
+    setSelectedWorksheet(worksheetName);
+    applyMappedSource(mapCoordinatorSourceMatrix(worksheet.matrix), artifact, sourceType === "xlsx" ? "xlsx" : "csv");
+  };
+  const handleFile = async (file: File) => {
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith(".xlsx") && !lowerName.endsWith(".xls") && !lowerName.endsWith(".csv")) return;
+    if (file.size > 10 * 1024 * 1024) return;
+    setIsReadingFile(true);
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const workbook = XLSX.read(bytes, { type: "array" });
+      const worksheets = workbook.SheetNames.map((name) => ({ name, matrix: (XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name], { header: 1, defval: "", raw: false }) as unknown[][]).map((row) => row.map((cell) => String(cell ?? ""))) }));
+      const first = worksheets[0];
+      if (!first?.matrix.length) return;
+      const artifact = { fileName: file.name, contentType: file.type || (lowerName.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"), byteSize: bytes.length, base64: base64FromBytes(bytes) };
+      setImportedWorksheets(worksheets);
+      setSelectedWorksheet(first.name);
+      applyMappedSource(mapCoordinatorSourceMatrix(first.matrix), artifact, lowerName.endsWith(".csv") ? "csv" : "xlsx");
+    } finally { setIsReadingFile(false); }
+  };
   const downloadTemplate = () => {
-    const csv = `${rosterHeaders.join(",")}\nAvery,Bowl,Yes,avery@example.com,702-555-0123,12,Pins Up,Initial request or note\n`;
+    const csv = `${rosterHeaders.join(",")}\n`;
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
@@ -142,7 +189,7 @@ export default function CoordinatorPortal() {
     {(scopes.data?.length ?? 0) === 0 ? <p className="mt-8 rounded-xl border border-amber-300/30 bg-amber-500/10 p-5 text-amber-100">Your account is active but has no current event scope. Contact your Event Director.</p> : <div className="mt-6 grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]"><aside className="space-y-4"><section className="rounded-2xl border border-slate-700 bg-slate-900 p-4"><div className="flex items-center justify-between gap-2"><h2 className="font-bold">My roster work</h2><button onClick={startNewRoster} className="rounded-md bg-cyan-400 px-2 py-1 text-xs font-bold text-slate-950">New roster</button></div><p className="mt-2 text-xs leading-5 text-slate-400">A roster is limited to the event, center, and league session in your invitation.</p><div className="mt-4 space-y-2">{submissions.data?.map((submission: any) => <button key={submission.id} onClick={() => openSubmission(submission.id)} className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedSubmissionId === submission.id ? "border-cyan-400 bg-cyan-500/10" : "border-slate-800 bg-slate-950 hover:border-slate-600"}`}><span className="block text-sm font-semibold">{submission.centerName ?? "Assigned center"}</span><span className="block text-xs text-slate-400">{submission.leagueSession ?? "League session pending"} · {submission.rowCount} bowlers</span><span className="mt-1 block text-xs text-cyan-200">{statusLabel(submission.status)}</span></button>)}</div></section><section className="rounded-2xl border border-cyan-400/20 bg-cyan-500/5 p-4"><h2 className="font-bold text-cyan-100">What to enter</h2><p className="mt-2 text-xs leading-5 text-slate-300">Start with names, team details, captain, email and phone. Missing email or phone appears as a review warning, so you can return later.</p><button onClick={downloadTemplate} className="mt-3 rounded-lg border border-cyan-400/50 px-3 py-2 text-xs font-semibold text-cyan-100">Download clean CSV template</button><p className="mt-2 text-xs leading-5 text-slate-400">The template contains only coordinator-entered fields. Do not include claim codes, Bowler IDs, QR codes, billing, scans, scores, or other app-generated information.</p></section></aside>
       <section className="min-w-0 rounded-2xl border border-slate-700 bg-slate-900 p-4 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-300">Scoped roster intake</p><h2 className="mt-1 text-xl font-bold">{selectedSubmissionId ? "Continue roster" : "Create roster draft"}</h2></div>{submissionStatus && <span className="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-100">{statusLabel(submissionStatus)}</span>}</div>
         <div className="mt-5 grid gap-3 md:grid-cols-2"><label className="grid gap-1 text-sm font-medium">Authorized event and center<select value={scopeId} onChange={(e) => { setScopeId(e.target.value); setLeagueSession(""); }} disabled={!isEditable} className={input}>{(scopes.data ?? []).map((scope: any) => <option key={scope.id} value={String(scope.id)}>{scope.eventName} · {scope.centerName ?? "Any approved center"}</option>)}</select></label><label className="grid gap-1 text-sm font-medium">League session / day and time<select value={leagueSession} onChange={(e) => setLeagueSession(e.target.value)} disabled={!isEditable} className={input}>{allowedSessions.length ? allowedSessions.map((session) => <option key={session} value={session}>{session}</option>) : <option value="">Enter league session below</option>}</select>{!allowedSessions.length && <input value={leagueSession} disabled={!isEditable} onChange={(e) => setLeagueSession(e.target.value)} className={`${input} mt-2`} placeholder="Example: Tuesday 7:00 PM" required />}</label></div>
-        <details className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4"><summary className="cursor-pointer text-sm font-semibold text-cyan-100">Paste a familiar CSV roster</summary><p className="mt-2 text-xs leading-5 text-slate-400">Paste a CSV with headers. Accepted fields: {rosterHeaders.join(", ")}. This only creates editable coordinator rows; app-generated fields are ignored.</p><textarea value={pasteText} disabled={!isEditable} onChange={(e) => setPasteText(e.target.value)} className={`${input} mt-3 min-h-28 font-mono`} placeholder={`${rosterHeaders.join(",")}\nAvery,Bowl,Yes,avery@example.com,702-555-0123,12,Pins Up,Wheelchair lane request`} /><button disabled={!isEditable || !pasteText.trim()} onClick={importPaste} className="mt-3 rounded-lg border border-cyan-400/50 px-3 py-2 text-sm font-semibold text-cyan-100 disabled:opacity-50">Replace rows with pasted CSV</button></details>
+        <details className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4" open><summary className="cursor-pointer text-sm font-semibold text-cyan-100">Import an existing roster file</summary><p className="mt-2 text-xs leading-5 text-slate-400">Upload a CSV, Excel workbook, or a Google Sheets download. The app recognizes common header names, maps only coordinator-owned fields, and ignores app-controlled columns such as Bowler IDs, QR codes, claim codes, entry scans, billing, and scores.</p><div className="mt-3 flex flex-wrap gap-2"><button disabled={!isEditable || isReadingFile} onClick={() => fileInputRef.current?.click()} className="rounded-lg border border-cyan-400/50 px-3 py-2 text-sm font-semibold text-cyan-100 disabled:opacity-50">{isReadingFile ? "Reading file…" : "Choose CSV or spreadsheet"}</button><button disabled={!isEditable || !pasteText.trim()} onClick={importPaste} className="rounded-lg border border-cyan-400/50 px-3 py-2 text-sm font-semibold text-cyan-100 disabled:opacity-50">Map pasted CSV or sheet grid</button></div><input ref={fileInputRef} className="hidden" type="file" accept=".csv,.xlsx,.xls" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); event.target.value = ""; }} /><p className="mt-2 text-xs leading-5 text-slate-500">For Google Sheets, choose <span className="font-semibold text-slate-300">File → Download → Microsoft Excel (.xlsx)</span> or <span className="font-semibold text-slate-300">Comma-separated values (.csv)</span>, then select it here. Files are limited to 10 MB.</p>{importedWorksheets.length > 1 && <label className="mt-3 grid gap-1 text-xs font-semibold text-slate-300">Worksheet to map<select value={selectedWorksheet} onChange={(event) => applyWorksheet(event.target.value)} className={input}>{importedWorksheets.map((worksheet) => <option key={worksheet.name} value={worksheet.name}>{worksheet.name}</option>)}</select></label>}<textarea value={pasteText} disabled={!isEditable} onChange={(e) => setPasteText(e.target.value)} className={`${input} mt-3 min-h-28 font-mono`} placeholder={`${rosterHeaders.join(",")}\nPaste your own header row and roster rows here`} />{mapping && <div className="mt-4 rounded-lg border border-emerald-400/25 bg-emerald-400/5 p-3 text-xs leading-5 text-slate-200"><p className="font-bold text-emerald-200">{mapping.sourceRowCount} roster row{mapping.sourceRowCount === 1 ? "" : "s"} mapped for review</p><p className="mt-1">Recognized columns: {mapping.recognizedHeaders.join(", ") || "None"}.</p>{mapping.appControlledHeaders.length > 0 && <p className="mt-1 text-amber-100">Ignored app-controlled columns: {mapping.appControlledHeaders.join(", ")}.</p>}{mapping.ignoredHeaders.length > 0 && <p className="mt-1 text-slate-400">Unrecognized columns kept out of the roster: {mapping.ignoredHeaders.join(", ")}.</p>}<p className="mt-2 text-slate-300">When you save, your Event Director receives the untouched source file and a separate app-parsed master-sheet CSV for comparison. Neither file writes to the production app or Google Sheet.</p></div>}</details>
         <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[940px] border-separate border-spacing-y-2 text-left text-sm"><thead className="text-xs uppercase tracking-wide text-slate-400"><tr><th className="px-2">Bowler</th><th className="px-2">Captain</th><th className="px-2">Contact</th><th className="px-2">Team</th><th className="px-2">Initial note</th><th className="px-2">More details</th><th /></tr></thead><tbody>{rows.map((row, index) => <RosterTableRow key={index} row={row} index={index} editable={isEditable} onChange={updateRow} onRemove={() => setRows((current) => current.length > 1 ? current.filter((_, currentIndex) => currentIndex !== index) : [blankRow()])} />)}</tbody></table></div>
         {isEditable && <button onClick={() => setRows((current) => [...current, blankRow()])} className="mt-2 rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold">Add bowler row</button>}
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-5"><button disabled={!isEditable || !scopeId || !leagueSession || saveDraft.isPending} onClick={save} className="rounded-lg bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 disabled:opacity-50">{saveDraft.isPending ? "Saving…" : "Save roster draft"}</button>{selectedSubmissionId && <button disabled={!isEditable || submitForReview.isPending} onClick={() => submitForReview.mutate({ submissionId: selectedSubmissionId })} className="rounded-lg border border-emerald-400/60 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-100 disabled:opacity-50">{submitForReview.isPending ? "Submitting…" : "Submit for ED review"}</button>}<p className="text-xs text-slate-400">Your Event Director sees the roster and validation notes; email and phone gaps are warnings rather than an automatic block.</p></div>

@@ -1,3 +1,5 @@
+import { coordinatorFieldForHeader } from "../../shared/coordinatorRosterMapping";
+
 export type CoordinatorRow = Record<string, unknown>;
 
 export type RowIssue = {
@@ -23,75 +25,15 @@ export type SubmissionSummary = {
   missingPhoneCount: number;
 };
 
-const fieldAliases: Record<string, string> = {
-  firstname: "firstName",
-  "first name": "firstName",
-  legalfirstname: "firstName",
-  lastname: "lastName",
-  "last name": "lastName",
-  legallastname: "lastName",
-  center: "center",
-  centername: "center",
-  leaguesession: "leagueSession",
-  "league session": "leagueSession",
-  leaguedaytime: "leagueSession",
-  "league day time": "leagueSession",
-  league: "leagueSession",
-  teamnumber: "teamNumber",
-  "team number": "teamNumber",
-  teamname: "teamName",
-  "team name": "teamName",
-  captain: "captain",
-  iscaptain: "captain",
-  "is captain": "captain",
-  email: "email",
-  emailaddress: "email",
-  "email address": "email",
-  phone: "phone",
-  phonenumber: "phone",
-  "phone number": "phone",
-  notes: "notes",
-  initialrequest: "notes",
-  lane: "lane",
-  under21: "under21",
-  "under 21": "under21",
-  sanctionnumber: "sanctionNumber",
-  "sanction number": "sanctionNumber",
-  games: "games",
-  bestaverage: "bestAverage",
-  "best average": "bestAverage",
-  shirtsize: "shirtSize",
-  "shirt size": "shirtSize",
-  hotelconfirmation: "hotelConfirmation",
-  "hotel confirmation": "hotelConfirmation",
-  hotelcheckin: "hotelCheckIn",
-  "hotel check in": "hotelCheckIn",
-  hotelcheckout: "hotelCheckOut",
-  "hotel check out": "hotelCheckOut",
-  roomtype: "roomType",
-  "room type": "roomType",
-  roommatename: "roommateName",
-  "roommate name": "roommateName",
-  specialrequestcategory: "specialRequestCategory",
-  "special request category": "specialRequestCategory",
-  specialrequestnote: "specialRequestNote",
-  "special request note": "specialRequestNote",
-  specialrequeststatus: "specialRequestStatus",
-  "special request status": "specialRequestStatus",
-};
-
-const acceptedFields = new Set(Object.values(fieldAliases));
+const acceptedFields = new Set([
+  "firstName", "lastName", "center", "leagueSession", "teamNumber", "teamName", "captain", "email", "phone", "notes", "lane", "under21", "sanctionNumber", "games", "bestAverage", "shirtSize", "hotelConfirmation", "hotelCheckIn", "hotelCheckOut", "roomType", "roommateName", "specialRequestCategory", "specialRequestNote", "specialRequestStatus",
+]);
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^[0-9+().\-\s]{7,32}$/;
 
 function cleanText(value: unknown, maxLength = 255): string {
   if (value === null || value === undefined) return "";
   return String(value).replace(/\s+/g, " ").trim().slice(0, maxLength);
-}
-
-function canonicalField(key: string): string | undefined {
-  const cleaned = key.trim().replace(/[_.-]/g, " ").replace(/\s+/g, " ").toLowerCase();
-  return fieldAliases[cleaned] ?? fieldAliases[cleaned.replace(/\s/g, "")];
 }
 
 function isAffirmative(value: string): boolean {
@@ -105,7 +47,7 @@ export function validateCoordinatorRosterRow(
 ): ValidatedCoordinatorRow {
   const data: Record<string, string> = {};
   for (const [key, value] of Object.entries(rawRow)) {
-    const mapped = acceptedFields.has(key) ? key : canonicalField(key);
+    const mapped = acceptedFields.has(key) ? key : coordinatorFieldForHeader(key);
     if (mapped && acceptedFields.has(mapped)) data[mapped] = cleanText(value, mapped === "notes" || mapped.endsWith("Note") ? 1_000 : 255);
   }
 
