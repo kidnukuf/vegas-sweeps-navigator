@@ -4,10 +4,12 @@ export type CoordinatorInvitationEmailInput = {
   eventName: string;
   centerName: string;
   signupUrl: string;
+  closingSignature?: string | null;
 };
 
 export function buildCoordinatorInvitationEmail(input: CoordinatorInvitationEmailInput) {
   const greeting = input.recipientName?.trim() ? `Hello ${input.recipientName.trim()},` : "Hello,";
+  const signature = input.closingSignature?.trim() || "The Bowl Vegas Team";
   return {
     subject: `Coordinator access for ${input.eventName}`,
     body: `${greeting}
@@ -31,7 +33,7 @@ Bowl Vegas gives bowlers and captains one place to view their event information,
 If you need help with the code or your assigned scope, contact your Event Director.
 
 Thank you,
-The Bowl Vegas Team`,
+${signature}`,
   };
 }
 

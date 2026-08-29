@@ -15,4 +15,10 @@ describe("coordinator invitation email template", () => {
   it("builds the coordinator signup URL without retaining an unrelated path", () => {
     expect(coordinatorSignupUrl("https://www.bowlvegas.com/ed?eventId=4", "CO-TEST")).toBe("https://www.bowlvegas.com/coordinator?code=CO-TEST");
   });
+
+  it("uses an Event Director’s custom closing signature when supplied", () => {
+    const template = buildCoordinatorInvitationEmail({ code: "CO-EXAMPLE", eventName: "Group 3 test", centerName: "Example Lanes", signupUrl: "https://www.bowlvegas.com/coordinator?code=CO-EXAMPLE", closingSignature: "Nate Jones\nEvent Director\nBowl Vegas" });
+    expect(template.body).toContain("Nate Jones\nEvent Director\nBowl Vegas");
+    expect(template.body).not.toContain("Thank you,\nThe Bowl Vegas Team");
+  });
 });

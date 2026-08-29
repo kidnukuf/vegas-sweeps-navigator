@@ -31,6 +31,7 @@ const invitationInput = z.object({
   recipientEmail: z.string().email().optional(),
   replacementForId: z.string().uuid().optional(),
   origin: z.string().url(),
+  closingSignature: z.string().trim().max(500).optional(),
 });
 const rosterRowsInput = z.array(z.record(z.string(), z.unknown())).min(1).max(2_000);
 
@@ -150,7 +151,7 @@ export const coordinatorRouter = router({
       );
       const event = await rawQuery<{ eventName: string }>(`SELECT eventName FROM events WHERE id = ? LIMIT 1`, [input.eventId]);
       const signupUrl = coordinatorSignupUrl(input.origin, rawCode);
-      const emailTemplate = buildCoordinatorInvitationEmail({ code: rawCode, recipientName: input.recipientName, eventName: event[0]?.eventName ?? "your Bowl Vegas event", centerName: center[0].centerName, signupUrl });
+      const emailTemplate = buildCoordinatorInvitationEmail({ code: rawCode, recipientName: input.recipientName, eventName: event[0]?.eventName ?? "your Bowl Vegas event", centerName: center[0].centerName, signupUrl, closingSignature: input.closingSignature });
       await audit({ eventId: input.eventId, actorType: "event_director", actorId: actorId(ed.staffId), action: "invitation_issued", newValue: id });
       return { id, code: rawCode, expiresInHours: 72, signupUrl, emailTemplate };
     }),

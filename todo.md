@@ -999,3 +999,7 @@
 - [x] Add a coordinator-invitation email template that includes the single-use code, sign-in route, expiry, and role purpose
 - [x] Add Event Director review, copy, and regenerate controls alongside invitation issuance without automatic sending
 - [x] Add focused template and invitation workflow tests, then validate and publish
+
+## Active Coordinator Invitation Signature
+- [x] Add an editable Event Director closing signature field that is included in copied coordinator invitation templates
+- [x] Validate the signature default, personalization behavior, and build before publishing
