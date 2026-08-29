@@ -1003,3 +1003,7 @@
 ## Active Coordinator Invitation Signature
 - [x] Add an editable Event Director closing signature field that is included in copied coordinator invitation templates
 - [x] Validate the signature default, personalization behavior, and build before publishing
+
+## Active Owner Portal Coordinator Access
+- [x] Add a direct Coordinator access link in the Owner Portal without bypassing coordinator sign-in or role boundaries
+- [x] Validate the navigation link and publish the Owner Portal enhancement
