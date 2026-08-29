@@ -1007,3 +1007,8 @@
 ## Active Owner Portal Coordinator Access
 - [x] Add a direct Coordinator access link in the Owner Portal without bypassing coordinator sign-in or role boundaries
 - [x] Validate the navigation link and publish the Owner Portal enhancement
+
+## Active Coordinator Signup Repair
+- [x] Diagnose why a first coordinator invitation redemption does not visibly enter the signed-in workspace
+- [x] Repair coordinator signup success state and explain a redeemed-code retry without weakening single-use security
+- [x] Add a focused successful-redemption regression test, then validate and publish
