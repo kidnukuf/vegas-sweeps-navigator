@@ -1170,7 +1170,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             </DropdownMenu>
             <button onClick={() => setLocation("/import")} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-semibold transition-colors">📥 Import Data</button>
             <button onClick={() => setLocation("/admin/coordinator-import")} className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 rounded-lg text-sm font-semibold transition-colors">🗂️ Coordinator Import</button>
-            <button onClick={() => setLocation(`/ed/coordinators?eventId=${EVENT_ID}`)} className="px-3 py-1.5 bg-teal-700 hover:bg-teal-600 rounded-lg text-sm font-semibold transition-colors">Coordinator Package</button>
+            <button onClick={() => setLocation(`/ed/coordinators?eventId=${EVENT_ID}#coordinator-invite`)} className="px-3 py-1.5 bg-teal-700 hover:bg-teal-600 rounded-lg text-sm font-semibold transition-colors">Invite Coordinator</button>
+            <button onClick={() => setLocation(`/ed/coordinators?eventId=${EVENT_ID}`)} className="px-3 py-1.5 border border-teal-500/40 hover:bg-teal-500/15 rounded-lg text-sm font-semibold text-teal-100 transition-colors">Coordinator Package</button>
             <button onClick={() => setLocation("/admin/master-sheet")} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-semibold transition-colors">📊 Sheet Sync</button>
             <button onClick={() => setLocation("/seating-chart")} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">🪑 Seating Chart</button>
           </div>

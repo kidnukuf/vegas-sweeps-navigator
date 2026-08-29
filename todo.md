@@ -994,3 +994,8 @@
 - [x] Add Owner-only server-side AI generation using only the selected prospect’s factual public research and ethical guardrails
 - [x] Add a review-only outreach email draft interface with subject, body, copy, and regenerate controls
 - [x] Add focused authorization and prompt-contract tests, then validate and publish
+
+## Active Event Director Coordinator Invitation Email
+- [x] Add a coordinator-invitation email template that includes the single-use code, sign-in route, expiry, and role purpose
+- [x] Add Event Director review, copy, and regenerate controls alongside invitation issuance without automatic sending
+- [x] Add focused template and invitation workflow tests, then validate and publish

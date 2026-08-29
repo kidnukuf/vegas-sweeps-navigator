@@ -18,6 +18,7 @@ import {
   summarizeCoordinatorRows,
   validateCoordinatorRosterRow,
 } from "./coordinator.logic";
+import { buildCoordinatorInvitationEmail, coordinatorSignupUrl } from "./coordinatorInviteTemplate";
 
 const cleanEmail = (email: string) => email.trim().toLowerCase();
 const invitationCode = () => `CO-${crypto.randomBytes(6).toString("base64url").toUpperCase()}`;
@@ -29,6 +30,7 @@ const invitationInput = z.object({
   recipientName: z.string().trim().max(255).optional(),
   recipientEmail: z.string().email().optional(),
   replacementForId: z.string().uuid().optional(),
+  origin: z.string().url(),
 });
 const rosterRowsInput = z.array(z.record(z.string(), z.unknown())).min(1).max(2_000);
 
@@ -133,7 +135,7 @@ export const coordinatorRouter = router({
     }),
     create: publicProcedure.input(invitationInput).mutation(async ({ input, ctx }) => {
       const ed = await assertEventAccess(ctx, input.eventId);
-      const center = await rawQuery<{ id: number }>(`SELECT id FROM bowling_centers WHERE id = ? LIMIT 1`, [input.centerId]);
+      const center = await rawQuery<{ id: number; centerName: string }>(`SELECT id, centerName FROM bowling_centers WHERE id = ? LIMIT 1`, [input.centerId]);
       if (!center[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a recognized bowling center." });
       if (input.replacementForId) {
         const priorInvites = await rawQuery<{ eventId: number }>(`SELECT eventId FROM coordinator_invitations WHERE id = ? LIMIT 1`, [input.replacementForId]);
@@ -146,7 +148,11 @@ export const coordinatorRouter = router({
          VALUES (?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 72 HOUR), ?, ?)`,
         [id, input.eventId, input.centerId, JSON.stringify(input.leagueSessions), input.recipientName?.trim() || null, input.recipientEmail ? cleanEmail(input.recipientEmail) : null, await bcrypt.hash(rawCode, 12), input.replacementForId ?? null, ed.staffId ?? null],
       );
-      return { id, code: rawCode, expiresInHours: 72 };
+      const event = await rawQuery<{ eventName: string }>(`SELECT eventName FROM events WHERE id = ? LIMIT 1`, [input.eventId]);
+      const signupUrl = coordinatorSignupUrl(input.origin, rawCode);
+      const emailTemplate = buildCoordinatorInvitationEmail({ code: rawCode, recipientName: input.recipientName, eventName: event[0]?.eventName ?? "your Bowl Vegas event", centerName: center[0].centerName, signupUrl });
+      await audit({ eventId: input.eventId, actorType: "event_director", actorId: actorId(ed.staffId), action: "invitation_issued", newValue: id });
+      return { id, code: rawCode, expiresInHours: 72, signupUrl, emailTemplate };
     }),
     revoke: publicProcedure.input(z.object({ invitationId: z.string().uuid() })).mutation(async ({ input, ctx }) => {
       const rows = await rawQuery<{ eventId: number; redeemedAt: Date | null }>(`SELECT eventId, redeemedAt FROM coordinator_invitations WHERE id = ? LIMIT 1`, [input.invitationId]);
