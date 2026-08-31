@@ -1020,3 +1020,11 @@
 - [x] Preserve the untouched coordinator-uploaded file and expose it only to that coordinator, assigned Event Director, and Owner
 - [x] Provide Event Directors the corresponding app-parsed roster file and comparison view without automatic app or Google Sheet writes
 - [x] Add focused mapping tests and validate the coordinator intake interface before publishing
+
+## Active Offline QR Incident Operations
+- [x] Inspect offline scanner persistence and define Event Director access to accepted, duplicate, and rejected scan outcomes
+- [x] Add a Raspberry Pi private-Wi-Fi local incident relay that broadcasts scan outcomes to a separate laptop without interrupting scanner focus
+- [x] Add a laptop Event Director monitor for accepted, duplicate, invalid, wrong-door, override, and flagged offline incidents
+- [x] Preserve local scan persistence and safe cloud reconciliation when the Raspberry Pi reconnects
+- [x] Write a step-by-step Raspberry Pi private-network and laptop monitor setup guide
+- [x] Add focused multi-device relay, duplicate-code, and offline incident tests, then validate the Event Director monitor before publishing

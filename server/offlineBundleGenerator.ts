@@ -353,6 +353,23 @@ const STORAGE_KEY = ${JSON.stringify(storageKey)};
 const SCAN_LOG_KEY = ${JSON.stringify(scanLogKey)};
 const FEEDBACK = ${JSON.stringify(OFFLINE_SCAN_FEEDBACK)};
 
+// When this bundle is served through the Raspberry Pi local relay, each scan
+// is also sent to the separate Event Director monitor. This request is not
+// awaited, never steals scanner focus, and is disabled for normal file:// use.
+function publishLocalIncident(decision, lane) {
+  if (location.protocol !== 'http:' || location.port !== '8787') return;
+  const payload = {
+    eventId: EVENT_ID, mode: MODE, lane, scannedAtMs: Date.now(),
+    result: decision.result, admit: Boolean(decision.admit), headline: decision.headline,
+    detail: decision.detail, displayName: decision.displayName || null,
+    teamNumber: decision.teamNumber || null, edFlagged: false
+  };
+  void fetch('/api/incidents', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload), keepalive: true
+  }).catch(() => {});
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -570,6 +587,7 @@ async function handleScan(rawToken, lane) {
   const decision = await processScan(rawToken, lane === 'A' ? 1 : 2);
   if (!decision) return;
   showResult(lane, decision);
+  publishLocalIncident(decision, lane);
 }
 
 function escHtml(s) {

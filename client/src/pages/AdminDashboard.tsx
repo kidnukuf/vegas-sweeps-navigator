@@ -786,6 +786,12 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   };
+  const downloadTextFile = (filename: string, content: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
   /** Legacy helper kept for any callers that build rows client-side. */
   const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
     const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
@@ -855,6 +861,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const generateBundleMut = trpc.offlineDoor.generateBundle.useMutation({
     onError: (e) => toast.error(`Bundle generation failed: ${e.message}`),
   });
+  const generateLocalRelayMut = trpc.offlineDoor.generateLocalRelayPackage.useMutation({
+    onError: (e) => toast.error(`Pi live monitor package failed: ${e.message}`),
+  });
 
   const downloadOfflineScanner = async (mode: "banquet" | "pool") => {
     const modeLabel = mode === "banquet" ? "Banquet" : "Pool Party";
@@ -871,6 +880,17 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       URL.revokeObjectURL(url);
       toast.success(`${modeLabel} offline scanner downloaded — open in Chrome, no internet needed`, { id: toastId, duration: 6000 });
     } catch { toast.dismiss(toastId); }
+  };
+
+  const downloadPiLiveMonitor = async () => {
+    const toastId = toast.loading("Preparing the Raspberry Pi live monitor package…");
+    try {
+      const res = await generateLocalRelayMut.mutateAsync();
+      downloadTextFile(res.filename, res.script, "text/x-python;charset=utf-8");
+      downloadTextFile(res.guideFilename, res.guide, "text/markdown;charset=utf-8");
+      toast.success("Pi relay and laptop-monitor setup guide downloaded.", { id: toastId, duration: 6000 });
+    } catch { toast.dismiss(toastId); }
+    setShowExportMenu(false);
   };
 
   const generateTestQr = trpc.tokens.generateTest.useMutation({
@@ -1051,8 +1071,15 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 >
                   🏊 Download Pool Party Scanner
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={downloadPiLiveMonitor}
+                  disabled={generateLocalRelayMut.isPending}
+                  className="text-emerald-300 focus:bg-emerald-500/10 focus:text-emerald-300 cursor-pointer"
+                >
+                  📡 Download Pi Live Monitor Relay
+                </DropdownMenuItem>
                 <div className="px-2 py-1 text-[10px] text-gray-500 leading-tight">
-                  Self-contained HTML · works offline · dual-scanner · race-lock
+                  Scanner: self-contained HTML · dual-scanner · race-lock. Pi relay: live laptop incident monitor with no internet.
                 </div>
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem

@@ -27,6 +27,7 @@ import {
 } from "../db";
 import { writeScanUsedToSheet } from "../googleSheets";
 import { generateOfflineBundle } from "../offlineBundleGenerator";
+import { buildOfflineRelayGuide, buildOfflineRelayScript } from "../offlineRelayPackage";
 
 const modeSchema = z.enum(["banquet", "pool"]);
 const zoneSchema = z.enum(["N", "E", "S", "W"]);
@@ -298,6 +299,17 @@ export const offlineDoorRouter = router({
       const filename = `VSN-OfflineScanner-Event${input.eventId}-${modeLabel}-${new Date().toISOString().slice(0, 10)}.html`;
       return { html, filename, generatedAtMs: Date.now() };
     }),
+
+  /**
+   * Download-only Raspberry Pi relay package. It has no cloud dependency at
+   * event time and does not alter event or scan data.
+   */
+  generateLocalRelayPackage: publicProcedure.mutation(() => ({
+    filename: "bowl-vegas-local-relay.py",
+    script: buildOfflineRelayScript(),
+    guideFilename: "BOWL_VEGAS_PI_LAPTOP_LIVE_MONITOR_SETUP.md",
+    guide: buildOfflineRelayGuide(),
+  })),
 });
 
 export type ReentryZoneT = z.infer<typeof zoneSchema>;
