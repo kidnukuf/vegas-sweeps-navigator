@@ -1028,3 +1028,8 @@
 - [x] Preserve local scan persistence and safe cloud reconciliation when the Raspberry Pi reconnects
 - [x] Write a step-by-step Raspberry Pi private-network and laptop monitor setup guide
 - [x] Add focused multi-device relay, duplicate-code, and offline incident tests, then validate the Event Director monitor before publishing
+
+## Active November 6 Coordinator Sheet Mapping
+- [x] Inspect the supplied coordinator source sheet and the exact November 6 event target tab
+- [x] Prepare a no-write mapping preview with parsed rows, destination columns, and exceptions
+- [x] Write only the user-approved mapped data to the confirmed target tab and verify the result
