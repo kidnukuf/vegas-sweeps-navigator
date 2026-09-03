@@ -1074,3 +1074,13 @@
 - [x] Inspect every supplied ledger’s phone values and the current November 6 master tab without modifying any sheet
 - [x] Prepare a no-write remaining-phone preview with exact matches, blank targets, conflicting values, and unmatched people
 - [x] Apply only user-approved phone updates and verify complete phone-value reconciliation
+
+## Active Three-Ledger November 6 Accuracy Audit
+- [x] Retrieve the three supplied ledgers and current November 6 master tab without modifying any sheet
+- [x] Compare all supported fields using duplicate, missing, mapping, protected-column, and conflict safeguards while preserving Bowlero Bakersfield as the approved center name
+- [x] Present a no-write discrepancy report and apply only explicitly approved corrections
+
+## Active November 6 Visalia and Hemet Coordinators
+- [x] Verify the exact master-tab center labels and existing Coordinator cells for Visalia and Hemet
+- [x] Prepare a targeted no-write update assigning Lillian Roland to Visalia and Pat Schwalbe to Hemet
+- [x] Write only confirmed Coordinator cells and verify the center assignments
