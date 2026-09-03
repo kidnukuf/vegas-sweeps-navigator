@@ -1033,3 +1033,19 @@
 - [x] Inspect the supplied coordinator source sheet and the exact November 6 event target tab
 - [x] Prepare a no-write mapping preview with parsed rows, destination columns, and exceptions
 - [x] Write only the user-approved mapped data to the confirmed target tab and verify the result
+
+## Active November 6 Enriched Coordinator Sheet Merge
+- [x] Inspect the supplied enriched source sheet and map blue-highlighted bowler-name cells to the master Coordinator column
+- [x] Prepare a no-write merged-value preview against the populated November 6 event tab, including coordinator mappings and matching exceptions
+- [x] Write only user-approved enriched values to matched November 6 event rows and verify the result
+
+## Active Hotel Room Planning
+- [ ] Add one append-only Hotel Room ID column, using a shared numeric ID for each reserved room and `G` suffix for a room with overnight guests
+- [ ] Keep event-attending guests separate from Hotel Room ID assignments unless explicitly identified as overnight room guests
+- [ ] Add Event Director numerical room-ID assignment, cross-team visibility, unique-room totals, and explicit selected-tab write-back
+- [ ] Add focused shared-room, single-room, guest-suffix, and protected-column safety tests, then validate and publish
+
+## Active November 6 Hotel Room IDs
+- [x] Calculate a no-write November 6 Hotel Room ID preview that assigns every bowler either a shared numeric code, a guest-suffixed code, or a unique solo-room code
+- [x] Treat ambiguous roommate name matches as unique solo-room codes; apply `G` only for a complete non-roster roommate name
+- [x] Append the user-approved Hotel Room ID column and write finalized November 6 room codes, then verify full-row coverage and unique-room totals
