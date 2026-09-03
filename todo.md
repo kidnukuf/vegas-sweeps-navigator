@@ -1104,3 +1104,13 @@
 - [x] Resolve all reliable source-supported roommate matches, including the confirmed rows 256–257 pairing
 - [x] Write only corrected Room ID cells in the November 6 event tab
 - [x] Re-read every changed Room ID cell and preserve all non-Room-ID data
+
+## Active November 6 Room ID Assignment PDF
+- [x] Read the current November 6 room assignments and group every Room ID with its bowlers and indicated overnight guests
+- [x] Generate a print-ready Room ID assignment PDF with event and room totals
+- [x] Verify the PDF content and layout before delivery
+
+## Active November 6 Alphabetized Room ID PDFs
+- [x] Generate a Room ID assignment PDF alphabetized by bowler name
+- [x] Generate a separate Room ID assignment PDF grouped by alphabetized bowling center with bowlers alphabetized within each center
+- [x] Verify the completeness and print layout of both alphabetized PDFs before delivery
