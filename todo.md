@@ -1090,3 +1090,17 @@
 - [x] Add Event Director-only center coordinator phone, email, and preferred-contact controls
 - [x] Expose authorized center-specific coordinator contact details to the relevant Event Director workflows
 - [x] Add focused authorization and data-isolation tests, then validate and publish
+
+## Active November 6 Roommate Audit and Correction
+- [x] Inspect the current November 6 Room ID assignments and verify rows 256–257 are paired
+- [x] Reconcile all roommate relationships against the supplied ledgers without changing unrelated sheet data
+- [x] Present a no-write Room ID correction preview and apply only confirmed changes
+- [x] Verify final Room ID pairings and preserve the approved Bowlero Bakersfield naming
+
+## Active November 6 Manual Room ID Verification
+- [x] Re-read the user-corrected rows 256–257 and confirm their shared Room ID without overwriting sheet data
+
+## Active November 6 Full Room ID Correction
+- [x] Resolve all reliable source-supported roommate matches, including the confirmed rows 256–257 pairing
+- [x] Write only corrected Room ID cells in the November 6 event tab
+- [x] Re-read every changed Room ID cell and preserve all non-Room-ID data
