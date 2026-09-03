@@ -1049,3 +1049,17 @@
 - [x] Calculate a no-write November 6 Hotel Room ID preview that assigns every bowler either a shared numeric code, a guest-suffixed code, or a unique solo-room code
 - [x] Treat ambiguous roommate name matches as unique solo-room codes; apply `G` only for a complete non-roster roommate name
 - [x] Append the user-approved Hotel Room ID column and write finalized November 6 room codes, then verify full-row coverage and unique-room totals
+
+## Active November 6 Updated Ledger Reconciliation
+- [ ] Inspect the supplied updated ledger and current November 6 master tab without modifying either sheet
+- [ ] Produce a no-write changed-value preview with duplicate, unmatched, and protected-column checks
+- [ ] Apply only user-approved changed values to existing matched November 6 rows and verify the result
+
+## Active Additional Updated Ledger Review
+- [x] Inspect the additional supplied ledger and compare it read-only against the current November 6 master tab
+- [x] Add its verified changed, duplicate, missing, and conflicting values to the no-write reconciliation preview
+
+## Active November 6 Mesa Roster Append
+- [x] Prepare a final no-write append preview for the confirmed new Lucky Strike Mesa W roster rows
+- [x] Append only the verified new Mesa rows to the November 6 event tab, without altering existing rows
+- [x] Verify new-row count, center assignment, and unchanged pre-existing roster rows
