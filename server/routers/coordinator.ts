@@ -21,6 +21,7 @@ import {
   validateCoordinatorRosterRow,
 } from "./coordinator.logic";
 import { buildCoordinatorInvitationEmail, coordinatorSignupUrl } from "./coordinatorInviteTemplate";
+import { CENTER_CONTACT_METHODS, normalizeCenterCoordinatorContact } from "../centerCoordinatorContact.logic";
 
 const cleanEmail = (email: string) => email.trim().toLowerCase();
 const invitationCode = () => `CO-${crypto.randomBytes(6).toString("base64url").toUpperCase()}`;
@@ -45,6 +46,15 @@ const sourceArtifactInput = z.object({
   recognizedHeaders: z.array(z.string().max(255)).max(200).default([]),
   ignoredHeaders: z.array(z.string().max(255)).max(200).default([]),
   appControlledHeaders: z.array(z.string().max(255)).max(200).default([]),
+});
+const centerCoordinatorContactInput = z.object({
+  eventId: z.number().int().positive(),
+  centerId: z.number().int().positive(),
+  coordinatorName: z.string().trim().min(1).max(255),
+  phone: z.string().max(32).optional().nullable(),
+  extension: z.string().max(20).optional().nullable(),
+  email: z.string().email().or(z.literal("")).optional().nullable(),
+  preferredContactMethod: z.enum(CENTER_CONTACT_METHODS).optional().nullable(),
 });
 
 type CoordinatorScope = { id: number; eventId: number; centerId: number | null; centerName: string | null; leagueSessions: unknown };
@@ -200,6 +210,38 @@ export const coordinatorRouter = router({
        ORDER BY isAlreadyInEvent DESC, bc.centerName ASC`,
       [input.eventId, input.eventId, input.eventId, input.eventId],
     );
+  }),
+  centerContacts: router({
+    list: publicProcedure.input(z.object({ eventId: z.number().int().positive() })).query(async ({ input, ctx }) => {
+      await assertEventAccess(ctx, input.eventId);
+      return rawQuery(
+        `SELECT bc.id AS centerId, bc.centerName, contact.coordinatorName, contact.phone, contact.extension, contact.email, contact.preferredContactMethod, contact.updatedAt
+         FROM bowling_centers bc
+         INNER JOIN (
+           SELECT DISTINCT centerId FROM bowlers WHERE eventId = ? AND centerId IS NOT NULL
+           UNION SELECT DISTINCT centerId FROM coordinator_scopes WHERE eventId = ? AND centerId IS NOT NULL
+           UNION SELECT DISTINCT centerId FROM coordinator_invitations WHERE eventId = ? AND centerId IS NOT NULL
+           UNION SELECT DISTINCT centerId FROM event_center_coordinator_contacts WHERE eventId = ?
+         ) eventCenters ON eventCenters.centerId = bc.id
+         LEFT JOIN event_center_coordinator_contacts contact ON contact.eventId = ? AND contact.centerId = bc.id
+         ORDER BY bc.centerName ASC`,
+        [input.eventId, input.eventId, input.eventId, input.eventId, input.eventId],
+      );
+    }),
+    save: publicProcedure.input(centerCoordinatorContactInput).mutation(async ({ input, ctx }) => {
+      const session = await assertEventAccess(ctx, input.eventId);
+      const [center] = await rawQuery<{ id: number; centerName: string }>(`SELECT id, centerName FROM bowling_centers WHERE id = ? LIMIT 1`, [input.centerId]);
+      if (!center) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a recognized bowling center." });
+      const contact = normalizeCenterCoordinatorContact(input);
+      await rawExec(
+        `INSERT INTO event_center_coordinator_contacts (eventId, centerId, coordinatorName, phone, extension, email, preferredContactMethod, createdByStaffId)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE coordinatorName = VALUES(coordinatorName), phone = VALUES(phone), extension = VALUES(extension), email = VALUES(email), preferredContactMethod = VALUES(preferredContactMethod), createdByStaffId = VALUES(createdByStaffId)`,
+        [input.eventId, input.centerId, contact.coordinatorName, contact.phone, contact.extension, contact.email, contact.preferredContactMethod, session.staffId ?? null],
+      );
+      await audit({ eventId: input.eventId, actorType: session.type === "owner" ? "owner" : "event_director", actorId: actorId(session.staffId), action: "center_coordinator_contact_saved", fieldName: center.centerName, newValue: JSON.stringify(contact) });
+      return { success: true };
+    }),
   }),
   invitations: router({
     list: publicProcedure.input(z.object({ eventId: z.number().int().positive() })).query(async ({ input, ctx }) => {

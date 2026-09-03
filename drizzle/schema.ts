@@ -177,6 +177,29 @@ export const eventCoordinatorContacts = mysqlTable("event_coordinator_contacts",
 
 export type EventCoordinatorContact = typeof eventCoordinatorContacts.$inferSelect;
 
+// ─── EVENT CENTER COORDINATOR CONTACTS ──────────────────────────────────────
+// Event Director-maintained contact details keyed to the exact event and center.
+// This is intentionally separate from the legacy event-wide coordinator contact
+// record so existing personalized claim-code guidance remains unchanged.
+export const eventCenterCoordinatorContacts = mysqlTable("event_center_coordinator_contacts", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(),
+  centerId: int("centerId").notNull(),
+  coordinatorName: varchar("coordinatorName", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  extension: varchar("extension", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  preferredContactMethod: varchar("preferredContactMethod", { length: 32 }),
+  createdByStaffId: int("createdByStaffId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  eventCenterContactUnique: uniqueIndex("event_center_coordinator_contact_unique").on(table.eventId, table.centerId),
+  eventCenterContactEventIndex: index("event_center_coordinator_contact_event_idx").on(table.eventId),
+}));
+
+export type EventCenterCoordinatorContact = typeof eventCenterCoordinatorContacts.$inferSelect;
+
 // ─── COORDINATOR PACKAGE ─────────────────────────────────────────────────────
 export const coordinatorInvitations = mysqlTable("coordinator_invitations", {
   id: varchar("id", { length: 64 }).primaryKey(),

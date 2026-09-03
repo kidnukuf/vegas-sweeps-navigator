@@ -1084,3 +1084,9 @@
 - [x] Verify the exact master-tab center labels and existing Coordinator cells for Visalia and Hemet
 - [x] Prepare a targeted no-write update assigning Lillian Roland to Visalia and Pat Schwalbe to Hemet
 - [x] Write only confirmed Coordinator cells and verify the center assignments
+
+## Active Center Coordinator Contact Management
+- [x] Inspect existing coordinator account, scope, and contact persistence for center-level contact maintenance
+- [x] Add Event Director-only center coordinator phone, email, and preferred-contact controls
+- [x] Expose authorized center-specific coordinator contact details to the relevant Event Director workflows
+- [x] Add focused authorization and data-isolation tests, then validate and publish

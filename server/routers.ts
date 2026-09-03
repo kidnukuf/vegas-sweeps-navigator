@@ -143,21 +143,24 @@ export const appRouter = router({
           `SELECT e.id, e.eventName, e.eventYear, e.startDate, e.endDate,
              (SELECT GROUP_CONCAT(DISTINCT NULLIF(TRIM(t.coordinatorName), '') ORDER BY t.coordinatorName SEPARATOR ' | ')
               FROM teams t WHERE t.eventId = e.id) AS coordinatorNames,
-             (SELECT NULLIF(TRIM(t.coordinatorName), '')
+             (SELECT COALESCE(NULLIF(TRIM(centerContact.coordinatorName), ''), NULLIF(TRIM(t.coordinatorName), ''))
               FROM bowler_claim_codes cc
               INNER JOIN bowlers b ON b.id = cc.bowlerId
               LEFT JOIN teams t ON t.id = b.teamId
+              LEFT JOIN event_center_coordinator_contacts centerContact ON centerContact.eventId = e.id AND centerContact.centerId = b.centerId
               WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorName,
-             (SELECT ecc.phone
+             (SELECT COALESCE(centerContact.phone, ecc.phone)
               FROM bowler_claim_codes cc
               INNER JOIN bowlers b ON b.id = cc.bowlerId
               LEFT JOIN teams t ON t.id = b.teamId
+              LEFT JOIN event_center_coordinator_contacts centerContact ON centerContact.eventId = e.id AND centerContact.centerId = b.centerId
               LEFT JOIN event_coordinator_contacts ecc ON ecc.eventId = e.id AND ecc.coordinatorName = t.coordinatorName
               WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorPhone,
-             (SELECT ecc.email
+             (SELECT COALESCE(centerContact.email, ecc.email)
               FROM bowler_claim_codes cc
               INNER JOIN bowlers b ON b.id = cc.bowlerId
               LEFT JOIN teams t ON t.id = b.teamId
+              LEFT JOIN event_center_coordinator_contacts centerContact ON centerContact.eventId = e.id AND centerContact.centerId = b.centerId
               LEFT JOIN event_coordinator_contacts ecc ON ecc.eventId = e.id AND ecc.coordinatorName = t.coordinatorName
               WHERE cc.eventId = e.id AND cc.code = ? AND cc.status <> 'void' LIMIT 1) AS recipientCoordinatorEmail,
              (SELECT GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ' | ')
