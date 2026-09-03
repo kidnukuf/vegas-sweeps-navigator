@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import SheetTabSelector from "@/components/SheetTabSelector";
+import HotelRoomPlanner from "@/components/HotelRoomPlanner";
 
 type ImportRow = Record<string, unknown>;
 type EventRecord = Record<string, unknown>;
@@ -420,6 +421,11 @@ export default function MasterSheetImport() {
               />
             </div>
           )}
+          <HotelRoomPlanner
+            eventId={eventId}
+            sheetTabOverride={sheetTabOverride || undefined}
+            hasSheetTarget={Boolean(activeEvent?.sheetSpreadsheetId && (sheetTabOverride || activeEvent?.sheetTabName))}
+          />
           {/* Bulk Sync QR Codes */}
           <div className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0b1220]/80 p-4 shadow-inner shadow-cyan-950/20">
             <div className="mb-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">

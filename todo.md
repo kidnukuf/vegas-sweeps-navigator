@@ -1040,10 +1040,10 @@
 - [x] Write only user-approved enriched values to matched November 6 event rows and verify the result
 
 ## Active Hotel Room Planning
-- [ ] Add one append-only Hotel Room ID column, using a shared numeric ID for each reserved room and `G` suffix for a room with overnight guests
-- [ ] Keep event-attending guests separate from Hotel Room ID assignments unless explicitly identified as overnight room guests
-- [ ] Add Event Director numerical room-ID assignment, cross-team visibility, unique-room totals, and explicit selected-tab write-back
-- [ ] Add focused shared-room, single-room, guest-suffix, and protected-column safety tests, then validate and publish
+- [x] Add one append-only Hotel Room ID column, using a shared numeric ID for each reserved room and `G` suffix for a room with overnight guests
+- [x] Keep event-attending guests separate from Hotel Room ID assignments unless explicitly identified as overnight room guests
+- [x] Add Event Director numerical room-ID assignment, cross-team visibility, unique-room totals, and explicit selected-tab write-back
+- [x] Add focused shared-room, single-room, guest-suffix, and protected-column safety tests, then validate and publish
 
 ## Active November 6 Hotel Room IDs
 - [x] Calculate a no-write November 6 Hotel Room ID preview that assigns every bowler either a shared numeric code, a guest-suffixed code, or a unique solo-room code

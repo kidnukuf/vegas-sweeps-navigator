@@ -5,6 +5,9 @@ import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
 import { rawQuery, rawExec, getEventSheetTarget, recordSheetSync } from "../db";
 import { getSheetsClient, writeQRCodesToSheet, writeBowlerIdToSheet, clearQRUsedColumns, sortSheetRows } from "../googleSheets";
+import { assertEventAccess } from "../_core/edAuth";
+import { buildHotelRoomPlan, normalizedName, type HotelRoomRosterRow } from "../../shared/hotelRoomPlanner";
+import { createHash } from "node:crypto";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -187,6 +190,71 @@ function parseSheetRow(row: string[]): SheetRow {
     guestPoolUsed: row[COLS.GUEST_POOL_USED]?.trim() || "",
     guestPoolQr: row[COLS.GUEST_POOL_QR]?.trim() || "",
   };
+}
+
+const ROOM_ID_HEADER = "Hotel Room ID";
+
+type RoomPlanSheetData = {
+  spreadsheetId: string;
+  sheetName: string;
+  headers: string[];
+  plan: ReturnType<typeof buildHotelRoomPlan>;
+  sourceHash: string;
+};
+
+function normalizeHeader(value: unknown): string {
+  return String(value ?? "").trim().toLocaleLowerCase();
+}
+
+function columnLetter(index: number): string {
+  let remaining = index + 1;
+  let label = "";
+  while (remaining > 0) {
+    const remainder = (remaining - 1) % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    remaining = Math.floor((remaining - 1) / 26);
+  }
+  return label;
+}
+
+async function loadRoomPlanSheetData(eventId: number, sheetTabOverride?: string): Promise<RoomPlanSheetData> {
+  const target = await getEventSheetTarget(eventId);
+  if (sheetTabOverride) target.sheetName = sheetTabOverride;
+  if (!target.spreadsheetId || !target.sheetName) {
+    throw new Error("No Google Sheet tab is configured for this event. Select the event tab in Event Settings first.");
+  }
+
+  const sheets = await getSheetsClient();
+  if (!sheets) throw new Error("Google Sheets connection is unavailable.");
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: target.spreadsheetId,
+    range: `'${target.sheetName}'!A:ZZ`,
+  });
+  const sheetRows = (response.data.values ?? []) as string[][];
+  const headers = (sheetRows[0] ?? []).map((value) => String(value ?? ""));
+  const firstNameColumn = headers.findIndex((header) => normalizeHeader(header) === "first name");
+  const lastNameColumn = headers.findIndex((header) => normalizeHeader(header) === "last name");
+  const roommateFirstColumn = headers.findIndex((header) => normalizeHeader(header) === "roommate first name");
+  const roommateLastColumn = headers.findIndex((header) => normalizeHeader(header) === "roommate last name");
+  if (firstNameColumn < 0 || lastNameColumn < 0 || roommateFirstColumn < 0 || roommateLastColumn < 0) {
+    throw new Error("The selected tab must contain First Name, Last Name, Roommate First Name, and Roommate Last Name columns.");
+  }
+
+  const rosterRows: HotelRoomRosterRow[] = sheetRows.slice(1).map((row, rowIndex) => ({
+    rowNumber: rowIndex + 2,
+    firstName: String(row[firstNameColumn] ?? ""),
+    lastName: String(row[lastNameColumn] ?? ""),
+    roommateFirstName: String(row[roommateFirstColumn] ?? ""),
+    roommateLastName: String(row[roommateLastColumn] ?? ""),
+  })).filter((row) => normalizedName(row.firstName, row.lastName).length > 0);
+
+  const plan = buildHotelRoomPlan(rosterRows);
+  const sourceHash = createHash("sha256").update(JSON.stringify({
+    sheetName: target.sheetName,
+    headers,
+    rows: rosterRows,
+  })).digest("hex");
+  return { spreadsheetId: target.spreadsheetId, sheetName: target.sheetName, headers, plan, sourceHash };
 }
 
 export const masterSheetRouter = router({
@@ -1034,5 +1102,78 @@ export const masterSheetRouter = router({
       }
 
       return { csv, rowCount: dataRows.length, sheetWritten, sheetErrors, sheetSkipped };
+    }),
+
+  // ─── Hotel Room ID Planner (Event Director only) ─────────────────────────
+  previewHotelRoomIds: publicProcedure
+    .input(z.object({ eventId: z.number().int().positive(), sheetTabOverride: z.string().trim().min(1).optional() }))
+    .query(async ({ input, ctx }) => {
+      await assertEventAccess(ctx, input.eventId);
+      const data = await loadRoomPlanSheetData(input.eventId, input.sheetTabOverride);
+      return {
+        sheetName: data.sheetName,
+        sourceHash: data.sourceHash,
+        existingRoomIdColumn: data.headers.findIndex((header) => normalizeHeader(header) === normalizeHeader(ROOM_ID_HEADER)) >= 0,
+        summary: data.plan.summary,
+        assignments: data.plan.assignments,
+        groups: data.plan.groups,
+      };
+    }),
+
+  applyHotelRoomIds: publicProcedure
+    .input(z.object({
+      eventId: z.number().int().positive(),
+      sourceHash: z.string().length(64),
+      confirmation: z.literal("APPLY"),
+      sheetTabOverride: z.string().trim().min(1).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await assertEventAccess(ctx, input.eventId);
+      const data = await loadRoomPlanSheetData(input.eventId, input.sheetTabOverride);
+      if (data.sourceHash !== input.sourceHash) {
+        throw new Error("The selected sheet changed after preview. Re-run the room plan before writing any Hotel Room IDs.");
+      }
+      const sheets = await getSheetsClient();
+      if (!sheets) throw new Error("Google Sheets connection is unavailable.");
+      let roomIdColumn = data.headers.findIndex((header) => normalizeHeader(header) === normalizeHeader(ROOM_ID_HEADER));
+
+      if (roomIdColumn < 0) {
+        roomIdColumn = data.headers.length;
+        const workbook = await sheets.spreadsheets.get({ spreadsheetId: data.spreadsheetId, fields: "sheets.properties" });
+        const properties = (workbook.data.sheets ?? []).find((sheet) => sheet.properties?.title === data.sheetName)?.properties;
+        if (properties?.sheetId === undefined) throw new Error("The selected sheet tab was not found.");
+        const currentColumns = properties.gridProperties?.columnCount ?? 0;
+        if (currentColumns <= roomIdColumn) {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: data.spreadsheetId,
+            requestBody: {
+              requests: [{ appendDimension: { sheetId: properties.sheetId, dimension: "COLUMNS", length: roomIdColumn - currentColumns + 1 } }],
+            },
+          });
+        }
+      }
+
+      const roomIdColumnLetter = columnLetter(roomIdColumn);
+      const updates = [
+        { range: `'${data.sheetName}'!${roomIdColumnLetter}1`, values: [[ROOM_ID_HEADER]] },
+        ...data.plan.assignments.map((assignment) => ({
+          range: `'${data.sheetName}'!${roomIdColumnLetter}${assignment.rowNumber}`,
+          values: [[assignment.roomId]],
+        })),
+      ];
+      const batchSize = 100;
+      for (let index = 0; index < updates.length; index += batchSize) {
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: data.spreadsheetId,
+          requestBody: { valueInputOption: "RAW", data: updates.slice(index, index + batchSize) },
+        });
+      }
+      await recordSheetSync(input.eventId);
+      return {
+        sheetName: data.sheetName,
+        roomIdColumn: roomIdColumnLetter,
+        assignedRows: data.plan.assignments.length,
+        ...data.plan.summary,
+      };
     }),
 });
