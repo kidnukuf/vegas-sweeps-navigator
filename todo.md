@@ -1064,3 +1064,8 @@
 - [x] Prepare a final no-write append preview for the confirmed new Lucky Strike Mesa W roster rows
 - [x] Append only the verified new Mesa rows to the November 6 event tab, without altering existing rows
 - [x] Verify new-row count, center assignment, and unchanged pre-existing roster rows
+
+## Active November 6 Mesa Hotel Room IDs
+- [x] Inspect new Lucky Strike Mesa W rows for verified roommate relationships without modifying existing Hotel Room IDs
+- [x] Prepare a no-write Mesa room-ID preview that preserves existing room codes and assigns every new Mesa bowler
+- [x] Write only the approved new Mesa Hotel Room ID cells and verify complete 588-row coverage
