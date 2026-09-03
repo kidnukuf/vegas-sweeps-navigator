@@ -1051,9 +1051,10 @@
 - [x] Append the user-approved Hotel Room ID column and write finalized November 6 room codes, then verify full-row coverage and unique-room totals
 
 ## Active November 6 Updated Ledger Reconciliation
-- [ ] Inspect the supplied updated ledger and current November 6 master tab without modifying either sheet
-- [ ] Produce a no-write changed-value preview with duplicate, unmatched, and protected-column checks
-- [ ] Apply only user-approved changed values to existing matched November 6 rows and verify the result
+- [x] Inspect the supplied updated ledger and current November 6 master tab without modifying either sheet
+- [x] Produce a no-write changed-value preview with duplicate, unmatched, and protected-column checks
+- [x] Apply only user-approved changed values to existing matched November 6 rows and verify the result
+- [x] Reconcile the supplied ledger against the post-Mesa-append master tab before any changed-value write
 
 ## Active Additional Updated Ledger Review
 - [x] Inspect the additional supplied ledger and compare it read-only against the current November 6 master tab
