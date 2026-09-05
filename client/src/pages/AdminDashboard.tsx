@@ -18,6 +18,7 @@ import EventWizard from "@/components/EventWizard";
 import EDBowlerView from "@/components/EDBowlerView";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { BulletinModerationPanel } from "@/components/BulletinModerationPanel";
+import IncompleteGuestInformationPanel from "@/components/IncompleteGuestInformationPanel";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -1222,6 +1223,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
           <span className="text-xs text-gray-500">{activeEvent ? "All data below is scoped to this event" : "Create an event to begin your Event Director workspace"}</span>
         </div>
       </div>
+
+      {activeEvent ? <IncompleteGuestInformationPanel eventId={EVENT_ID} /> : null}
 
       <div className="bg-[#111] border-b border-white/10 px-4 py-3">
         <div className="max-w-7xl mx-auto grid grid-cols-3 sm:grid-cols-6 gap-3">

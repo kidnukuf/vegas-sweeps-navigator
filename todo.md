@@ -1120,3 +1120,21 @@
 - [x] Compare every supported roster value with duplicate, missing, spelling, and protected-column safeguards
 - [x] Present a no-write discrepancy preview and apply only user-confirmed corrections
 - [x] Re-read updated cells and preserve all unrelated master-sheet data
+
+## Active November 6 Rooming Review and Directory Refresh
+- [x] Audit remaining ambiguous roommate references against all supplied ledger evidence without changing Room IDs
+- [x] Refresh both alphabetized Room ID directories from the current November 6 master tab
+- [x] Validate the refreshed PDFs and prepare the next-center reconciliation workflow when its ledger is supplied
+- [ ] Reconcile the next center ledger after the user provides its Google Sheet link
+
+## Active Guest QR and October Claim-Code Access Planning
+- [ ] Verify whether bowlers with one or two identified guests receive the correct guest QR codes in the Bowler Portal
+- [ ] Map an Event Director-visible opt-out workflow for bowlers who will use paper ticket substitutes
+- [ ] Define secure personalized claim-link, email, and text-verification requirements without exposing protected bowler data
+- [ ] Present build options and required provider, consent, and operational decisions before implementation
+
+## Active Event Director Guest Information Completion
+- [x] Flag numeric or currency-style guest entries after import as incomplete guest information
+- [x] Add an Event Director-only guest review prompt showing host bowler, bowling center, amount paid, and editable guest name
+- [x] Securely save completed guest names and display them beside the corresponding Bowler Portal guest QR codes
+- [x] Add regression coverage, validate responsive portal behavior, and publish the completed workflow

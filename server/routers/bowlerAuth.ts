@@ -19,6 +19,7 @@ import { getEventSheetTarget } from "../db";
 import { assertBowlerAccess, assertEventAccess, resolveEdSession } from "../_core/edAuth";
 import type { TrpcContext } from "../_core/context";
 import { formatPassportScannerName } from "../passportDisplay";
+import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -984,6 +985,94 @@ export const bowlerAuthRouter = router({
         banquetUsed: Boolean(row.banquetUsed),
         disabled: Boolean(row.disabled),
       }));
+    }),
+
+  // ── ED: REVIEW NUMERIC / CURRENCY GUEST ENTRIES AFTER IMPORT ──────────────
+  listIncompleteGuestInformation: publicProcedure
+    .input(z.object({ eventId: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      await assertEventAccess(ctx, input.eventId);
+      const rows = await rawQuery<{
+        guestTicketId: number;
+        suffix: string;
+        importedGuestValue: string | null;
+        bowlerId: number;
+        legalFirstName: string;
+        legalLastName: string;
+        centerName: string | null;
+        teamName: string | null;
+        guestAmountPaid: string | null;
+        hasPoolTicket: number;
+        hasBanquetTicket: number;
+      }>(
+        `SELECT g.id AS guestTicketId, g.suffix, g.guestName AS importedGuestValue,
+                b.id AS bowlerId, b.legalFirstName, b.legalLastName,
+                bc.centerName, t.teamName, g.guestAmountPaid,
+                CASE WHEN g.token IS NOT NULL AND g.token NOT LIKE '%-BQ' THEN 1 ELSE 0 END AS hasPoolTicket,
+                CASE WHEN g.banquetToken IS NOT NULL AND g.banquetToken <> '' THEN 1 ELSE 0 END AS hasBanquetTicket
+         FROM guest_pool_party_tokens g
+         INNER JOIN bowlers b ON b.id = g.bowlerId
+         LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+         LEFT JOIN teams t ON t.id = b.teamId
+         WHERE g.eventId = ? AND g.disabled = 0
+         ORDER BY bc.centerName, b.legalLastName, b.legalFirstName, g.suffix`,
+        [input.eventId],
+      );
+      return rows
+        .filter((row) => isIncompleteGuestName(row.importedGuestValue))
+        .map((row) => ({
+          ...row,
+          hasPoolTicket: Boolean(row.hasPoolTicket),
+          hasBanquetTicket: Boolean(row.hasBanquetTicket),
+        }));
+    }),
+
+  // ── ED: COMPLETE A GUEST NAME SO THE BOWLER PORTAL LABEL IS PERSONALIZED ──
+  completeGuestInformation: publicProcedure
+    .input(z.object({
+      eventId: z.number().int().positive(),
+      guestTicketId: z.number().int().positive(),
+      guestName: z.string().trim().min(2, "Enter the guest's full name.").max(120),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const session = await assertEventAccess(ctx, input.eventId);
+      const guestName = normalizeGuestName(input.guestName);
+      if (isIncompleteGuestName(guestName)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Enter the guest's name, not a price or numeric value." });
+      }
+      const rows = await rawQuery<{
+        guestTicketId: number;
+        importedGuestValue: string | null;
+        bowlerId: number;
+        legalFirstName: string;
+        legalLastName: string;
+      }>(
+        `SELECT g.id AS guestTicketId, g.guestName AS importedGuestValue,
+                b.id AS bowlerId, b.legalFirstName, b.legalLastName
+         FROM guest_pool_party_tokens g
+         INNER JOIN bowlers b ON b.id = g.bowlerId
+         WHERE g.id = ? AND g.eventId = ?
+         LIMIT 1`,
+        [input.guestTicketId, input.eventId],
+      );
+      const guest = rows[0];
+      if (!guest) throw new TRPCError({ code: "NOT_FOUND", message: "Guest ticket not found for this event." });
+      await rawQuery(`UPDATE guest_pool_party_tokens SET guestName = ? WHERE id = ? AND eventId = ?`, [guestName, input.guestTicketId, input.eventId]);
+      await writeAuditLog({
+        eventId: input.eventId,
+        actorRole: session.type === "owner" ? "Owner" : "EventDirector",
+        actorId: session.userId ?? session.staffId,
+        action: "ed_complete_guest_information",
+        targetId: guest.bowlerId,
+        targetType: "guest_ticket",
+        details: JSON.stringify({
+          guestTicketId: input.guestTicketId,
+          hostBowler: `${guest.legalFirstName} ${guest.legalLastName}`,
+          replacedImportedValue: guest.importedGuestValue,
+          guestName,
+        }),
+      });
+      return { success: true, guestTicketId: input.guestTicketId, guestName, bowlerId: guest.bowlerId };
     }),
 
   // ── ED: CREATE A NAMED GUEST TICKET AND SYNC ITS QR CODE(S) TO THE SHEET ───

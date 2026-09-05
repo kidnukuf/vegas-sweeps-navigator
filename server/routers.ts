@@ -39,6 +39,7 @@ import { v4 as uuidv4 } from "uuid";
 import { assertBowlerAccess, assertEventAccess, getAccessibleEvents, requireEdSession, requirePlatformAdmin } from "./_core/edAuth";
 import { resolveSharedSheetTarget } from "./sharedSheetLogic";
 import { resolveGoogleCredentialStatus } from "./googleCredsLogic";
+import { splitImportedGuestEntry } from "./guestInformation.logic";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -1940,10 +1941,11 @@ export const appRouter = router({
               0;
             // BJ and BK are the two named guest slots. A supplied name always gets a
             // banquet QR; it also gets a pool QR when this row is pool-party eligible.
-            const namedGuestSlots = [
+            const importedGuestSlots = [
               String(row["Guest Name"] ?? row["guestName"] ?? row["guest_name"] ?? "").trim(),
               String(row["Additional Guest Name"] ?? row["additionalGuestName"] ?? row["additional_guest_name"] ?? "").trim(),
             ];
+            const guestDetails = importedGuestSlots.map(splitImportedGuestEntry);
             const guestUnder21Slots = [
               ["Y", "YES", "TRUE", "1"].includes(String(row["Guest Under 21?"] ?? row["Guest Under 21"] ?? row["guestUnder21"] ?? "").trim().toUpperCase()),
               ["Y", "YES", "TRUE", "1"].includes(String(row["Additional Guest Under 21?"] ?? row["Additional Guest Under 21"] ?? row["additionalGuestUnder21"] ?? "").trim().toUpperCase()),
@@ -2006,21 +2008,23 @@ export const appRouter = router({
               ) as Record<string, unknown>[];
               const existingPoolToken = existingTokenRows[0]?.poolPartyToken as string | undefined;
               const existingBanquetToken = existingTokenRows[0]?.banquetToken as string | undefined;
-              // Add or refresh only the named slots supplied by the master sheet.
+              // Add or refresh only the populated BJ/BK slots supplied by the master sheet.
+              // Numeric/currency values are retained as incomplete guest amounts for ED review.
               // Blank BJ/BK cells intentionally leave ED-created guest tickets intact.
-              for (let gi = 0; gi < namedGuestSlots.length; gi++) {
-                const guestName = namedGuestSlots[gi];
+              for (let gi = 0; gi < importedGuestSlots.length; gi++) {
+                const importedGuestValue = importedGuestSlots[gi];
+                const { guestName, guestAmountPaid } = guestDetails[gi];
                 const guestUnder21 = guestUnder21Slots[gi] ?? false;
-                if (!guestName) continue;
+                if (!importedGuestValue) continue;
                 const suffix = ["A", "B"][gi];
                 const guestId = `${existingScantronId}${suffix}`;
                 const poolTok = poolParty ? guestId : `${guestId}-BQ`;
                 const banquetTok = `${guestId}-BQ`;
                 await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ? AND suffix = ?`, [bowlerId, suffix]);
                 await rawQuery(
-                  `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken, under21, used, banquetUsed, disabled)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
-                  [bowlerId, input.eventId, guestId, guestName, suffix, poolTok, banquetTok, guestUnder21 ? 1 : 0]
+                  `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, guestAmountPaid, suffix, token, banquetToken, under21, used, banquetUsed, disabled)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
+                  [bowlerId, input.eventId, guestId, guestName, guestAmountPaid, suffix, poolTok, banquetTok, guestUnder21 ? 1 : 0]
                 );
               }
               const existingGuestRows = await rawQuery<{ suffix: string; token: string; banquetToken: string | null }>(
@@ -2086,11 +2090,11 @@ export const appRouter = router({
                 const banquetGuestCount = extraBanquet >= 1 && extraBanquet < 80
                   ? Math.round(extraBanquet) // Y/N or small integer count
                   : Math.floor(extraBanquet / 80);
-                const lastNamedGuestSlot = namedGuestSlots.reduce(
-                  (lastSlot, name, index) => name ? index + 1 : lastSlot,
+                const lastImportedGuestSlot = importedGuestSlots.reduce(
+                  (lastSlot, value, index) => value ? index + 1 : lastSlot,
                   0
                 );
-                const totalGuestCount = Math.min(Math.max(poolGuestCount, banquetGuestCount, lastNamedGuestSlot), SUFFIXES.length);
+                const totalGuestCount = Math.min(Math.max(poolGuestCount, banquetGuestCount, lastImportedGuestSlot), SUFFIXES.length);
                 const importGuestTokens: Array<{ suffix: string; token: string }> = [];
                 const importGuestBanquetTokens: Array<{ suffix: string; banquetToken: string }> = [];
                 if (totalGuestCount > 0) {
@@ -2098,20 +2102,21 @@ export const appRouter = router({
                   for (let gi = 0; gi < totalGuestCount; gi++) {
                     const suffix = SUFFIXES[gi];
                     const guestId = `${scantronId}${suffix}`;
-                    const guestName = namedGuestSlots[gi] || null;
+                    const importedGuestValue = importedGuestSlots[gi];
+                    const { guestName, guestAmountPaid } = guestDetails[gi];
                     const guestUnder21 = guestUnder21Slots[gi] ?? false;
                     // BK may be filled while BJ is blank. Preserve its B suffix without
                     // creating an unused placeholder A record.
-                    if (!guestName && gi >= poolGuestCount && gi >= banquetGuestCount) continue;
+                    if (!importedGuestValue && gi >= poolGuestCount && gi >= banquetGuestCount) continue;
                     // Named BJ/BK guests always receive banquet access. Pool QR is
                     // added only when the bowler row is pool-party eligible.
-                    const poolTok = guestName ? (poolParty ? guestId : null) : (gi < poolGuestCount ? guestId : null);
-                    const banquetTok = guestName ? `${guestId}-BQ` : (gi < banquetGuestCount ? `${guestId}-BQ` : null);
+                    const poolTok = importedGuestValue ? (poolParty ? guestId : null) : (gi < poolGuestCount ? guestId : null);
+                    const banquetTok = importedGuestValue ? `${guestId}-BQ` : (gi < banquetGuestCount ? `${guestId}-BQ` : null);
                     // `token` column is NOT NULL + unique; use pool token, else banquet token, else guestId
                     const primaryToken = poolTok ?? banquetTok ?? guestId;
                     await rawQuery(
-                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, suffix, token, banquetToken, under21) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                      [bowlerId, input.eventId, guestId, guestName, suffix, primaryToken, banquetTok, guestUnder21 ? 1 : 0]
+                      `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, guestName, guestAmountPaid, suffix, token, banquetToken, under21) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      [bowlerId, input.eventId, guestId, guestName, guestAmountPaid, suffix, primaryToken, banquetTok, guestUnder21 ? 1 : 0]
                     );
                     if (poolTok) importGuestTokens.push({ suffix, token: poolTok });
                     if (banquetTok) importGuestBanquetTokens.push({ suffix, banquetToken: banquetTok });

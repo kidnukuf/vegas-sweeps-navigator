@@ -742,6 +742,7 @@ export const guestPoolPartyTokens = mysqlTable("guest_pool_party_tokens", {
   bowlerId: int("bowlerId").notNull(),
   guestId: varchar("guestId", { length: 16 }), // scantronId + suffix (e.g. 1234567890A)
   guestName: varchar("guestName", { length: 120 }),
+  guestAmountPaid: varchar("guestAmountPaid", { length: 32 }), // imported fee/count retained until the ED supplies a real name
   eventId: int("eventId"),
   suffix: varchar("suffix", { length: 2 }).notNull(), // A, B, C, ...
   token: varchar("token", { length: 64 }).notNull().unique(), // pool party token
