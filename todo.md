@@ -1114,3 +1114,9 @@
 - [x] Generate a Room ID assignment PDF alphabetized by bowler name
 - [x] Generate a separate Room ID assignment PDF grouped by alphabetized bowling center with bowlers alphabetized within each center
 - [x] Verify the completeness and print layout of both alphabetized PDFs before delivery
+
+## Active November 6 New Ledger Reconciliation
+- [x] Inspect the supplied ledger and the exact November 6 event master tab without making changes
+- [x] Compare every supported roster value with duplicate, missing, spelling, and protected-column safeguards
+- [x] Present a no-write discrepancy preview and apply only user-confirmed corrections
+- [x] Re-read updated cells and preserve all unrelated master-sheet data
