@@ -1128,13 +1128,31 @@
 - [ ] Reconcile the next center ledger after the user provides its Google Sheet link
 
 ## Active Guest QR and October Claim-Code Access Planning
-- [ ] Verify whether bowlers with one or two identified guests receive the correct guest QR codes in the Bowler Portal
-- [ ] Map an Event Director-visible opt-out workflow for bowlers who will use paper ticket substitutes
-- [ ] Define secure personalized claim-link, email, and text-verification requirements without exposing protected bowler data
-- [ ] Present build options and required provider, consent, and operational decisions before implementation
+- [x] Verify whether bowlers with one or two identified guests receive the correct guest QR codes in the Bowler Portal
+- [x] Map an Event Director-visible opt-out workflow for bowlers who will use paper ticket substitutes
+- [x] Define secure personalized claim-link, email, and text-verification requirements without exposing protected bowler data
+- [x] Present build options and required provider, consent, and operational decisions before implementation
 
 ## Active Event Director Guest Information Completion
 - [x] Flag numeric or currency-style guest entries after import as incomplete guest information
 - [x] Add an Event Director-only guest review prompt showing host bowler, bowling center, amount paid, and editable guest name
 - [x] Securely save completed guest names and display them beside the corresponding Bowler Portal guest QR codes
 - [x] Add regression coverage, validate responsive portal behavior, and publish the completed workflow
+
+## Active Claim-Code Email Verification and Paper-Ticket Access
+- [ ] Require a roster-matching email address and valid claim code before a bowler can begin account creation
+- [ ] Send a short-lived, signed email-verification button link before password creation and safely complete the verified claim
+- [ ] Add Event Director-controlled paper-ticket requests and printable ticket-substitute records for bowlers who do not use the app
+- [ ] Preserve staff scoping, audit access changes, add regression coverage, and validate the secure alternative-access flow
+
+## Active Approved Email-First Claim and Paper-Ticket Workflow
+- [ ] Add short-lived, single-use claim-verification and paper-ticket request records without storing raw verification tokens
+- [ ] Require a valid claim code plus the roster email address before issuing a verification-button email
+- [ ] Add secured Bowler Portal confirmation and Event Director paper-ticket queue controls
+- [ ] Activate the authenticated Bowl Vegas SMTP sender after credentials are supplied and validate successful delivery
+
+## Active Fictional QR Testing Roster
+- [x] Read the event test Google Sheet tab and map its roster columns without changing the workbook
+- [x] Prepare a clearly fictional presidential roster across eight real bowling centers with humorous team names for QR testing
+- [x] Present the exact test-roster preview and apply it only after confirmation
+- [x] Verify the completed event test tab and preserve all non-test tabs
