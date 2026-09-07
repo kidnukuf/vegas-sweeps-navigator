@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import SheetTabSelector from "@/components/SheetTabSelector";
+import { applyCenterOverrideToRawRow, findMismatchedCenterNames } from "@/lib/importCenterValidation";
 
 interface ParsedRow {
   rowIndex: number;
@@ -289,7 +290,9 @@ export default function ImportData() {
   const selectedEvent = (events as Record<string, unknown>[]).find((e) => Number(e.id) === selectedEventId) ?? null;
 
   // ── Center mismatch detection ──────────────────────────────────────────────
-  const { data: allCenters = [] } = trpc.centers.list.useQuery();
+  const centersQuery = trpc.centers.list.useQuery();
+  const allCenters = centersQuery.data ?? [];
+  const isCenterListReady = !centersQuery.isLoading && !centersQuery.isError;
   const centerNameSet = useMemo(() => {
     const s = new Set<string>();
     (allCenters as Record<string, unknown>[]).forEach(c => s.add(String(c.centerName ?? "").toLowerCase().trim()));
@@ -314,17 +317,8 @@ export default function ImportData() {
   // Unique center names from parsed rows that don’t match any DB center
   const mismatchedCenters = useMemo(() => {
     if (step !== "preview" || parsedRows.length === 0) return [];
-    const unique = new Set<string>();
-    parsedRows.forEach(r => {
-      if (!r.centerName) return;
-      const key = r.centerName.toLowerCase().trim();
-      // A center is mismatched if it’s not in the DB AND not already overridden/added
-      if (!centerNameSet.has(key) && !centerOverrides[r.centerName]) {
-        unique.add(r.centerName);
-      }
-    });
-    return Array.from(unique).sort();
-  }, [step, parsedRows, centerNameSet, centerOverrides]);
+    return findMismatchedCenterNames(parsedRows, centerNameSet, isCenterListReady, centerOverrides);
+  }, [step, parsedRows, centerNameSet, isCenterListReady, centerOverrides]);
 
   const adminRosterQuery = trpc.bowlers.adminList.useQuery(
     { eventId: selectedEventId },
@@ -432,7 +426,7 @@ export default function ImportData() {
     const validRows = parsedRows.filter(r => r.errors.length === 0);
     if (validRows.length === 0) { toast.error("No valid rows to import."); return; }
     // Send the RAW row data keyed by original headers so the server's header-based lookups work
-    const rawRows = validRows.map(r => r.raw);
+    const rawRows = validRows.map((row) => applyCenterOverrideToRawRow(row.raw, centerOverrides));
     // Extract spreadsheet ID and tab name from the Google Sheets URL so the server can
     // auto-save the sheet target for this event — enabling write-backs to the correct sheet.
     let sheetSpreadsheetId: string | undefined;
@@ -681,6 +675,18 @@ export default function ImportData() {
               </div>
             </div>
 
+            {centersQuery.isLoading && (
+              <div className="neon-card p-4 border-cyan-500/30 bg-cyan-950/20 text-cyan-200 text-sm">
+                Checking the imported center names against the live center database…
+              </div>
+            )}
+
+            {centersQuery.isError && (
+              <div className="neon-card p-4 border-red-500/50 bg-red-950/20 text-red-200 text-sm">
+                Unable to verify center names right now. Refresh the page before importing so valid centers are not incorrectly flagged.
+              </div>
+            )}
+
             {/* ⚠️ Center Mismatch Banner */}
             {mismatchedCenters.length > 0 && (
               <div className="neon-card p-4 border-orange-500/50 bg-orange-950/20">
@@ -854,7 +860,7 @@ export default function ImportData() {
                   }
                   handleImport();
                 }}
-                disabled={validCount === 0 || importMutation.isPending}
+                disabled={validCount === 0 || importMutation.isPending || !isCenterListReady || mismatchedCenters.length > 0}
                 className="neon-btn-gold flex-[2] py-3 disabled:opacity-50 disabled:cursor-not-allowed">
                 {importMutation.isPending ? "⏳ Importing..." : `🚀 Import ${validCount} Bowlers`}
               </button>

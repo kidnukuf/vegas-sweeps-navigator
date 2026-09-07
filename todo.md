@@ -1161,3 +1161,8 @@
 - [x] Compare every `testevent90526` center value with the live bowling-center database
 - [x] Present exact-name replacements only for unmatched or non-identical center values
 - [x] Apply only confirmed Center-column corrections and verify all 64 test rows retain recognized database names
+
+## Active Test Roster Center-Validation Repair
+- [x] Trace the reported center-not-found error despite exact global center-name matches
+- [x] Reproduce the test-tab import path and isolate whether event scope, source selection, or stale validation causes the error
+- [x] Correct the confirmed defect and verify all eight real test centers import without center-not-found errors
