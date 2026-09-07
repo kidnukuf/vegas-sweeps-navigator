@@ -40,6 +40,7 @@ import { assertBowlerAccess, assertEventAccess, getAccessibleEvents, requireEdSe
 import { resolveSharedSheetTarget } from "./sharedSheetLogic";
 import { resolveGoogleCredentialStatus } from "./googleCredsLogic";
 import { splitImportedGuestEntry } from "./guestInformation.logic";
+import { validateImportTeamCode } from "./importTeamCode.logic";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -1762,7 +1763,9 @@ export const appRouter = router({
             };
             const aliased = CENTER_NAME_ALIASES[centerName.toLowerCase()];
             if (aliased) centerName = aliased;
-            const teamCode = String(row["Team #"] ?? row["team"] ?? row["Team"] ?? "").trim().padStart(2, "0");
+            const rawTeamCode = String(row["Team #"] ?? row["team"] ?? row["Team"] ?? "").trim();
+            const teamCodeValidation = validateImportTeamCode(rawTeamCode);
+            const teamCode = teamCodeValidation.ok ? teamCodeValidation.teamCode : rawTeamCode;
             const firstName = String(row["First Name"] ?? row["first_name"] ?? row["FirstName"] ?? "").trim();
             const lastName = String(row["Last Name"] ?? row["last_name"] ?? row["LastName"] ?? "").trim();
             const teamName = String(row["Team Name"] ?? row["team_name"] ?? "").trim();
@@ -1774,6 +1777,13 @@ export const appRouter = router({
             // Skip placeholder/vacant rows
             const firstLower = firstName.toLowerCase();
             if (firstLower === 'vacant' || firstLower === 'tbd' || firstLower === 'open' || firstLower.startsWith('vacant') || firstLower.startsWith('tbd')) { skipped++; continue; }
+
+            if (!teamCodeValidation.ok) {
+              errors++;
+              errorDetails.push({ row: firstName + " " + lastName, error: teamCodeValidation.message });
+              rowResults.push({ status: 'error', firstName, lastName, centerName, teamName, teamCode, squadTime: String(row["Squad Day & Time"] ?? row["Squad Time"] ?? "").trim(), error: teamCodeValidation.message });
+              continue;
+            }
 
             // Find center — exact match first, then fuzzy partial match
             let center = centerMap.get(centerName.toLowerCase()) as Record<string, unknown> | undefined;

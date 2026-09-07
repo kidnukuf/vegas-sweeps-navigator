@@ -889,7 +889,7 @@ export default function ImportData() {
                 </div>
                 <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
                   <div className="text-3xl font-black text-red-400">{importResult.errors}</div>
-                  <div className="text-gray-400 text-sm">Errors (center not found)</div>
+                  <div className="text-gray-400 text-sm">Errors (see row results)</div>
                 </div>
               </div>
             </div>
