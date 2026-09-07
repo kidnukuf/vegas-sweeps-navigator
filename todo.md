@@ -1168,11 +1168,11 @@
 - [x] Correct the confirmed defect and verify all eight real test centers import without center-not-found errors
 
 ## Active Server-Side Test Import Center Repair
-- [ ] Trace why all 64 test-tab rows reach the server but resolve no live center records
-- [ ] Repair the server-side center lookup or submitted-row mapping without changing non-test data
-- [ ] Safely retry the test import and verify all eight recognized centers process successfully
+- [x] Trace why all 64 test-tab rows reach the server but resolve no live center records
+- [x] Repair the server-side center lookup or submitted-row mapping without changing non-test data
+- [x] Safely retry the test import and verify all eight recognized centers process successfully
 
 ## Active QR Test Roster Team-Code Repair
-- [ ] Correct the fictional test roster’s three-digit Team Number values to valid two-digit codes without changing its other fields
-- [ ] Fix the import result presentation so scantron-ID generation failures are never labeled as center-not-found errors
-- [ ] Retry the corrected test import and verify all 64 fictional bowlers receive valid IDs, QR tokens, and claim codes
+- [x] Correct the fictional test roster’s three-digit Team Number values to valid two-digit codes without changing its other fields
+- [x] Fix the import result presentation so scantron-ID generation failures are never labeled as center-not-found errors
+- [x] Retry the corrected test import and verify all 64 fictional bowlers receive valid IDs, QR tokens, and claim codes
