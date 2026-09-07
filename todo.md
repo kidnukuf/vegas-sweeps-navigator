@@ -1156,3 +1156,8 @@
 - [x] Prepare a clearly fictional presidential roster across eight real bowling centers with humorous team names for QR testing
 - [x] Present the exact test-roster preview and apply it only after confirmation
 - [x] Verify the completed event test tab and preserve all non-test tabs
+
+## Active Fictional Test Center Name Alignment
+- [x] Compare every `testevent90526` center value with the live bowling-center database
+- [x] Present exact-name replacements only for unmatched or non-identical center values
+- [x] Apply only confirmed Center-column corrections and verify all 64 test rows retain recognized database names
