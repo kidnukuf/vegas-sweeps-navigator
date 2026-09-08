@@ -151,6 +151,8 @@ async function getBowlerProfile(bowlerId: number) {
     teamCode: string | null;
     coordinatorName: string | null;
     centerName: string | null;
+    leagueName: string | null;
+    leagueCode: string | null;
     laneNumber: number | null;
     squadTime: string | null;
     laneNumber2: number | null;
@@ -190,6 +192,8 @@ async function getBowlerProfile(bowlerId: number) {
             b.email, b.phone, b.scantronId, b.registrationStatus,
             b.isCapitain, b.captainVerified, b.teamId, b.centerId,
             t.teamName, t.teamCode, t.coordinatorName, bc.centerName,
+            COALESCE(NULLIF(l.leagueName, ''), CONCAT('League ', SUBSTRING(b.scantronId, 3, 2))) AS leagueName,
+            COALESCE(l.leagueCode, SUBSTRING(b.scantronId, 3, 2)) AS leagueCode,
             b.laneNumber, b.squadTime, b.laneNumber2, b.squadTime2, b.laneToEvent,
             e.eventName, e.bowlingDate, b.tshirtSize,
             e.tshirtsProvided, e.tshirtPickupLocation, e.tshirtPickupTime,
@@ -203,6 +207,7 @@ async function getBowlerProfile(bowlerId: number) {
      FROM bowlers b
      LEFT JOIN teams t ON t.id = b.teamId
      LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+     LEFT JOIN leagues l ON l.id = b.leagueId
      LEFT JOIN events e ON e.id = b.eventId
      LEFT JOIN hotel_records h ON h.bowlerId = b.id
      LEFT JOIN payment_records p ON p.bowlerId = b.id

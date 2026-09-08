@@ -636,6 +636,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           </h3>
           <InfoRow icon="🏆" label="Event" value={p.eventName ?? undefined} />
           <InfoRow icon="📍" label="Bowling Center" value={p.centerName ?? undefined} />
+          <InfoRow icon="🎳" label="League" value={p.leagueName ? `${p.leagueName}${p.leagueCode ? ` (Code ${p.leagueCode})` : ""}` : undefined} />
           <InfoRow icon="👥" label="Team" value={p.teamName ? `${p.teamName} (${p.teamCode})` : undefined} />
           <InfoRow icon="📋" label="Coordinator" value={(p as any).coordinatorName ?? undefined} />
           <InfoRow icon="📆" label="Bowling Date" value={p.bowlingDate ?? undefined} />

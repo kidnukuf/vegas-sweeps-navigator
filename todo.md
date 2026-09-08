@@ -1200,3 +1200,9 @@
 - [x] Prepare remaining presidential and first-lady names in randomized league and center assignments using exact database center names
 - [x] Present an append-only no-write preview and apply only the user-confirmed test rows
 - [x] Verify newly appended test rows and preserve the 64 existing fictional records
+
+## Active Human-Readable League Names
+- [x] Map current League Code storage, selected-sheet fields, and portal display locations without changing QR or seating identities
+- [x] Add a human-readable League Name data field with safe import and Event Director editing behavior
+- [x] Display League Name beside League Code in Event Director, Coordinator, Bowler, and seating-chart workflows
+- [x] Add scoped regression coverage and validate that existing events continue using their stable League Codes

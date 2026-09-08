@@ -147,3 +147,35 @@ describe("creator-owned Event Director router isolation", () => {
     }
   });
 });
+
+describe("Event Director League Name editing", () => {
+  it("saves a readable label only for the creator's event and keeps the stable code unchanged", async () => {
+    const stamp = Date.now();
+    const company = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`League Label Company ${stamp}`, `league-label-${stamp}`]);
+    const staff = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`league-label-director-${stamp}`, "test-hash", "League Label Director", company.insertId]);
+    const ownedEvent = await rawExec("INSERT INTO events (companyId, createdByStaffId, eventName, eventYear, status) VALUES (?, ?, ?, ?, 'active')", [company.insertId, staff.insertId, `League Label Owned ${stamp}`, 2099]);
+    const blockedEvent = await rawExec("INSERT INTO events (companyId, eventName, eventYear, status) VALUES (?, ?, ?, 'active')", [company.insertId, `League Label Blocked ${stamp}`, 2099]);
+    const [center] = await rawQuery<{ id: number }>("SELECT id FROM bowling_centers ORDER BY id ASC LIMIT 1");
+    const unique = String(stamp).slice(-6).padStart(6, "0");
+    const ownedBowler = await rawExec("INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, scantronId, registrationStatus) VALUES (?, ?, ?, ?, ?, 'pre_registered')", [ownedEvent.insertId, center.id, "Label", "Allowed", `9901${unique}`,]);
+    const blockedBowler = await rawExec("INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, scantronId, registrationStatus) VALUES (?, ?, ?, ?, ?, 'pre_registered')", [blockedEvent.insertId, center.id, "Label", "Blocked", `9801${unique}`,]);
+
+    try {
+      const caller = appRouter.createCaller(staffContext(staff.insertId));
+      await expect(caller.leagueLabels.save({ eventId: ownedEvent.insertId, centerId: center.id, leagueCode: "01", leagueName: "Tuesday 6:30 PM Mixed League" })).resolves.toMatchObject({ ok: true, leagueCode: "01", leagueName: "Tuesday 6:30 PM Mixed League" });
+      const [saved] = await rawQuery<{ leagueName: string; leagueCode: string; leagueId: number | null }>(`SELECT l.leagueName, l.leagueCode, b.leagueId FROM bowlers b JOIN leagues l ON l.id = b.leagueId WHERE b.id = ?`, [ownedBowler.insertId]);
+      expect(saved).toMatchObject({ leagueName: "Tuesday 6:30 PM Mixed League", leagueCode: "01" });
+      await expect(caller.leagueLabels.list({ eventId: ownedEvent.insertId })).resolves.toEqual(expect.arrayContaining([
+        expect.objectContaining({ centerId: center.id, leagueCode: "01", leagueName: "Tuesday 6:30 PM Mixed League" }),
+      ]));
+      await expect(caller.leagueLabels.save({ eventId: blockedEvent.insertId, centerId: center.id, leagueCode: "01", leagueName: "Blocked League" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    } finally {
+      await rawQuery("DELETE FROM teams WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawQuery("DELETE FROM bowlers WHERE id IN (?, ?)", [ownedBowler.insertId, blockedBowler.insertId]);
+      await rawQuery("DELETE FROM leagues WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawQuery("DELETE FROM events WHERE id IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawQuery("DELETE FROM ed_staff WHERE id = ?", [staff.insertId]);
+      await rawQuery("DELETE FROM companies WHERE id = ?", [company.insertId]);
+    }
+  });
+});

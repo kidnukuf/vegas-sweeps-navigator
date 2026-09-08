@@ -444,7 +444,7 @@ export const leagues = mysqlTable("leagues", {
   id: int("id").autoincrement().primaryKey(),
   eventId: int("eventId").notNull(),
   centerId: int("centerId").notNull(),
-  leagueCode: varchar("leagueCode", { length: 1 }).notNull(), // L (1-9)
+  leagueCode: varchar("leagueCode", { length: 2 }).notNull(), // LL (01-99)
   leagueName: varchar("leagueName", { length: 255 }).notNull(),
   programDirectorName: varchar("programDirectorName", { length: 255 }),
   dayOfWeek: varchar("dayOfWeek", { length: 20 }),

@@ -148,7 +148,7 @@ function VenueGrid({
 }
 
 // ─── Confirmation Grid ────────────────────────────────────────────────────────
-function ConfirmationGrid({ result, rows }: { result: SeatingResult; rows: SeatingRow[] }) {
+function ConfirmationGrid({ result, rows, leagueLabelFor }: { result: SeatingResult; rows: SeatingRow[]; leagueLabelFor: (code: string) => string }) {
   const sorted = [...result.assignments].sort((a, b) => a.originalIndex - b.originalIndex);
 
   return (
@@ -177,7 +177,7 @@ function ConfirmationGrid({ result, rows }: { result: SeatingResult; rows: Seati
                     className="inline-block px-2 py-0.5 rounded text-xs font-bold text-white"
                     style={{ backgroundColor: color, border: `1px solid ${color}` }}
                   >
-                    {a.ll}
+                    {a.ll} — {leagueLabelFor(a.ll)}
                   </span>
                 </td>
                 <td className="px-3 py-1.5 text-gray-300 font-mono text-xs">{a.cc}</td>
@@ -236,6 +236,10 @@ export default function SeatingChart() {
   );
   const seatingPreviewMutation = trpc.seating.previewSheetWrite.useMutation();
   const seatingWriteMutation = trpc.seating.syncSheetWrite.useMutation();
+  const leagueLabelsQuery = trpc.leagueLabels.list.useQuery(
+    { eventId: activeSeatingEventId },
+    { enabled: Boolean(activeSeatingEventId) && events.length > 0 },
+  );
   const configuredSheetId = String((selectedEventQuery.data as any)?.sheetSpreadsheetId ?? "");
   const configuredSheetTab = String((selectedEventQuery.data as any)?.sheetTabName ?? "");
 
@@ -382,6 +386,11 @@ export default function SeatingChart() {
   const usedLeagues = result
     ? Array.from(new Set(result.assignments.map(a => a.ll))).sort()
     : [];
+  const leagueLabelFor = useCallback((leagueCode: string) => {
+    const matching = ((leagueLabelsQuery.data ?? []) as Array<{ leagueCode: string; leagueName: string }>).filter((entry) => entry.leagueCode === leagueCode).map((entry) => entry.leagueName).filter(Boolean);
+    if (matching.length === 1) return matching[0];
+    return LEAGUE_NAMES[leagueCode]?.split("—")[1]?.trim() ?? `League ${leagueCode}`;
+  }, [leagueLabelsQuery.data]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -619,7 +628,7 @@ export default function SeatingChart() {
                           className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold text-white"
                           style={{ backgroundColor: leagueColor(ll) }}
                         >
-                          {ll} — {LEAGUE_NAMES[ll]?.split("—")[1]?.trim() ?? ll}
+                          {ll} — {leagueLabelFor(ll)}
                         </span>
                       ))}
                     </div>
@@ -637,7 +646,7 @@ export default function SeatingChart() {
                 </div>
 
                 {/* Confirmation table */}
-                <ConfirmationGrid result={result} rows={rows} />
+                <ConfirmationGrid result={result} rows={rows} leagueLabelFor={leagueLabelFor} />
 
                 <div className="flex gap-3 pt-2">
                   <Button variant="outline" onClick={() => setStep("config")} className="border-gray-600 text-gray-300">

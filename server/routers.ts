@@ -42,6 +42,7 @@ import { resolveGoogleCredentialStatus } from "./googleCredsLogic";
 import { splitImportedGuestEntry } from "./guestInformation.logic";
 import { validateImportTeamCode } from "./importTeamCode.logic";
 import { buildSeatingArrangementSheetPlan, snapshotSeatingSheet } from "./seatingArrangement.logic";
+import { normalizeLeagueCode, normalizeLeagueName } from "./leagueName.logic";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -95,6 +96,73 @@ export const appRouter = router({
           [nextCode, input.centerName.trim()]
         );
         return { success: true, centerCode: nextCode, centerName: input.centerName.trim() };
+    }),
+  }),
+
+  // ─── LEAGUE LABELS ───────────────────────────────────────────────────────
+  // The code stays embedded in existing IDs; the saved label is display-only.
+  leagueLabels: router({
+    list: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
+        return rawQuery(
+          `SELECT b.centerId, bc.centerName,
+                  SUBSTRING(b.scantronId, 3, 2) AS leagueCode,
+                  COALESCE(NULLIF(MAX(l.leagueName), ''), CONCAT('League ', MAX(SUBSTRING(b.scantronId, 3, 2)))) AS leagueName,
+                  COUNT(*) AS bowlerCount
+             FROM bowlers b
+             JOIN bowling_centers bc ON bc.id = b.centerId
+             LEFT JOIN leagues l ON l.id = b.leagueId
+            WHERE b.eventId = ? AND b.scantronId IS NOT NULL
+            GROUP BY b.centerId, bc.centerName, SUBSTRING(b.scantronId, 3, 2)
+            ORDER BY bc.centerName, leagueCode`,
+          [input.eventId],
+        );
+      }),
+    save: publicProcedure
+      .input(z.object({
+        eventId: z.number().int().positive(),
+        centerId: z.number().int().positive(),
+        leagueCode: z.string().min(1).max(2),
+        leagueName: z.string().trim().min(1).max(255),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
+        const leagueCode = normalizeLeagueCode(input.leagueCode);
+        if (!leagueCode) throw new TRPCError({ code: "BAD_REQUEST", message: "League Code must be a number from 01 through 99." });
+        const source = await rawQuery<{ id: number }>(
+          `SELECT id FROM bowlers WHERE eventId = ? AND centerId = ? AND SUBSTRING(scantronId, 3, 2) = ? LIMIT 1`,
+          [input.eventId, input.centerId, leagueCode],
+        );
+        if (!source[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "That center and League Code do not exist in this event roster." });
+        const leagueName = normalizeLeagueName(input.leagueName, leagueCode);
+        const existing = await rawQuery<{ id: number }>(
+          `SELECT id FROM leagues WHERE eventId = ? AND centerId = ? AND LPAD(leagueCode, 2, '0') = ? LIMIT 1`,
+          [input.eventId, input.centerId, leagueCode],
+        );
+        let leagueId: number;
+        if (existing[0]) {
+          leagueId = existing[0].id;
+          await rawExec(`UPDATE leagues SET leagueName = ? WHERE id = ?`, [leagueName, leagueId]);
+        } else {
+          const inserted = await rawExec(
+            `INSERT INTO leagues (eventId, centerId, leagueCode, leagueName, eventCode) VALUES (?, ?, ?, ?, '01')`,
+            [input.eventId, input.centerId, leagueCode, leagueName],
+          );
+          leagueId = inserted.insertId as number;
+        }
+        await rawExec(
+          `UPDATE bowlers SET leagueId = ? WHERE eventId = ? AND centerId = ? AND SUBSTRING(scantronId, 3, 2) = ?`,
+          [leagueId, input.eventId, input.centerId, leagueCode],
+        );
+        await rawExec(
+          `UPDATE teams t JOIN bowlers b ON b.teamId = t.id SET t.leagueId = ?
+            WHERE b.eventId = ? AND b.centerId = ? AND SUBSTRING(b.scantronId, 3, 2) = ?`,
+          [leagueId, input.eventId, input.centerId, leagueCode],
+        );
+        await writeAuditLog({ eventId: input.eventId, actorRole: "event_director", action: "league_label_saved", details: JSON.stringify({ centerId: input.centerId, leagueCode, leagueName }) });
+        return { ok: true, leagueCode, leagueName };
       }),
   }),
 
@@ -1657,6 +1725,7 @@ export const appRouter = router({
         sourceName: z.string().optional(),
         eventId: z.number(),
         leagueCode: z.string().default("1"),
+        leagueName: z.string().trim().max(255).optional(),
         eventCode: z.string().default("01"),
         importedBy: z.number().optional(),
         sheetSpreadsheetId: z.string().optional().nullable(),
@@ -1703,6 +1772,34 @@ export const appRouter = router({
         const centerMap = new Map<string, Record<string, unknown>>(centers.map(c => [
           (c.centerName as string).toLowerCase(), c
         ]));
+        const leagueIdCache = new Map<string, number>();
+        const resolveLeagueId = async (centerId: number, rawLeagueCode: string, suppliedName: string) => {
+          const leagueCode = normalizeLeagueCode(rawLeagueCode);
+          if (!leagueCode) throw new Error("League Code must be a number from 01 through 99.");
+          const cacheKey = `${centerId}:${leagueCode}`;
+          const desiredName = normalizeLeagueName(suppliedName, leagueCode);
+          const cached = leagueIdCache.get(cacheKey);
+          if (cached) return { leagueId: cached, leagueCode };
+          const existing = await rawQuery<{ id: number; leagueName: string }>(
+            `SELECT id, leagueName FROM leagues WHERE eventId = ? AND centerId = ? AND LPAD(leagueCode, 2, '0') = ? LIMIT 1`,
+            [input.eventId, centerId, leagueCode],
+          );
+          let leagueId: number;
+          if (existing[0]) {
+            leagueId = existing[0].id;
+            if (suppliedName.trim() && existing[0].leagueName !== desiredName) {
+              await rawExec(`UPDATE leagues SET leagueName = ? WHERE id = ?`, [desiredName, leagueId]);
+            }
+          } else {
+            const inserted = await rawExec(
+              `INSERT INTO leagues (eventId, centerId, leagueCode, leagueName, eventCode) VALUES (?, ?, ?, ?, ?)`,
+              [input.eventId, centerId, leagueCode, desiredName, String(input.eventCode).padStart(2, "0")],
+            );
+            leagueId = inserted.insertId as number;
+          }
+          leagueIdCache.set(cacheKey, leagueId);
+          return { leagueId, leagueCode };
+        };
 
         // Log column headers from first row for debugging center-name issues
         if (input.rows.length > 0) {
@@ -1770,6 +1867,7 @@ export const appRouter = router({
             const firstName = String(row["First Name"] ?? row["first_name"] ?? row["FirstName"] ?? "").trim();
             const lastName = String(row["Last Name"] ?? row["last_name"] ?? row["LastName"] ?? "").trim();
             const teamName = String(row["Team Name"] ?? row["team_name"] ?? "").trim();
+            const suppliedLeagueName = String(row["League Name"] ?? row["leagueName"] ?? row["League"] ?? input.leagueName ?? "").trim();
             const coordinatorName = String(row["Coordinator"] ?? row["coordinator"] ?? "").trim() || null;
             const captRaw = String(row["Capt"] ?? row["Captain"] ?? row["Is Captain"] ?? row["capt"] ?? row["captain"] ?? "").trim().toLowerCase();
             const isCapt = ["y", "yes", "true", "1", "x"].includes(captRaw);
@@ -1815,6 +1913,9 @@ export const appRouter = router({
             }
 
             const cc = String(center.centerCode);
+            const resolvedLeague = await resolveLeagueId(center.id as number, input.leagueCode, suppliedLeagueName);
+            const leagueId = resolvedLeague.leagueId;
+            const effectiveLeagueCode = resolvedLeague.leagueCode;
             const teamKey = `${cc}-${teamCode}`;
             const currentPos = (teamPositionMap.get(teamKey) ?? 0) + 1;
             teamPositionMap.set(teamKey, currentPos);
@@ -1822,7 +1923,7 @@ export const appRouter = router({
             // Generate scantron ID
             let scantronId: string;
             try {
-              scantronId = generateScantronId(cc, input.leagueCode, input.eventCode, teamCode, bb);
+              scantronId = generateScantronId(cc, effectiveLeagueCode, input.eventCode, teamCode, bb);
             } catch (genErr) {
               errors++;
               if (errors <= 5) console.log('[import] ID gen failed:', firstName, lastName, 'cc='+cc, 'teamCode='+teamCode, 'bb='+bb, String(genErr));
@@ -1842,8 +1943,8 @@ export const appRouter = router({
             let teamId: number;
             if (teamRows.length === 0) {
               await rawQuery(
-                "INSERT INTO teams (leagueId, centerId, eventId, teamCode, teamName, coordinatorName, status) VALUES (1, ?, ?, ?, ?, ?, 'gray')",
-                [center.id, input.eventId, teamCode, teamName || `Team ${teamCode}`, coordinatorName]
+                "INSERT INTO teams (leagueId, centerId, eventId, teamCode, teamName, coordinatorName, status) VALUES (?, ?, ?, ?, ?, ?, 'gray')",
+                [leagueId, center.id, input.eventId, teamCode, teamName || `Team ${teamCode}`, coordinatorName]
               );
               teamRows = await rawQuery(
                 "SELECT id FROM teams WHERE teamCode = ? AND centerId = ? AND eventId = ? LIMIT 1",
@@ -1993,7 +2094,7 @@ export const appRouter = router({
               const bowlerId = existing[0].id as number;
               await updateBowler(bowlerId, {
                 legalFirstName: firstName, legalLastName: lastName,
-                teamId, centerId: center.id as number, isCapitain: isCapt,
+                leagueId, teamId, centerId: center.id as number, isCapitain: isCapt,
                 notes: notes || null,
                 phone: phone || null, email: email || null,
                 sanctionNumber, gamesPlayed, bestAverage, tshirtSize,
@@ -2064,8 +2165,8 @@ export const appRouter = router({
               await rawQuery(
                 `INSERT IGNORE INTO bowlers (eventId, leagueId, teamId, centerId, scantronId, bowlerPosition, legalFirstName, legalLastName, isCapitain, phone, email, notes, registrationStatus,
                    sanctionNumber, gamesPlayed, bestAverage, tshirtSize, under21, leagueMember, squadTime, laneNumber, squadTime2, laneNumber2, laneToEvent, guestPoolPartyAmount, banquetTable)
-                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [input.eventId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [input.eventId, leagueId, teamId, center.id, scantronId, bb, firstName, lastName, isCapt ? 1 : 0,
                  phone || null, email || null, notes || null,
                  sanctionNumber || null, gamesPlayed ?? null, bestAverage ?? null, tshirtSize || null,
                  under21 ? 1 : 0, leagueMember ? 1 : 0, squadTimeVal || null, laneNumber ?? null, squadTime2Val || null, laneNumber2 ?? null, laneToEvent || null,

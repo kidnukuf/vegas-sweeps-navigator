@@ -277,6 +277,7 @@ export default function ImportData() {
   const [activeTab, setActiveTab] = useState<"file" | "google" | "paste">("file");
   const [isDragging, setIsDragging] = useState(false);
   const [leagueCode, setLeagueCode] = useState("1");
+  const [leagueName, setLeagueName] = useState("");
   const [eventCode, setEventCode] = useState("26");
   const [idRosterRows, setIdRosterRows] = useState<{ scantronId: string; firstName: string; lastName: string; center: string; team: string; teamCode: string; position: string; leagueCode: string; eventCode: string; centerCode: string }[]>([]);
 
@@ -444,6 +445,7 @@ export default function ImportData() {
       sourceType: activeTab === "google" ? "google_sheets" : activeTab === "paste" ? "paste" : "csv",
       sourceName: activeTab === "file" ? "uploaded file" : activeTab === "google" ? googleUrl : "pasted data",
       leagueCode,
+      leagueName: leagueName.trim() || undefined,
       eventCode,
       sheetSpreadsheetId,
       sheetTabName,
@@ -497,7 +499,7 @@ export default function ImportData() {
             <div className="neon-card p-5 border-yellow-500/30">
               <h2 className="text-yellow-400 font-bold text-lg mb-1">🔢 ID Generation Settings</h2>
               <p className="text-gray-400 text-xs mb-4">These two values are baked into every bowler's 10-digit scantron ID. Set them before importing — they cannot be changed after.</p>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid gap-4 mb-4 md:grid-cols-3">
                 <div>
                   <label className="block text-gray-400 text-xs font-semibold mb-1">League Code <span className="text-yellow-500">(2 digits)</span></label>
                   <input
@@ -507,6 +509,16 @@ export default function ImportData() {
                     placeholder="1"
                   />
                   <p className="text-gray-500 text-xs mt-1">e.g. 1 = Funtime 1, 2 = Funtime 2</p>
+                </div>
+                <div>
+                  <label className="block text-gray-400 text-xs font-semibold mb-1">League Name <span className="text-gray-600">(shown in portals)</span></label>
+                  <input
+                    type="text" maxLength={255} value={leagueName}
+                    onChange={e => setLeagueName(e.target.value)}
+                    className="w-full bg-[#111] border border-violet-500/30 rounded-lg px-3 py-2 text-violet-200 text-sm focus:outline-none focus:border-violet-400"
+                    placeholder="e.g. Tuesday 6:30 PM Mixed League"
+                  />
+                  <p className="text-gray-500 text-xs mt-1">Optional; the code remains the permanent ID value.</p>
                 </div>
                 <div>
                   <label className="block text-gray-400 text-xs font-semibold mb-1">Event Year Code <span className="text-yellow-500">(2 digits)</span></label>
