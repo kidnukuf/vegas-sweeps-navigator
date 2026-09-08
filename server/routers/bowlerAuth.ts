@@ -20,6 +20,7 @@ import { assertBowlerAccess, assertEventAccess, resolveEdSession } from "../_cor
 import type { TrpcContext } from "../_core/context";
 import { formatPassportScannerName } from "../passportDisplay";
 import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
+import { isPassportTypeAllowedAtDoor } from "@shared/doorPassportScan";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -774,8 +775,16 @@ export const bowlerAuthRouter = router({
     .input(z.object({
       tokenValue: z.string().min(1),
       passportType: z.enum(["pool", "banquet", "guest-pool", "guest-banquet"]),
+      doorMode: z.enum(["pool", "banquet"]).optional(),
     }))
     .mutation(async ({ input }) => {
+      if (input.doorMode && !isPassportTypeAllowedAtDoor(input.passportType, input.doorMode)) {
+        const expectedDoor = input.doorMode === "pool" ? "Pool Party" : "Banquet";
+        return {
+          result: "invalid" as const,
+          message: `This QR is not valid for the ${expectedDoor} door.`,
+        };
+      }
       // ── Guest banquet token (separate table) ─────────────────────────────────
       if (input.passportType === "guest-banquet") {
         const guestRows = await rawQuery<{

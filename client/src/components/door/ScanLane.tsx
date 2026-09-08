@@ -173,7 +173,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
         {flash === "idle" && (
           <>
             <div className="text-3xl font-semibold text-slate-300">Ready to Scan</div>
-            <div className="mt-2 text-base text-slate-500">{label}</div>
+            <div className="mt-2 text-base text-slate-500">{label} · Bowler & guest QR passes</div>
           </>
         )}
         {flash !== "idle" && decision && (

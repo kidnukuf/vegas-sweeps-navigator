@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { doorLabel, resolveDoorPassportScan, type DoorMode } from "@shared/doorPassportScan";
 
 // ─── Confetti particle ────────────────────────────────────────────────────────
 interface Particle {
@@ -117,7 +118,6 @@ function ConfettiBurst({ active }: { active: boolean }) {
   );
 }
 
-type PassportMode = "pool" | "banquet" | "guest-pool" | "guest-banquet";
 type ScanResult = "granted" | "used" | "disabled" | "invalid" | null;
 type TabletTab = "passport" | "checkin" | "reentry";
 
@@ -258,7 +258,7 @@ function playSound(url: string) {
 // ─── Scanner UI ───────────────────────────────────────────────────────────────
 function TabletScanner({ onLock }: { onLock: () => void }) {
   const [tab, setTab] = useState<TabletTab>("passport");
-  const [passportMode, setPassportMode] = useState<PassportMode>("pool");
+  const [passportMode, setPassportMode] = useState<DoorMode>("pool");
   const [scanResult, setScanResult] = useState<ScanResult>(null);
   const [bowlerName, setBowlerName] = useState("");
   const [scanMessage, setScanMessage] = useState("");
@@ -278,6 +278,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
   const passportDivId = "tablet-passport-qr";
   const checkinDivId = "tablet-checkin-qr";
   const tokenInputRef = useRef<HTMLInputElement>(null);
+  const passportInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-lock after 10 minutes of inactivity
   function resetInactivity() {
@@ -319,8 +320,23 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
       } else {
         playSound(BUZZER_SOUND);
       }
+      window.setTimeout(() => {
+        setScanResult(null);
+        setBowlerName("");
+        setScanMessage("");
+        passportInputRef.current?.focus();
+      }, data.result === "granted" ? 2500 : 4000);
     },
-    onError: (err) => { setScanResult("invalid"); setScanMessage(err.message); stopScanner(); },
+    onError: (err) => {
+      setScanResult("invalid");
+      setScanMessage(err.message);
+      stopScanner();
+      window.setTimeout(() => {
+        setScanResult(null);
+        setScanMessage("");
+        passportInputRef.current?.focus();
+      }, 4000);
+    },
   });
 
   const validateToken = trpc.tokens.validate.useMutation({
@@ -403,12 +419,8 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
   }
 
   function handlePassportScan(decodedText: string) {
-    const match = decodedText.match(/\/scan\/(guest-banquet|guest-pool|pool|banquet)\/([a-zA-Z0-9-]+)/i);
-    if (match) {
-      passportScan.mutate({ tokenValue: match[2], passportType: match[1] as PassportMode });
-    } else {
-      passportScan.mutate({ tokenValue: decodedText.trim(), passportType: passportMode });
-    }
+    const scan = resolveDoorPassportScan(decodedText, passportMode);
+    if (scan) passportScan.mutate({ ...scan, doorMode: passportMode });
   }
 
   function handleCheckinScan(decodedText: string) {
@@ -524,7 +536,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
         <div className="max-w-lg mx-auto flex gap-1">
           <button onClick={() => setTab("passport")}
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === "passport" ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-gray-400 hover:text-white"}`}>
-            🎫 Passport Scanner
+            🚪 Door Scanner
           </button>
           <button onClick={() => setTab("checkin")}
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === "checkin" ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black" : "text-gray-400 hover:text-white"}`}>
@@ -556,16 +568,13 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
               </div>
               {bowlerName && <div className="text-xl text-white/90 mb-1">{bowlerName}</div>}
               <div className="text-white/70 text-sm mb-4">{scanMessage}</div>
-              <button onClick={() => { setScanResult(null); setBowlerName(""); setScanMessage(""); }}
-                className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl border border-white/30 transition-colors">
-                Scan Next →
-              </button>
+              <p className="text-xs font-semibold text-white/70">Ready for the next scan automatically.</p>
             </div>
           )}
 
           {!scanResult && (
             <>
-              {/* Mode selector */}
+              {/* The selected physical door handles bowler and guest passes in one scanner flow. */}
               <div className="bg-[#1a1a1a] rounded-2xl p-1 flex gap-1 border border-white/10 flex-wrap">
                 <button onClick={() => setPassportMode("pool")}
                   className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${passportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
@@ -574,14 +583,6 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
                 <button onClick={() => setPassportMode("banquet")}
                   className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${passportMode === "banquet" ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
                   🍽️ Banquet Dinner
-                </button>
-                <button onClick={() => setPassportMode("guest-pool")}
-                  className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${passportMode === "guest-pool" ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
-                  🎟️ Guest Pool
-                </button>
-                <button onClick={() => setPassportMode("guest-banquet")}
-                  className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${passportMode === "guest-banquet" ? "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>
-                  🍽️ Guest Banquet
                 </button>
               </div>
 
@@ -597,9 +598,9 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
                 ) : (
                   <div className="p-8 text-center">
                     <div className="text-6xl mb-4">📷</div>
-                    <p className="text-gray-500 text-sm mb-4">Tap to activate camera and scan a bowler's passport QR code.</p>
+                    <p className="text-gray-500 text-sm mb-4">Scan any bowler or guest QR for the selected {doorLabel(passportMode)} door.</p>
                     <button onClick={() => setScanning(true)}
-                      className={`w-full py-4 font-black text-lg rounded-xl text-white transition-all active:scale-95 ${passportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600" : passportMode === "guest-pool" ? "bg-gradient-to-r from-teal-500 to-cyan-600" : "bg-gradient-to-r from-purple-500 to-pink-600"}`}>
+                      className={`w-full py-4 font-black text-lg rounded-xl text-white transition-all active:scale-95 ${passportMode === "pool" ? "bg-gradient-to-r from-cyan-500 to-blue-600" : "bg-gradient-to-r from-purple-500 to-pink-600"}`}>
                       📷 Start Camera Scan
                     </button>
                   </div>
@@ -608,9 +609,9 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
 
               {/* Manual entry */}
               <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
-                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Manual Entry</p>
-                <form onSubmit={(e) => { e.preventDefault(); if (!manualToken.trim()) return; const m = manualToken.trim().match(/\/scan\/(guest-banquet|guest-pool|pool|banquet)\/([a-zA-Z0-9-]+)/i); if (m) { passportScan.mutate({ tokenValue: m[2], passportType: m[1] as PassportMode }); } else { passportScan.mutate({ tokenValue: manualToken.trim(), passportType: passportMode }); } setManualToken(""); }} className="flex gap-2">
-                  <input type="text" placeholder="Paste QR URL or token..." value={manualToken} onChange={(e) => setManualToken(e.target.value)}
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Shared Bowler & Guest Scanner</p>
+                <form onSubmit={(e) => { e.preventDefault(); const scan = resolveDoorPassportScan(manualToken, passportMode); if (!scan) return; passportScan.mutate({ ...scan, doorMode: passportMode }); setManualToken(""); }} className="flex gap-2">
+                  <input ref={passportInputRef} autoFocus type="text" placeholder="Scan any bowler or guest QR..." value={manualToken} onChange={(e) => setManualToken(e.target.value)}
                     className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500 font-mono" />
                   <button type="submit" disabled={passportScan.isPending || !manualToken.trim()}
                     className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-900 font-black rounded-lg disabled:opacity-50 transition-colors">

@@ -74,7 +74,7 @@ export default function OfflineDoor() {
               ← Console
             </Button>
             <span className="text-sm text-slate-400">
-              {label} — one scanner only · Zone {zone}
+              {label} — shared bowler & guest self-scan · Zone {zone}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -120,7 +120,7 @@ export default function OfflineDoor() {
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 p-4">
-          <div className="text-xl font-bold">Offline Door Scanner</div>
+          <div><div className="text-xl font-bold">Offline Door Scanner</div><p className="mt-1 text-xs text-muted-foreground">Each selected door uses one shared scan station for bowler and guest QR passes.</p></div>
           <div className="flex gap-2">
             <Button variant="default">Console</Button>
             <Button variant="outline" onClick={() => setView("A")}>

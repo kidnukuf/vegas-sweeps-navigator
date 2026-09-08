@@ -1182,3 +1182,9 @@
 - [x] Make the selected Event Director visible in Owner event management without exposing other directors’ event data
 - [x] Provide Event Directors an event-scoped coordinator assignment control that preserves invitation and center boundaries
 - [x] Add authorization, ownership-transfer, and coordinator-scope regression coverage before publishing
+
+## Active Shared Self-Scan Door Station
+- [x] Inspect the current banquet, pool, guest, and offline QR validation behavior
+- [x] Create one shared scanner input that accepts bowler and guest passes for the selected door event
+- [x] Preserve immediate scan-field clearing, accepted/under-21/denied feedback, and already-used pass blocking
+- [x] Add regression coverage and visually validate the staffed self-scan station before publishing
