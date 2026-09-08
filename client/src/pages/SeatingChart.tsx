@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import SheetTabSelector from "@/components/SheetTabSelector";
 import {
   parseRow,
   runSeatingAlgorithm,
@@ -79,27 +80,34 @@ function VenueGrid({
 
       const occupants = tableMap.get(tNum) ?? [];
       const isEmpty = occupants.length === 0;
-      // Determine dominant league color for this table
-      const llCounts: Record<string, number> = {};
-      for (const a of occupants) {
-        llCounts[a.ll] = (llCounts[a.ll] ?? 0) + 1;
-      }
-      const dominantLl = Object.entries(llCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-      const bgColor = dominantLl ? leagueColor(dominantLl) : undefined;
+      // Every league represented at a shared table receives a visible segment.
+      const tableLeagues = Array.from(new Set(occupants.map((assignment) => assignment.ll))).sort();
+      const leagueColors = tableLeagues.map((league) => leagueColor(league));
+      const tableBackground = leagueColors.length === 1
+        ? leagueColors[0]
+        : leagueColors.length > 1
+          ? `conic-gradient(${leagueColors.map((color, index) => `${color} ${(index / leagueColors.length) * 100}% ${((index + 1) / leagueColors.length) * 100}%`).join(", ")})`
+          : undefined;
       const isHighlighted = highlightTable === tNum;
 
       cells.push(
         <button
           key={`${col}-${row}`}
           onClick={() => onTableClick?.(tNum)}
-          title={`Table ${tNum} — ${occupants.length} seated`}
-          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all
+          title={`Table ${tNum} — ${occupants.length} seated${tableLeagues.length ? ` — league${tableLeagues.length === 1 ? "" : "s"} ${tableLeagues.join(", ")}` : ""}`}
+          aria-label={`Table ${tNum}, ${occupants.length} seated${tableLeagues.length ? `, leagues ${tableLeagues.join(", ")}` : ""}`}
+          className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all
             ${isEmpty ? "border-gray-600 bg-gray-800 text-gray-500" : "border-yellow-400 text-white"}
             ${isHighlighted ? "ring-2 ring-white scale-125" : "hover:scale-110"}
           `}
-          style={bgColor && !isEmpty ? { backgroundColor: bgColor, borderColor: bgColor } : undefined}
+          style={tableBackground && !isEmpty ? { background: tableBackground, borderColor: leagueColors[0] } : undefined}
         >
-          {tNum}
+          <span className="relative z-10 rounded bg-slate-950/65 px-1 leading-4">{tNum}</span>
+          {!isEmpty && (
+            <span className="absolute -bottom-1 flex gap-0.5 rounded-full bg-slate-950 px-1 py-0.5" aria-hidden="true">
+              {leagueColors.slice(0, 5).map((color, index) => <i key={`${color}-${index}`} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />)}
+            </span>
+          )}
         </button>
       );
     }
@@ -197,6 +205,18 @@ export default function SeatingChart() {
   const [highlightTable, setHighlightTable] = useState<number | null>(null);
   const [seatingEventId, setSeatingEventId] = useState<number | null>(null);
   const [loadedFromEventRoster, setLoadedFromEventRoster] = useState(false);
+  const [sheetTabOverride, setSheetTabOverride] = useState("");
+  const [sheetWritePreview, setSheetWritePreview] = useState<{
+    sourceHash: string;
+    sheetName: string;
+    assignmentCount: number;
+    matched: number;
+    headerNeedsAdd: boolean;
+    columnIssue: string | null;
+    missingBowlerIds: string[];
+    duplicateBowlerIds: string[];
+    duplicateAssignments: string[];
+  } | null>(null);
   const outputRef = useRef<HTMLTextAreaElement>(null);
   const { data: eventListData } = trpc.event.list.useQuery();
   const events = (eventListData ?? []) as Array<{ id: number; eventName: string; eventYear: number }>;
@@ -206,10 +226,22 @@ export default function SeatingChart() {
   }, [events, seatingEventId]);
 
   const activeSeatingEventId = seatingEventId ?? events[0]?.id ?? 1;
+  const selectedEventQuery = trpc.event.getById.useQuery(
+    { id: activeSeatingEventId },
+    { enabled: Boolean(activeSeatingEventId) },
+  );
   const banquetRosterQuery = trpc.seating.banquetRoster.useQuery(
     { eventId: activeSeatingEventId },
     { enabled: events.length > 0 && Boolean(activeSeatingEventId) }
   );
+  const seatingPreviewMutation = trpc.seating.previewSheetWrite.useMutation();
+  const seatingWriteMutation = trpc.seating.syncSheetWrite.useMutation();
+  const configuredSheetId = String((selectedEventQuery.data as any)?.sheetSpreadsheetId ?? "");
+  const configuredSheetTab = String((selectedEventQuery.data as any)?.sheetTabName ?? "");
+
+  useEffect(() => {
+    if (!sheetTabOverride && configuredSheetTab) setSheetTabOverride(configuredSheetTab);
+  }, [configuredSheetTab, sheetTabOverride]);
 
   const handleLoadEventRoster = useCallback(() => {
     const roster = banquetRosterQuery.data ?? [];
@@ -295,6 +327,56 @@ export default function SeatingChart() {
       toast.success("Seat codes copied! Paste starting at Row 2 of your Google Sheet.");
     });
   }, [buildOutput]);
+
+  const sheetAssignments = useMemo(() => {
+    if (!result) return [];
+    return result.assignments
+      .filter((assignment) => !assignment.isGuest)
+      .map((assignment) => ({ scantronId: assignment.rawId, tableNumber: assignment.tableNum }));
+  }, [result]);
+
+  const handlePreviewSheetWrite = useCallback(async () => {
+    if (!activeSeatingEventId || sheetAssignments.length === 0) return;
+    try {
+      const preview = await seatingPreviewMutation.mutateAsync({
+        eventId: activeSeatingEventId,
+        sheetTabOverride: sheetTabOverride || undefined,
+        assignments: sheetAssignments,
+      });
+      setSheetWritePreview(preview);
+      if (preview.columnIssue || preview.missingBowlerIds.length || preview.duplicateBowlerIds.length || preview.duplicateAssignments.length) {
+        toast.error("Sheet preview found a safeguard issue. No values were written.");
+      } else {
+        toast.success(`Preview ready: ${preview.matched} table numbers will be written to ${preview.sheetName}.`);
+      }
+    } catch (error: any) {
+      toast.error(error.message ?? "Could not prepare the Seating Arrangement preview.");
+    }
+  }, [activeSeatingEventId, seatingPreviewMutation, sheetAssignments, sheetTabOverride]);
+
+  const handleConfirmSheetWrite = useCallback(async () => {
+    if (!sheetWritePreview || !activeSeatingEventId) return;
+    const allowed = sheetWritePreview.matched === sheetWritePreview.assignmentCount
+      && !sheetWritePreview.columnIssue
+      && sheetWritePreview.missingBowlerIds.length === 0
+      && sheetWritePreview.duplicateBowlerIds.length === 0
+      && sheetWritePreview.duplicateAssignments.length === 0;
+    if (!allowed) return;
+    if (!window.confirm(`Write ${sheetWritePreview.matched} table numbers only to ${sheetWritePreview.sheetName}!BP? BO Hotel Room ID will not be changed.`)) return;
+    try {
+      const response = await seatingWriteMutation.mutateAsync({
+        eventId: activeSeatingEventId,
+        sheetTabOverride: sheetTabOverride || undefined,
+        sourceHash: sheetWritePreview.sourceHash,
+        confirmation: "WRITE TABLE NUMBERS",
+        assignments: sheetAssignments,
+      });
+      toast.success(`Wrote ${response.written} table number${response.written === 1 ? "" : "s"} to ${response.sheetName}!BP.`);
+      setSheetWritePreview(null);
+    } catch (error: any) {
+      toast.error(error.message ?? "Seating Arrangement write failed.");
+    }
+  }, [activeSeatingEventId, seatingWriteMutation, sheetAssignments, sheetTabOverride, sheetWritePreview]);
 
   // ── League legend ────────────────────────────────────────────────────────
   const usedLeagues = result
@@ -385,7 +467,11 @@ export default function SeatingChart() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <select
                     value={activeSeatingEventId}
-                    onChange={(event) => setSeatingEventId(Number(event.target.value))}
+                    onChange={(event) => {
+                      setSeatingEventId(Number(event.target.value));
+                      setSheetTabOverride("");
+                      setSheetWritePreview(null);
+                    }}
                     className="h-10 min-w-0 flex-1 rounded-md border border-cyan-500/40 bg-slate-950 px-3 text-sm text-white"
                     aria-label="Event roster to load"
                   >
@@ -606,6 +692,50 @@ export default function SeatingChart() {
                   readOnly
                   className="bg-gray-800 border-gray-600 text-yellow-300 font-mono text-sm min-h-[300px]"
                 />
+
+                {loadedFromEventRoster && (
+                  <div className="space-y-3 rounded-xl border border-cyan-500/40 bg-cyan-950/25 p-4">
+                    <div>
+                      <p className="font-semibold text-cyan-100">Write table numbers to Seating Arrangement</p>
+                      <p className="mt-1 text-xs text-cyan-100/75">This selected-tab write-back uses only host bowlers, writes numeric table numbers to <span className="font-mono font-bold">BP</span>, and never changes <span className="font-mono font-bold">BO Hotel Room ID</span>. A fresh preview and Event Director confirmation are required.</p>
+                    </div>
+                    <SheetTabSelector
+                      spreadsheetId={configuredSheetId}
+                      value={sheetTabOverride}
+                      onChange={(tab) => { setSheetTabOverride(tab); setSheetWritePreview(null); }}
+                      label="Target Google Sheet tab"
+                      required
+                      disabled={seatingPreviewMutation.isPending || seatingWriteMutation.isPending}
+                    />
+                    {!configuredSheetId && <p className="text-xs text-amber-300">This event has no configured Google Sheet target. Set it in Event Settings first.</p>}
+                    <Button
+                      type="button"
+                      onClick={handlePreviewSheetWrite}
+                      disabled={!configuredSheetId || !sheetTabOverride || seatingPreviewMutation.isPending || seatingWriteMutation.isPending}
+                      className="w-full bg-cyan-500 text-slate-950 hover:bg-cyan-400"
+                    >
+                      {seatingPreviewMutation.isPending ? "Preparing preview…" : "Preview BP Table Number Write-back"}
+                    </Button>
+                    {sheetWritePreview && (
+                      <div className="space-y-2 rounded-lg border border-white/10 bg-slate-950/70 p-3 text-xs">
+                        <p className="font-semibold text-white">Preview: {sheetWritePreview.matched} of {sheetWritePreview.assignmentCount} bowlers → {sheetWritePreview.sheetName}!BP</p>
+                        {sheetWritePreview.headerNeedsAdd && <p className="text-cyan-200">BP is blank; the write will add the header <strong>Seating Arrangement</strong>.</p>}
+                        {sheetWritePreview.columnIssue && <p className="text-red-300">{sheetWritePreview.columnIssue}</p>}
+                        {sheetWritePreview.missingBowlerIds.length > 0 && <p className="text-red-300">{sheetWritePreview.missingBowlerIds.length} Bowler ID match{sheetWritePreview.missingBowlerIds.length === 1 ? "" : "es"} missing.</p>}
+                        {sheetWritePreview.duplicateBowlerIds.length > 0 && <p className="text-red-300">{sheetWritePreview.duplicateBowlerIds.length} duplicate Bowler ID{sheetWritePreview.duplicateBowlerIds.length === 1 ? "" : "s"} in the sheet.</p>}
+                        {sheetWritePreview.duplicateAssignments.length > 0 && <p className="text-red-300">{sheetWritePreview.duplicateAssignments.length} duplicate bowler assignment{sheetWritePreview.duplicateAssignments.length === 1 ? "" : "s"} in this chart.</p>}
+                        <Button
+                          type="button"
+                          onClick={handleConfirmSheetWrite}
+                          disabled={seatingWriteMutation.isPending || Boolean(sheetWritePreview.columnIssue) || sheetWritePreview.matched !== sheetWritePreview.assignmentCount || sheetWritePreview.missingBowlerIds.length > 0 || sheetWritePreview.duplicateBowlerIds.length > 0 || sheetWritePreview.duplicateAssignments.length > 0}
+                          className="w-full bg-green-600 text-white hover:bg-green-500"
+                        >
+                          {seatingWriteMutation.isPending ? "Writing table numbers…" : "Confirm & Write Table Numbers Only"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <Separator className="bg-gray-700" />
 

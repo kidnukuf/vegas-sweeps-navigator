@@ -87,8 +87,8 @@
  *   BL (63) = Claim Code              (app writes)
  *   BM (64) = Bill Breakdown          (app writes)
  *   BN (65) = Team Score              (app writes)
- *   BO (66) = Event Ranking           (app writes)
- *   BP (67) = Payout Amount           (app writes)
+ *   BO (66) = Hotel Room ID           (event-planning reference)
+ *   BP (67) = Seating Arrangement     (app writes table number only after ED confirmation)
  *
  * ⬜ WHITE — Informational (no color, not parsed):
  *   M  (12) = Sanction #

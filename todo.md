@@ -1188,3 +1188,9 @@
 - [x] Create one shared scanner input that accepts bowler and guest passes for the selected door event
 - [x] Preserve immediate scan-field clearing, accepted/under-21/denied feedback, and already-used pass blocking
 - [x] Add regression coverage and visually validate the staffed self-scan station before publishing
+
+## Active Seating Arrangement Sheet Sync and League Colors
+- [x] Inspect the selected master-sheet tab and current seating-chart write-back to preserve existing column alignment
+- [x] Add or recognize BP Seating Arrangement while preserving BO Hotel Room ID, then write table numbers only after Event Director confirmation
+- [x] Apply distinct, accessible league colors throughout the seating-chart table grid
+- [x] Add focused tests, validate the selected-tab safeguard, and verify the responsive seating grid before publishing

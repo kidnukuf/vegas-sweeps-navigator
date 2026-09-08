@@ -33,7 +33,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import QRCode from "qrcode";
-import { markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
+import { getSheetsClient, markTshirtReceivedInSheet, batchWriteBowlerIds } from "./googleSheets";
 import { storagePut } from "./storage";
 import { v4 as uuidv4 } from "uuid";
 import { assertBowlerAccess, assertEventAccess, getAccessibleEvents, requireEdSession, requirePlatformAdmin } from "./_core/edAuth";
@@ -41,6 +41,7 @@ import { resolveSharedSheetTarget } from "./sharedSheetLogic";
 import { resolveGoogleCredentialStatus } from "./googleCredsLogic";
 import { splitImportedGuestEntry } from "./guestInformation.logic";
 import { validateImportTeamCode } from "./importTeamCode.logic";
+import { buildSeatingArrangementSheetPlan, snapshotSeatingSheet } from "./seatingArrangement.logic";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -2549,7 +2550,8 @@ export const appRouter = router({
   seating: router({
     banquetRoster: publicProcedure
       .input(z.object({ eventId: z.number().int().positive() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
         const rows = await rawQuery<{
           scantronId: string;
           name: string;
@@ -2571,6 +2573,86 @@ export const appRouter = router({
           [input.eventId, input.eventId]
         );
         return rows;
+      }),
+    previewSheetWrite: publicProcedure
+      .input(z.object({
+        eventId: z.number().int().positive(),
+        sheetTabOverride: z.string().trim().min(1).max(255).optional(),
+        assignments: z.array(z.object({
+          scantronId: z.string().trim().min(10).max(32),
+          tableNumber: z.number().int().min(1).max(80),
+        })).min(1).max(5000),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
+        const target = await getEventSheetTarget(input.eventId);
+        if (input.sheetTabOverride) target.sheetName = input.sheetTabOverride;
+        if (!target.spreadsheetId || !target.sheetName) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No Google Sheet tab is configured for this event. Select the target tab first." });
+        }
+        const sheets = await getSheetsClient();
+        if (!sheets) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Google Sheets credentials are unavailable." });
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: target.spreadsheetId,
+          range: `'${target.sheetName}'!A1:BP`,
+        });
+        const rows = (response.data.values ?? []) as string[][];
+        const plan = buildSeatingArrangementSheetPlan(rows, input.assignments);
+        return {
+          sheetName: target.sheetName,
+          sourceHash: snapshotSeatingSheet(target.sheetName, rows),
+          assignmentCount: input.assignments.length,
+          matched: plan.updates.length,
+          headerNeedsAdd: plan.headerNeedsAdd,
+          columnIssue: plan.columnIssue,
+          missingBowlerIds: plan.missingBowlerIds,
+          duplicateBowlerIds: plan.duplicateBowlerIds,
+          duplicateAssignments: plan.duplicateAssignments,
+        };
+      }),
+    syncSheetWrite: publicProcedure
+      .input(z.object({
+        eventId: z.number().int().positive(),
+        sheetTabOverride: z.string().trim().min(1).max(255).optional(),
+        sourceHash: z.string().length(64),
+        confirmation: z.literal("WRITE TABLE NUMBERS"),
+        assignments: z.array(z.object({
+          scantronId: z.string().trim().min(10).max(32),
+          tableNumber: z.number().int().min(1).max(80),
+        })).min(1).max(5000),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
+        const target = await getEventSheetTarget(input.eventId);
+        if (input.sheetTabOverride) target.sheetName = input.sheetTabOverride;
+        if (!target.spreadsheetId || !target.sheetName) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No Google Sheet tab is configured for this event. Select the target tab first." });
+        }
+        const sheets = await getSheetsClient();
+        if (!sheets) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Google Sheets credentials are unavailable." });
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: target.spreadsheetId,
+          range: `'${target.sheetName}'!A1:BP`,
+        });
+        const rows = (response.data.values ?? []) as string[][];
+        if (snapshotSeatingSheet(target.sheetName, rows) !== input.sourceHash) {
+          throw new TRPCError({ code: "CONFLICT", message: "The selected tab changed after preview. Preview the Seating Arrangement write again before confirming." });
+        }
+        const plan = buildSeatingArrangementSheetPlan(rows, input.assignments);
+        if (plan.columnIssue || plan.missingBowlerIds.length || plan.duplicateBowlerIds.length || plan.duplicateAssignments.length) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: plan.columnIssue ?? "The selected tab contains missing or duplicate Bowler IDs. No Seating Arrangement values were written." });
+        }
+        const data: Array<{ range: string; values: string[][] }> = [];
+        if (plan.headerNeedsAdd) data.push({ range: `'${target.sheetName}'!BP1`, values: [["Seating Arrangement"]] });
+        for (const update of plan.updates) {
+          data.push({ range: `'${target.sheetName}'!BP${update.rowNumber}`, values: [[String(update.tableNumber)]] });
+        }
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: target.spreadsheetId,
+          requestBody: { valueInputOption: "RAW", data },
+        });
+        await recordSheetSync(input.eventId);
+        return { written: plan.updates.length, headerAdded: plan.headerNeedsAdd, sheetName: target.sheetName };
       }),
   }),
 });
