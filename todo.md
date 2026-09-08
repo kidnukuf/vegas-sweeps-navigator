@@ -1194,3 +1194,9 @@
 - [x] Add or recognize BP Seating Arrangement while preserving BO Hotel Room ID, then write table numbers only after Event Director confirmation
 - [x] Apply distinct, accessible league colors throughout the seating-chart table grid
 - [x] Add focused tests, validate the selected-tab safeguard, and verify the responsive seating grid before publishing
+
+## Active Fictional Test Roster Expansion
+- [x] Read the existing `testevent90526` fictional names and live center database values without changing the sheet
+- [x] Prepare remaining presidential and first-lady names in randomized league and center assignments using exact database center names
+- [x] Present an append-only no-write preview and apply only the user-confirmed test rows
+- [x] Verify newly appended test rows and preserve the 64 existing fictional records
