@@ -59,6 +59,7 @@ const ownerEventCreateInput = z.object({
   eventName: z.string().trim().min(1).max(255),
   eventYear: z.number().int().min(2020).max(2100),
   companyId: z.number().int().positive(),
+  assignedDirectorId: z.number().int().positive().optional().nullable(),
   groupSlug: z.string().trim().min(1).max(64),
   startDate: optionalText,
   endDate: optionalText,
@@ -195,6 +196,17 @@ export const ownerDashboardRouter = router({
     const session = await requireOwner(ctx);
     const [company] = await rawQuery<{ id: number }>(`SELECT id FROM companies WHERE id = ? LIMIT 1`, [input.companyId]);
     if (!company) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid company for the event." });
+    const assignedDirectorId = input.assignedDirectorId ?? null;
+    if (assignedDirectorId) {
+      const [director] = await rawQuery<{ id: number; companyId: number | null }>(
+        `SELECT id, companyId FROM ed_staff WHERE id = ? AND accessRole = 'event_director' LIMIT 1`,
+        [assignedDirectorId],
+      );
+      if (!director) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid Event Director." });
+      if (director.companyId !== input.companyId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The Event Director must belong to the same company as the event." });
+      }
+    }
     const [group] = await rawQuery<{ id: number }>(`SELECT id FROM event_groups WHERE slug = ? LIMIT 1`, [input.groupSlug]);
     const sharedSheet = await getSharedSheetDefault();
     let sheetTarget: { spreadsheetId: string | null; sheetTabName: string | null };
@@ -208,11 +220,14 @@ export const ownerDashboardRouter = router({
       throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Invalid Google Sheet configuration." });
     }
     const created = await rawExec(
-      `INSERT INTO events (companyId, groupId, groupSlug, eventName, eventYear, status, startDate, endDate, bowlingDate, squadTime, sheetSpreadsheetId, sheetTabName, sheetTabNickname)
-       VALUES (?, ?, ?, ?, ?, 'planning', ?, ?, ?, ?, ?, ?, ?)`,
-      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, cleanText(input.startDate), cleanText(input.endDate), cleanText(input.bowlingDate), cleanText(input.squadTime), sheetTarget.spreadsheetId, sheetTarget.sheetTabName, cleanText(input.sheetTabNickname)]
+      `INSERT INTO events (companyId, groupId, groupSlug, eventName, eventYear, status, startDate, endDate, bowlingDate, squadTime, sheetSpreadsheetId, sheetTabName, sheetTabNickname, createdByStaffId)
+       VALUES (?, ?, ?, ?, ?, 'planning', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, cleanText(input.startDate), cleanText(input.endDate), cleanText(input.bowlingDate), cleanText(input.squadTime), sheetTarget.spreadsheetId, sheetTarget.sheetTabName, cleanText(input.sheetTabNickname), assignedDirectorId]
     );
-    await writeAuditLog({ eventId: created.insertId, actorRole: "Owner", actorId: session.userId, action: "owner_create_event", targetId: created.insertId, targetType: "event", details: `Owner created planning event ${input.eventName.trim()} (${input.eventYear})` });
+    if (assignedDirectorId) {
+      await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [assignedDirectorId, created.insertId]);
+    }
+    await writeAuditLog({ eventId: created.insertId, actorRole: "Owner", actorId: session.userId, action: "owner_create_event", targetId: created.insertId, targetType: "event", details: `Owner created planning event ${input.eventName.trim()} (${input.eventYear})${assignedDirectorId ? ` and assigned Event Director #${assignedDirectorId}` : " without an Event Director"}` });
     return { success: true, eventId: created.insertId };
   }),
 

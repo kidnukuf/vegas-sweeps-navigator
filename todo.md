@@ -1176,3 +1176,9 @@
 - [x] Correct the fictional test roster’s three-digit Team Number values to valid two-digit codes without changing its other fields
 - [x] Fix the import result presentation so scantron-ID generation failures are never labeled as center-not-found errors
 - [x] Retry the corrected test import and verify all 64 fictional bowlers receive valid IDs, QR tokens, and claim codes
+
+## Active Event Director and Coordinator Assignment Workflow
+- [x] Allow the Owner to select an Event Director while creating an event and persist that director as the event’s scoped creator
+- [x] Make the selected Event Director visible in Owner event management without exposing other directors’ event data
+- [x] Provide Event Directors an event-scoped coordinator assignment control that preserves invitation and center boundaries
+- [x] Add authorization, ownership-transfer, and coordinator-scope regression coverage before publishing

@@ -13,6 +13,69 @@ function staffContext(staffId: number): TrpcContext {
   };
 }
 
+function ownerContext(): TrpcContext {
+  return {
+    user: {
+      id: 1,
+      openId: "owner-test",
+      email: "owner@example.test",
+      name: "Owner Test",
+      loginMethod: "manus",
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+  };
+}
+
+describe("Owner Event Director assignment at event creation", () => {
+  it("sets the selected same-company director as the creator and preserves cross-company rejection", async () => {
+    const stamp = Date.now();
+    const companyA = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Assignment A ${stamp}`, `assignment-a-${stamp}`]);
+    const companyB = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Assignment B ${stamp}`, `assignment-b-${stamp}`]);
+    const director = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`assignment-director-${stamp}`, "test-hash", "Assigned Director", companyA.insertId]);
+    let eventId: number | undefined;
+
+    try {
+      const owner = appRouter.createCaller(ownerContext());
+      const created = await owner.ownerDashboard.createEvent({
+        eventName: `Assigned Event ${stamp}`,
+        eventYear: 2099,
+        companyId: companyA.insertId,
+        assignedDirectorId: director.insertId,
+        groupSlug: "bob",
+        sheetTabName: `assignment-test-${stamp}`,
+      });
+      eventId = created.eventId;
+
+      const [event] = await rawQuery<{ createdByStaffId: number | null }>("SELECT createdByStaffId FROM events WHERE id = ?", [eventId]);
+      const [assignment] = await rawQuery<{ staffId: number; eventId: number }>("SELECT staffId, eventId FROM event_director_assignments WHERE staffId = ? AND eventId = ?", [director.insertId, eventId]);
+      expect(event?.createdByStaffId).toBe(director.insertId);
+      expect(assignment).toMatchObject({ staffId: director.insertId, eventId });
+
+      const directorEvents = await appRouter.createCaller(staffContext(director.insertId)).event.list();
+      expect((directorEvents as Array<{ id: number }>).map((row) => Number(row.id))).toContain(eventId);
+
+      await expect(owner.ownerDashboard.createEvent({
+        eventName: `Rejected Assignment ${stamp}`,
+        eventYear: 2099,
+        companyId: companyB.insertId,
+        assignedDirectorId: director.insertId,
+        groupSlug: "bob",
+        sheetTabName: `assignment-rejected-${stamp}`,
+      })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    } finally {
+      if (eventId) await rawQuery("DELETE FROM event_director_assignments WHERE eventId = ?", [eventId]);
+      if (eventId) await rawQuery("DELETE FROM events WHERE id = ?", [eventId]);
+      await rawQuery("DELETE FROM ed_staff WHERE id = ?", [director.insertId]);
+      await rawQuery("DELETE FROM companies WHERE id IN (?, ?)", [companyA.insertId, companyB.insertId]);
+    }
+  });
+});
+
 describe("creator-owned Event Director router isolation", () => {
   it("returns only the director’s own event and rejects another director’s read or write", async () => {
     const stamp = Date.now();
@@ -25,6 +88,8 @@ describe("creator-owned Event Director router isolation", () => {
     const bowlerB = await rawExec("INSERT INTO bowlers (eventId, legalFirstName, legalLastName, scantronId, registrationStatus) VALUES (?, ?, ?, ?, 'pre_registered')", [eventB.insertId, "Blocked", "Bowler", `${String(stamp).slice(-10)}`]);
     const guestA = await rawExec("INSERT INTO guest_pool_party_tokens (bowlerId, eventId, suffix, token, guestName) VALUES (?, ?, 'A', ?, '80')", [bowlerA.insertId, eventA.insertId, `guest-a-${stamp}`]);
     const guestB = await rawExec("INSERT INTO guest_pool_party_tokens (bowlerId, eventId, suffix, token, guestName) VALUES (?, ?, 'A', ?, '80')", [bowlerB.insertId, eventB.insertId, `guest-b-${stamp}`]);
+    const [center] = await rawQuery<{ id: number }>("SELECT id FROM bowling_centers ORDER BY id ASC LIMIT 1");
+    let invitationId: string | undefined;
     await rawExec("INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)", [staff.insertId, eventA.insertId]);
 
     try {
@@ -50,7 +115,28 @@ describe("creator-owned Event Director router isolation", () => {
       await expect(caller.bowlerAuth.disablePassport({ token: "", bowlerId: bowlerB.insertId, passportType: "pool" })).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(caller.bowlerAuth.listIncompleteGuestInformation({ eventId: eventB.insertId })).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(caller.bowlerAuth.completeGuestInformation({ eventId: eventB.insertId, guestTicketId: guestB.insertId, guestName: "Blocked Guest" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+      const allowedAssignment = await caller.coordinator.invitations.create({
+        eventId: eventA.insertId,
+        centerId: center.id,
+        recipientName: "Allowed Coordinator",
+        recipientEmail: `allowed-coordinator-${stamp}@example.test`,
+        leagueSessions: ["Monday 6:00 PM"],
+        origin: "https://www.bowlvegas.com",
+      });
+      invitationId = allowedAssignment.id;
+      expect(allowedAssignment.signupUrl).toContain("/coordinator?code=");
+
+      await expect(caller.coordinator.invitations.create({
+        eventId: eventB.insertId,
+        centerId: center.id,
+        recipientName: "Blocked Coordinator",
+        recipientEmail: `blocked-coordinator-${stamp}@example.test`,
+        leagueSessions: [],
+        origin: "https://www.bowlvegas.com",
+      })).rejects.toMatchObject({ code: "FORBIDDEN" });
     } finally {
+      if (invitationId) await rawQuery("DELETE FROM coordinator_invitations WHERE id = ?", [invitationId]);
       await rawQuery("DELETE FROM event_director_assignments WHERE staffId = ?", [staff.insertId]);
       await rawQuery("DELETE FROM ed_staff WHERE id = ?", [staff.insertId]);
       await rawQuery("DELETE FROM guest_pool_party_tokens WHERE bowlerId IN (?, ?)", [bowlerA.insertId, bowlerB.insertId]);
