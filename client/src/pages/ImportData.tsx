@@ -72,7 +72,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   // Secondary squad
   "2nd squad time": "squadTime2", "second squad time": "squadTime2",
   "2nd squad time △ unmapped": "squadTime2",
-  "2nd lane #": "laneNumber2", "second lane #": "laneNumber2",
+  "#2 lane": "laneNumber2", "2nd lane #": "laneNumber2", "second lane #": "laneNumber2",
   "2nd pool used": "poolUsed2", "second pool used": "poolUsed2",
   "2nd pool used △ unmapped": "poolUsed2",
   "2nd banquet used": "banquetUsed2", "second banquet used": "banquetUsed2",

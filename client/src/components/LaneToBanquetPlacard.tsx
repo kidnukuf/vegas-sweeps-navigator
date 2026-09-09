@@ -215,7 +215,7 @@ export function LaneToBanquetPlacard({
                   <div className="flex items-center gap-2">
                     <span className="text-base">🎳</span>
                     <div>
-                      <p className="text-white/65 text-xs">Lane Assignment</p>
+                      <p className="text-white/65 text-xs">#2 Lane</p>
                       <p className="text-white font-semibold text-sm">Lane {laneNumber2}</p>
                     </div>
                   </div>

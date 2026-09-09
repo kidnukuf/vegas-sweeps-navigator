@@ -8,6 +8,7 @@ import { getSheetsClient, writeQRCodesToSheet, writeBowlerIdToSheet, clearQRUsed
 import { assertEventAccess } from "../_core/edAuth";
 import { buildHotelRoomPlan, normalizedName, type HotelRoomRosterRow } from "../../shared/hotelRoomPlanner";
 import { createHash } from "node:crypto";
+import { parseSecondSquadLane } from "../../shared/secondSquadLane";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -38,7 +39,7 @@ const COLS = {
   ROOMMATE_FIRST: 21,      // V  — Roommate First Name
   ROOMMATE_LAST: 22,       // W  — Roommate Last Name
   SQUAD_TIME_2: 23,        // X  — 2nd Squad Time
-  LANE_2: 24,              // Y  — Lane # (2nd)
+  LANE_2: 24,              // Y  — #2 Lane
   POOL_QR: 25,             // Z  — Pool QR
   POOL_USED: 26,           // AA — Pool Used
   BANQUET_QR: 27,          // AB — Banquet QR
@@ -118,6 +119,8 @@ interface SheetRow {
   centerName: string;
   squadTime: string;
   laneNumber: number | null;
+  squadTime2: string;
+  laneNumber2: number | null;
   under21: boolean;
   sanction: string;
   games: number | null;
@@ -163,6 +166,8 @@ function parseSheetRow(row: string[]): SheetRow {
     centerName: row[COLS.CENTER]?.trim() || "",
     squadTime: row[COLS.SQUAD_TIME]?.trim() || "",
     laneNumber: parseInt(row[COLS.LANE]?.trim() || "0") || null,
+    squadTime2: row[COLS.SQUAD_TIME_2]?.trim() || "",
+    laneNumber2: parseSecondSquadLane({ "#2 Lane": row[COLS.LANE_2] }),
     under21: row[COLS.UNDER_21]?.trim().toLowerCase() === "y",
     sanction: row[COLS.SANCTION]?.trim() || "",
     games: parseInt(row[COLS.GAMES]?.trim() || "0") || null,
@@ -299,8 +304,8 @@ export const masterSheetRouter = router({
           }
 
           await rawQuery(
-            `INSERT INTO bowlers (eventId, firstName, lastName, phone, email, squadTime, laneNumber, centerId, league, teamCode, teamName, under21, sanction, games, bestAvg, leagueMember, tshirtSize, hotelConfirmation, hotelCheckin, hotelCheckout, roommateFirst, roommateLast, banquetTable, extraBanquet, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email), squadTime = VALUES(squadTime), laneNumber = VALUES(laneNumber), centerId = VALUES(centerId), league = VALUES(league), teamCode = VALUES(teamCode), teamName = VALUES(teamName), under21 = VALUES(under21), sanction = VALUES(sanction), games = VALUES(games), bestAvg = VALUES(bestAvg), leagueMember = VALUES(leagueMember), tshirtSize = VALUES(tshirtSize), hotelConfirmation = VALUES(hotelConfirmation), hotelCheckin = VALUES(hotelCheckin), hotelCheckout = VALUES(hotelCheckout), roommateFirst = VALUES(roommateFirst), roommateLast = VALUES(roommateLast), banquetTable = VALUES(banquetTable), extraBanquet = VALUES(extraBanquet), updatedAt = NOW()`,
-            [eventId, sheetRow.firstName, sheetRow.lastName, sheetRow.phone, sheetRow.email, sheetRow.squadTime, sheetRow.laneNumber, centerId, sheetRow.league, sheetRow.teamCode, sheetRow.teamName, sheetRow.under21 ? 1 : 0, sheetRow.sanction, sheetRow.games, sheetRow.bestAvg, sheetRow.leagueMember, sheetRow.tshirtSize, sheetRow.hotelConfirmation, sheetRow.hotelCheckin, sheetRow.hotelCheckout, sheetRow.roommateFirst, sheetRow.roommateLast, sheetRow.banquetTable, sheetRow.extraBanquet]
+            `INSERT INTO bowlers (eventId, firstName, lastName, phone, email, squadTime, laneNumber, squadTime2, laneNumber2, centerId, league, teamCode, teamName, under21, sanction, games, bestAvg, leagueMember, tshirtSize, hotelConfirmation, hotelCheckin, hotelCheckout, roommateFirst, roommateLast, banquetTable, extraBanquet, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE phone = VALUES(phone), email = VALUES(email), squadTime = VALUES(squadTime), laneNumber = VALUES(laneNumber), squadTime2 = VALUES(squadTime2), laneNumber2 = VALUES(laneNumber2), centerId = VALUES(centerId), league = VALUES(league), teamCode = VALUES(teamCode), teamName = VALUES(teamName), under21 = VALUES(under21), sanction = VALUES(sanction), games = VALUES(games), bestAvg = VALUES(bestAvg), leagueMember = VALUES(leagueMember), tshirtSize = VALUES(tshirtSize), hotelConfirmation = VALUES(hotelConfirmation), hotelCheckin = VALUES(hotelCheckin), hotelCheckout = VALUES(hotelCheckout), roommateFirst = VALUES(roommateFirst), roommateLast = VALUES(roommateLast), banquetTable = VALUES(banquetTable), extraBanquet = VALUES(extraBanquet), updatedAt = NOW()`,
+            [eventId, sheetRow.firstName, sheetRow.lastName, sheetRow.phone, sheetRow.email, sheetRow.squadTime, sheetRow.laneNumber, sheetRow.squadTime2, sheetRow.laneNumber2, centerId, sheetRow.league, sheetRow.teamCode, sheetRow.teamName, sheetRow.under21 ? 1 : 0, sheetRow.sanction, sheetRow.games, sheetRow.bestAvg, sheetRow.leagueMember, sheetRow.tshirtSize, sheetRow.hotelConfirmation, sheetRow.hotelCheckin, sheetRow.hotelCheckout, sheetRow.roommateFirst, sheetRow.roommateLast, sheetRow.banquetTable, sheetRow.extraBanquet]
           );
 
           imported++;
@@ -340,6 +345,7 @@ export const masterSheetRouter = router({
           if (bowler.phone !== sheetRow.phone) changedFields.phone = { old: String(bowler.phone || ""), new: sheetRow.phone };
           if (bowler.email !== sheetRow.email) changedFields.email = { old: String(bowler.email || ""), new: sheetRow.email };
           if (bowler.laneNumber !== sheetRow.laneNumber) changedFields.lane = { old: String(bowler.laneNumber), new: String(sheetRow.laneNumber) };
+          if (bowler.laneNumber2 !== sheetRow.laneNumber2) changedFields.secondSquadLane = { old: String(bowler.laneNumber2 ?? ""), new: String(sheetRow.laneNumber2 ?? "") };
           if (bowler.teamName !== sheetRow.teamName) changedFields.teamName = { old: String(bowler.teamName || ""), new: sheetRow.teamName };
           if (bowler.tshirtSize !== sheetRow.tshirtSize) changedFields.tshirtSize = { old: String(bowler.tshirtSize || ""), new: sheetRow.tshirtSize };
 

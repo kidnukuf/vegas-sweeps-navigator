@@ -1272,3 +1272,8 @@
 - [ ] Complete claim-code and roster-email verification state handling independently of delivery-provider credentials
 - [ ] Add Event Director paper-ticket queue and printable substitute records for bowlers who do not use the app
 - [ ] Connect a separately approved transactional-email sender and verify a live secure-button delivery
+
+## Active Second-Squad Lane Header Update
+- [x] Map Column Y, headed #2 Lane, as the lane assignment for a bowler's second squad without changing first-squad lane assignments
+- [x] Display the saved second-squad lane alongside the existing second-squad schedule where applicable
+- [x] Add regression coverage, validate the import mapping, and publish the update

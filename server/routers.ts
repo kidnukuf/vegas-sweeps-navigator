@@ -44,6 +44,7 @@ import { splitImportedGuestEntry } from "./guestInformation.logic";
 import { validateImportTeamCode } from "./importTeamCode.logic";
 import { buildSeatingArrangementSheetPlan, snapshotSeatingSheet } from "./seatingArrangement.logic";
 import { normalizeLeagueCode, normalizeLeagueName } from "./leagueName.logic";
+import { parseSecondSquadLane, SECOND_SQUAD_LANE_HEADER } from "../shared/secondSquadLane";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -558,7 +559,7 @@ export const appRouter = router({
           "Coordinator", "Team #", "Captain", "First Name", "Last Name", "Under 21?",
           "Sanction #", "# Games", "Best Avg", "Team Name", "League Member", "T-Shirt Size",
           "Hotel Confirmation", "Check In", "Check Out", "Roommate First Name", "Roommate Last Name",
-          "2nd Squad Time", "Lane #", "Pool QR", "Pool Used", "Banquet QR", "Banquet Used",
+          "2nd Squad Time", SECOND_SQUAD_LANE_HEADER, "Pool QR", "Pool Used", "Banquet QR", "Banquet Used",
           "#A Pool QR", "#A Pool Used", "#A Banquet QR", "#A Banquet Used",
           "#B Pool QR", "#B Pool Used", "#B Banquet QR", "#B Banquet Used",
           "2nd Banquet QR", "2nd Banquet Used", "2nd Pool QR", "2nd Pool Used",
@@ -2086,8 +2087,7 @@ export const appRouter = router({
             const laneRaw = String(row["Lane #"] ?? row["Lane"] ?? row["lane"] ?? "").trim();
             const laneNumber = laneRaw ? (parseInt(laneRaw) || null) : null;
             const squadTime2Val = String(row["2nd Squad Time"] ?? row["Second Squad Time"] ?? row["squadTime2"] ?? row["secondSquadTime"] ?? "").trim() || null;
-            const lane2Raw = String(row["2nd Lane #"] ?? row["Second Lane #"] ?? row["laneNumber2"] ?? row["secondLaneNumber"] ?? "").trim();
-            const laneNumber2 = lane2Raw ? (parseInt(lane2Raw) || null) : null;
+            const laneNumber2 = parseSecondSquadLane(row);
             // Column 44 — "Lane to Event" / "Lane to Banquet" directional info
             const laneToEvent = String(row["Lane to Event"] ?? row["Lane to Banquet"] ?? row["lane_to_event"] ?? row["LaneToEvent"] ?? "").trim() || null;
 
