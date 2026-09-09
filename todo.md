@@ -1206,3 +1206,8 @@
 - [x] Add a human-readable League Name data field with safe import and Event Director editing behavior
 - [x] Display League Name beside League Code in Event Director, Coordinator, Bowler, and seating-chart workflows
 - [x] Add scoped regression coverage and validate that existing events continue using their stable League Codes
+
+## Active Owner Attention Required Navigation
+- [x] Inspect each Owner Portal Attention Required warning and identify its safe remediation workspace
+- [x] Make actionable warnings clickable with event-scoped navigation while keeping non-actionable summaries as status text
+- [x] Add regression coverage and validate Owner warning destinations before publishing

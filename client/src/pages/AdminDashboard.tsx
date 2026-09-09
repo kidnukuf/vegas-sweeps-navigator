@@ -433,11 +433,12 @@ import SurveyControlsCard from "@/components/SurveyControlsCard";
 import GuidedHelpPanel from "@/components/GuidedHelpPanel";
 import { ED_HELP } from "@/lib/edHelpContent";
 import { hasVerifiedEventDirectorAccess, isLegacyEventDirectorSessionCandidate } from "@/lib/portalAccess";
+import { parseEventDirectorAttentionTab } from "@/lib/ownerReadinessNavigation";
 
 function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"guide" | "links" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "messages" | "bulletin" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">("roster");
+  const [activeTab, setActiveTab] = useState<"guide" | "links" | "roster" | "audit" | "doormen" | "qrtest" | "unmatched" | "passports" | "scan" | "support" | "messages" | "bulletin" | "ads" | "survey" | "codes" | "leads" | "staff" | "workspace" | "payouts">(() => parseEventDirectorAttentionTab(new URLSearchParams(window.location.search).get("focus")) ?? "roster");
   // Company-scoped Event Director management
   const { data: edAccess } = trpc.edStaff.access.useQuery();
   const { data: signedInStaff } = trpc.edStaff.me.useQuery();

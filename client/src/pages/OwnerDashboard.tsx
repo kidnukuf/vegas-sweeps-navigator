@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { createEventDirectorWorkspacePath } from "@/lib/ownerNavigation";
+import { getOwnerReadinessNavigation, parseOwnerWorkspaceFocus, type OwnerWorkspaceFocus } from "@/lib/ownerReadinessNavigation";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { LocalOffersManager } from "@/components/LocalOffersManager";
 import { BulletinModerationPanel } from "@/components/BulletinModerationPanel";
@@ -43,10 +44,12 @@ function statusClass(level: Readiness["level"]) {
   return level === "ready" ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/25" : level === "attention" ? "bg-amber-400/10 text-amber-200 border-amber-400/25" : "bg-rose-400/10 text-rose-200 border-rose-400/30";
 }
 
-function ReadinessBadge({ readiness }: { readiness: Readiness }) {
+function ReadinessBadge({ readiness, onClick }: { readiness: Readiness; onClick?: () => void }) {
   const Icon = readiness.level === "ready" ? CheckCircle2 : readiness.level === "attention" ? CircleAlert : TriangleAlert;
   const label = readiness.level === "ready" ? "Ready" : readiness.level === "attention" ? "Needs attention" : "Blocked";
-  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${statusClass(readiness.level)}`}><Icon className="h-3.5 w-3.5" />{label}</span>;
+  const badge = <><Icon className="h-3.5 w-3.5" />{label}</>;
+  if (!onClick) return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${statusClass(readiness.level)}`}>{badge}</span>;
+  return <button type="button" onClick={onClick} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold transition hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-amber-300 ${statusClass(readiness.level)}`} aria-label={`${label}: open the next required action`}>{badge}<ChevronRight className="h-3.5 w-3.5" /></button>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -66,7 +69,7 @@ function EventEditor({ event, onSaved, onDelete }: { event: Record<string, any>;
     tshirtsProvided: Boolean(draft.tshirtsProvided), tshirtPickupLocation: draft.tshirtPickupLocation, tshirtPickupTime: draft.tshirtPickupTime,
     sheetSpreadsheetId: draft.sheetSpreadsheetId, sheetTabName: draft.sheetTabName, sheetTabNickname: draft.sheetTabNickname,
   });
-  return <section className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 shadow-xl shadow-black/20">
+  return <section id="owner-event-settings" className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 shadow-xl shadow-black/20">
     <div className="mb-5 flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Owner editor</p><h2 className="mt-1 text-xl font-semibold text-white">Event configuration</h2></div><Button variant="outline" onClick={onDelete} className="border-rose-400/30 text-rose-200 hover:bg-rose-400/10 hover:text-rose-100"><Trash2 className="mr-2 h-4 w-4" />Delete event</Button></div>
     <div className="grid gap-4 md:grid-cols-2">
       <Field label="Event name"><Input className={inputClass} value={draft.eventName ?? ""} onChange={(e) => set("eventName", e.target.value)} /></Field>
@@ -253,15 +256,31 @@ export default function OwnerDashboard() {
     if (Number.isInteger(initialEventId) && initialEventId > 0) setSelectedEventId(initialEventId);
   }, []);
 
+  useEffect(() => {
+    if (!selected) return;
+    const focus = parseOwnerWorkspaceFocus(new URLSearchParams(window.location.search).get("focus"));
+    if (!focus) return;
+    const timeout = window.setTimeout(() => document.getElementById(focus)?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    return () => window.clearTimeout(timeout);
+  }, [selected]);
+
   if (loading || (isAuthenticated && overview.isLoading)) return <div className="min-h-screen bg-[#080b14] text-slate-100 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-amber-300" /></div>;
   if (!isAuthenticated) return null;
 
   const refreshSelected = () => { detail.refetch(); overview.refetch(); operations.refetch(); };
-  const openEventWorkspace = (eventId: number) => {
+  const openEventWorkspace = (eventId: number, focus: OwnerWorkspaceFocus = "owner-event-settings") => {
     setSelectedEventId(eventId);
     setEditingBowlerId(null);
-    window.history.replaceState({}, "", `/owner?eventId=${eventId}`);
-    window.setTimeout(() => document.getElementById("owner-event-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    window.history.replaceState({}, "", `/owner?eventId=${eventId}&focus=${focus}`);
+    window.setTimeout(() => document.getElementById(focus)?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  };
+  const openReadinessIssue = (row: EventRow, issue: string) => {
+    const destination = getOwnerReadinessNavigation(issue);
+    if (destination.kind === "event-director") {
+      window.location.assign(createEventDirectorWorkspacePath(row.id, destination.tab));
+      return;
+    }
+    openEventWorkspace(row.id, destination.focus);
   };
   const openEventDirectorPortal = () => {
     const eventId = Number(eventDirectorPortalEventId);
@@ -288,6 +307,8 @@ export default function OwnerDashboard() {
         { label: "Blocked", value: overviewStats.blocked, icon: TriangleAlert, className: "text-rose-200" },
         { label: "Bowlers in platform", value: overviewStats.bowlers.toLocaleString(), icon: Users, className: "text-sky-200" },
       ].map(({ label, value, icon: Icon, className }) => <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 shadow-xl shadow-black/10"><div className="flex items-center justify-between"><p className="text-sm font-medium text-slate-400">{label}</p><Icon className="h-5 w-5 text-slate-500" /></div><p className={`mt-3 text-3xl font-semibold ${className}`}>{value}</p></div>)}</section>
+
+      {rows.some((row) => row.readiness.level !== "ready") ? <section id="owner-attention-required" className="mb-8 rounded-2xl border border-amber-300/25 bg-amber-300/[0.06] p-5 shadow-xl shadow-black/15"><div className="flex items-start gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-amber-300/25 bg-amber-300/10"><CircleAlert className="h-5 w-5 text-amber-200" /></span><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Attention required</p><h2 className="mt-1 text-xl font-semibold text-white">Choose an issue to open its required workspace.</h2><p className="mt-1 text-sm leading-6 text-slate-300">Each warning below is event-scoped. Selecting one opens the Owner settings or the correct authorized Event Director tool for that exact event.</p></div></div><div className="mt-5 space-y-3">{rows.filter((row) => row.readiness.level !== "ready").map((row) => <div key={row.id} className="rounded-xl border border-white/10 bg-slate-950/55 p-4"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="font-semibold text-white">{row.eventName}</p><p className="mt-1 text-xs text-slate-500">{row.companyName ?? "Unassigned company"} · {row.eventYear}</p></div><ReadinessBadge readiness={row.readiness} onClick={() => { const firstIssue = row.readiness.issues[0]; if (firstIssue) openReadinessIssue(row, firstIssue); }} /></div><div className="mt-3 flex flex-wrap gap-2">{row.readiness.issues.map((issue) => { const destination = getOwnerReadinessNavigation(issue); return <button key={issue} type="button" onClick={() => openReadinessIssue(row, issue)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-left text-xs font-semibold text-amber-100 transition hover:bg-amber-300/20 focus:outline-none focus:ring-2 focus:ring-amber-300"><span>{issue}</span><span className="text-amber-200/70">· {destination.actionLabel}</span><ChevronRight className="h-3.5 w-3.5 shrink-0" /></button>; })}</div></div>)}</div></section> : null}
 
       <section className="mb-8 overflow-hidden rounded-2xl border border-amber-300/15 bg-gradient-to-r from-amber-300/[0.11] via-slate-950/70 to-sky-300/[0.08] p-5 shadow-xl shadow-black/15"><div className="grid gap-5 lg:grid-cols-[1.3fr_repeat(3,minmax(0,1fr))]"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Owner command center</p><h2 className="mt-2 text-2xl font-semibold text-white">Resolve readiness issues before they reach an event.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">Start from the event validation table, then open the specific event and bowler records that require correction. Only your Manus owner account can use these controls.</p><Button onClick={() => { if (priorityEvent) openEventWorkspace(priorityEvent.id); document.getElementById("owner-events")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-4 bg-amber-300 text-slate-950 hover:bg-amber-200"><ClipboardPenLine className="mr-2 h-4 w-4" />{priorityEvent ? `Review ${priorityEvent.eventName}` : "Review events"}</Button></div><div className="rounded-xl border border-white/10 bg-slate-950/45 p-4"><p className="text-sm font-semibold text-white">Validation authority</p><p className="mt-2 text-sm leading-5 text-slate-400">Review Sheet routing, missing IDs, QR/passport passes, claim codes, centers, and roster matches in one place.</p></div><div className="rounded-xl border border-white/10 bg-slate-950/45 p-4"><p className="text-sm font-semibold text-white">Event authority</p><p className="mt-2 text-sm leading-5 text-slate-400">Create events, issue staff credentials, review creator-owned portfolios, and correct event settings.</p></div><div className="rounded-xl border border-white/10 bg-slate-950/45 p-4"><p className="text-sm font-semibold text-white">Roster authority</p><p className="mt-2 text-sm leading-5 text-slate-400">Open and edit individual bowler records, including passes, U21 status, lanes, registration, and notes.</p></div></div></section>
 
