@@ -1226,3 +1226,13 @@
 - [x] Inspect current existing-event ownership and Event Director eligibility rules
 - [x] Add an Owner-only selector to assign an existing same-company Event Director to an existing event
 - [x] Add reassignment and cross-event isolation regression coverage before publishing
+
+## Active Bowler Portal Duplicate Click-Down Content Repair
+- [x] Identify the duplicate hotel timing display inside the expandable itinerary section
+- [x] Remove redundant hotel check-in and check-out rows while preserving unique QR, itinerary, and eligibility information
+- [x] Add focused schedule-state regression coverage and validate the responsive Bowler Portal route before publishing
+
+## Active Bowler Portal Event Schedule Clarity
+- [x] Replace the misleading Lane to Banquet label with a clear event-schedule label
+- [x] Show only configured hotel, bowling, pool-party, banquet, and checkout itinerary details in the expanded schedule
+- [x] Validate the revised schedule hierarchy and responsive display before publishing

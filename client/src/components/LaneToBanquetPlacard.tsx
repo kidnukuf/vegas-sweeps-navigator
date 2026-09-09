@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { normalizeSquadTime } from "@/lib/squadTime";
 import OrleansHotelModal from "@/components/OrleansHotelModal";
+import { getEventScheduleState } from "@/lib/eventSchedule";
 
 /**
  * Shared "Lane to Banquet" trip-planner placard used by both the Bowler and
@@ -58,15 +59,25 @@ export function LaneToBanquetPlacard({
     setOpen((o) => !o);
   }
 
-  const hasHotel = hotelName || confirmationCode || checkinDate || checkoutDate;
-  const hasBanquet = banquetTable || banquetLocation || banquetTime;
-  const hasEvSteps = !!(ev && (ev.hotelCheckinDay || ev.hotelCheckinTime || ev.registrationDay || ev.registrationTime || ev.poolPartyEnabled || ev.banquetDay || ev.hotelCheckoutDay || ev.hotelCheckoutTime));
-  const hasInfo = laneToEvent || laneNumber || squadTime || laneNumber2 || squadTime2 || hasHotel || hasBanquet || hasEvSteps;
+  const { checkinLabel, checkoutLabel, hasHotel, hasBanquet, hasInfo } = getEventScheduleState({
+    laneToEvent,
+    laneNumber,
+    squadTime,
+    laneNumber2,
+    squadTime2,
+    hotelName,
+    confirmationCode,
+    checkinDate,
+    checkoutDate,
+    roomType,
+    banquetTable,
+    banquetLocation,
+    banquetTime,
+    eventSettings: ev,
+  });
   if (!hasInfo) return null;
 
   const showHotelCard = !ev || ev.showHotelInfoCard === undefined || ev.showHotelInfoCard === null ? true : Boolean(ev.showHotelInfoCard);
-  const checkinLabel = [ev?.hotelCheckinDay, ev?.hotelCheckinTime].filter(Boolean).join(" · ") || checkinDate || null;
-  const checkoutLabel = [ev?.hotelCheckoutDay, ev?.hotelCheckoutTime].filter(Boolean).join(" · ") || checkoutDate || null;
 
   return (
     <div
@@ -79,8 +90,8 @@ export function LaneToBanquetPlacard({
         <div className="flex items-center gap-3">
           <span className="text-2xl">🗺️</span>
           <div>
-            <p className="text-amber-300 font-bold text-sm tracking-wide">Lane to Banquet</p>
-            <p className="text-white/75 text-xs">Tap to see your event directions</p>
+            <p className="text-amber-300 font-bold text-sm tracking-wide">Your Event Schedule</p>
+            <p className="text-white/75 text-xs">Tap to see your hotel, bowling, pool party, and banquet details</p>
           </div>
         </div>
         <span className={`text-amber-300 text-lg transition-transform duration-300 ${open ? "rotate-90" : "rotate-0"}`} aria-hidden="true">▶</span>
@@ -109,24 +120,6 @@ export function LaneToBanquetPlacard({
                     <div>
                       <p className="text-white/60 text-xs">Hotel</p>
                       <p className="text-white font-semibold text-sm">{hotelName}</p>
-                    </div>
-                  </div>
-                )}
-                {checkinDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📅</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Check-In</p>
-                      <p className="text-white font-semibold text-sm">{checkinDate}</p>
-                    </div>
-                  </div>
-                )}
-                {checkoutDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📅</span>
-                    <div>
-                      <p className="text-white/60 text-xs">Check-Out</p>
-                      <p className="text-white font-semibold text-sm">{checkoutDate}</p>
                     </div>
                   </div>
                 )}
@@ -281,16 +274,6 @@ export function LaneToBanquetPlacard({
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-          )}
-
-          {checkoutLabel && (
-            <div className="flex items-center gap-3">
-              <span className="text-lg">🧳</span>
-              <div>
-                <p className="text-white/75 text-xs">Hotel Check-Out</p>
-                <p className="text-white font-semibold text-sm">{checkoutLabel}</p>
               </div>
             </div>
           )}
