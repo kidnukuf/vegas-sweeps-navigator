@@ -83,6 +83,11 @@ const ownerDirectorAssignmentsInput = z.object({
   eventIds: z.array(z.number().int().positive()).default([]),
 });
 
+const ownerExistingEventDirectorInput = z.object({
+  eventId: z.number().int().positive(),
+  staffId: z.number().int().positive(),
+});
+
 const coordinatorContactInput = z.object({
   eventId: z.number().int().positive(),
   coordinatorName: z.string().trim().min(1).max(255),
@@ -248,6 +253,38 @@ export const ownerDashboardRouter = router({
   setDirectorAssignments: publicProcedure.input(ownerDirectorAssignmentsInput).mutation(async ({ input, ctx }) => {
     await requireOwner(ctx);
     throw new TRPCError({ code: "BAD_REQUEST", message: "Event Directors can access only events they create. The Owner Portal can open every event directly." });
+  }),
+
+  assignExistingEventDirector: publicProcedure.input(ownerExistingEventDirectorInput).mutation(async ({ input, ctx }) => {
+    const session = await requireOwner(ctx);
+    const [event] = await rawQuery<{ id: number; eventName: string; companyId: number | null; createdByStaffId: number | null }>(
+      `SELECT id, eventName, companyId, createdByStaffId FROM events WHERE id = ? LIMIT 1`,
+      [input.eventId],
+    );
+    if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+
+    const [director] = await rawQuery<{ id: number; name: string; username: string; companyId: number | null }>(
+      `SELECT id, name, username, companyId FROM ed_staff WHERE id = ? AND accessRole = 'event_director' LIMIT 1`,
+      [input.staffId],
+    );
+    if (!director) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose an existing Event Director." });
+    if (event.companyId !== null && director.companyId !== event.companyId) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "The Event Director must belong to the same company as the event." });
+    }
+
+    await rawExec(`UPDATE events SET createdByStaffId = ? WHERE id = ?`, [director.id, event.id]);
+    await rawExec(`DELETE FROM event_director_assignments WHERE eventId = ?`, [event.id]);
+    await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [director.id, event.id]);
+    await writeAuditLog({
+      eventId: event.id,
+      actorRole: "Owner",
+      actorId: session.userId,
+      action: "owner_assign_existing_event_director",
+      targetId: event.id,
+      targetType: "event",
+      details: `Owner assigned Event Director #${director.id} (${director.name || director.username}) to ${event.eventName}; previous creator was ${event.createdByStaffId ?? "unassigned"}.`,
+    });
+    return { success: true, eventId: event.id, staffId: director.id, directorName: director.name || director.username };
   }),
 
   resetDirectorPassword: publicProcedure.input(z.object({ staffId: z.number().int().positive(), password: z.string().min(8).max(128) })).mutation(async ({ input, ctx }) => {

@@ -76,6 +76,47 @@ describe("Owner Event Director assignment at event creation", () => {
   });
 });
 
+describe("Owner existing Event Director assignment", () => {
+  it("transfers an existing event to an eligible director and rejects a cross-company director", async () => {
+    const stamp = Date.now();
+    const companyA = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Existing Assignment A ${stamp}`, `existing-assignment-a-${stamp}`]);
+    const companyB = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Existing Assignment B ${stamp}`, `existing-assignment-b-${stamp}`]);
+    const formerDirector = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`former-director-${stamp}`, "test-hash", "Former Director", companyA.insertId]);
+    const replacementDirector = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`replacement-director-${stamp}`, "test-hash", "Replacement Director", companyA.insertId]);
+    const crossCompanyDirector = await rawExec("INSERT INTO ed_staff (username, passwordHash, name, companyId, accessRole) VALUES (?, ?, ?, ?, 'event_director')", [`cross-company-director-${stamp}`, "test-hash", "Cross Company Director", companyB.insertId]);
+    const event = await rawExec("INSERT INTO events (companyId, createdByStaffId, eventName, eventYear, status) VALUES (?, ?, ?, ?, 'planning')", [companyA.insertId, formerDirector.insertId, `Existing Assignment ${stamp}`, 2099]);
+    await rawExec("INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)", [formerDirector.insertId, event.insertId]);
+
+    try {
+      const owner = appRouter.createCaller(ownerContext());
+      await expect(owner.ownerDashboard.assignExistingEventDirector({ eventId: event.insertId, staffId: replacementDirector.insertId })).resolves.toMatchObject({
+        success: true,
+        eventId: event.insertId,
+        staffId: replacementDirector.insertId,
+      });
+
+      const [updatedEvent] = await rawQuery<{ createdByStaffId: number | null }>("SELECT createdByStaffId FROM events WHERE id = ?", [event.insertId]);
+      const assignments = await rawQuery<{ staffId: number }>("SELECT staffId FROM event_director_assignments WHERE eventId = ?", [event.insertId]);
+      expect(updatedEvent?.createdByStaffId).toBe(replacementDirector.insertId);
+      expect(assignments).toEqual([{ staffId: replacementDirector.insertId }]);
+
+      const formerEvents = await appRouter.createCaller(staffContext(formerDirector.insertId)).event.list();
+      const replacementEvents = await appRouter.createCaller(staffContext(replacementDirector.insertId)).event.list();
+      expect((formerEvents as Array<{ id: number }>).map((row) => Number(row.id))).not.toContain(event.insertId);
+      expect((replacementEvents as Array<{ id: number }>).map((row) => Number(row.id))).toContain(event.insertId);
+
+      await expect(owner.ownerDashboard.assignExistingEventDirector({ eventId: event.insertId, staffId: crossCompanyDirector.insertId })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      const [unchangedEvent] = await rawQuery<{ createdByStaffId: number | null }>("SELECT createdByStaffId FROM events WHERE id = ?", [event.insertId]);
+      expect(unchangedEvent?.createdByStaffId).toBe(replacementDirector.insertId);
+    } finally {
+      await rawQuery("DELETE FROM event_director_assignments WHERE eventId = ?", [event.insertId]);
+      await rawQuery("DELETE FROM events WHERE id = ?", [event.insertId]);
+      await rawQuery("DELETE FROM ed_staff WHERE id IN (?, ?, ?)", [formerDirector.insertId, replacementDirector.insertId, crossCompanyDirector.insertId]);
+      await rawQuery("DELETE FROM companies WHERE id IN (?, ?)", [companyA.insertId, companyB.insertId]);
+    }
+  });
+});
+
 describe("Owner Event Director credential creation", () => {
   it("creates a new scoped director with an optional valid company and rejects duplicate usernames", async () => {
     const stamp = Date.now();

@@ -1221,3 +1221,8 @@
 - [x] Reproduce the reported click-blocking behavior in the Owner Portal using a real authenticated interaction path
 - [x] Identify and remove any overlay, pointer-event, or layout layer intercepting the creation control
 - [x] Replace the interaction with an accessible reliable entry point and verify actual click activation before publishing
+
+## Active Existing Event Director Assignment
+- [x] Inspect current existing-event ownership and Event Director eligibility rules
+- [x] Add an Owner-only selector to assign an existing same-company Event Director to an existing event
+- [x] Add reassignment and cross-event isolation regression coverage before publishing
