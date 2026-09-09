@@ -15,6 +15,7 @@ import { coordinatorRouter } from "./routers/coordinator";
 import { communicationsRouter } from "./routers/communications";
 import { bulletinRouter } from "./routers/bulletin";
 import { advertisingProspectsRouter } from "./routers/advertisingProspects";
+import { claimAccessRouter } from "./routers/claimAccess";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -67,6 +68,7 @@ export const appRouter = router({
   advertisingProspects: advertisingProspectsRouter,
   system: systemRouter,
   emailInvitation: emailInvitationRouter,
+  claimAccess: claimAccessRouter,
 
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),

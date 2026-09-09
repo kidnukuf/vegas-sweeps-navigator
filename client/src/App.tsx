@@ -16,6 +16,7 @@ import BowlerProfile from "./pages/BowlerProfile";
 import ImportData from "./pages/ImportData";
 import ProgramDirector from "./pages/ProgramDirector";
 import BowlerLogin from "./pages/BowlerLogin";
+import ClaimVerify from "./pages/ClaimVerify";
 import BowlerDashboard from "./pages/BowlerDashboard";
 import BowlerConfirmation from "./pages/BowlerConfirmation";
 import CaptainDashboard from "./pages/CaptainDashboard";
@@ -124,6 +125,7 @@ function Router() {
       <Route path="/ed-login" component={EdLogin} />
       <Route path="/ed" component={AdminDashboard} />
       <Route path="/bowler-login" component={BowlerLogin} />
+      <Route path="/claim/verify" component={ClaimVerify} />
       <Route path="/bowler" component={BowlerDashboard} />
       <Route path="/bowler-dashboard" component={BowlerDashboard} />
       <Route path="/bowler-confirmation" component={BowlerConfirmation} />

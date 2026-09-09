@@ -69,6 +69,22 @@ export async function rawExec(query: string, params: unknown[] = []): Promise<{ 
   return result as unknown as { insertId: number; affectedRows: number };
 }
 
+/** Run related state changes as one atomic database transaction. */
+export async function withDbTransaction<T>(work: (connection: mysql2.PoolConnection) => Promise<T>): Promise<T> {
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await work(connection);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 // ─── BOWLING CENTERS ─────────────────────────────────────────────────────────
 export async function getAllCenters() {
   return rawQuery("SELECT * FROM bowling_centers ORDER BY centerCode");

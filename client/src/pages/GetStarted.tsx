@@ -12,8 +12,8 @@ const steps = [
   },
   {
     number: "02",
-    title: "Create your event profile",
-    detail: "Confirm your information, choose a password, and add the contact details your event team may need.",
+    title: "Verify your roster email",
+    detail: "Confirm your roster details and claim code, then use the secure email button before choosing a password.",
     icon: UsersRound,
   },
   {
@@ -92,9 +92,9 @@ export default function GetStarted() {
           <aside className="rounded-3xl border border-white/15 bg-slate-950/60 p-6 shadow-2xl shadow-cyan-950/50 backdrop-blur">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Before you begin</p>
             <div className="mt-5 space-y-4">
-              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" /><p className="text-sm leading-6 text-slate-200">Enter the claim code printed next to your name during account creation.</p></div>
+              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" /><p className="text-sm leading-6 text-slate-200">Enter the claim code printed next to your name and the email address already listed on your roster.</p></div>
               <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" /><p className="text-sm leading-6 text-slate-200">Use your legal name so the app can match your event roster correctly.</p></div>
-              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" /><p className="text-sm leading-6 text-slate-200">Plan to arrive <strong className="text-white">30 minutes early</strong>; check-in and event lines can be busy.</p></div>
+              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" /><p className="text-sm leading-6 text-slate-200">No smartphone or prefer not to use the app? Ask your Event Director for the paper-ticket substitute provided with team shirts.</p></div>
             </div>
           </aside>
         </div>

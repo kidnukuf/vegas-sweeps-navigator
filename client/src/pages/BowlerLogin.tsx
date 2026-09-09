@@ -87,6 +87,7 @@ export default function BowlerLogin() {
   const [suCenterName, setSuCenterName] = useState<string>("");
   const [showCenterPicker, setShowCenterPicker] = useState(false);
   const [centerSearch, setCenterSearch] = useState("");
+  const [claimEmailRequested, setClaimEmailRequested] = useState(false);
   const suTurnstileRef = useRef<any>(null);
 
   // Resolve eventId from domain/group slug — fully isolated per website
@@ -105,6 +106,11 @@ export default function BowlerLogin() {
     ? registrationEventId
     : sessionEventId ?? (Number((groupEventData as any)?.id) || null);
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: eventId ?? 0 }, { enabled: tab === "signup" && !!eventId });
+  const claimPolicy = trpc.claimAccess.policy.useQuery(
+    { eventId: eventId ?? 0 },
+    { enabled: tab === "signup" && !!eventId }
+  );
+  const claimVerificationRequired = Boolean(claimPolicy.data?.emailVerificationRequired);
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
     onSuccess: (data) => {
@@ -148,6 +154,27 @@ export default function BowlerLogin() {
     },
   });
 
+  const requestClaimVerification = trpc.claimAccess.requestEmailVerification.useMutation({
+    onSuccess: (result) => {
+      if (result.delivery === "sent") {
+        setClaimEmailRequested(true);
+        toast.success("Verification email sent. Open the secure button in that email within 15 minutes.");
+        return;
+      }
+      if (result.delivery === "throttled") {
+        setClaimEmailRequested(true);
+        toast.info(`Please wait ${result.retryAfterSeconds} seconds before requesting another email.`);
+        return;
+      }
+      toast.error("Email verification is not active yet. Your claim code has not been redeemed; please contact your Event Director for a paper ticket or help.");
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      suTurnstileRef.current?.reset();
+      setSuToken("");
+    },
+  });
+
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) return toast.error("Open your event’s registration link to sign in.");
@@ -159,10 +186,27 @@ export default function BowlerLogin() {
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) return toast.error("Open your event’s registration link to create an account.");
-    if (!suFirst || !suLast || !suPass) return toast.error("Please fill in all fields.");
+    if (!suFirst || !suLast) return toast.error("Please enter your first and last name.");
     if (!suCenterId) return toast.error("Please select your bowling center.");
-    if (suPass !== suPass2) return toast.error("Passwords do not match.");
     if (!suToken) return toast.error("Please complete the security check.");
+    if (claimPolicy.isLoading) return toast.info("Checking your event’s registration requirements…");
+    if (claimVerificationRequired) {
+      if (!suEmail.trim()) return toast.error("Enter the email address already listed on your event roster.");
+      if (!suClaimCode.trim()) return toast.error("Enter the claim code provided at league night.");
+      requestClaimVerification.mutate({
+        eventId,
+        centerId: suCenterId,
+        firstName: suFirst.trim(),
+        lastName: suLast.trim(),
+        rosterEmail: suEmail.trim(),
+        claimCode: suClaimCode.trim().toUpperCase(),
+        origin: window.location.origin,
+        turnstileToken: suToken,
+      });
+      return;
+    }
+    if (!suPass) return toast.error("Please create a password.");
+    if (suPass !== suPass2) return toast.error("Passwords do not match.");
     signUp.mutate({
       firstName: suFirst.trim(),
       lastName: suLast.trim(),
@@ -293,7 +337,7 @@ export default function BowlerLogin() {
                 <div className="bowler-info-box mb-4">
                 <span className="text-amber-300 font-semibold text-sm">📋 Name Verification</span>
                 <p className="text-white/70 text-xs mt-1">
-                  Your first name, last name, and bowling center must match the roster exactly. If you have trouble, contact your Event Director.
+                  Your first name, last name, and bowling center must match the roster exactly. When claim codes are active, the roster email and claim code are also required before you create a password.
                 </p>
               </div>
               <form onSubmit={handleSignUp} className="space-y-4">
@@ -343,46 +387,34 @@ export default function BowlerLogin() {
                     className="bowler-input uppercase tracking-widest"
                     placeholder="e.g. BOB-7F3K"
                     value={suClaimCode}
-                    onChange={(e) => setSuClaimCode(e.target.value.toUpperCase())}
+                    onChange={(e) => { setSuClaimCode(e.target.value.toUpperCase()); setClaimEmailRequested(false); }}
                     autoComplete="off"
                   />
                   <p className="text-white/40 text-[11px] mt-1">
-                    Your program director hands these out on league night. Required if your league uses claim codes.
+                    Your program director hands these out on league night. {claimVerificationRequired ? "This event requires it." : "Required if your league uses claim codes."}
                   </p>
                 </div>
                 <div>
-                  <Label className="bowler-label">Email <span className="text-white/40">(optional)</span></Label>
+                  <Label className="bowler-label">Email {claimVerificationRequired ? <span className="text-amber-300">(roster email required)</span> : <span className="text-white/40">(optional)</span>}</Label>
                   <Input
                     className="bowler-input"
                     type="email"
                     placeholder="your@email.com"
                     value={suEmail}
-                    onChange={(e) => setSuEmail(e.target.value)}
+                    onChange={(e) => { setSuEmail(e.target.value); setClaimEmailRequested(false); }}
                     autoComplete="email"
                   />
                 </div>
-                <div>
-                  <Label className="bowler-label">Create Password</Label>
-                  <Input
-                    className="bowler-input"
-                    type="password"
-                    placeholder="At least 6 characters"
-                    value={suPass}
-                    onChange={(e) => setSuPass(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div>
-                  <Label className="bowler-label">Confirm Password</Label>
-                  <Input
-                    className="bowler-input"
-                    type="password"
-                    placeholder="Repeat password"
-                    value={suPass2}
-                    onChange={(e) => setSuPass2(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </div>
+                {!claimVerificationRequired && <>
+                  <div>
+                    <Label className="bowler-label">Create Password</Label>
+                    <Input className="bowler-input" type="password" placeholder="At least 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} autoComplete="new-password" />
+                  </div>
+                  <div>
+                    <Label className="bowler-label">Confirm Password</Label>
+                    <Input className="bowler-input" type="password" placeholder="Repeat password" value={suPass2} onChange={(e) => setSuPass2(e.target.value)} autoComplete="new-password" />
+                  </div>
+                </>}
 
                 {/* Turnstile widget */}
                 <div className="flex justify-center pt-1">
@@ -398,12 +430,19 @@ export default function BowlerLogin() {
 
                 <Button
                   type="submit"
-                  disabled={signUp.isPending || !suToken}
+                  disabled={signUp.isPending || requestClaimVerification.isPending || !suToken || claimPolicy.isLoading}
                   className="bowler-btn-primary w-full"
                 >
-                  {signUp.isPending ? "Verifying name…" : "Create My Account →"}
+                  {claimVerificationRequired
+                    ? requestClaimVerification.isPending ? "Sending verification…" : "Verify Email to Continue →"
+                    : signUp.isPending ? "Verifying name…" : "Create My Account →"}
                 </Button>
               </form>
+              {claimVerificationRequired && (
+                <div className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-relaxed text-amber-100">
+                  {claimEmailRequested ? <><strong>Check your inbox.</strong> Use the verification button in the email to set your password. The secure link expires after 15 minutes.</> : <><strong>Need a paper substitute instead?</strong> Ask your Event Director to add you to the paper-ticket queue. That record can be supplied to your team captain with event shirts.</>}
+                </div>
+              )}
               <p className="text-center text-white/40 text-xs mt-4">
                 Already have an account?{" "}
                 <button className="text-amber-400 underline" onClick={() => setTab("signin")}>

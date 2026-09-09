@@ -21,9 +21,9 @@ import type { TrpcContext } from "../_core/context";
 import { formatPassportScannerName } from "../passportDisplay";
 import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
 import { isPassportTypeAllowedAtDoor } from "@shared/doorPassportScan";
+import { verifyTurnstileToken } from "../turnstile";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
-const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
 
 function signToken(payload: object) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_TTL });
@@ -44,41 +44,6 @@ async function requireEventDirectorToolAccess(ctx: TrpcContext, token: string): 
   const session = await resolveEdSession(ctx);
   if (session) return;
   throw new TRPCError({ code: "FORBIDDEN", message: "Event Director access required." });
-}
-
-// ─── Cloudflare Turnstile server-side verification ────────────────────────────
-async function verifyTurnstile(token: string, ip?: string): Promise<void> {
-  // In test/CI environments where no secret is configured, skip verification
-  if (!TURNSTILE_SECRET || TURNSTILE_SECRET === "") return;
-
-  const body = new URLSearchParams({
-    secret: TURNSTILE_SECRET,
-    response: token,
-    ...(ip ? { remoteip: ip } : {}),
-  });
-
-  let result: { success: boolean; "error-codes"?: string[] };
-  try {
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body.toString(),
-    });
-    result = (await res.json()) as typeof result;
-  } catch {
-    // Network error — fail open in dev, fail closed in production
-    if (process.env.NODE_ENV === "production") {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "Security check could not be verified. Please try again." });
-    }
-    return;
-  }
-
-  if (!result.success) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Security check failed. Please refresh the page and try again.",
-    });
-  }
 }
 
 // ─── SHARED: look up a bowler by full name + event (+ optional centerId) ─────
@@ -309,15 +274,15 @@ export const bowlerAuthRouter = router({
       // Verify Turnstile token first
       const ip = (ctx as any)?.req?.headers?.["cf-connecting-ip"] as string | undefined
         ?? (ctx as any)?.req?.ip as string | undefined;
-      await verifyTurnstile(input.turnstileToken, ip);
+      await verifyTurnstileToken(input.turnstileToken, ip);
 
       // Look up bowler by first name + last name + center (3-field match)
       let bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId, input.centerId);
 
       // ── CLAIM-CODE SECURITY (fall-season) ───────────────────────────────────
-      // Enforcement is automatic & seamless: if ANY claim codes exist for this
-      // event, a valid unused code matching THIS bowler is required. If no codes
-      // exist for the event yet, sign-up behaves exactly as before (legacy).
+      // Events with issued claim codes must use the separate email-verified
+      // claim flow. This legacy endpoint never receives a verified-email token,
+      // so refusing it here prevents a direct call from redeeming a code early.
       const codesForEvent = await rawQuery<{ c: number }>(
         `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
         [input.eventId]
@@ -326,55 +291,10 @@ export const bowlerAuthRouter = router({
       let redeemedCodeId: number | null = null;
 
       if (claimRequired) {
-        const entered = (input.claimCode ?? "").trim().toUpperCase();
-        if (!entered) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message:
-              "A claim code is required to sign up. Enter the code from your league-night paper, or contact your Event Director.",
-          });
-        }
-        const codeRows = await rawQuery<{ id: number; bowlerId: number; status: string }>(
-          `SELECT id, bowlerId, status FROM bowler_claim_codes WHERE eventId = ? AND code = ? LIMIT 1`,
-          [input.eventId, entered]
-        );
-        const codeRow = codeRows[0];
-        if (!codeRow) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message:
-              "That claim code was not recognized. Please re-check it, or contact your Event Director.",
-          });
-        }
-        if (codeRow.status !== "unused") {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "That claim code has already been used (or was voided). If you didn't use it, contact your Event Director for a reissue.",
-          });
-        }
-        const codeMatchedBowler = await findBowlerByName(
-          input.firstName,
-          input.lastName,
-          input.eventId,
-          input.centerId,
-          codeRow.bowlerId
-        );
-        if (!codeMatchedBowler) {
-          // Code belongs to a different bowler than the entered name/center.
-          // Looking it up by its ID keeps same-name bowlers at one center distinct.
-          notifyED({ category: "security" as const,
-            title: "⚠️ Claim Code / Name Mismatch on Sign-Up",
-            content: `A claim code was entered that does not match the name+center provided.\n\nName entered: ${input.firstName} ${input.lastName}\nCode: ${entered}\nCode belongs to bowlerId: ${codeRow.bowlerId}`,
-          }).catch(() => {});
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message:
-            "This claim code does not belong to the name and bowling center entered. Please verify your details or contact your Event Director.",
-          });
-        }
-        bowler = codeMatchedBowler;
-        redeemedCodeId = codeRow.id;
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Claim-code registration now requires roster-email verification. Start with the verification step on the Create Account form.",
+        });
       }
 
       if (!bowler) {
@@ -490,7 +410,7 @@ export const bowlerAuthRouter = router({
       // Verify Turnstile token first
       const ip = (ctx as any)?.req?.headers?.["cf-connecting-ip"] as string | undefined
         ?? (ctx as any)?.req?.ip as string | undefined;
-      await verifyTurnstile(input.turnstileToken, ip);
+      await verifyTurnstileToken(input.turnstileToken, ip);
 
       const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId);
 

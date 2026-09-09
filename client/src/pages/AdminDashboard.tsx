@@ -20,6 +20,7 @@ import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { BulletinModerationPanel } from "@/components/BulletinModerationPanel";
 import IncompleteGuestInformationPanel from "@/components/IncompleteGuestInformationPanel";
 import LeagueNameManager from "@/components/LeagueNameManager";
+import PaperTicketQueue from "@/components/PaperTicketQueue";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -2023,16 +2024,19 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
           </div>
         )}
         {activeTab === "passports" && (
-          <PassportManager
-            bowlers={bowlers as Bowler[]}
-            eventId={EVENT_ID}
-            passportSearch={passportSearch}
-            setPassportSearch={setPassportSearch}
-            passportFilter={passportFilter}
-            setPassportFilter={setPassportFilter}
-            refetch={refetch}
-            onViewBowler={setImpersonateBowlerId}
-          />
+          <>
+            <PassportManager
+              bowlers={bowlers as Bowler[]}
+              eventId={EVENT_ID}
+              passportSearch={passportSearch}
+              setPassportSearch={setPassportSearch}
+              passportFilter={passportFilter}
+              setPassportFilter={setPassportFilter}
+              refetch={refetch}
+              onViewBowler={setImpersonateBowlerId}
+            />
+            <PaperTicketQueue eventId={EVENT_ID} bowlers={bowlers as Bowler[]} />
+          </>
         )}
 
         {activeTab === "audit" && (

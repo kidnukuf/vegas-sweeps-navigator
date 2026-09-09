@@ -973,6 +973,54 @@ export const bowlerClaimCodes = mysqlTable("bowler_claim_codes", {
 export type BowlerClaimCode = typeof bowlerClaimCodes.$inferSelect;
 export type InsertBowlerClaimCode = typeof bowlerClaimCodes.$inferInsert;
 
+// ─── BOWLER CLAIM EMAIL VERIFICATIONS ─────────────────────────────────────────
+// The verification token is never persisted in plaintext. Only a SHA-256 digest
+// of the opaque link token and of the normalized roster email are retained.
+export const bowlerClaimEmailVerifications = mysqlTable("bowler_claim_email_verifications", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  bowlerId: int("bowlerId").notNull(),
+  claimCodeId: int("claimCodeId").notNull(),
+  emailHash: varchar("emailHash", { length: 64 }).notNull(),
+  tokenHash: varchar("tokenHash", { length: 64 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "verified", "consumed", "expired", "revoked"]).default("pending").notNull(),
+  requestedAt: bigint("requestedAt", { mode: "number" }).notNull(),
+  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
+  verifiedAt: bigint("verifiedAt", { mode: "number" }),
+  consumedAt: bigint("consumedAt", { mode: "number" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  bowlerEventIdx: index("bowler_claim_email_verifications_bowler_event_idx").on(table.bowlerId, table.eventId),
+  expiryIdx: index("bowler_claim_email_verifications_expiry_idx").on(table.expiresAt),
+}));
+
+export type BowlerClaimEmailVerification = typeof bowlerClaimEmailVerifications.$inferSelect;
+export type InsertBowlerClaimEmailVerification = typeof bowlerClaimEmailVerifications.$inferInsert;
+
+// ─── BOWLER PAPER TICKET REQUESTS ─────────────────────────────────────────────
+// This is an ED-operated operational queue. It intentionally does not revoke
+// digital passes or claim codes; the director retains that separate control.
+export const bowlerPaperTicketRequests = mysqlTable("bowler_paper_ticket_requests", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  eventId: int("eventId").notNull(),
+  bowlerId: int("bowlerId").notNull(),
+  status: mysqlEnum("status", ["requested", "ready", "delivered", "restored"]).default("requested").notNull(),
+  requestedBy: mysqlEnum("requestedBy", ["bowler", "event_director", "owner"]).notNull(),
+  note: varchar("note", { length: 500 }),
+  referenceCode: varchar("referenceCode", { length: 32 }).notNull().unique(),
+  requestedAt: bigint("requestedAt", { mode: "number" }).notNull(),
+  handledAt: bigint("handledAt", { mode: "number" }),
+  handledByStaffId: int("handledByStaffId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  bowlerEventUnique: uniqueIndex("bowler_paper_ticket_requests_bowler_event_unique").on(table.bowlerId, table.eventId),
+  eventStatusIdx: index("bowler_paper_ticket_requests_event_status_idx").on(table.eventId, table.status),
+}));
+
+export type BowlerPaperTicketRequest = typeof bowlerPaperTicketRequests.$inferSelect;
+export type InsertBowlerPaperTicketRequest = typeof bowlerPaperTicketRequests.$inferInsert;
+
 // ─── AD INQUIRIES ("Advertise Here" leads → ED Advertiser Leads inbox) ────────
 // Submitted when someone taps the "Advertise Here" placeholder in a portal ad
 // slot. Kept separate from bowler login-help (support_messages).
