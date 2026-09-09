@@ -76,6 +76,42 @@ describe("Owner Event Director assignment at event creation", () => {
   });
 });
 
+describe("Owner Event Director credential creation", () => {
+  it("creates a new scoped director with an optional valid company and rejects duplicate usernames", async () => {
+    const stamp = Date.now();
+    const company = await rawExec("INSERT INTO companies (name, slug) VALUES (?, ?)", [`Director Create ${stamp}`, `director-create-${stamp}`]);
+    const username = `created-director-${stamp}`;
+    let staffId: number | undefined;
+
+    try {
+      const owner = appRouter.createCaller(ownerContext());
+      const created = await owner.ownerDashboard.createDirector({
+        name: "Created Event Director",
+        username,
+        password: "ValidPassword123!",
+        companyId: company.insertId,
+        eventIds: [],
+      });
+      staffId = created.staffId;
+
+      const [director] = await rawQuery<{ name: string; username: string; companyId: number; accessRole: string }>(
+        "SELECT name, username, companyId, accessRole FROM ed_staff WHERE id = ?",
+        [staffId],
+      );
+      expect(director).toMatchObject({ name: "Created Event Director", username, companyId: company.insertId, accessRole: "event_director" });
+      await expect(owner.ownerDashboard.createDirector({
+        name: "Duplicate Director",
+        username,
+        password: "AnotherValid123!",
+        eventIds: [],
+      })).rejects.toMatchObject({ code: "CONFLICT" });
+    } finally {
+      if (staffId) await rawQuery("DELETE FROM ed_staff WHERE id = ?", [staffId]);
+      await rawQuery("DELETE FROM companies WHERE id = ?", [company.insertId]);
+    }
+  });
+});
+
 describe("creator-owned Event Director router isolation", () => {
   it("returns only the director’s own event and rejects another director’s read or write", async () => {
     const stamp = Date.now();

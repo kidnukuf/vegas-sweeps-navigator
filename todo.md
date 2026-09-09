@@ -1211,3 +1211,8 @@
 - [x] Inspect each Owner Portal Attention Required warning and identify its safe remediation workspace
 - [x] Make actionable warnings clickable with event-scoped navigation while keeping non-actionable summaries as status text
 - [x] Add regression coverage and validate Owner warning destinations before publishing
+
+## Active Owner Add Event Director Repair
+- [x] Trace the nonresponsive Add Event Director button through dialog and form state
+- [x] Repair the confirmed Owner Portal Event Director creation failure without changing existing accounts
+- [x] Add focused regression coverage and validate the creation flow before publishing
