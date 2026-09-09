@@ -1216,3 +1216,8 @@
 - [x] Trace the nonresponsive Add Event Director button through dialog and form state
 - [x] Repair the confirmed Owner Portal Event Director creation failure without changing existing accounts
 - [x] Add focused regression coverage and validate the creation flow before publishing
+
+## Active Persistent Owner Add Event Director Click Repair
+- [x] Reproduce the reported click-blocking behavior in the Owner Portal using a real authenticated interaction path
+- [x] Identify and remove any overlay, pointer-event, or layout layer intercepting the creation control
+- [x] Replace the interaction with an accessible reliable entry point and verify actual click activation before publishing
