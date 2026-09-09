@@ -1151,6 +1151,9 @@
 - [x] Add secured Bowler Portal confirmation and Event Director paper-ticket queue controls
 - [ ] Activate the authenticated Bowl Vegas SMTP sender after credentials are supplied and validate successful delivery
 
+## Event Director League-Name Prompt Disclosure
+- [x] Hide league-name prompts inside a clear click-to-expand control in the Event Director Portal
+
 ## Active Fictional QR Testing Roster
 - [x] Read the event test Google Sheet tab and map its roster columns without changing the workbook
 - [x] Prepare a clearly fictional presidential roster across eight real bowling centers with humorous team names for QR testing
