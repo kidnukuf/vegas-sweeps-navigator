@@ -18,3 +18,9 @@ Resend generated the manual DNS verification requirements for `bowlvegas.com`: o
 
 This preview was read from the authenticated Resend setup page. It is not a record of completed DNS changes. Before creating any of these records, inspect the active Cloudflare zone for existing records at the same names and obtain explicit user confirmation.
 - Cloudflare and R2 credentials previously pasted into conversation remain out of scope and must not be reused for this workflow.
+
+## Approved DNS change — 2026-09-09
+
+The user explicitly confirmed the reviewed DNS change. A collision check had already confirmed that the names were unused in the active `bowlvegas.com` Cloudflare zone. The following four records were then created successfully with automatic TTL and no proxying: DKIM TXT at `resend._domainkey`, sending MX at `send` (priority 10), sending SPF TXT at `send`, and the optional monitoring-only DMARC TXT at `_dmarc`.
+
+Resend’s authenticated domain page now lists `bowlvegas.com` as **pending** and reports that it is checking DNS. At the time checked, DKIM, the sending MX, and SPF remained pending. The provider cautions that propagation may take several hours. No inbound-email receiving setting was enabled, no website-routing record was touched, and no email was sent.

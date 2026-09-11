@@ -1277,3 +1277,6 @@
 - [x] Map Column Y, headed #2 Lane, as the lane assignment for a bowler's second squad without changing first-squad lane assignments
 - [x] Display the saved second-squad lane alongside the existing second-squad schedule where applicable
 - [x] Add regression coverage, validate the import mapping, and publish the update
+
+- [x] Fix claim-code PDF card instructions so each cut-out card contains its own wrapped, non-overlapping instructions within the card boundaries
+- [x] Generate and visually verify the corrected claim-code PDF layout; add regression coverage and checkpoint the change

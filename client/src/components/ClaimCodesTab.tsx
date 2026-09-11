@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import { getClaimCodeIntroductionUrl } from "@/lib/claimCodeLinks";
+import { getClaimCardInstructionLines } from "@/lib/claimCardLayout";
 
 /**
  * ClaimCodesTab — Event Director tool to generate, view, look up, and reissue
@@ -284,11 +285,20 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
 
       doc.setDrawColor(180);
       doc.setLineWidth(0.35);
-      doc.line(x + 8, y + cardHeight - 21, x + cardWidth - 8, y + cardHeight - 21);
+      const instructionRuleY = y + cardHeight - 29;
+      doc.line(x + 8, instructionRuleY, x + cardWidth - 8, instructionRuleY);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.8);
+      doc.setFontSize(5.8);
       doc.setTextColor(85);
-      doc.text("Each bowler: scan your QR → Create Account → enter your claim code.", x + 8, y + cardHeight - 9, { maxWidth: cardWidth - 16 });
+      const instructionLines = getClaimCardInstructionLines();
+      doc.text(instructionLines[0], x + cardWidth / 2, y + cardHeight - 20, {
+        align: "center",
+        maxWidth: cardWidth - 18,
+      });
+      doc.text(instructionLines[1], x + cardWidth / 2, y + cardHeight - 12, {
+        align: "center",
+        maxWidth: cardWidth - 18,
+      });
       doc.setTextColor(0);
     });
 
