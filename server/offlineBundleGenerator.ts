@@ -15,6 +15,7 @@
 
 import { loadDoorGuests, ensureReentryPool, getEventById, type DoorMode } from "./db";
 import { OFFLINE_SCAN_FEEDBACK } from "./offlineScannerFeedback";
+import { OFFLINE_SCANNER_MIN_TOKEN_LENGTH } from "./offlineScannerInput";
 
 function makeReentryToken(eventId: number, mode: DoorMode, zone: string, index: number): string {
   const m = mode === "banquet" ? "BQ" : "PP";
@@ -264,7 +265,7 @@ export async function generateOfflineBundle(
     </div>
     <div class="lane-body" id="laneABody">
       <div class="lane-idle">Ready to Scan</div>
-      <div style="font-size:.85rem;color:var(--muted)">Scanner A — keyboard focus active</div>
+      <div style="font-size:.85rem;color:var(--muted)">Scanner A — global capture active; no mouse refocus required</div>
     </div>
     <div class="lane-input-row">
       <input class="lane-input" id="laneAInput" placeholder="Manual entry or scanner input…" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -277,7 +278,7 @@ export async function generateOfflineBundle(
     </div>
     <div class="lane-body" id="laneBBody">
       <div class="lane-idle">Ready to Scan</div>
-      <div style="font-size:.85rem;color:var(--muted)">Scanner B — click input to focus</div>
+      <div style="font-size:.85rem;color:var(--muted)">Scanner B — optional dedicated input</div>
     </div>
   <div class="lane-input-row">
       <input class="lane-input" id="laneBInput" placeholder="Manual entry or scanner input…" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -352,6 +353,7 @@ const EVENT_NAME  = ${JSON.stringify(eventName)};
 const STORAGE_KEY = ${JSON.stringify(storageKey)};
 const SCAN_LOG_KEY = ${JSON.stringify(scanLogKey)};
 const FEEDBACK = ${JSON.stringify(OFFLINE_SCAN_FEEDBACK)};
+const SCANNER_MIN_TOKEN_LENGTH = ${OFFLINE_SCANNER_MIN_TOKEN_LENGTH};
 
 // When this bundle is served through the Raspberry Pi local relay, each scan
 // is also sent to the separate Event Director monitor. This request is not
@@ -596,33 +598,39 @@ function escHtml(s) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// KEYBOARD CAPTURE (Scanner A = global keyboard; Scanner B = its input only)
+// KEYBOARD CAPTURE (Scanner A = global keyboard; Scanner B = optional dedicated input)
 // ═══════════════════════════════════════════════════════════════════════════
 let bufA = '', lastKeyA = 0;
 let bufB = '', lastKeyB = 0;
 
+// Scanner A is deliberately captured during the capture phase. A USB QR scanner
+// behaves like a keyboard and normally types into whichever element is focused.
+// The rapid-token heuristic lets the Pi accept scans even when a search box,
+// manual field, or monitor-related control has focus. It also prevents the
+// browser from inserting the QR text into the focused field.
 document.addEventListener('keydown', function(e) {
-  // If focus is in Scanner B's input, let that input handle it
-  if (document.activeElement === document.getElementById('laneBInput')) return;
-  // If focus is in any other input/textarea, ignore
-  const t = e.target;
-  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-
   const now = Date.now();
   if (now - lastKeyA > 120) bufA = '';
   lastKeyA = now;
 
   if (e.key === 'Enter') {
-    const code = bufA;
+    const code = bufA.trim();
     bufA = '';
-    if (code) handleScan(code, 'A');
-    e.preventDefault();
+    if (code.length >= SCANNER_MIN_TOKEN_LENGTH) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const active = document.activeElement;
+      if (active && (active.id === 'laneAInput' || active.id === 'laneBInput')) active.value = '';
+      handleScan(code, 'A');
+      return;
+    }
     return;
   }
   if (e.key.length === 1) bufA += e.key;
-});
+}, true);
 
-// Scanner B uses its dedicated input
+// Scanner B remains available as an optional dedicated input for a two-scanner
+// station. Scanner A requires no focused entry field or mouse repositioning.
 const laneBInput = document.getElementById('laneBInput');
 laneBInput.addEventListener('keydown', function(e) {
   const now = Date.now();

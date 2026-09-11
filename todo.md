@@ -1280,3 +1280,9 @@
 
 - [x] Fix claim-code PDF card instructions so each cut-out card contains its own wrapped, non-overlapping instructions within the card boundaries
 - [x] Generate and visually verify the corrected claim-code PDF layout; add regression coverage and checkpoint the change
+
+
+## Active Raspberry Pi Scanner Focus Reliability
+- [x] Verify whether the offline scanner accepts USB scanner keystrokes without a manually focused entry field
+- [x] Add resilient automatic focus recovery or global scan capture so repeated scans do not require mouse repositioning
+- [x] Add scanner-input regression coverage, update operator instructions, and publish the verified workflow
