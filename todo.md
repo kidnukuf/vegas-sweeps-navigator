@@ -1141,7 +1141,7 @@
 
 ## Active Claim-Code Email Verification and Paper-Ticket Access
 - [x] Require a roster-matching email address and valid claim code before a bowler can begin account creation
-- [ ] Send a short-lived, signed email-verification button link before password creation and safely complete the verified claim
+- [x] Send a short-lived, signed email-verification button link before password creation and safely complete the verified claim
 - [x] Add Event Director-controlled paper-ticket requests and printable ticket-substitute records for bowlers who do not use the app
 - [x] Preserve staff scoping, audit access changes, add regression coverage, and validate the secure alternative-access flow
 
@@ -1243,7 +1243,7 @@
 ## Active Branded Email Verification Sender Setup
 - [ ] Inspect Cloudflare Email Routing availability for a Bowl Vegas inbound address without changing DNS or routing
 - [x] Identify Cloudflare Email Sending as an authenticated outbound option for verification-button email from a Bowl Vegas address
-- [ ] Prepare the secure claim-code email verification activation plan and request only the approved sender credentials
+- [x] Prepare the secure claim-code email verification activation plan and request only the approved sender credentials
 
 ## Active Cloudflare Token Policy Validation
 - [x] Verify that the supplied permission group is Account API Tokens Write, not an email-sending permission
@@ -1268,9 +1268,9 @@
 - [ ] Verify the latest sender token and leave the supplied R2 credentials unused for email delivery
 
 ## Active Provider-Independent Claim Verification and Paper Tickets
-- [ ] Preserve the Cloudflare token failure as a blocked sender configuration without requesting further manual token retries
-- [ ] Complete claim-code and roster-email verification state handling independently of delivery-provider credentials
-- [ ] Add Event Director paper-ticket queue and printable substitute records for bowlers who do not use the app
+- [x] Preserve the Cloudflare token failure as a blocked sender configuration without requesting further manual token retries
+- [x] Complete claim-code and roster-email verification state handling independently of delivery-provider credentials
+- [x] Add Event Director paper-ticket queue and printable substitute records for bowlers who do not use the app
 - [ ] Connect a separately approved transactional-email sender and verify a live secure-button delivery
 
 ## Active Second-Squad Lane Header Update
