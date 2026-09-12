@@ -1265,7 +1265,7 @@
 
 ## Active Latest Cloudflare Credential Set
 - [ ] Store only the latest standalone Cloudflare sender token for email verification
-- [x] Verify the latest sender token and leave the supplied R2 credentials unused for email delivery
+- [ ] Verify the latest sender token; the supplied R2 credentials remain unused for email delivery
 
 ## Active Provider-Independent Claim Verification and Paper Tickets
 - [x] Preserve the Cloudflare token failure as a blocked sender configuration without requesting further manual token retries
