@@ -23,7 +23,7 @@ export const advertisingProspectsRouter = router({
     const prospect = prospects[0];
     if (!prospect) throw new TRPCError({ code: "NOT_FOUND", message: "Advertising prospect not found for this event." });
     await rawExec(`UPDATE advertising_prospects SET researchStatus = ?, ownerNotes = ?, contactedAt = CASE WHEN ? = 1 AND contactedAt IS NULL THEN NOW() ELSE contactedAt END WHERE id = ?`, [input.researchStatus, input.ownerNotes?.trim() || null, input.markContacted ? 1 : 0, prospect.id]);
-    await writeAuditLog({ eventId: input.eventId, actorRole: "Owner", actorId: owner.userId, action: "owner_update_advertising_prospect", targetId: prospect.id, targetType: "advertising_prospect", details: `Owner changed prospect ${prospect.businessName} from ${prospect.researchStatus} to ${input.researchStatus}` });
+    await writeAuditLog({ eventId: input.eventId, actorRole: "Owner", actorId: owner.userId, action: "owner_update_advertising_prospect", targetType: "advertising_prospect", details: `Owner changed prospect ${prospect.businessName} from ${prospect.researchStatus} to ${input.researchStatus}` });
     return { success: true };
   }),
   generateOutreachDraft: publicProcedure.input(z.object({ id: z.string().uuid(), eventId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
@@ -64,7 +64,7 @@ export const advertisingProspectsRouter = router({
     }
     const draft = z.object({ subject: z.string().trim().min(8).max(180), body: z.string().trim().min(80).max(2_500) }).safeParse(generated);
     if (!draft.success) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The draft generator returned an invalid response. No email was sent." });
-    await writeAuditLog({ eventId: input.eventId, actorRole: "Owner", actorId: owner.userId, action: "owner_generated_advertising_outreach_draft", targetId: prospect.id, targetType: "advertising_prospect", details: `Generated a review-only outreach email draft for ${prospect.businessName}; no email was sent.` });
+    await writeAuditLog({ eventId: input.eventId, actorRole: "Owner", actorId: owner.userId, action: "owner_generated_advertising_outreach_draft", targetType: "advertising_prospect", details: `Generated a review-only outreach email draft for ${prospect.businessName}; no email was sent.` });
     return { businessName: prospect.businessName, ...draft.data };
   }),
 });

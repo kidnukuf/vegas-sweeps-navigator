@@ -35,7 +35,6 @@ export default function CoordinatorManagement() {
   const finalReady = trpc.coordinator.submissions.markReadyForFinalImport.useMutation({ onSuccess: async () => { await Promise.all([utils.coordinator.submissions.listForEvent.invalidate(), utils.coordinator.submissions.getForEdReview.invalidate()]); } });
   const followUp = trpc.coordinator.submissions.requestCoordinatorFollowUp.useMutation({ onSuccess: async () => { await Promise.all([utils.coordinator.submissions.listForEvent.invalidate(), utils.coordinator.submissions.getForEdReview.invalidate()]); } });
   const correct = trpc.coordinator.submissions.correctRow.useMutation({ onSuccess: async () => { await Promise.all([utils.coordinator.submissions.listForEvent.invalidate(), utils.coordinator.submissions.getForEdReview.invalidate()]); } });
-  const artifactDownload = trpc.coordinator.submissions.artifactDownload.useMutation();
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [centerId, setCenterId] = useState("none");
@@ -44,6 +43,7 @@ export default function CoordinatorManagement() {
   const [replacementForId, setReplacementForId] = useState<string | undefined>();
   const [issuedInvitation, setIssuedInvitation] = useState<{ code: string; signupUrl: string; emailTemplate: { subject: string; body: string } } | null>(null);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
+  const [artifactDownload, setArtifactDownload] = useState<{ isPending: boolean; error: { message: string } | null }>({ isPending: false, error: null });
   const [followUpNote, setFollowUpNote] = useState("");
   const [correctionRowId, setCorrectionRowId] = useState("");
   const [correctionField, setCorrectionField] = useState("email");
@@ -97,12 +97,16 @@ export default function CoordinatorManagement() {
     }
   };
   const openArtifact = async (artifactId: string) => {
+    setArtifactDownload({ isPending: true, error: null });
     try {
-      const artifact = await artifactDownload.mutateAsync({ artifactId });
+      const artifact = await utils.coordinator.submissions.artifactDownload.fetch({ artifactId });
       window.open(artifact.url, "_blank", "noopener,noreferrer");
     } catch (error) {
       console.error(error);
+      setArtifactDownload({ isPending: false, error: { message: error instanceof Error ? error.message : "Unable to download the coordinator artifact." } });
+      return;
     }
+    setArtifactDownload({ isPending: false, error: null });
   };
 
   if (!eventId) return <main className="min-h-screen bg-[#071018] p-8 text-slate-100"><p>Choose an event from the Event Director Portal before opening coordinator management.</p><button className="mt-4 rounded-lg bg-cyan-400 px-4 py-2 font-bold text-slate-950" onClick={() => setLocation("/ed")}>Return to Event Director Portal</button></main>;

@@ -104,7 +104,7 @@ export function summarizeCoordinatorRows(rows: ValidatedCoordinatorRow[]): Submi
     if (!row.data.phone) missingPhoneCount += 1;
     if (!row.errors.length) readyRowCount += 1;
   }
-  return { rowCount: rows.length, teamCount: [...teamKeys].filter(Boolean).length, readyRowCount, warningCount, errorCount, missingEmailCount, missingPhoneCount };
+  return { rowCount: rows.length, teamCount: Array.from(teamKeys).filter(Boolean).length, readyRowCount, warningCount, errorCount, missingEmailCount, missingPhoneCount };
 }
 
 export function hasRosterReadinessErrors(rows: ValidatedCoordinatorRow[]): boolean {
@@ -114,7 +114,7 @@ export function hasRosterReadinessErrors(rows: ValidatedCoordinatorRow[]): boole
     const key = `${row.data.leagueSession ?? ""}|${row.data.teamNumber ?? ""}|${row.data.teamName ?? ""}`;
     captainTeams.set(key, Boolean(captainTeams.get(key)) || isAffirmative(row.data.captain ?? ""));
   }
-  return [...captainTeams.values()].some((hasCaptain) => !hasCaptain);
+  return Array.from(captainTeams.values()).some((hasCaptain) => !hasCaptain);
 }
 
 export function isInvitationRedeemable(invitation: { redeemedAt?: Date | string | null; revokedAt?: Date | string | null; expiresAt: Date | string }, now = new Date()): boolean {

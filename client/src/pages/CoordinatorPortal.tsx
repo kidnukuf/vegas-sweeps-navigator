@@ -45,7 +45,7 @@ function matrixFromPastedGrid(value: string) {
 function base64FromBytes(bytes: Uint8Array) {
   let binary = "";
   const chunkSize = 0x8000;
-  for (let start = 0; start < bytes.length; start += chunkSize) binary += String.fromCharCode(...bytes.subarray(start, start + chunkSize));
+  for (let start = 0; start < bytes.length; start += chunkSize) binary += String.fromCharCode(...Array.from(bytes.subarray(start, start + chunkSize)));
   return btoa(binary);
 }
 

@@ -1307,11 +1307,11 @@
 - [x] Add regression coverage for event selection and publish a corrective checkpoint
 
 ## Current Session — QR Test Event Access Incident
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
-- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
 - [x] Run focused tests, production build, and visual verification; save a checkpoint
 
 ---
@@ -1340,11 +1340,11 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
-- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
 - [x] Run focused tests, production build, and visual verification; save a checkpoint
 
 ---
@@ -1373,11 +1373,11 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
-- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
 - [x] Run focused tests, production build, and visual verification; save a checkpoint
 
 ---
@@ -1406,11 +1406,11 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
-- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
 - [x] Run focused tests, production build, and visual verification; save a checkpoint
 
 ---
@@ -1439,11 +1439,11 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
-- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
 - [x] Run focused tests, production build, and visual verification; save a checkpoint
 
 ---
@@ -1472,7 +1472,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1505,7 +1505,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1538,7 +1538,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1571,7 +1571,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1604,7 +1604,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1637,7 +1637,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1670,7 +1670,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1703,7 +1703,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1736,7 +1736,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1769,7 +1769,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1802,7 +1802,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1835,7 +1835,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1868,7 +1868,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1901,7 +1901,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1934,7 +1934,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1967,7 +1967,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -1999,7 +1999,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -2031,7 +2031,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -2063,7 +2063,7 @@
 ---
 
 ## Current Session — QR Test Event Access Incident (continued)
-- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
 - [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
 - [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
 - [x] Verify the QR test event remains accessible and claim/email delivery remains paused
@@ -3714,3 +3714,13 @@
 
 ## Completed Session Items
 - [x] Provider-independent claim
+
+
+## Current Session — TypeScript Error Correction
+- [x] Inspect all 18 TypeScript diagnostics and identify their exact causes in advertisingProspects.ts and coordinator.logic.ts
+- [x] Apply minimal type-safe fixes without changing runtime behavior
+- [x] Add or update focused regression coverage for the corrected code paths
+- [x] Run TypeScript checking, focused tests, and production build
+- [x] Publish the verified TypeScript correction
+
+---
