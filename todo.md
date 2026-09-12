@@ -1252,7 +1252,7 @@
 
 ## Active Supplied Cloudflare Credential Verification
 - [ ] Verify the supplied API token’s actual Cloudflare permission scope without exposing it
-- [ ] Keep R2 endpoint and storage credentials out of the verification-email sender configuration
+- [x] Keep R2 endpoint and storage credentials out of the verification-email sender configuration
 - [ ] Store only an approved Email Sending credential through the project secret workflow
 
 ## Active Replacement Cloudflare Sender Token
@@ -1265,7 +1265,7 @@
 
 ## Active Latest Cloudflare Credential Set
 - [ ] Store only the latest standalone Cloudflare sender token for email verification
-- [ ] Verify the latest sender token and leave the supplied R2 credentials unused for email delivery
+- [x] Verify the latest sender token and leave the supplied R2 credentials unused for email delivery
 
 ## Active Provider-Independent Claim Verification and Paper Tickets
 - [x] Preserve the Cloudflare token failure as a blocked sender configuration without requesting further manual token retries
