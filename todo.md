@@ -1289,9 +1289,9 @@
 
 
 ## Active Catastrophic Check-In Backup Design
-- [ ] Define failure levels for banquet and pool-party admission, including scanner failure, app outage, network loss, power loss, and data inconsistency
-- [ ] Compare manual, offline, and hybrid backup admission-control options before implementation
-- [ ] Select a practical backup operating model, fallback materials, chain of custody, and reconciliation process
+- [x] Define failure levels for banquet and pool-party admission, including scanner failure, app outage, network loss, power loss, and data inconsistency
+- [x] Compare manual, offline, and hybrid backup admission-control options before implementation
+- [x] Select a practical backup operating model, fallback materials, chain of custody, and reconciliation process
 
 
 ## Active Coordinator Bowler Admission-Pass PDF
