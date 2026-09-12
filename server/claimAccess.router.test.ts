@@ -89,13 +89,13 @@ describe("claim access verification and paper-ticket lifecycle", () => {
       await expect(ownerDirector.claimAccess.paperTickets.updateStatus({ eventId: ownedEvent.insertId, requestId: ticket.id, status: "ready" })).resolves.toEqual({ success: true });
       await expect(ownerDirector.claimAccess.paperTickets.updateStatus({ eventId: ownedEvent.insertId, requestId: ticket.id, status: "delivered" })).resolves.toEqual({ success: true });
     } finally {
-      await rawQuery("DELETE FROM bowler_paper_ticket_requests WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
-      await rawQuery("DELETE FROM bowler_claim_email_verifications WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
-      await rawQuery("DELETE FROM bowler_claim_codes WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
-      await rawQuery("DELETE FROM bowlers WHERE id IN (?, ?)", [ownedBowler.insertId, blockedBowler.insertId]);
-      await rawQuery("DELETE FROM events WHERE id IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
-      await rawQuery("DELETE FROM ed_staff WHERE id IN (?, ?)", [ownerStaff.insertId, otherStaff.insertId]);
-      await rawQuery("DELETE FROM companies WHERE id = ?", [company.insertId]);
+      await rawExec("DELETE FROM bowler_paper_ticket_requests WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawExec("DELETE FROM bowler_claim_email_verifications WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawExec("DELETE FROM bowler_claim_codes WHERE eventId IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawExec("DELETE FROM bowlers WHERE id IN (?, ?)", [ownedBowler.insertId, blockedBowler.insertId]);
+      await rawExec("DELETE FROM events WHERE id IN (?, ?)", [ownedEvent.insertId, blockedEvent.insertId]);
+      await rawExec("DELETE FROM ed_staff WHERE id IN (?, ?)", [ownerStaff.insertId, otherStaff.insertId]);
+      await rawExec("DELETE FROM companies WHERE id = ?", [company.insertId]);
     }
   });
 });

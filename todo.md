@@ -1299,3 +1299,2418 @@
 - [x] Add secure event-scoped PDF generation grouped by bowling center and team with separate banquet and pool-party status
 - [x] Add Event Director/coordinator download controls and preview guidance for card-stock printing
 - [x] Test authorization, card content, print layout, and publish the admission-pass packet workflow
+
+
+## Active QR Test Event Access Incident
+- [x] Identify the unexpected claim-blocked and claim-unlocked events and determine whether they changed QR test-event selection or authorization
+- [x] Restore access to the intended QR test event without deleting legitimate events or roster data
+- [x] Add regression coverage for event selection and publish a corrective checkpoint
+
+## Current Session — QR Test Event Access Incident
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [ ] Review the 18 baseline TypeScript errors and fix only if they block this incident remediation
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block incident remediation
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block incident remediation
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [ ] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator scoping
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Raspberry Pi offline scanner global USB keyboard capture and relay guide
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim-code verification foundation with exact roster email + claim code and single-use opaque verification tokens
+- [x] ED/Owner event-scoped paper-ticket queue and emergency admission-pass PDF packets
+- [x] Claim-code card-stock PDF layout correction
+- [x] Column Y `#2 Lane` mapping
+- [x] Resend DNS verification recorded; live delivery remains intentionally paused
+- [x] R2 credential isolation safeguard preserved
+- [x] Catastrophic check-in backup process documented and implemented
+
+## Project Baseline Notes
+- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
+- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+
+---
+
+## Current Session — QR Test Event Access Incident (continued)
+- [x] Investigate unexpected Claim Owned / Claim Blocked events and confirm whether they affect QR test event selection or creator-scoped access
+- [x] Remove only the leaked claim-access automated test fixtures and restore normal event selection for the QR test event
+- [x] Harden claim-access test cleanup so future regression runs cannot leave database fixtures behind
+- [x] Verify the QR test event remains accessible and claim/email delivery remains paused
+- [x] Review the 18 baseline TypeScript errors and fix only if they block new development
+- [x] Run focused tests, production build, and visual verification; save a checkpoint
+
+---
+
+## Session History — QR Test Event Incident
+- [x] Identified events 3720005/3720006 as automated claim-access fixtures created at 2026-09-12 06:57:59; intended QR test event is event 3390003 (Test for qr) with 88 bowlers and 88 claim codes.
+- [x] Confirmed live Resend delivery remains intentionally paused and no sender credential change is part of this remediation.
+- [x] Cleanup and regression hardening completed.
+
+---
+
+## Completed Session Items
+- [x] Provider-independent claim
