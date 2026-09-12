@@ -1286,3 +1286,16 @@
 - [x] Verify whether the offline scanner accepts USB scanner keystrokes without a manually focused entry field
 - [x] Add resilient automatic focus recovery or global scan capture so repeated scans do not require mouse repositioning
 - [x] Add scanner-input regression coverage, update operator instructions, and publish the verified workflow
+
+
+## Active Catastrophic Check-In Backup Design
+- [ ] Define failure levels for banquet and pool-party admission, including scanner failure, app outage, network loss, power loss, and data inconsistency
+- [ ] Compare manual, offline, and hybrid backup admission-control options before implementation
+- [ ] Select a practical backup operating model, fallback materials, chain of custody, and reconciliation process
+
+
+## Active Coordinator Bowler Admission-Pass PDF
+- [x] Define one cut-ready admission card per bowler with event, center, team, bowler, pass eligibility, and captain-distribution guidance
+- [x] Add secure event-scoped PDF generation grouped by bowling center and team with separate banquet and pool-party status
+- [x] Add Event Director/coordinator download controls and preview guidance for card-stock printing
+- [x] Test authorization, card content, print layout, and publish the admission-pass packet workflow

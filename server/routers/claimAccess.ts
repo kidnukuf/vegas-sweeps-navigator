@@ -283,6 +283,51 @@ export const claimAccessRouter = router({
       return { ...result, token: signBowlerToken(result.bowlerId) };
     }),
 
+  admissionPasses: router({
+    listForEvent: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertEventAccess(ctx, input.eventId);
+        const rows = await rawQuery<{
+          eventId: number; eventName: string; eventYear: number | null; startDate: string | null; endDate: string | null;
+          poolPartyEnabled: number | null; banquetLocation: string | null; banquetTime: string | null; poolPartyTime: string | null;
+          bowlerId: number; firstName: string; lastName: string; bowlerIdLabel: string | null; centerName: string | null; teamName: string | null;
+          under21: number | null; guestNames: string | null; guestCount: number;
+          hasPoolPass: number; hasBanquetPass: number;
+        }>(
+          `SELECT e.id AS eventId, e.eventName, e.eventYear, e.startDate, e.endDate,
+                  e.poolPartyEnabled, e.banquetLocation, e.banquetTime, e.poolPartyTime,
+                  b.id AS bowlerId, b.legalFirstName AS firstName, b.legalLastName AS lastName,
+                  b.scantronId AS bowlerIdLabel, b.under21,
+                  bc.centerName, t.teamName,
+                  CASE WHEN b.poolPartyToken IS NOT NULL AND b.poolPartyToken <> '' THEN 1 ELSE 0 END AS hasPoolPass,
+                  CASE WHEN b.banquetToken IS NOT NULL AND b.banquetToken <> '' THEN 1 ELSE 0 END AS hasBanquetPass,
+                  COALESCE(g.guestCount, 0) AS guestCount, g.guestNames
+           FROM bowlers b
+           INNER JOIN events e ON e.id = b.eventId
+           LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+           LEFT JOIN teams t ON t.id = b.teamId
+           LEFT JOIN (
+             SELECT bowlerId, COUNT(*) AS guestCount,
+                    GROUP_CONCAT(NULLIF(TRIM(guestName), '') ORDER BY suffix SEPARATOR ', ') AS guestNames
+             FROM guest_pool_party_tokens
+             WHERE disabled = 0
+             GROUP BY bowlerId
+           ) g ON g.bowlerId = b.id
+           WHERE b.eventId = ?
+           ORDER BY bc.centerName, t.teamName, b.legalLastName, b.legalFirstName`,
+          [input.eventId],
+        );
+        return rows.map((row) => ({
+          ...row,
+          poolPartyEnabled: Boolean(row.poolPartyEnabled),
+          under21: Boolean(row.under21),
+          hasPoolPass: Boolean(row.hasPoolPass),
+          hasBanquetPass: Boolean(row.hasBanquetPass),
+        }));
+      }),
+  }),
+
   paperTickets: router({
     listForEvent: publicProcedure
       .input(z.object({ eventId: z.number().int().positive() }))

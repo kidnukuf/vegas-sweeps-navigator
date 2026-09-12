@@ -23,6 +23,7 @@ type ClaimCodeEventDetails = {
 export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: number; eventDetails?: ClaimCodeEventDetails }) {
   const utils = trpc.useUtils();
   const list = trpc.claimCodes.listForEvent.useQuery({ eventId });
+  const admissionPasses = trpc.claimAccess.admissionPasses.listForEvent.useQuery({ eventId });
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const lookup = trpc.claimCodes.lookup.useQuery(
@@ -307,6 +308,161 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     doc.save(`${safeEvent || "BOB"}-${safeCenter || "Center"}-Claim-Code-Cards.pdf`);
   }
 
+  async function downloadAdmissionPassPdf() {
+    const passes = [...(admissionPasses.data ?? [])].sort((a, b) => {
+      const center = String(a.centerName ?? "").localeCompare(String(b.centerName ?? ""));
+      if (center !== 0) return center;
+      const team = String(a.teamName ?? "").localeCompare(String(b.teamName ?? ""));
+      if (team !== 0) return team;
+      return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+    });
+    if (passes.length === 0) {
+      toast.error("There are no bowlers available for an admission-pass packet.");
+      return;
+    }
+
+    const doc = new jsPDF({ unit: "pt", format: "letter" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 28;
+    const gap = 12;
+    const headerHeight = 34;
+    const cardWidth = (pageWidth - margin * 2 - gap) / 2;
+    const cardHeight = (pageHeight - margin * 2 - headerHeight - gap) / 2;
+    const totalPages = Math.ceil(passes.length / 4);
+    const first = passes[0];
+    const packetEventName = eventTitle || first.eventName || "Bowl Vegas Event";
+    const packetDateWindow = eventDateWindow !== "Event dates to be announced"
+      ? eventDateWindow
+      : (first.startDate && first.endDate ? (first.startDate === first.endDate ? first.startDate : `${first.startDate} – ${first.endDate}`) : first.startDate || first.endDate || String(first.eventYear ?? ""));
+
+    const safeFilePart = (value: string) => value.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Bowl-Vegas";
+    const writeHeader = (pageNumber: number) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(20);
+      doc.text(`${packetEventName} — Bowler Admission Passes`, margin, 18, { maxWidth: pageWidth - margin * 2 - 70 });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(90);
+      doc.text(`${packetDateWindow} • Sorted by center, team, and bowler • Print on card stock`, margin, 29, { maxWidth: pageWidth - margin * 2 - 70 });
+      doc.text(`${pageNumber} / ${totalPages}`, pageWidth - margin, 18, { align: "right" });
+      doc.setTextColor(0);
+    };
+
+    passes.forEach((pass, index) => {
+      const slot = index % 4;
+      if (slot === 0) {
+        if (index > 0) doc.addPage();
+        writeHeader(Math.floor(index / 4) + 1);
+      }
+      const col = slot % 2;
+      const row = Math.floor(slot / 2);
+      const x = margin + col * (cardWidth + gap);
+      const y = margin + headerHeight + row * (cardHeight + gap);
+      const center = String(pass.centerName ?? "Unassigned center");
+      const team = String(pass.teamName ?? "Unassigned team");
+      const fullName = `${pass.firstName} ${pass.lastName}`.trim();
+
+      doc.setDrawColor(75);
+      doc.setLineWidth(1);
+      doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, "S");
+      doc.setFillColor(11, 23, 38);
+      doc.roundedRect(x, y, cardWidth, 48, 5, 5, "F");
+      doc.rect(x, y + 40, cardWidth, 8, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(250, 204, 21);
+      doc.text("BOWL VEGAS", x + 12, y + 17);
+      doc.setFontSize(7);
+      doc.setTextColor(230);
+      doc.text("EMERGENCY ADMISSION PASS", x + 12, y + 31);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.8);
+      doc.text(`${index + 1} of ${passes.length}`, x + cardWidth - 12, y + 18, { align: "right" });
+
+      doc.setTextColor(80);
+      doc.setFontSize(7);
+      doc.text("EVENT", x + 12, y + 63);
+      doc.setTextColor(20);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.2);
+      doc.text(packetEventName, x + 12, y + 76, { maxWidth: cardWidth - 24 });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(80);
+      doc.text(packetDateWindow, x + 12, y + 88, { maxWidth: cardWidth - 24 });
+
+      doc.setTextColor(80);
+      doc.text("BOWLER", x + 12, y + 112);
+      doc.setTextColor(20);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text(fullName || "Unnamed bowler", x + 12, y + 131, { maxWidth: cardWidth - 24 });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(80);
+      doc.text(`Bowler ID: ${pass.bowlerIdLabel || pass.bowlerId}`, x + 12, y + 144, { maxWidth: cardWidth - 24 });
+
+      doc.setTextColor(80);
+      doc.text("TEAM / CENTER", x + 12, y + 166);
+      doc.setTextColor(20);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(team, x + 12, y + 180, { maxWidth: cardWidth - 24 });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(65);
+      doc.text(center, x + 12, y + 193, { maxWidth: cardWidth - 24 });
+
+      const accessTop = y + 214;
+      const boxGap = 8;
+      const boxWidth = (cardWidth - 24 - boxGap) / 2;
+      const drawAccess = (label: string, included: boolean, boxX: number, detail?: string) => {
+        doc.setDrawColor(included ? 16 : 185, included ? 135 : 28, included ? 70 : 28);
+        doc.setFillColor(included ? 236 : 245, included ? 253 : 245, included ? 245 : 245);
+        doc.roundedRect(boxX, accessTop, boxWidth, 50, 3, 3, "FD");
+        doc.setTextColor(included ? 15 : 115);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.text(label, boxX + 8, accessTop + 15);
+        doc.setFontSize(8.5);
+        doc.text(included ? "ELIGIBLE" : "NOT INCLUDED", boxX + 8, accessTop + 30);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(5.8);
+        if (detail) doc.text(detail, boxX + 8, accessTop + 41, { maxWidth: boxWidth - 16 });
+      };
+      drawAccess("BANQUET", Boolean(pass.hasBanquetPass), x + 12, pass.under21 ? "Under 21 — verify venue policy" : pass.banquetLocation || "Present at banquet door");
+      drawAccess("POOL PARTY", Boolean(pass.poolPartyEnabled && pass.hasPoolPass), x + 12 + boxWidth + boxGap, pass.poolPartyEnabled ? (pass.poolPartyTime || "Present at pool door") : "Pool party not enabled");
+
+      doc.setTextColor(80);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text("GUESTS LINKED TO THIS BOWLER", x + 12, y + 286);
+      doc.setTextColor(35);
+      doc.setFontSize(8);
+      const guestLine = pass.guestCount > 0 ? `${pass.guestCount} guest${pass.guestCount === 1 ? "" : "s"}${pass.guestNames ? `: ${pass.guestNames}` : ""}` : "None listed";
+      doc.text(guestLine, x + 12, y + 300, { maxWidth: cardWidth - 24 });
+
+      doc.setDrawColor(155);
+      doc.setLineWidth(0.5);
+      doc.line(x + 12, y + cardHeight - 53, x + cardWidth - 12, y + cardHeight - 53);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(30);
+      doc.text("EMERGENCY LOG", x + 12, y + cardHeight - 39);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.6);
+      doc.text("Entry # __________   Time __________   Staff initials __________", x + 12, y + cardHeight - 26, { maxWidth: cardWidth - 24 });
+      doc.setTextColor(85);
+      doc.setFontSize(5.8);
+      doc.text("Use only if QR or app check-in is unavailable. Verify against the controlled roster and mark the door log.", x + 12, y + cardHeight - 13, { maxWidth: cardWidth - 24 });
+      doc.setTextColor(0);
+    });
+
+    doc.save(`${safeFilePart(packetEventName)}-Bowler-Admission-Passes.pdf`);
+  }
+
   function downloadAllCenterPdfs() {
     if (centerPackets.length === 0) {
       toast.error("There are no unused claim codes to include in center packets.");
@@ -395,6 +551,17 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
               📦 Download All Center PDFs
             </Button>
             <span className="text-xs text-gray-500">Allow multiple downloads if your browser asks.</span>
+          </div>
+          <div className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4">
+            <p className="text-sm font-bold text-amber-200">Emergency Bowler Admission Passes</p>
+            <p className="mt-1 text-xs leading-relaxed text-gray-400">One larger, cut-ready card per bowler, sorted by center and team. Print on card stock and give the packet to the team coordinator for distribution to team captains. These cards do not expose QR or claim-code secrets.</p>
+            <Button
+              onClick={() => void downloadAdmissionPassPdf()}
+              disabled={admissionPasses.isLoading || (admissionPasses.data ?? []).length === 0}
+              className="mt-3 bg-amber-400 text-black hover:bg-amber-300 font-bold"
+            >
+              {admissionPasses.isLoading ? "Preparing admission passes…" : "🪪 Download Bowler Admission Pass PDF"}
+            </Button>
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {centerPackets.map((packet) => (

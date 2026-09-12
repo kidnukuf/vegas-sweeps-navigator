@@ -31,8 +31,9 @@ describe("claim access verification and paper-ticket lifecycle", () => {
     const ownedEvent = await rawExec("INSERT INTO events (companyId, createdByStaffId, eventName, eventYear, status) VALUES (?, ?, ?, ?, 'active')", [company.insertId, ownerStaff.insertId, `Claim Owned ${stamp}`, 2099]);
     const blockedEvent = await rawExec("INSERT INTO events (companyId, createdByStaffId, eventName, eventYear, status) VALUES (?, ?, ?, ?, 'active')", [company.insertId, otherStaff.insertId, `Claim Blocked ${stamp}`, 2099]);
     const [center] = await rawQuery<{ id: number }>("SELECT id FROM bowling_centers ORDER BY id ASC LIMIT 1");
-    const ownedBowler = await rawExec("INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, email, scantronId, registrationStatus) VALUES (?, ?, ?, ?, ?, ?, 'pre_registered')", [ownedEvent.insertId, center.id, "Verified", "Bowler", `verified-${stamp}@example.test`, String(stamp).slice(-10)]);
-    const blockedBowler = await rawExec("INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, email, scantronId, registrationStatus) VALUES (?, ?, ?, ?, ?, ?, 'pre_registered')", [blockedEvent.insertId, center.id, "Blocked", "Bowler", `blocked-${stamp}@example.test`, `9${String(stamp).slice(-9)}`]);
+    const scanSuffix = String(stamp).slice(-9);
+    const ownedBowler = await rawExec("INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, email, scantronId, registrationStatus) VALUES (?, ?, ?, ?, ?, ?, 'pre_registered')", [ownedEvent.insertId, center.id, "Verified", "Bowler", `verified-${stamp}@example.test`, `8${scanSuffix}`]);
+    const blockedBowler = await rawExec("INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, email, scantronId, registrationStatus) VALUES (?, ?, ?, ?, ?, ?, 'pre_registered')", [blockedEvent.insertId, center.id, "Blocked", "Bowler", `blocked-${stamp}@example.test`, `9${scanSuffix}`]);
     const claimCode = await rawExec("INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, createdAt) VALUES (?, ?, ?, 'unused', ?)", [ownedEvent.insertId, ownedBowler.insertId, `TEST-${String(stamp).slice(-8)}`, stamp]);
     const rawVerificationToken = `verification-${stamp}-safe-token`;
     const verificationId = crypto.randomUUID();
@@ -72,6 +73,12 @@ describe("claim access verification and paper-ticket lifecycle", () => {
       await expect(ownerDirector.claimAccess.paperTickets.createForBowler({ eventId: ownedEvent.insertId, bowlerId: ownedBowler.insertId, note: "Give to captain with shirts" })).resolves.toMatchObject({ success: true });
       const ownTickets = await ownerDirector.claimAccess.paperTickets.listForEvent({ eventId: ownedEvent.insertId });
       expect(ownTickets).toHaveLength(1);
+      const admissionPasses = await ownerDirector.claimAccess.admissionPasses.listForEvent({ eventId: ownedEvent.insertId });
+      expect(admissionPasses).toHaveLength(1);
+      expect(admissionPasses[0]).toMatchObject({ bowlerId: ownedBowler.insertId, firstName: "Verified", lastName: "Bowler", hasPoolPass: true, hasBanquetPass: true });
+      expect(admissionPasses[0]).not.toHaveProperty("poolPartyToken");
+      expect(admissionPasses[0]).not.toHaveProperty("banquetToken");
+      await expect(otherDirector.claimAccess.admissionPasses.listForEvent({ eventId: ownedEvent.insertId })).rejects.toMatchObject({ code: "FORBIDDEN" });
       expect(ownTickets[0]).toMatchObject({ bowlerId: ownedBowler.insertId, status: "requested", hasDigitalPoolPass: true, hasDigitalBanquetPass: true });
       await expect(ownerDirector.claimAccess.paperTickets.createForBowler({ eventId: ownedEvent.insertId, bowlerId: ownedBowler.insertId })).rejects.toMatchObject({ code: "CONFLICT" });
       await expect(ownerDirector.claimAccess.paperTickets.listForEvent({ eventId: blockedEvent.insertId })).rejects.toMatchObject({ code: "FORBIDDEN" });
