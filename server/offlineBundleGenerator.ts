@@ -355,6 +355,29 @@ const SCAN_LOG_KEY = ${JSON.stringify(scanLogKey)};
 const FEEDBACK = ${JSON.stringify(OFFLINE_SCAN_FEEDBACK)};
 const SCANNER_MIN_TOKEN_LENGTH = ${OFFLINE_SCANNER_MIN_TOKEN_LENGTH};
 
+// QR images in the bowler portal encode a full URL such as
+// /scan/banquet/<token>. USB scanners return that entire URL, while manual
+// entry and some exported sheets may contain only the raw token. Normalize
+// both forms before checking the event-scoped token map.
+function parseScannedValue(rawValue) {
+  const raw = String(rawValue || '').trim();
+  if (!raw) return { token: '', qrMode: null };
+  try {
+    const parsed = new URL(raw);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const scanIndex = parts.findIndex((part) => part.toLowerCase() === 'scan');
+    if (scanIndex >= 0 && parts[scanIndex + 1] && parts[scanIndex + 2]) {
+      const routeMode = parts[scanIndex + 1].toLowerCase();
+      const qrMode = routeMode === 'pool' || routeMode === 'guest-pool' ? 'pool'
+        : routeMode === 'banquet' || routeMode === 'guest-banquet' ? 'banquet' : null;
+      return { token: decodeURIComponent(parts[scanIndex + 2]), qrMode };
+    }
+  } catch (_) {
+    // Raw scanner token; continue with the value unchanged.
+  }
+  return { token: raw, qrMode: null };
+}
+
 // When this bundle is served through the Raspberry Pi local relay, each scan
 // is also sent to the separate Event Director monitor. This request is not
 // awaited, never steals scanner focus, and is disabled for normal file:// use.
@@ -418,7 +441,8 @@ function appendScanLog(entry) {
 }
 
 async function processScan(rawToken, lane) {
-  const token = rawToken.trim();
+  const parsedScan = parseScannedValue(rawToken);
+  const token = parsedScan.token;
   if (!token) return null;
 
   // ── Race-condition guard ────────────────────────────────────────────────
@@ -428,6 +452,12 @@ async function processScan(rawToken, lane) {
   inFlight.add(token);
   try {
     const now = Date.now();
+
+    // ── 0. QR station type check ────────────────────────────────────────────
+    if (parsedScan.qrMode && parsedScan.qrMode !== MODE) {
+      appendScanLog({ token, result: 'denied_wrongzone', reason: 'QR station type does not match this bundle', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
+      return { result: 'denied_wrongzone', admit: false, headline: 'WRONG STATION', detail: 'This QR is for the ' + (parsedScan.qrMode === 'banquet' ? 'Banquet' : 'Pool Party') + ' station. This bundle is for ' + (MODE === 'banquet' ? 'Banquet' : 'Pool Party') + '.', displayName: null, teamNumber: null };
+    }
 
     // ── 1. Reentry token? ─────────────────────────────────────────────────
     const re = reentryPool[token];
@@ -444,7 +474,7 @@ async function processScan(rawToken, lane) {
     const guest = TOKEN_MAP[token];
     if (!guest) {
       appendScanLog({ token, result: 'denied_notfound', reason: 'Token not in list', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
-      return { result: 'denied_notfound', admit: false, headline: 'QR NOT LOADED', detail: 'Not in the ${escHtml(eventName)} bundle (Event ID ${eventId}) — download a fresh scanner', displayName: null, teamNumber: null };
+      return { result: 'denied_notfound', admit: false, headline: 'QR NOT LOADED', detail: ${JSON.stringify(`Not in the ${eventName} bundle (Event ID ${eventId}) — download a fresh scanner`)}, displayName: null, teamNumber: null };
     }
 
     // ── 3. Already used? ──────────────────────────────────────────────────

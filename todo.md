@@ -3751,3 +3751,13 @@
 - [x] Verify the corrected Pi scanner flow and publish the fix
 
 ---
+
+
+## Current Session — Test QR Event ID on Raspberry Pi
+- [x] Inspect the standalone HTML scanner’s embedded event ID and wrong-event validation path
+- [x] Update the scanner export to explicitly recognize Test for qr event ID 3390003
+- [x] Add regression coverage proving the standalone bundle carries the correct event ID and accepts matching QR data
+- [x] Run focused scanner tests, TypeScript checking, and production build
+- [x] Publish the corrected standalone Raspberry Pi scanner export
+
+---

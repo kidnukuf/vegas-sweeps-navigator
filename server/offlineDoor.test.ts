@@ -81,7 +81,10 @@ describe("offlineDoor.generateBundle", () => {
     expect(bundle.filename).toContain("Event3390003-Banquet");
     expect(bundle.html).toContain("Test for qr");
     expect(bundle.html).toContain("Event ID: 3390003");
+    expect(bundle.html).toContain("function parseScannedValue(rawValue)");
+    expect(bundle.html).toContain("/scan/banquet/<token>");
     expect(bundle.html).toContain("QR NOT LOADED");
+    expect(bundle.html).toContain("Not in the Test for qr bundle (Event ID 3390003)");
   });
 });
 
