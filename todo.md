@@ -3761,3 +3761,12 @@
 - [x] Publish the corrected standalone Raspberry Pi scanner export
 
 ---
+
+
+## Current Session — Pi Offline Scanner and Laptop Live Monitor Runbook
+- [x] Inspect the current standalone scanner export, Pi relay script, and generated setup guide
+- [x] Validate the Pi-to-laptop local monitoring workflow, ports, startup order, and offline failure modes
+- [x] Write a precise client-ready step-by-step runbook with preflight and recovery checklists
+- [x] Deliver the verified runbook and current project version
+
+---
