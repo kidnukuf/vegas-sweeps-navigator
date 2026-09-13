@@ -13,25 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import {
-  getMeta,
-  loadDataset,
-  searchGuests,
-  setPin,
-  verifyPin,
-  getLocalCounts,
-  getUnsyncedCount,
-  getAllReentry,
-  getAllGuests,
-  nextAvailableReentry,
-  issueReentryLocal,
-  releaseReentryLocal,
-  getReentryByToken,
-  type DoorMode,
-  type GuestRecord,
-  type ReentryZone,
-  type ScanResult,
-} from "@/lib/offlineDoorDb";
+import { getMeta, loadDataset, searchGuests, setPin, verifyPin, getLocalCounts, getUnsyncedCount, getAllReentry, getAllGuests, nextAvailableReentry, issueReentryLocal, releaseReentryLocal, getReentryByToken, type DoorMode, type GuestRecord, type ReentryZone, type ScanResult, } from "@/lib/offlineDoorDb";
+import { isOfflineDoorDatasetForEvent } from "@/lib/offlineDoorNavigation";
 import { overrideAdmit, flagForEd } from "@/lib/offlineDoorEngine";
 import { trpc } from "@/lib/trpc";
 import { EmailInvitationPanel } from "./EmailInvitationPanel";
@@ -75,14 +58,21 @@ export function DoorConsole({ eventId }: { eventId: number }) {
     async function refresh() {
       const meta = await getMeta();
       if (!alive) return;
-      if (meta) {
-        setMode(meta.mode);
-        setEventName(meta.eventName);
-        setLoadedAt(meta.loadedAtMs);
-        setHasPin(Boolean(meta.pinHash));
+      const matchingMeta = isOfflineDoorDatasetForEvent(meta, eventId) ? meta : null;
+      if (matchingMeta) {
+        setMode(matchingMeta.mode);
+        setEventName(matchingMeta.eventName);
+        setLoadedAt(matchingMeta.loadedAtMs);
+        setHasPin(Boolean(matchingMeta.pinHash));
+        setCounts(await getLocalCounts());
+        setGuestCount((await getAllGuests()).length);
+      } else {
+        setEventName("");
+        setLoadedAt(null);
+        setHasPin(false);
+        setCounts({ admitted: 0, denied_used: 0, denied_notfound: 0, override_admitted: 0, reentry_admitted: 0, denied_wrongzone: 0 });
+        setGuestCount(0);
       }
-      setCounts(await getLocalCounts());
-      setGuestCount((await getAllGuests()).length);
       const unsynced = await getUnsyncedCount();
       setConn((c) => ({ ...c, unsynced }));
     }

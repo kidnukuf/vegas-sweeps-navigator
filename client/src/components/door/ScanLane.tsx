@@ -91,6 +91,11 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
         setScanResultMsg("This QR does not match this station");
         setScanFlashClass("scan-flash-wrong-event");
         playDoorSound("wrong_event");
+      } else if (d.result === "denied_notfound") {
+        setScanResultState("notfound");
+        setScanResultMsg(d.detail || "This QR is not in the loaded scanner bundle");
+        setScanFlashClass("scan-flash-mismatch");
+        playDoorSound("already_used");
       } else {
         setScanResultState("mismatch");
         setScanResultMsg(d.detail || "QR not recognized");

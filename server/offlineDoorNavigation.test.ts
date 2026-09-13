@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveOfflineDoorEventId } from "../client/src/lib/offlineDoorNavigation";
+import { isOfflineDoorDatasetForEvent, resolveOfflineDoorEventId } from "../client/src/lib/offlineDoorNavigation";
 
 describe("resolveOfflineDoorEventId", () => {
   it("prefers the explicit selected event in the scanner link", () => {
@@ -12,5 +12,16 @@ describe("resolveOfflineDoorEventId", () => {
 
   it("uses a safe fallback when neither source contains a valid event ID", () => {
     expect(resolveOfflineDoorEventId("", null)).toBe(1);
+  });
+});
+
+describe("isOfflineDoorDatasetForEvent", () => {
+  it("accepts cached data for the selected event", () => {
+    expect(isOfflineDoorDatasetForEvent({ eventId: 3390003 }, 3390003)).toBe(true);
+  });
+
+  it("rejects cached data from a different event", () => {
+    expect(isOfflineDoorDatasetForEvent({ eventId: 1980003 }, 3390003)).toBe(false);
+    expect(isOfflineDoorDatasetForEvent(null, 3390003)).toBe(false);
   });
 });

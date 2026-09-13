@@ -444,7 +444,7 @@ async function processScan(rawToken, lane) {
     const guest = TOKEN_MAP[token];
     if (!guest) {
       appendScanLog({ token, result: 'denied_notfound', reason: 'Token not in list', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
-      return { result: 'denied_notfound', admit: false, headline: 'NOT FOUND', detail: 'Not on the list — step aside', displayName: null, teamNumber: null };
+      return { result: 'denied_notfound', admit: false, headline: 'QR NOT LOADED', detail: 'Not in the ${escHtml(eventName)} bundle (Event ID ${eventId}) — download a fresh scanner', displayName: null, teamNumber: null };
     }
 
     // ── 3. Already used? ──────────────────────────────────────────────────

@@ -783,19 +783,28 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event";
   }, [activeEvent]);
 
-  /** Trigger a browser download from a CSV string. */
-  const downloadCSVString = (filename: string, csv: string) => {
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  };
-  const downloadTextFile = (filename: string, content: string, mimeType: string) => {
+  /**
+   * Trigger a browser download reliably in desktop Chromium, Raspberry Pi Chromium,
+   * and mobile browsers. Some Pi Chromium builds ignore a detached anchor or lose
+   * a blob URL that is revoked in the same event loop turn.
+   */
+  const downloadBlob = (filename: string, content: BlobPart, mimeType: string) => {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    window.setTimeout(() => {
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }, 1500);
   };
+  const downloadCSVString = (filename: string, csv: string) => downloadBlob(filename, csv, "text/csv;charset=utf-8");
+  const downloadTextFile = (filename: string, content: string, mimeType: string) => downloadBlob(filename, content, mimeType);
   /** Legacy helper kept for any callers that build rows client-side. */
   const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
     const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
@@ -874,15 +883,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
     const toastId = toast.loading(`Generating ${modeLabel} offline scanner…`);
     try {
       const res = await generateBundleMut.mutateAsync({ eventId: EVENT_ID, mode });
-      // Trigger browser download of the self-contained HTML file
-      const blob = new Blob([res.html], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(`${modeLabel} offline scanner downloaded — open in Chrome, no internet needed`, { id: toastId, duration: 6000 });
+      // Trigger a Pi-compatible download of the self-contained HTML file.
+      downloadBlob(res.filename, res.html, "text/html;charset=utf-8");
+      toast.success(`${modeLabel} scanner downloaded — open the HTML in Raspberry Pi Chromium or Android Chrome; no internet is required`, { id: toastId, duration: 7000 });
     } catch { toast.dismiss(toastId); }
   };
 
@@ -1066,14 +1069,14 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   disabled={generateBundleMut.isPending}
                   className="text-purple-300 focus:bg-purple-500/10 focus:text-purple-300 cursor-pointer"
                 >
-                  🍽️ Download Banquet Scanner
+                  🍽️ Download Banquet Scanner (Pi / Android)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => downloadOfflineScanner("pool")}
                   disabled={generateBundleMut.isPending}
                   className="text-blue-300 focus:bg-blue-500/10 focus:text-blue-300 cursor-pointer"
                 >
-                  🏊 Download Pool Party Scanner
+                  🏊 Download Pool Party Scanner (Pi / Android)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={downloadPiLiveMonitor}
@@ -1083,7 +1086,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   📡 Download Pi Live Monitor Relay
                 </DropdownMenuItem>
                 <div className="px-2 py-1 text-[10px] text-gray-500 leading-tight">
-                  Scanner: self-contained HTML · dual-scanner · race-lock. Pi relay: live laptop incident monitor with no internet.
+                  Scanner: self-contained HTML for Raspberry Pi Chromium or Android Chrome · USB keyboard capture · dual-scanner · race-lock. Download the Pi relay separately for live laptop monitoring.
                 </div>
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem

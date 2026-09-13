@@ -17,7 +17,7 @@
  */
 import { cn } from "@/lib/utils";
 
-export type ScanResultState = "used" | "pool" | "banquet" | "mismatch";
+export type ScanResultState = "used" | "pool" | "banquet" | "mismatch" | "notfound";
 
 export interface ScanResultProps {
   state: ScanResultState;
@@ -121,6 +121,25 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
             <div className="mt-4 text-2xl font-bold text-slate-800">
               {isUnder21 ? "UNDER 21" : "21+"}
             </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Not found: the QR token is not present in the loaded event bundle.
+  if (state === "notfound") {
+    return (
+      <>
+        {flashOverlay}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-amber-600">
+          <div className="px-8 text-center">
+            <div className="mb-6 text-6xl font-black text-white">⚠️</div>
+            <div className="mb-4 text-5xl font-black text-white">QR NOT LOADED</div>
+            <div className="text-3xl font-semibold text-white/90">
+              {message || "This QR code is not in the loaded scanner bundle."}
+            </div>
+            <div className="mt-8 text-2xl font-bold text-white/80">Check the event ID and download a fresh scanner.</div>
           </div>
         </div>
       </>

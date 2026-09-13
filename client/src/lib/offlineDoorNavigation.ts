@@ -11,3 +11,11 @@ export function resolveOfflineDoorEventId(
 
   return fallbackEventId;
 }
+
+/** A cached offline dataset is safe to scan only when it belongs to the route event. */
+export function isOfflineDoorDatasetForEvent(
+  meta: { eventId?: number | null } | null | undefined,
+  eventId: number
+): boolean {
+  return Boolean(meta && Number(meta.eventId) === eventId);
+}

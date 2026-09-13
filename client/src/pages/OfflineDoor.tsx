@@ -20,7 +20,7 @@ import { DoorConsole } from "@/components/door/DoorConsole";
 import { Button } from "@/components/ui/button";
 import { startSyncService } from "@/lib/offlineDoorSync";
 import { getMeta, type ReentryZone } from "@/lib/offlineDoorDb";
-import { resolveOfflineDoorEventId } from "@/lib/offlineDoorNavigation";
+import { isOfflineDoorDatasetForEvent, resolveOfflineDoorEventId } from "@/lib/offlineDoorNavigation";
 
 type View = "console" | "A" | "B";
 
@@ -50,11 +50,11 @@ export default function OfflineDoor() {
     let alive = true;
     (async () => {
       const meta = await getMeta();
-      if (alive) setHasData(Boolean(meta));
+      if (alive) setHasData(isOfflineDoorDatasetForEvent(meta, eventId));
     })();
     const t = setInterval(async () => {
       const meta = await getMeta();
-      if (alive) setHasData(Boolean(meta));
+      if (alive) setHasData(isOfflineDoorDatasetForEvent(meta, eventId));
     }, 3000);
     return () => {
       alive = false;
@@ -95,8 +95,8 @@ export default function OfflineDoor() {
         {!hasData ? (
           <div className="flex flex-1 items-center justify-center text-center text-slate-300">
             <div>
-              <div className="text-2xl font-semibold">No data loaded</div>
-              <div className="mt-2 text-slate-500">Go to the Console and load Banquet or Pool Party data first.</div>
+              <div className="text-2xl font-semibold">No data loaded for Event ID {eventId}</div>
+              <div className="mt-2 text-slate-500">Go to the Console and load Banquet or Pool Party data for this event before scanning.</div>
             </div>
           </div>
         ) : (

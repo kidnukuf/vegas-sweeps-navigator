@@ -75,6 +75,16 @@ describe("offlineDoor.loadData", () => {
   });
 });
 
+describe("offlineDoor.generateBundle", () => {
+  it("embeds the selected event identity and stale-token diagnostic", { timeout: 30000 }, async () => {
+    const bundle = await caller.offlineDoor.generateBundle({ eventId: 3390003, mode: "banquet" });
+    expect(bundle.filename).toContain("Event3390003-Banquet");
+    expect(bundle.html).toContain("Test for qr");
+    expect(bundle.html).toContain("Event ID: 3390003");
+    expect(bundle.html).toContain("QR NOT LOADED");
+  });
+});
+
 describe("offlineDoor.sync idempotency", () => {
   it("inserts new scans once and treats re-sends as duplicates", async () => {
     const batch = {

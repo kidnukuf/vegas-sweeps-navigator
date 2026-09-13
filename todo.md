@@ -3724,3 +3724,30 @@
 - [x] Publish the verified TypeScript correction
 
 ---
+
+
+## Current Session — Raspberry Pi Banquet Scanner Export
+- [ ] Inspect why the exported banquet scanner behaves like an Android-only page on Raspberry Pi
+- [ ] Verify the exported HTML, local relay contract, USB keyboard capture, and Pi browser requirements
+- [ ] Implement a Pi-compatible export path that preserves Android fallback behavior
+- [ ] Add clear Pi launch and scanner-connection instructions to the generated package
+- [ ] Run focused offline scanner tests, build, and package-level validation
+- [ ] Publish the verified Raspberry Pi scanner correction
+
+---
+
+
+## Current Session — QR Test Event Verified-Roster Setup
+- [x] Inspect the Test for qr event roster, claim codes, and verification tables
+- [x] Mark only Test for qr bowlers as signed up and email-verified for testing
+- [x] Verify all Test for qr bowlers are ready and other events are unchanged
+
+
+## Current Session — Raspberry Pi Wrong-Event Rejection
+- [x] Inspect the Test for qr scanner export event ID, token map, QR token ownership, and wrong-event validation
+- [x] Reproduce whether the Pi is using a stale scanner HTML bundle or a token from another event
+- [x] Apply the narrowest safe correction without weakening event scoping
+- [x] Add focused regression coverage for Test for qr offline scans
+- [x] Verify the corrected Pi scanner flow and publish the fix
+
+---
