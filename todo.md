@@ -3770,3 +3770,11 @@
 - [x] Deliver the verified runbook and current project version
 
 ---
+
+
+## Current Session — Online Event Director QR Scan Verification
+- [x] Inspect the online Event Director scanner route, event selection, station mode, and QR payload handling
+- [x] Run focused online scanner tests and verify current Test for qr event context
+- [x] Report the exact online scanning readiness and operator steps
+
+---

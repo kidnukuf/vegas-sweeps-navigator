@@ -88,7 +88,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
         playDoorSound(isUnder21 ? "admit_under21" : "admit_21plus");
       } else if (d.result === "denied_wrongzone") {
         setScanResultState("mismatch");
-        setScanResultMsg("This QR does not match this station");
+        setScanResultMsg(d.detail || "This QR does not match this station");
         setScanFlashClass("scan-flash-wrong-event");
         playDoorSound("wrong_event");
       } else if (d.result === "denied_notfound") {

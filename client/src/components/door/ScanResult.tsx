@@ -10,7 +10,7 @@
  * Each state includes a synchronized full-screen color flash that plays with the sound:
  * - 21+ entry: Bright green flash
  * - Under-21 entry: Orange/amber flash
- * - Wrong event: Red flash
+ * - Wrong station or event mismatch: Red flash
  * - Already used: Purple/magenta flash
  *
  * Designed for TV display with high-contrast, large text suitable for 10+ feet viewing.
@@ -154,12 +154,12 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-red-600">
           <div className="text-center px-8">
             <div className="text-6xl font-black text-white mb-6">⚠️</div>
-            <div className="text-5xl font-black text-white mb-4">WRONG EVENT</div>
+            <div className="text-5xl font-black text-white mb-4">WRONG STATION</div>
             <div className="text-3xl font-semibold text-white/90">
               {message || "This QR does not match this station"}
             </div>
             <div className="mt-8 text-2xl font-bold text-white/80">
-              Ask guest to STEP ASIDE
+              Verify the selected event and station, then ask guest to STEP ASIDE
             </div>
           </div>
         </div>

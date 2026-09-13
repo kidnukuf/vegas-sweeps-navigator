@@ -7,6 +7,7 @@
  * token scheme or the "which results consume a token" rule is caught immediately.
  */
 import { describe, expect, it } from "vitest";
+import { parseOfflineScanValue } from "../client/src/lib/offlineDoorEngine";
 
 // Mirror of makeReentryToken in offlineDoor.ts (kept in sync intentionally).
 function makeReentryToken(eventId: number, mode: "banquet" | "pool", zone: string, index: number): string {
@@ -20,6 +21,23 @@ function consumesEntryToken(result: string): boolean {
   // Reentry admits are reusable and do NOT consume an entry token.
   return ADMIT_RESULTS.includes(result) && result !== "reentry_admitted";
 }
+
+describe("online QR payload parsing", () => {
+  it("extracts a banquet token from the full bowler portal URL", () => {
+    expect(parseOfflineScanValue("https://www.bowlvegas.com/scan/banquet/banquet-token-3390003")).toEqual({
+      token: "banquet-token-3390003",
+      qrMode: "banquet",
+    });
+  });
+
+  it("extracts guest and pool station URLs while preserving raw-token support", () => {
+    expect(parseOfflineScanValue("https://www.bowlvegas.com/scan/guest-pool/guest%2Ftoken")).toEqual({
+      token: "guest/token",
+      qrMode: "pool",
+    });
+    expect(parseOfflineScanValue("raw-token-3390003")).toEqual({ token: "raw-token-3390003", qrMode: null });
+  });
+});
 
 describe("reentry token format", () => {
   it("encodes mode, zone, event id and zero-padded index", () => {

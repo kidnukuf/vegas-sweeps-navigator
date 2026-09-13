@@ -41,8 +41,35 @@ export interface ScanDecision {
 // In-memory lock: tokens currently being processed (prevents same-tick double admit).
 const inFlight = new Set<string>();
 
-function normalize(raw: string): string {
-  return raw.trim();
+export interface ParsedOfflineScanValue {
+  token: string;
+  qrMode: DoorMode | null;
+}
+
+/**
+ * Normalize both QR payloads used by the app:
+ *   - the full portal URL: https://www.bowlvegas.com/scan/banquet/<token>
+ *   - a raw token from a keyboard scanner, CSV, or manual entry
+ */
+export function parseOfflineScanValue(rawValue: string): ParsedOfflineScanValue {
+  const raw = String(rawValue || "").trim();
+  if (!raw) return { token: "", qrMode: null };
+
+  try {
+    const parsed = new URL(raw, "https://offline.invalid");
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const scanIndex = parts.findIndex((part) => part.toLowerCase() === "scan");
+    const routeMode = scanIndex >= 0 ? parts[scanIndex + 1]?.toLowerCase() : undefined;
+    const token = scanIndex >= 0 ? parts[scanIndex + 2] : undefined;
+    if (token && routeMode) {
+      const qrMode = routeMode === "pool" || routeMode === "guest-pool" ? "pool" : routeMode === "banquet" || routeMode === "guest-banquet" ? "banquet" : null;
+      if (qrMode) return { token: decodeURIComponent(token), qrMode };
+    }
+  } catch {
+    // Treat malformed or non-URL input as a raw scanner token.
+  }
+
+  return { token: raw, qrMode: null };
 }
 
 /**
@@ -53,7 +80,8 @@ export async function processScan(
   rawToken: string,
   opts: { lane: number; zone: ReentryZone | null }
 ): Promise<ScanDecision> {
-  const token = normalize(rawToken);
+  const parsedScan = parseOfflineScanValue(rawToken);
+  const token = parsedScan.token;
   const meta = await getMeta();
   const mode: DoorMode = meta?.mode ?? "banquet";
   const eventId = meta?.eventId ?? 0;
@@ -99,6 +127,23 @@ export async function processScan(
   inFlight.add(token);
 
   try {
+    // ── 0. QR station check ─────────────────────────────────────────────────────
+    if (parsedScan.qrMode && parsedScan.qrMode !== mode) {
+      const qrStation = parsedScan.qrMode === "banquet" ? "Banquet" : "Pool Party";
+      const loadedStation = mode === "banquet" ? "Banquet" : "Pool Party";
+      await appendScanLog({ ...baseLog, result: "denied_wrongzone", reason: `QR is for ${qrStation}; loaded station is ${loadedStation}` });
+      return {
+        result: "denied_wrongzone",
+        admit: false,
+        headline: "WRONG STATION",
+        detail: `This QR is for ${qrStation}. Load the ${qrStation} scanner for Event ID ${eventId}.`,
+        displayName: null,
+        teamNumber: null,
+        token,
+        isReentry: false,
+      };
+    }
+
     // ── 1. Reentry token? ──────────────────────────────────────────────────────
     const re = await getReentryByToken(token);
     if (re) {
@@ -159,8 +204,8 @@ export async function processScan(
       return {
         result: "denied_notfound",
         admit: false,
-        headline: "NOT FOUND",
-        detail: "Not on the list — step aside",
+          headline: "QR NOT LOADED",
+          detail: `This QR is not loaded for Event ID ${eventId}. Confirm the selected event and station.`,
         displayName: null,
         teamNumber: null,
         token,
