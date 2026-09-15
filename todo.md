@@ -3808,3 +3808,15 @@
 - [x] Include referral-program language in the marketing-page verification and tests
 
 ---
+
+
+## Current Session — In-Slot Bowl Vegas House Advertisement
+- [x] Review the existing AdRotator and sponsor-slot dimensions, shuffle behavior, and prospect-page section
+- [x] Create a compact image-based Bowl Vegas house ad sized for the existing ad slot
+- [x] Add the Bowl Vegas house ad to the same rotation as “Advertisement Here” and future sold ads
+- [x] Remove the large “For future event directors” section from the prospect page
+- [x] Preserve image click-through to the Bowl Vegas prospect experience
+- [x] Run visual, rotation, route, accessibility, and production-build verification
+- [x] Publish the revised in-slot advertisement experience
+
+---

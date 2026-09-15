@@ -30,6 +30,7 @@ type Ad = {
   mediaType: "image" | "video";
   mediaUrl: string;
   linkUrl?: string | null;
+  kind?: "sponsor" | "house" | "placeholder";
 };
 
 const TIER_WEIGHT: Record<Ad["tier"], number> = { gold: 4, silver: 2, bronze: 1 };
@@ -75,7 +76,29 @@ export function AdRotator({
   );
 
   const ads = (data ?? []) as Ad[];
-  const playlist = useMemo(() => buildWeightedPlaylist(ads, slot), [ads, slot]);
+  const rotationAds = useMemo<Ad[]>(() => [
+    {
+      id: -9000,
+      sponsorName: "Bowl Vegas",
+      tier: "gold",
+      category: "Bowl Vegas",
+      mediaType: "image",
+      mediaUrl: "/manus-storage/bowl-vegas-house-ad_d46e7689.jpg",
+      linkUrl: "/event-directors",
+      kind: "house",
+    },
+    {
+      id: -9001 - (slot % 2),
+      sponsorName: "Advertise Here",
+      tier: "bronze",
+      category: "House inventory",
+      mediaType: "image",
+      mediaUrl: ADVERTISE_HERE_IMGS[slot % ADVERTISE_HERE_IMGS.length],
+      kind: "placeholder",
+    },
+    ...ads,
+  ], [ads, slot]);
+  const playlist = useMemo(() => buildWeightedPlaylist(rotationAds, slot), [rotationAds, slot]);
   const [idx, setIdx] = useState(0);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -92,32 +115,20 @@ export function AdRotator({
     return () => clearTimeout(t);
   }, [current, idx, playlist.length, reduced]);
 
-  // ── Empty state: show the "Advertise Here" placeholder that opens an inquiry form ──
-  if (!current) {
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => setInquiryOpen(true)}
-          className={`group relative block aspect-[16/6] w-full overflow-hidden rounded-2xl border border-amber-500/20 bg-black shadow-md transition-transform active:scale-[0.99] ${className}`}
-          title="Advertise here"
-          aria-label="Advertise here — contact the Event Director"
-        >
-          <img
-            src={ADVERTISE_HERE_IMGS[slot % ADVERTISE_HERE_IMGS.length]}
-            alt="Advertise here"
-            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-          />
-        </button>
-        <AdInquiryDialog open={inquiryOpen} onOpenChange={setInquiryOpen} eventId={eventId} />
-      </>
-    );
-  }
+  // The house and placeholder entries keep this playlist populated, but retain
+  // a defensive guard for loading and future data-shape changes.
+  if (!current) return null;
 
   const advance = () => setIdx((i) => (i + 1) % Math.max(playlist.length, 1));
 
   const media =
-    current.mediaType === "video" ? (
+    current.kind === "placeholder" ? (
+      <img
+        src={current.mediaUrl}
+        alt="Advertise here"
+        className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+      />
+    ) : current.mediaType === "video" ? (
       <div className="relative h-full w-full">
         <video
           ref={videoRef}
@@ -154,19 +165,21 @@ export function AdRotator({
   const inner = (
     <div className={`relative aspect-[16/6] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-md ${className}`}>
       {media}
-      {/* Subtle, non-obnoxious sponsor labelling */}
-      <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-1.5">
-        <span className="rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80 backdrop-blur-sm">
-          Sponsor
-        </span>
-        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tierBadge}`}>
-          {current.tier}
-        </span>
-      </div>
-      {/* dot indicators for distinct sponsors */}
-      {ads.length > 1 && (
+      {/* Subtle sponsor labelling; the placeholder already carries its own message. */}
+      {current.kind !== "placeholder" && (
+        <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-1.5">
+          <span className="rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80 backdrop-blur-sm">
+            {current.kind === "house" ? "Bowl Vegas" : "Sponsor"}
+          </span>
+          <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tierBadge}`}>
+            {current.kind === "house" ? "Explore" : current.tier}
+          </span>
+        </div>
+      )}
+      {/* dot indicators for distinct rotating entries */}
+      {rotationAds.length > 1 && (
         <div className="pointer-events-none absolute bottom-2 left-2 flex gap-1">
-          {ads.map((a) => (
+          {rotationAds.map((a) => (
             <span
               key={a.id}
               className={`h-1.5 w-1.5 rounded-full ${a.id === current.id ? "bg-white/90" : "bg-white/35"}`}
@@ -176,6 +189,23 @@ export function AdRotator({
       )}
     </div>
   );
+
+  if (current.kind === "placeholder") {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setInquiryOpen(true)}
+          className={`group relative block w-full overflow-hidden rounded-2xl border border-amber-500/20 bg-black shadow-md transition-transform active:scale-[0.99] ${className}`}
+          title="Advertise here"
+          aria-label="Advertise here — contact the Event Director"
+        >
+          {inner}
+        </button>
+        <AdInquiryDialog open={inquiryOpen} onOpenChange={setInquiryOpen} eventId={eventId} />
+      </>
+    );
+  }
 
   if (current.linkUrl) {
     return (
