@@ -3820,3 +3820,20 @@
 - [x] Publish the revised in-slot advertisement experience
 
 ---
+
+
+## Current Session — Additional Squad Time Display
+- [x] Inspect the Bowler Portal additional-squad display and confirm Column X/Column Y field names
+- [x] Replace visible `#2 Lane` with the Column X `2nd Squad time` value
+- [x] Add or update focused regression coverage for additional-squad display mapping
+- [x] Verify the mobile Bowler Portal layout, TypeScript, and production build
+- [x] Publish the corrected additional-squad display
+
+---
+
+
+## Clarification — Additional Squad Card
+- [x] Keep the Column Y lane assignment visible beneath the label
+- [x] Replace only the `#2 Lane` identifier text with the Column X second-squad day/time value
+
+---

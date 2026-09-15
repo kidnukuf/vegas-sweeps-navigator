@@ -2,6 +2,7 @@ import { useState } from "react";
 import { normalizeSquadTime } from "@/lib/squadTime";
 import OrleansHotelModal from "@/components/OrleansHotelModal";
 import { getEventScheduleState } from "@/lib/eventSchedule";
+import { getAdditionalSquadDisplay } from "@/lib/additionalSquadDisplay";
 
 /**
  * Shared "Lane to Banquet" trip-planner placard used by both the Bowler and
@@ -78,6 +79,7 @@ export function LaneToBanquetPlacard({
   if (!hasInfo) return null;
 
   const showHotelCard = !ev || ev.showHotelInfoCard === undefined || ev.showHotelInfoCard === null ? true : Boolean(ev.showHotelInfoCard);
+  const additionalSquad = getAdditionalSquadDisplay(squadTime2, laneNumber2);
 
   return (
     <div
@@ -198,28 +200,15 @@ export function LaneToBanquetPlacard({
               </div>
             </div>
           )}
-          {(laneNumber2 || squadTime2) && (
+          {additionalSquad && (
             <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3">
               <p className="mb-2 text-cyan-200 text-xs font-bold uppercase tracking-wide">🎳 Additional Squad</p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {squadTime2 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🕐</span>
-                    <div>
-                      <p className="text-white/65 text-xs">Squad Time</p>
-                      <p className="text-white font-semibold text-sm">{normalizeSquadTime(squadTime2)}</p>
-                    </div>
-                  </div>
-                )}
-                {laneNumber2 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎳</span>
-                    <div>
-                      <p className="text-white/65 text-xs">#2 Lane</p>
-                      <p className="text-white font-semibold text-sm">Lane {laneNumber2}</p>
-                    </div>
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                <span className="text-base">{additionalSquad.icon === "lane" ? "🎳" : "🕐"}</span>
+                <div>
+                  <p className="text-white/65 text-xs">{additionalSquad.label}</p>
+                  <p className="text-white font-semibold text-sm">{additionalSquad.value}</p>
+                </div>
               </div>
             </div>
           )}
