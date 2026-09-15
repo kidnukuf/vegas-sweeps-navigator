@@ -54,6 +54,7 @@ describe("offlineDoor.loadData", () => {
     expect(data.eventId).toBe(EVENT_ID);
     expect(data.mode).toBe(MODE);
     expect(Array.isArray(data.guests)).toBe(true);
+    if (data.guests.length > 0) expect(data.guests[0]).toHaveProperty("under21");
 
     // Reentry pool: 4 zones × 50 = 200, all tokens unique, each zone-locked.
     expect(data.reentry.length).toBe(200);
@@ -85,6 +86,8 @@ describe("offlineDoor.generateBundle", () => {
     expect(bundle.html).toContain("/scan/banquet/<token>");
     expect(bundle.html).toContain("QR NOT LOADED");
     expect(bundle.html).toContain("Not in the Test for qr bundle (Event ID 3390003)");
+    expect(bundle.html).toContain("under21: guest.under21");
+    expect(bundle.html).toContain('"under21":');
   });
 });
 

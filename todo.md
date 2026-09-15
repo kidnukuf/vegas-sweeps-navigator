@@ -3778,3 +3778,12 @@
 - [x] Report the exact online scanning readiness and operator steps
 
 ---
+
+
+## Current Session — Under-21 Scanner Visuals
+- [x] Inspect under-21 roster fields, online scan result classification, and standalone HTML rendering
+- [x] Implement correct under-21 visual classification for bowler and guest QR passes in both scanner modes
+- [x] Add regression coverage and run TypeScript checking, focused tests, and production build
+- [x] Publish the verified under-21 scanner visual correction
+
+---

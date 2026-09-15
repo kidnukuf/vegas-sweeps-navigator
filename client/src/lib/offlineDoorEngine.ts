@@ -36,6 +36,7 @@ export interface ScanDecision {
   teamNumber: string | null;
   token: string;
   isReentry: boolean;
+  under21: boolean;
 }
 
 // In-memory lock: tokens currently being processed (prevents same-tick double admit).
@@ -108,6 +109,7 @@ export async function processScan(
       teamNumber: null,
       token,
       isReentry: false,
+      under21: false,
     };
   }
 
@@ -122,6 +124,7 @@ export async function processScan(
       teamNumber: null,
       token,
       isReentry: false,
+      under21: false,
     };
   }
   inFlight.add(token);
@@ -141,6 +144,7 @@ export async function processScan(
         teamNumber: null,
         token,
         isReentry: false,
+        under21: false,
       };
     }
 
@@ -159,6 +163,7 @@ export async function processScan(
           teamNumber: null,
           token,
           isReentry: true,
+          under21: false,
         };
       }
       if (opts.zone && re.zone !== opts.zone) {
@@ -176,6 +181,7 @@ export async function processScan(
           teamNumber: null,
           token,
           isReentry: true,
+          under21: false,
         };
       }
       // Valid reentry admit — does NOT consume an entry token (reusable).
@@ -194,6 +200,7 @@ export async function processScan(
         teamNumber: null,
         token,
         isReentry: true,
+        under21: false,
       };
     }
 
@@ -210,6 +217,7 @@ export async function processScan(
         teamNumber: null,
         token,
         isReentry: false,
+        under21: false,
       };
     }
 
@@ -225,6 +233,7 @@ export async function processScan(
         teamNumber: guest.teamNumber,
         token,
         isReentry: false,
+        under21: guest.under21,
       };
     }
 
@@ -242,6 +251,7 @@ export async function processScan(
       teamNumber: guest.teamNumber,
       token,
       isReentry: false,
+      under21: guest.under21,
     };
   } finally {
     inFlight.delete(token);

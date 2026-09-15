@@ -73,7 +73,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
       setFlash(d.admit ? "admit" : "deny");
 
       // Determine ScanResult overlay state
-      const isUnder21 = d.detail?.toLowerCase().includes("under 21") || d.detail?.toLowerCase().includes("u21");
+      const isUnder21 = Boolean(d.under21);
       const ageCode = isUnder21 ? "00" : "21";
 
       if (d.result === "denied_used") {

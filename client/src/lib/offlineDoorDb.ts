@@ -27,6 +27,7 @@ export interface GuestRecord {
   displayName: string;
   teamNumber: string | null;
   teamName: string | null;
+  under21: boolean;
   entitlementType: "bowler" | "guest";
   guestSuffix: string | null;
   mode: DoorMode;
@@ -166,6 +167,7 @@ export interface LoadPayload {
     displayName: string;
     teamNumber: string | null;
     teamName: string | null;
+    under21: boolean;
     entitlementType: "bowler" | "guest";
     guestSuffix: string | null;
     alreadyUsedAtLoad: boolean;

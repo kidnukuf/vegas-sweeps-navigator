@@ -447,7 +447,7 @@ async function processScan(rawToken, lane) {
 
   // ── Race-condition guard ────────────────────────────────────────────────
   if (inFlight.has(token)) {
-    return { result: 'denied_used', admit: false, headline: 'DENIED', detail: 'Scan already in progress', displayName: null, teamNumber: null };
+    return { result: 'denied_used', admit: false, headline: 'DENIED', detail: 'Scan already in progress', displayName: null, teamNumber: null, under21: false };
   }
   inFlight.add(token);
   try {
@@ -456,7 +456,7 @@ async function processScan(rawToken, lane) {
     // ── 0. QR station type check ────────────────────────────────────────────
     if (parsedScan.qrMode && parsedScan.qrMode !== MODE) {
       appendScanLog({ token, result: 'denied_wrongzone', reason: 'QR station type does not match this bundle', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
-      return { result: 'denied_wrongzone', admit: false, headline: 'WRONG STATION', detail: 'This QR is for the ' + (parsedScan.qrMode === 'banquet' ? 'Banquet' : 'Pool Party') + ' station. This bundle is for ' + (MODE === 'banquet' ? 'Banquet' : 'Pool Party') + '.', displayName: null, teamNumber: null };
+      return { result: 'denied_wrongzone', admit: false, headline: 'WRONG STATION', detail: 'This QR is for the ' + (parsedScan.qrMode === 'banquet' ? 'Banquet' : 'Pool Party') + ' station. This bundle is for ' + (MODE === 'banquet' ? 'Banquet' : 'Pool Party') + '.', displayName: null, teamNumber: null, under21: false };
     }
 
     // ── 1. Reentry token? ─────────────────────────────────────────────────
@@ -464,23 +464,23 @@ async function processScan(rawToken, lane) {
     if (re !== undefined) {
       if (!re.inUse) {
         appendScanLog({ token, result: 'denied_notfound', reason: 'Reentry code not issued', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
-        return { result: 'denied_notfound', admit: false, headline: 'NOT ACTIVE', detail: 'Re-entry code not issued', displayName: null, teamNumber: null };
+        return { result: 'denied_notfound', admit: false, headline: 'NOT ACTIVE', detail: 'Re-entry code not issued', displayName: null, teamNumber: null, under21: false };
       }
       appendScanLog({ token, result: 'reentry_admitted', reason: 're-entry ' + re.zone, lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now, wristbandNumber: re.linkedWristband });
-      return { result: 'reentry_admitted', admit: true, headline: 'RE-ENTRY OK', detail: re.linkedWristband ? 'Band #' + re.linkedWristband + ' (' + re.zone + ')' : 'Zone ' + re.zone, displayName: null, teamNumber: null };
+      return { result: 'reentry_admitted', admit: true, headline: 'RE-ENTRY OK', detail: re.linkedWristband ? 'Band #' + re.linkedWristband + ' (' + re.zone + ')' : 'Zone ' + re.zone, displayName: null, teamNumber: null, under21: false };
     }
 
     // ── 2. In guest list? ─────────────────────────────────────────────────
     const guest = TOKEN_MAP[token];
     if (!guest) {
       appendScanLog({ token, result: 'denied_notfound', reason: 'Token not in list', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
-      return { result: 'denied_notfound', admit: false, headline: 'QR NOT LOADED', detail: ${JSON.stringify(`Not in the ${eventName} bundle (Event ID ${eventId}) — download a fresh scanner`)}, displayName: null, teamNumber: null };
+      return { result: 'denied_notfound', admit: false, headline: 'QR NOT LOADED', detail: ${JSON.stringify(`Not in the ${eventName} bundle (Event ID ${eventId}) — download a fresh scanner`)}, displayName: null, teamNumber: null, under21: false };
     }
 
     // ── 3. Already used? ──────────────────────────────────────────────────
     if (guest.alreadyUsedAtLoad || usedTokens.has(token)) {
       appendScanLog({ token, result: 'denied_used', reason: 'Already redeemed', lane, mode: MODE, eventId: EVENT_ID, scannedAtMs: now });
-      return { result: 'denied_used', admit: false, headline: 'ALREADY IN', detail: guest.displayName + ' — already scanned', displayName: guest.displayName, teamNumber: guest.teamNumber };
+      return { result: 'denied_used', admit: false, headline: 'ALREADY IN', detail: guest.displayName + ' — already scanned', displayName: guest.displayName, teamNumber: guest.teamNumber, under21: guest.under21 };
     }
 
     // ── 4. Admit + consume ────────────────────────────────────────────────
@@ -494,6 +494,7 @@ async function processScan(rawToken, lane) {
       detail: guest.displayName + (guest.teamNumber ? ' · Team ' + guest.teamNumber : ''),
       displayName: guest.displayName,
       teamNumber: guest.teamNumber,
+      under21: guest.under21,
     };
   } finally {
     inFlight.delete(token);
