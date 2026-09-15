@@ -1,3 +1,18 @@
+export type OfflineDoorView = "console" | "A" | "B";
+
+export function resolveOfflineDoorView(search: string): OfflineDoorView {
+  const params = new URLSearchParams(search);
+  const requested = String(params.get("station") ?? params.get("view") ?? "").trim().toUpperCase();
+  return requested === "A" || requested === "B" ? requested : "console";
+}
+
+export function buildOfflineDoorStationUrl(origin: string, eventId: number, station: "A" | "B"): string {
+  const url = new URL("/offline-door", origin);
+  url.searchParams.set("eventId", String(eventId));
+  url.searchParams.set("station", station);
+  return url.toString();
+}
+
 export function resolveOfflineDoorEventId(
   search: string,
   savedEventId: string | null,

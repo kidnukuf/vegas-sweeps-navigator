@@ -3892,3 +3892,15 @@
 - [x] Verify the landing page, TypeScript, tests, and production build
 - [x] Publish the landing-page navigation correction
 ---
+
+
+## Current Session — Dual Scanner Dual Monitor Stations
+- [x] Inspect the online scanner, offline bundle, relay, station-mode, and verification-display architecture
+- [x] Define independent station identity for two scanner/monitor pairs
+- [x] Ensure each station displays its own scan verification result without stealing focus from the other station
+- [x] Preserve event-scoped single-use validation across both stations
+- [x] Add concurrency and cross-station regression coverage
+- [x] Add operator setup instructions for two scanners and two monitors
+- [x] Verify the dual-station flow, TypeScript, tests, and production build
+- [ ] Publish the dual-scanner update
+---

@@ -6,13 +6,15 @@
  *   • Window A — fullscreen scan view for TV #1 (one scanner)
  *   • Window B — fullscreen scan view for TV #2 (one scanner)
  *
- * Real-world setup: open this page in 2 browser windows, drag one to each TV,
- * press "Window A" on one and "Window B" on the other, then F11 to fullscreen.
- * Keep the Console on the laptop's own screen. All three share the same IndexedDB,
- * so a pass used on either TV is instantly dead everywhere.
+ * Real-world setup: use the Console to open Scanner A and Scanner B as two
+ * station-specific browser windows, then place one window on each monitor. Both
+ * windows share the same IndexedDB, so a pass used at either station is instantly
+ * dead everywhere. Each station keeps its own verification flash and result display.
  *
- * Only ONE scan window should capture the keyboard per physical machine window —
- * each opened browser window has its own keyboard focus, so one scanner → one window.
+ * A keyboard-wedge USB scanner sends keystrokes to the focused operating-system
+ * window. For two scanners on one Pi, use devices with distinct serial/evdev
+ * routing or use one scanner host per station; two ordinary keyboard-wedge scanners
+ * cannot be distinguished by browser JavaScript alone.
  */
 import { useEffect, useState } from "react";
 import { ScanLane } from "@/components/door/ScanLane";
@@ -20,12 +22,12 @@ import { DoorConsole } from "@/components/door/DoorConsole";
 import { Button } from "@/components/ui/button";
 import { startSyncService } from "@/lib/offlineDoorSync";
 import { getMeta, type ReentryZone } from "@/lib/offlineDoorDb";
-import { isOfflineDoorDatasetForEvent, resolveOfflineDoorEventId } from "@/lib/offlineDoorNavigation";
+import { buildOfflineDoorStationUrl, isOfflineDoorDatasetForEvent, resolveOfflineDoorEventId, resolveOfflineDoorView, type OfflineDoorView } from "@/lib/offlineDoorNavigation";
 
-type View = "console" | "A" | "B";
+type View = OfflineDoorView;
 
 export default function OfflineDoor() {
-  const [view, setView] = useState<View>("console");
+  const [view, setView] = useState<View>(() => resolveOfflineDoorView(window.location.search));
   const [eventId] = useState<number>(() => {
     return resolveOfflineDoorEventId(
       window.location.search,
@@ -41,6 +43,12 @@ export default function OfflineDoor() {
   // Per-window station mode (banquet or pool).
   const [stationA, setStationA] = useState<"banquet" | "pool">("banquet");
   const [stationB, setStationB] = useState<"banquet" | "pool">("pool");
+
+  const openStationWindow = (station: "A" | "B") => {
+    const url = buildOfflineDoorStationUrl(window.location.origin, eventId, station);
+    const popup = window.open(url, `bowl-vegas-scanner-${station}`, "popup,width=1280,height=800");
+    if (!popup) window.location.assign(url);
+  };
 
   useEffect(() => {
     startSyncService();
@@ -74,7 +82,7 @@ export default function OfflineDoor() {
               ← Console
             </Button>
             <span className="text-sm text-slate-400">
-              {label} — shared bowler & guest self-scan · Zone {zone}
+              {label} — dedicated scanner display · Event {eventId} · Zone {zone}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -120,15 +128,16 @@ export default function OfflineDoor() {
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 p-4">
-          <div><div className="text-xl font-bold">Offline Door Scanner</div><p className="mt-1 text-xs text-muted-foreground">Each selected door uses one shared scan station for bowler and guest QR passes.</p></div>
+          <div><div className="text-xl font-bold">Offline Door Scanner</div><p className="mt-1 text-xs text-muted-foreground">Open Scanner A and Scanner B on separate monitors. Each station shows its own verification result while the event database prevents duplicate entry across both stations.</p></div>
           <div className="flex gap-2">
             <Button variant="default">Console</Button>
-            <Button variant="outline" onClick={() => setView("A")}>
-              Open Door A (TV 1)
-            </Button>
-            <Button variant="outline" onClick={() => setView("B")}>
-              Open Door B (TV 2)
-            </Button>
+                          <Button variant="outline" onClick={() => openStationWindow("A")}>
+                Open Scanner A (Monitor 1)
+              </Button>
+              <Button variant="outline" onClick={() => openStationWindow("B")}>
+                Open Scanner B (Monitor 2)
+              </Button>
+
           </div>
         </div>
       </div>

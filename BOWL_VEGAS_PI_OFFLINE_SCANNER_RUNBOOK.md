@@ -202,6 +202,14 @@ Plug the USB QR scanner into the Pi. Most keyboard-wedge scanners require no dri
 
 Do not click the scanner input between scans. Scanner A is designed to capture the USB scanner’s keystrokes globally. Keep the scanner page visible and full-screen if desired.
 
+### 13A. Run two scanner stations on two monitors
+
+From the Offline Door Scanner **Console**, use **Open Scanner A (Monitor 1)** and **Open Scanner B (Monitor 2)**. The application creates station-specific links that preserve the selected event ID. Move each station window to its assigned monitor and use full-screen mode. Scanner A and Scanner B each render their own accepted, under-21, duplicate, invalid, and wrong-station verification display.
+
+Both station windows use the same event-scoped IndexedDB dataset. A QR pass accepted at Scanner A is therefore rejected as already used at Scanner B, and vice versa. This is the intended duplicate-prevention behavior.
+
+A normal keyboard-wedge scanner is an operating-system keyboard device, not a browser-addressable device. If both scanners are plugged into the same Pi as ordinary keyboard-wedge devices, the operating system may send both scanners’ keystrokes to the focused window. For a reliable two-scanner deployment, use one scanner host per station, or use scanners and a local serial/evdev relay that assigns each physical device to Scanner A or Scanner B. Do not present two same-host keyboard-wedge scanners as independently routed until that device-level routing has been tested.
+
 ## Part 6 — Open the laptop’s real-time monitor
 
 ### 14. Open the exact printed monitor URL
