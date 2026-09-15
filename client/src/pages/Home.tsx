@@ -311,7 +311,7 @@ export default function Home() {
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">For Event Directors</p>
               <h2 id="director-workflow-title" className="mt-2 text-2xl font-black text-white md:text-3xl">Plan, validate, and run the event from one system.</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-200">Event Directors work from the secured Director Portal. It is separate from bowler sign-up and is built for event setup, roster correction, and live operations.</p>
-              <button onClick={() => setLocation("/ed")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 transition-transform duration-150 hover:brightness-110 active:scale-[0.97]">Open Event Director Portal <ArrowRight className="h-4 w-4" /></button>
+              <button onClick={() => setLocation("/ed-login")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 transition-transform duration-150 hover:brightness-110 active:scale-[0.97]">Event Director Portal <ArrowRight className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3">
               <div className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4"><ClipboardCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" /><div><h3 className="font-semibold text-white">Prepare the roster</h3><p className="mt-1 text-sm text-slate-300">Create the event, choose the exact Google Sheet tab, review center matches, and issue IDs and claim codes.</p></div></div>

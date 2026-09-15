@@ -3882,3 +3882,13 @@
 - [x] Verify responsive Bowler and Team Captain portal rendering, TypeScript, tests, and production build
 - [x] Publish the portal payment-section removal
 ---
+
+
+## Current Session — Landing Page Event Director Entry
+- [x] Inspect the landing page Event Director entry and route wiring
+- [x] Change the visible label to `Event Director Portal`
+- [x] Ensure the entry opens the Event Director sign-in/sign-up page
+- [x] Add regression coverage for the label and route target
+- [x] Verify the landing page, TypeScript, tests, and production build
+- [ ] Publish the landing-page navigation correction
+---
