@@ -3880,5 +3880,5 @@
 - [x] Preserve the remaining portal sections and navigation
 - [x] Add regression coverage for the payment-section removal
 - [x] Verify responsive Bowler and Team Captain portal rendering, TypeScript, tests, and production build
-- [ ] Publish the portal payment-section removal
+- [x] Publish the portal payment-section removal
 ---
