@@ -3890,5 +3890,5 @@
 - [x] Ensure the entry opens the Event Director sign-in/sign-up page
 - [x] Add regression coverage for the label and route target
 - [x] Verify the landing page, TypeScript, tests, and production build
-- [ ] Publish the landing-page navigation correction
+- [x] Publish the landing-page navigation correction
 ---
