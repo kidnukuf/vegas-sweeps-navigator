@@ -3837,3 +3837,15 @@
 - [x] Replace only the `#2 Lane` identifier text with the Column X second-squad day/time value
 
 ---
+
+
+## Current Session — Column X-Gated Additional Squad
+- [x] Trace why Column Y lane data is still displayed when Column X is blank
+- [x] Require a valid Column X second-squad date/time before retaining or displaying Column Y lane data
+- [x] Suppress the entire Additional Squad card when Column X has no date/time
+- [x] Display the actual Column X date/time above the preserved lane assignment when both exist
+- [x] Add regression coverage for blank Column X, valid Column X + Column Y, and missing Column Y cases
+- [x] Verify the real Bowler Portal data path, mobile layout, TypeScript, and production build
+- [x] Publish the corrected behavior
+
+---

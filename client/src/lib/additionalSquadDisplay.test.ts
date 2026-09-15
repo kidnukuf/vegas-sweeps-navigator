@@ -25,4 +25,9 @@ describe("getAdditionalSquadDisplay", () => {
       icon: "time",
     });
   });
+
+  it("suppresses orphaned Column Y lane data when Column X is blank", () => {
+    expect(getAdditionalSquadDisplay("", 3)).toBeNull();
+    expect(getAdditionalSquadDisplay(null, 3)).toBeNull();
+  });
 });

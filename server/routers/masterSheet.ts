@@ -150,6 +150,9 @@ interface SheetRow {
 }
 
 function parseSheetRow(row: string[]): SheetRow {
+  const squadTime2 = row[COLS.SQUAD_TIME_2]?.trim() || "";
+  const laneNumber2 = squadTime2 ? parseSecondSquadLane({ "#2 Lane": row[COLS.LANE_2] }) : null;
+
   return {
     bowlerId: row[COLS.BOWLER_ID]?.trim() || "",
     teamName: row[COLS.TEAM_NAME]?.trim() || "",
@@ -166,8 +169,8 @@ function parseSheetRow(row: string[]): SheetRow {
     centerName: row[COLS.CENTER]?.trim() || "",
     squadTime: row[COLS.SQUAD_TIME]?.trim() || "",
     laneNumber: parseInt(row[COLS.LANE]?.trim() || "0") || null,
-    squadTime2: row[COLS.SQUAD_TIME_2]?.trim() || "",
-    laneNumber2: parseSecondSquadLane({ "#2 Lane": row[COLS.LANE_2] }),
+    squadTime2,
+    laneNumber2,
     under21: row[COLS.UNDER_21]?.trim().toLowerCase() === "y",
     sanction: row[COLS.SANCTION]?.trim() || "",
     games: parseInt(row[COLS.GAMES]?.trim() || "0") || null,

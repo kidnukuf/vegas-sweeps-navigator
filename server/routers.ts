@@ -2087,7 +2087,7 @@ export const appRouter = router({
             const laneRaw = String(row["Lane #"] ?? row["Lane"] ?? row["lane"] ?? "").trim();
             const laneNumber = laneRaw ? (parseInt(laneRaw) || null) : null;
             const squadTime2Val = String(row["2nd Squad Time"] ?? row["Second Squad Time"] ?? row["squadTime2"] ?? row["secondSquadTime"] ?? "").trim() || null;
-            const laneNumber2 = parseSecondSquadLane(row);
+            const laneNumber2 = squadTime2Val ? parseSecondSquadLane(row) : null;
             // Column 44 — "Lane to Event" / "Lane to Banquet" directional info
             const laneToEvent = String(row["Lane to Event"] ?? row["Lane to Banquet"] ?? row["lane_to_event"] ?? row["LaneToEvent"] ?? "").trim() || null;
 

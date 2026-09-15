@@ -14,18 +14,22 @@ export function getAdditionalSquadDisplay(
   squadTime2: string | null | undefined,
   laneNumber2: number | null | undefined,
 ): AdditionalSquadDisplay {
+  const rawSquadTime = String(squadTime2 ?? "").trim();
+  if (!rawSquadTime) return null;
+
+  const normalizedSquadTime = normalizeSquadTime(rawSquadTime);
   if (laneNumber2) {
     return {
-      label: normalizeSquadTime(squadTime2) || "2nd Squad",
+      label: normalizedSquadTime,
       value: `Lane ${laneNumber2}`,
       icon: "lane",
     };
   }
 
-  if (squadTime2) {
+  if (rawSquadTime) {
     return {
       label: "2nd Squad Time",
-      value: normalizeSquadTime(squadTime2),
+      value: normalizedSquadTime,
       icon: "time",
     };
   }
