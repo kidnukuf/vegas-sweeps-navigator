@@ -3868,6 +3868,6 @@
 - [x] Keep claim code, bill breakdown, and team score marked app-managed unless a legitimate source header exists
 - [x] Add regression coverage for exact header aliases and persistence
 - [x] Verify import preview, TypeScript, tests, and production build
-- [ ] Publish the corrected header mapping
+- [x] Publish the corrected header mapping
 
 ---
