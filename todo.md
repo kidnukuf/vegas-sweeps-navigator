@@ -3787,3 +3787,24 @@
 - [x] Publish the verified under-21 scanner visual correction
 
 ---
+
+
+## Current Session — Bowl Vegas Prospect Advertising
+- [x] Review Bowler, Team Captain, and Coordinator portal placements and existing design system
+- [x] Define grounded marketing copy and ambassador-focused CTA without unsupported claims
+- [x] Create the advertising banner asset or coded banner treatment
+- [x] Build the linked prospect-facing event-coordination page
+- [x] Add banner placements and route navigation in all three portals
+- [x] Run route, accessibility, responsive, visual, test, and production-build verification
+- [x] Publish the verified advertising experience
+
+---
+
+
+## Scope Addendum — Referral Bonus
+- [x] Add an ambassador referral section explaining that a referral may qualify when it introduces a league or coordinator and results in a completed event contract
+- [x] Avoid promising a reward amount, timing, tax treatment, or automatic eligibility until written program terms are approved
+- [x] Add a referral-intake CTA that captures the referrer and referred contact without exposing private participant data
+- [x] Include referral-program language in the marketing-page verification and tests
+
+---

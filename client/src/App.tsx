@@ -27,6 +27,7 @@ import DoormanTablet from "./pages/DoormanTablet";
 import LeagueSelector from "./pages/LeagueSelector";
 import SeatingChart from "./pages/SeatingChart";
 import AdLanding from "./pages/AdLanding";
+import EventDirectorProspect from "./pages/EventDirectorProspect";
 import OfflineDoor from "./pages/OfflineDoor";
 import OperatorSetupGuide from "./pages/OperatorSetupGuide";
 import EdLogin from "./pages/EdLogin";
@@ -139,6 +140,7 @@ function Router() {
       <Route path="/offline-door" component={OfflineDoor} />
       <Route path="/seating-chart" component={SeatingChart} />
       <Route path="/ad" component={AdLanding} />
+      <Route path="/event-directors" component={EventDirectorProspect} />
       <Route path="/invite" component={AdLanding} />
       <Route path="/setup-guide" component={OperatorSetupGuide} />
       <Route path="/admin/master-sheet" component={MasterSheetImport} />

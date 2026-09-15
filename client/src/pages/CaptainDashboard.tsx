@@ -15,6 +15,7 @@ import { detectGroupSlug, GROUP_THEMES } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
 import AdRotator from "@/components/AdRotator";
+import BowlVegasGrowthBanner from "@/components/BowlVegasGrowthBanner";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { CenterBulletinBoard } from "@/components/CenterBulletinBoard";
@@ -347,6 +348,8 @@ export default function CaptainDashboard() {
             </div>
           </div>
         </div>
+
+        <BowlVegasGrowthBanner className="mb-4" />
 
         {/* ── Sponsor ad (slot A) ── */}
         <AdRotator eventId={captainEventId} slot={0} />

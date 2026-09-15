@@ -27,6 +27,7 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import AppFooter from "@/components/AppFooter";
 import LaneToBanquetPlacard, { EventTripSettings } from "@/components/LaneToBanquetPlacard";
 import AdRotator from "@/components/AdRotator";
+import BowlVegasGrowthBanner from "@/components/BowlVegasGrowthBanner";
 import SurveyDialog from "@/components/SurveyDialog";
 import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
@@ -604,6 +605,8 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
             poolPartyEnabled={Boolean(surveyStatusQuery.data?.poolPartyEnabled)}
           />
         )}
+
+        <BowlVegasGrowthBanner className="mb-4" />
 
         {/* ── Sponsor ad (slot A) ── */}
         <AdRotator eventId={bowlerEventId} slot={0} />
