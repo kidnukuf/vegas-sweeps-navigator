@@ -45,6 +45,7 @@ import { validateImportTeamCode } from "./importTeamCode.logic";
 import { buildSeatingArrangementSheetPlan, snapshotSeatingSheet } from "./seatingArrangement.logic";
 import { normalizeLeagueCode, normalizeLeagueName } from "./leagueName.logic";
 import { parseSecondSquadLane, SECOND_SQUAD_LANE_HEADER } from "../shared/secondSquadLane";
+import { extractImportMappedFields } from "./importMapping";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -1998,13 +1999,9 @@ export const appRouter = router({
             const roommateLast = String(row["Roommate Last Name"] ?? row["Roommate Last"] ?? row["roommate_last"] ?? "").trim();
             const roommateRequested = !!(roommateFirst || roommateLast);
             const roomAmount = parseFloat(String(row["Amount Due"] ?? row["Room Amount Due"] ?? row["Room Amount"] ?? row["room_amount"] ?? "0").replace(/[$,]/g, "")) || 0;
+                        const { additionalGuest, hotelRoomId, seatingArrangement } = extractImportMappedFields(row);
+            const banquetTable = seatingArrangement;
 
-            // ── Banquet table assignment (Col W) ──────────────────────────────────────
-            // Accepts: "Assigned Table #", "Assigned Table", "Table #", "Table", "banquet_table", "Banquet Table"
-            const banquetTable = String(
-              row["Assigned Table #"] ?? row["Assigned Table"] ?? row["Table #"] ??
-              row["Table"] ?? row["banquet_table"] ?? row["Banquet Table"] ?? ""
-            ).trim() || null;
 
             // ── Extra banquet tickets (Col S / X) ────────────────────────────────────
             // Accepts numeric count, dollar amount, or Y/N
@@ -2058,7 +2055,7 @@ export const appRouter = router({
             // banquet QR; it also gets a pool QR when this row is pool-party eligible.
             const importedGuestSlots = [
               String(row["Guest Name"] ?? row["guestName"] ?? row["guest_name"] ?? "").trim(),
-              String(row["Additional Guest Name"] ?? row["additionalGuestName"] ?? row["additional_guest_name"] ?? "").trim(),
+              additionalGuest,
             ];
             const guestDetails = importedGuestSlots.map(splitImportedGuestEntry);
             const guestUnder21Slots = [
@@ -2104,8 +2101,8 @@ export const appRouter = router({
                 guestPoolPartyAmount: guestPoolPartyAmount.toFixed(2),
                 banquetTable: banquetTable || null,
               });
-              if (checkinDate || checkoutDate || roomType || hotelConfirmation) {
-                await upsertHotelRecord(bowlerId, { checkinDate: checkinDate || null, checkoutDate: checkoutDate || null, roomType: roomType || null, roommateRequested, roommateFirstName: roommateFirst || null, roommateLastName: roommateLast || null, roomAmount, confirmationCode: hotelConfirmation || null });
+              if (checkinDate || checkoutDate || roomType || hotelConfirmation || hotelRoomId || roommateRequested || roomAmount) {
+                await upsertHotelRecord(bowlerId, { checkinDate: checkinDate || null, checkoutDate: checkoutDate || null, roomType: roomType || null, roomId: hotelRoomId, roommateRequested, roommateFirstName: roommateFirst || null, roommateLastName: roommateLast || null, roomAmount, confirmationCode: hotelConfirmation || null });
               }
               const effectiveBanquet = extraBanquet;
               const effectivePoolParty = poolParty;
@@ -2177,8 +2174,8 @@ export const appRouter = router({
               const newBowler = await rawQuery("SELECT id FROM bowlers WHERE scantronId = ? AND eventId = ? LIMIT 1", [scantronId, input.eventId]) as Record<string, unknown>[];
               const bowlerId = newBowler[0]?.id as number;
               if (bowlerId) {
-                if (checkinDate || checkoutDate || roomType || hotelConfirmation) {
-                  await upsertHotelRecord(bowlerId, { checkinDate: checkinDate || null, checkoutDate: checkoutDate || null, roomType: roomType || null, roommateRequested, roommateFirstName: roommateFirst || null, roommateLastName: roommateLast || null, roomAmount, confirmationCode: hotelConfirmation || null });
+                if (checkinDate || checkoutDate || roomType || hotelConfirmation || hotelRoomId || roommateRequested || roomAmount) {
+                  await upsertHotelRecord(bowlerId, { checkinDate: checkinDate || null, checkoutDate: checkoutDate || null, roomType: roomType || null, roomId: hotelRoomId, roommateRequested, roommateFirstName: roommateFirst || null, roommateLastName: roommateLast || null, roomAmount, confirmationCode: hotelConfirmation || null });
                 }
                 const effectiveBanquet2 = extraBanquet;
                 const effectivePoolParty2 = poolParty;

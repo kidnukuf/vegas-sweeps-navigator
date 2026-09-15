@@ -574,6 +574,8 @@ export const hotelRecords = mysqlTable("hotel_records", {
   checkoutDate: varchar("checkoutDate", { length: 20 }),
   roomType: varchar("roomType", { length: 20 }), // 1K, 2D, etc.
   roomAmount: decimal("roomAmount", { precision: 10, scale: 2 }),
+  // Stable room-sharing identifier imported from the master sheet's Hotel Room ID column.
+  roomId: varchar("roomId", { length: 64 }),
   roommateRequested: boolean("roommateRequested").default(false),
   roommateFirstName: varchar("roommateFirstName", { length: 100 }),
   roommateLastName: varchar("roommateLastName", { length: 100 }),

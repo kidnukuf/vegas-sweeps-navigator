@@ -3858,3 +3858,16 @@
 - [x] Verify the resulting GitHub synchronization and report the commit/state
 
 ---
+
+
+## Current Session — Import Header Mapping Correction
+- [x] Inspect the header registry, parser, schema fields, and unmapped-column display
+- [x] Map `Additional Guest` to the correct guest data field
+- [x] Map `Hotel Room ID` to the room-sharing identifier field
+- [x] Map `Seating Arrangement` to the seating/table assignment field
+- [x] Keep claim code, bill breakdown, and team score marked app-managed unless a legitimate source header exists
+- [x] Add regression coverage for exact header aliases and persistence
+- [x] Verify import preview, TypeScript, tests, and production build
+- [ ] Publish the corrected header mapping
+
+---

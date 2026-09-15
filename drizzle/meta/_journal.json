@@ -22,6 +22,13 @@
       "when": 1782257761512,
       "tag": "0002_sweet_jean_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1789495086342,
+      "tag": "0003_add_hotel_room_id",
+      "breakpoints": true
     }
   ]
 }

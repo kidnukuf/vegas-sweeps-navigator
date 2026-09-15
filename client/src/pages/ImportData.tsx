@@ -82,7 +82,9 @@ const COLUMN_ALIASES: Record<string, string> = {
   "extra banquet": "extraBanquet", "extra banquet qr code": "extraBanquet",
   "extra pool party": "poolParty",
   "guest pool party": "guestPoolPartyAmount", "guest $15": "guestPoolPartyAmount",
-  "guest name": "guestName", "additional guest name": "additionalGuestName",
+  "guest name": "guestName", "additional guest": "additionalGuestName", "additional guest name": "additionalGuestName",
+  "hotel room id": "hotelRoomId", "hotel room #": "hotelRoomId", "room id": "hotelRoomId",
+  "seating arrangement": "banquetTable", "seating arrangement id": "banquetTable", "banquet table": "banquetTable",
   "guest under 21?": "guestUnder21", "guest under 21": "guestUnder21",
   "additional guest under 21?": "additionalGuestUnder21", "additional guest under 21": "additionalGuestUnder21",
   // Notes
@@ -639,7 +641,7 @@ export default function ImportData() {
             <div className="neon-card p-5">
               <h3 className="text-yellow-400 font-bold mb-3">📌 Recognized Column Headers</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-400">
-                {["First Name", "Last Name", "Phone", "Email", "Center", "Team Name", "Team #", "Position", "Captain", "Check In", "Check Out", "Room Type", "Roommate First", "Roommate Last", "Room Amount", "Banquet", "Pool Party", "Total Due", "Paid"].map(h => (
+                {["First Name", "Last Name", "Phone", "Email", "Center", "Team Name", "Team #", "Position", "Captain", "Check In", "Check Out", "Room Type", "Roommate First", "Roommate Last", "Hotel Room ID", "Seating Arrangement", "Room Amount", "Banquet", "Pool Party", "Additional Guest", "Total Due", "Paid"].map(h => (
                   <span key={h} className="bg-[#111] rounded px-2 py-1 font-mono">{h}</span>
                 ))}
               </div>
