@@ -3902,5 +3902,5 @@
 - [x] Add concurrency and cross-station regression coverage
 - [x] Add operator setup instructions for two scanners and two monitors
 - [x] Verify the dual-station flow, TypeScript, tests, and production build
-- [ ] Publish the dual-scanner update
+- [x] Publish the dual-scanner update
 ---
