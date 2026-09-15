@@ -3871,3 +3871,14 @@
 - [x] Publish the corrected header mapping
 
 ---
+
+
+## Current Session — Remove Portal Payment Sections
+- [x] Inspect Bowler Portal and Team Captain Portal payment UI and dependent display-only code
+- [x] Remove the visible Payment section from the Bowler Portal
+- [x] Remove the visible Payment section from the Team Captain Portal
+- [x] Preserve the remaining portal sections and navigation
+- [x] Add regression coverage for the payment-section removal
+- [x] Verify responsive Bowler and Team Captain portal rendering, TypeScript, tests, and production build
+- [ ] Publish the portal payment-section removal
+---

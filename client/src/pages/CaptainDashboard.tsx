@@ -647,7 +647,6 @@ export default function CaptainDashboard() {
           </h3>
           <ul className="space-y-2 text-white/60 text-sm">
             <li className="flex items-start gap-2"><span className="text-amber-400 flex-shrink-0">→</span> Ensure all team members have signed up and are verified before event day</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 flex-shrink-0">→</span> Confirm hotel reservations and payment status with each member</li>
             <li className="flex items-start gap-2"><span className="text-amber-400 flex-shrink-0">→</span> Arrive at Lane {p.laneNumber ?? "TBD"} by {normalizeSquadTime(p.squadTime) || "squad time"} on bowling day</li>
             <li className="flex items-start gap-2"><span className="text-cyan-400 flex-shrink-0">→</span> Practice starts <strong className="text-white">10 minutes before</strong> squad time — ensure your team is on the lanes early</li>
             <li className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">→</span> Side pots &amp; brackets are at the <strong className="text-white">front desk</strong> — see the desk before your squad begins</li>

@@ -6,9 +6,8 @@
  *  3. Animated "Lane to Banquet" clickable placard
  *  4. Event Details card
  *  5. Hotel card (if present)
- *  6. Payment card (if present)
- *  7. Contact Info card
- *  8. ── QR PASSPORT SECTION ──
+ *  6. Contact Info card
+ *  7. ── QR PASSPORT SECTION ──
  *     a. My Entry Ticket (bowling check-in)
  *     b. Banquet Dinner Passport QR
  *     c. Pool Party Passport QR
@@ -668,34 +667,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
 
         {/* Hotel info is now inside the Lane to Banquet accordion (Reg section) */}
 
-        {/* ── 5. Payment Status ── */}
-        {(p.totalAmountDue || isEDMode) && (
-          <div className="bowler-card">
-            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-              <span>💳</span> Payment
-            </h3>
-            <div className="flex items-center justify-between">
-              <span className="text-white/60 text-sm">Total Due</span>
-              <span className="text-white font-bold text-lg">
-                {p.totalAmountDue ? `$${Number(p.totalAmountDue).toFixed(2)}` : "—"}
-                {isEDMode && <EDEditField label="Total Amount Due" fieldKey="totalAmountDue" value={p.totalAmountDue} bowlerId={p.id} onSaved={() => profileQuery.refetch()} type="number" />}
-              </span>
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-white/60 text-sm">Status</span>
-              <span className="flex items-center gap-1">
-                {p.paid ? (
-                  <span className="text-emerald-400 font-semibold text-sm">✓ Paid</span>
-                ) : (
-                  <span className="text-red-400 font-semibold text-sm">⚠ Outstanding</span>
-                )}
-                {isEDMode && <EDEditField label="Paid" fieldKey="paid" value={p.paid ? "1" : "0"} bowlerId={p.id} onSaved={() => profileQuery.refetch()} type="select" options={[{label:"Paid",value:"1"},{label:"Outstanding",value:"0"}]} />}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* ── 6. Contact Info ── */}
+        {/* ── 5. Contact Info ── */}
         <div className="bowler-card">
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
             <span>📞</span> My Contact Info
