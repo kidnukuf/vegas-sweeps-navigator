@@ -21,6 +21,7 @@ import { BulletinModerationPanel } from "@/components/BulletinModerationPanel";
 import IncompleteGuestInformationPanel from "@/components/IncompleteGuestInformationPanel";
 import LeagueNameManager from "@/components/LeagueNameManager";
 import PaperTicketQueue from "@/components/PaperTicketQueue";
+import BanquetQrPacketPanel from "@/components/BanquetQrPacketPanel";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -2028,6 +2029,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         )}
         {activeTab === "passports" && (
           <>
+            <BanquetQrPacketPanel
+              eventId={EVENT_ID}
+              eventName={String(activeEvent?.eventName ?? "Bowl Vegas Event")}
+              eventYear={activeEvent?.eventYear ? Number(activeEvent.eventYear) : null}
+              startDate={activeEvent?.startDate ? String(activeEvent.startDate) : null}
+              endDate={activeEvent?.endDate ? String(activeEvent.endDate) : null}
+            />
             <PassportManager
               bowlers={bowlers as Bowler[]}
               eventId={EVENT_ID}

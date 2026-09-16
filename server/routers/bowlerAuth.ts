@@ -22,6 +22,7 @@ import { formatPassportScannerName } from "../passportDisplay";
 import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
 import { isPassportTypeAllowedAtDoor } from "@shared/doorPassportScan";
 import { verifyTurnstileToken } from "../turnstile";
+import { buildBanquetQrUrl } from "../banquetQr";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 
@@ -190,7 +191,7 @@ async function getBowlerProfile(bowlerId: number) {
     poolPartyQR = await QRCode.toDataURL(`${appOrigin}/scan/pool/${row.poolPartyToken}`, { width: 300, margin: 2 });
   }
   if (row.banquetToken && !row.banquetUsed) {
-    banquetQR = await QRCode.toDataURL(`${appOrigin}/scan/banquet/${row.banquetToken}`, { width: 300, margin: 2 });
+    banquetQR = await QRCode.toDataURL(buildBanquetQrUrl(row.banquetToken, appOrigin), { width: 300, margin: 2 });
   }
   // Fetch guest tokens (pool + banquet)
   const guestTokenRows = await rawQuery<{ suffix: string; token: string; used: number; disabled: number; guestName: string | null; banquetToken: string | null; banquetUsed: number | null; under21: number }>(
@@ -1167,6 +1168,56 @@ export const bowlerAuthRouter = router({
           disabled: Boolean(g.disabled),
         })),
       }));
+    }),
+
+  // ── EVENT DIRECTOR BANQUET QR ROSTER ─────────────────────────────────────────
+  // Returns the exact stored banquet token for every bowler in the authorized event.
+  // The Event Director PDF uses these URLs; it never generates replacement tokens.
+  getBanquetQrRoster: publicProcedure
+    .input(z.object({ token: z.string(), eventId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      await requireEventDirectorToolAccess(ctx, input.token);
+      await assertEventAccess(ctx, input.eventId);
+      const rows = await rawQuery<{
+        id: number;
+        legalFirstName: string;
+        legalLastName: string;
+        scantronId: string | null;
+        under21: number | boolean | null;
+        banquetToken: string | null;
+        banquetUsed: number | boolean;
+        centerName: string | null;
+        teamName: string | null;
+      }>(
+        `SELECT b.id, b.legalFirstName, b.legalLastName, b.scantronId, b.under21,
+                b.banquetToken, b.banquetUsed, bc.centerName, t.teamName
+           FROM bowlers b
+           LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+           LEFT JOIN teams t ON t.id = b.teamId
+          WHERE b.eventId = ? AND b.banquetToken IS NOT NULL
+          ORDER BY b.legalLastName, b.legalFirstName, b.id`,
+        [input.eventId]
+      );
+      const eventRows = await rawQuery<{ eventName: string; eventYear: number | null; startDate: string | null; endDate: string | null }>(
+        `SELECT eventName, eventYear, startDate, endDate FROM events WHERE id = ? LIMIT 1`,
+        [input.eventId]
+      );
+      const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
+      return {
+        event: eventRows[0] ?? null,
+        codes: rows.map((row) => ({
+          bowlerId: row.id,
+          firstName: row.legalFirstName,
+          lastName: row.legalLastName,
+          scantronId: row.scantronId,
+          under21: Boolean(row.under21),
+          banquetToken: row.banquetToken,
+          banquetUsed: Boolean(row.banquetUsed),
+          centerName: row.centerName,
+          teamName: row.teamName,
+          banquetUrl: row.banquetToken ? buildBanquetQrUrl(row.banquetToken, appOrigin) : null,
+        })),
+      };
     }),
 
   // ── SUBMIT CONTACT REQUEST (bowler submits phone + email when info is missing) ──

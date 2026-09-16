@@ -3920,7 +3920,7 @@
 - [x] Make under-21 status explicit and visually distinct on banquet scan results
 - [x] Add regression coverage for under-21 banquet bowler scans and accurate identity display
 - [x] Verify online/offline scan behavior, TypeScript, tests, and production build
-- [ ] Publish the banquet QR display correction
+- [x] Publish the banquet QR display correction
 ---
 
 
@@ -3938,4 +3938,15 @@
 - [x] Regenerate the printable artifacts with banquet-specific payloads and labels
 - [x] Validate banquet payloads and QR artifact readability
 - [x] Deliver the corrected banquet QR-code artifacts
+---
+
+
+## Current Session — Event Director Banquet QR Roster and Duplex PDF
+- [x] Inspect Event Director event workspace, banquet token generation, and existing PDF/download utilities
+- [x] Add a protected event-level banquet QR roster procedure using the exact stored bowler banquet tokens
+- [x] Add a 12-QR-per-page PDF generator with duplex-print page ordering and instructions
+- [x] Add Event Director controls to display the full event QR list, download the PDF, and print in one action
+- [x] Add regression coverage for exact-token parity, event access control, roster completeness, and 12-per-page layout
+- [x] Verify the feature in the Event Director portal, TypeScript, tests, and production build
+- [ ] Publish the Event Director banquet QR roster feature
 ---
