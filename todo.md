@@ -3948,5 +3948,5 @@
 - [x] Add Event Director controls to display the full event QR list, download the PDF, and print in one action
 - [x] Add regression coverage for exact-token parity, event access control, roster completeness, and 12-per-page layout
 - [x] Verify the feature in the Event Director portal, TypeScript, tests, and production build
-- [ ] Publish the Event Director banquet QR roster feature
+- [x] Publish the Event Director banquet QR roster feature
 ---
