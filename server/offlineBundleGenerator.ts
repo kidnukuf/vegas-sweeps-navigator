@@ -149,6 +149,9 @@ export async function generateOfflineBundle(
   .lane-headline { font-size: 3.5rem; font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: -.02em; }
   .lane-detail   { font-size: 1.3rem; font-weight: 500; color: rgba(255,255,255,.9); }
   .lane-team     { font-size: 0.9rem; color: rgba(255,255,255,.6); }
+  .lane-age      { font-size: 1.15rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  .lane-age.under21-age { color: #fecaca; }
+  .lane-age.adult-age { color: rgba(255,255,255,.72); }
   .lane-idle     { font-size: 1.4rem; color: var(--muted); }
 
   .lane-input-row { padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08); }
@@ -589,6 +592,7 @@ function showResult(lane, decision) {
     <div class="lane-headline flash-in">\${escHtml(decision.headline)}</div>
     <div class="lane-detail">\${escHtml(decision.detail)}</div>
     \${decision.teamNumber ? '<div class="lane-team">Team ' + escHtml(decision.teamNumber) + '</div>' : ''}
+    \${decision.result === 'admitted' ? '<div class="lane-age ' + (decision.under21 ? 'under21-age' : 'adult-age') + '">' + (decision.under21 ? 'UNDER 21 · AGE RESTRICTION' : '21+') + '</div>' : ''}
   \`;
 
   // Update stats

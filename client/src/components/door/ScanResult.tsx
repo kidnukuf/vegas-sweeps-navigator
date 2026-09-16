@@ -31,9 +31,14 @@ export interface ScanResultProps {
   onDismiss?: () => void;
   /** Optional: flash color overlay class to animate on mount */
   flashClass?: string;
+  /** Accurate roster identity returned by the scan decision. */
+  displayName?: string | null;
+  teamNumber?: string | null;
 }
 
-export function ScanResult({ state, ageCode = "21", message, duration, onDismiss, flashClass }: ScanResultProps) {
+export function ScanResult({ state, ageCode = "21", message, duration, onDismiss, flashClass, displayName, teamNumber }: ScanResultProps) {
+  const isUnder21 = ageCode === "00";
+  const identity = displayName ? `${displayName}${teamNumber ? ` · Team ${teamNumber}` : ""}` : null;
   // Auto-dismiss after duration
   if (duration && onDismiss) {
     setTimeout(onDismiss, duration);
@@ -75,52 +80,31 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
     );
   }
 
-  // Pool match: light blue background + age code
-  if (state === "pool") {
-    const isUnder21 = ageCode === "00";
+  // Pool and banquet matches show the roster identity together with the age decision.
+  if (state === "pool" || state === "banquet") {
+    const isBanquet = state === "banquet";
     return (
       <>
         {flashOverlay}
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "#ADD8E6" }}>
-          <div className="text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: isBanquet ? "#90EE90" : "#ADD8E6" }}>
+          <div className="w-full max-w-5xl px-8 text-center">
+            <div className="text-3xl font-black uppercase tracking-[0.18em] text-slate-800">
+              {isBanquet ? "BANQUET ENTRY" : "POOL PARTY ENTRY"}
+            </div>
             <div
               className={cn(
-                "font-black tracking-tighter",
+                "mt-2 font-black tracking-tighter",
                 isUnder21 ? "text-red-600" : "text-white"
               )}
-              style={{ fontSize: "clamp(200px, 50vw, 600px)" }}
+              style={{ fontSize: "clamp(150px, 34vw, 460px)", lineHeight: 0.9 }}
             >
               {ageCode}
             </div>
-            <div className="mt-4 text-2xl font-bold text-slate-800">
+            <div className="text-4xl font-black text-slate-900">
               {isUnder21 ? "UNDER 21" : "21+"}
             </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // Banquet match: light green background + age code
-  if (state === "banquet") {
-    const isUnder21 = ageCode === "00";
-    return (
-      <>
-        {flashOverlay}
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "#90EE90" }}>
-          <div className="text-center">
-            <div
-              className={cn(
-                "font-black tracking-tighter",
-                isUnder21 ? "text-red-600" : "text-white"
-              )}
-              style={{ fontSize: "clamp(200px, 50vw, 600px)" }}
-            >
-              {ageCode}
-            </div>
-            <div className="mt-4 text-2xl font-bold text-slate-800">
-              {isUnder21 ? "UNDER 21" : "21+"}
-            </div>
+            {identity && <div className="mt-6 text-4xl font-black text-slate-950">{identity}</div>}
+            {isUnder21 && <div className="mt-3 text-2xl font-bold uppercase tracking-wide text-red-700">Age restriction — verify wristband/eligibility</div>}
           </div>
         </div>
       </>

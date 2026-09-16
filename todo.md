@@ -3904,3 +3904,38 @@
 - [x] Verify the dual-station flow, TypeScript, tests, and production build
 - [x] Publish the dual-scanner update
 ---
+
+
+## Current Session — Reset Test for qr Bowler QR Redemption
+- [x] Identify the Test for qr event and bowler redemption fields
+- [x] Reset all bowler QR redemption states for Test for qr only
+- [x] Verify target bowler QR codes are unredeemed and guest/other-event records are unchanged
+- [x] Report the reset result
+---
+
+
+## Current Session — Accurate Banquet QR Bowler Display
+- [x] Trace bowler identity and under-21 data through online and offline banquet QR scanning
+- [x] Ensure banquet scan results display the accurate bowler identity and event data
+- [x] Make under-21 status explicit and visually distinct on banquet scan results
+- [x] Add regression coverage for under-21 banquet bowler scans and accurate identity display
+- [x] Verify online/offline scan behavior, TypeScript, tests, and production build
+- [ ] Publish the banquet QR display correction
+---
+
+
+## Current Session — Ten Legitimate Test for qr Bowler QR Codes
+- [x] Select 10 active bowler QR tokens from Test for qr
+- [x] Verify each token belongs to the target event and is currently unredeemed
+- [x] Generate a printable document containing the 10 real QR codes and clear bowler labels
+- [x] Validate QR image readability and token accuracy
+- [x] Deliver the printable QR-code file
+---
+
+
+## Current Session — Regenerate as Banquet QR Codes
+- [x] Confirm the selected live tokens are banquet tokens for Test for qr
+- [x] Regenerate the printable artifacts with banquet-specific payloads and labels
+- [x] Validate banquet payloads and QR artifact readability
+- [x] Deliver the corrected banquet QR-code artifacts
+---

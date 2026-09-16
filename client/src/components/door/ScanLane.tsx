@@ -202,6 +202,8 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
           state={scanResultState}
           ageCode={scanResultAge}
           message={scanResultMsg}
+          displayName={decision?.displayName}
+          teamNumber={decision?.teamNumber}
           duration={2500}
           onDismiss={() => {
             setScanResultState(null);
