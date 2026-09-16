@@ -130,7 +130,12 @@ export async function generateOfflineBundle(
     transition: border-color .15s, background .15s; overflow: hidden; position: relative;
   }
   .lane.admit { border-color: var(--green); background: var(--green-bg); }
-  .lane.under21 { border-color: var(--cyan); background: var(--cyan-bg); }
+  .lane.under21 { border-color: var(--green); background: var(--green-bg); }
+  .lane.under21 .lane-body { position: relative; overflow: hidden; }
+  .lane.under21 .lane-body::before,
+  .lane.under21 .lane-body::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
+  .lane.under21 .lane-body::after { background: linear-gradient(-45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
+  .lane.under21 .lane-body > * { position: relative; z-index: 1; }
   .lane.deny  { border-color: var(--red);   background: var(--red-bg); }
   .lane.used  { border-color: var(--red); background: var(--red-bg); }
   .lane.notfound { border-color: #6b21a8; background: #3b0764; }
@@ -150,7 +155,7 @@ export async function generateOfflineBundle(
   .lane-detail   { font-size: 1.3rem; font-weight: 500; color: rgba(255,255,255,.9); }
   .lane-team     { font-size: 0.9rem; color: rgba(255,255,255,.6); }
   .lane-age      { font-size: 1.15rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-  .lane-age.under21-age { color: #fecaca; }
+  .lane-age.under21-age { color: #991b1b; }
   .lane-age.adult-age { color: rgba(255,255,255,.72); }
   .lane-idle     { font-size: 1.4rem; color: var(--muted); }
 
@@ -225,13 +230,17 @@ export async function generateOfflineBundle(
   @keyframes flash-in { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
   .flash-in { animation: flash-in .15s ease-out; }
 
-  /* Full-screen outcome feedback: green = 21+, cyan = accepted under 21, red = no entry. */
+  /* Full-screen outcome feedback: green = 21+, green + red X = accepted under 21, red = no entry. */
   #screenFlash { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; pointer-events:none; }
   #screenFlash.show { display:flex; animation: screen-flash .8s ease-out; }
   #screenFlash.adult { background:rgba(34,197,94,.44); color:var(--green); }
-  #screenFlash.under21 { background:rgba(34,211,238,.48); color:var(--cyan); }
+  #screenFlash.under21 { background:rgba(144,238,144,.96); color:#b91c1c; overflow:hidden; }
+  #screenFlash.under21::before, #screenFlash.under21::after { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
+  #screenFlash.under21::after { background:linear-gradient(-45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
   #screenFlash.denied { background:rgba(239,68,68,.52); color:var(--red); }
-  #screenFlash .flash-card { border:4px solid currentColor; border-radius:24px; background:rgba(8,15,28,.94); padding:28px 42px; max-width:82vw; text-align:center; box-shadow:0 0 90px currentColor; }
+  #screenFlash .flash-card { position:relative; z-index:1; border:4px solid currentColor; border-radius:24px; background:rgba(8,15,28,.94); padding:28px 42px; max-width:82vw; text-align:center; box-shadow:0 0 90px currentColor; }
+  #screenFlash.under21 .flash-card { background:rgba(255,255,255,.78); border-color:#b91c1c; color:#991b1b; }
+  #screenFlash.under21 .flash-label { color:#991b1b; }
   #screenFlash .flash-label { font-size:clamp(2.5rem,8vw,6.5rem); font-weight:900; letter-spacing:.03em; line-height:1; }
   #screenFlash .flash-name { margin-top:12px; font-size:clamp(1.1rem,3vw,2rem); font-weight:700; color:#fff; }
   #screenFlash .flash-detail { margin-top:7px; font-size:1rem; color:#cbd5e1; }
@@ -588,8 +597,9 @@ function showResult(lane, decision) {
   laneCounts[lane]++;
   countEl.textContent = laneCounts[lane] + ' scanned';
 
+  const displayHeadline = kind === 'under21' ? 'Accepted-UNDER 21' : decision.headline;
   body.innerHTML = \`
-    <div class="lane-headline flash-in">\${escHtml(decision.headline)}</div>
+    <div class="lane-headline flash-in">\${escHtml(displayHeadline)}</div>
     <div class="lane-detail">\${escHtml(decision.detail)}</div>
     \${decision.teamNumber ? '<div class="lane-team">Team ' + escHtml(decision.teamNumber) + '</div>' : ''}
     \${decision.result === 'admitted' ? '<div class="lane-age ' + (decision.under21 ? 'under21-age' : 'adult-age') + '">' + (decision.under21 ? 'UNDER 21 · AGE RESTRICTION' : '21+') + '</div>' : ''}

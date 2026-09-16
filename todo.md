@@ -3950,3 +3950,14 @@
 - [x] Verify the feature in the Event Director portal, TypeScript, tests, and production build
 - [x] Publish the Event Director banquet QR roster feature
 ---
+
+
+## Current Session — Exact Under-21 Successful Scan Display
+- [x] Inspect online and Raspberry Pi/offline successful under-21 scan-result rendering
+- [x] Render under-21 successful scans green with a large red corner-to-corner X
+- [x] Display the exact text `Accepted-UNDER 21` in large type
+- [x] Preserve the normal successful green display for bowlers who are not under 21
+- [x] Add regression coverage for online and offline under-21 scan states
+- [x] Verify scanner display rendering, TypeScript, tests, and production build
+- [ ] Publish the exact under-21 successful-scan display correction
+---
