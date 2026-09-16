@@ -3959,5 +3959,5 @@
 - [x] Preserve the normal successful green display for bowlers who are not under 21
 - [x] Add regression coverage for online and offline under-21 scan states
 - [x] Verify scanner display rendering, TypeScript, tests, and production build
-- [ ] Publish the exact under-21 successful-scan display correction
+- [x] Publish the exact under-21 successful-scan display correction
 ---
