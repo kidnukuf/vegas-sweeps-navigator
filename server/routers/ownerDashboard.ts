@@ -132,6 +132,32 @@ type SharedSheetDefaultRow = { id: number; spreadsheetId: string };
 const asNumber = (value: number | string | null | undefined) => Number(value ?? 0);
 const cleanText = (value: string | null | undefined) => value?.trim() || null;
 
+/** Convert the Owner Portal's friendly date input into the MySQL DATE format. */
+export function normalizeOwnerEventDate(value: string | null | undefined, label = "Date") {
+  const raw = value?.trim() ?? "";
+  if (!raw) return null;
+
+  const match = raw.match(/^(?:(\d{4})-(\d{1,2})-(\d{1,2})|(\d{1,2})[/-](\d{1,2})[/-](\d{4}))$/);
+  if (!match) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `${label} must use MM/DD/YYYY (for example, 10/06/2026).` });
+  }
+
+  const year = Number(match[1] ?? match[6]);
+  const month = Number(match[2] ?? match[4]);
+  const day = Number(match[3] ?? match[5]);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    !Number.isInteger(year) || year < 1000 || year > 9999 ||
+    !Number.isInteger(month) || month < 1 || month > 12 ||
+    !Number.isInteger(day) || day < 1 ||
+    candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day
+  ) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `${label} is not a valid calendar date.` });
+  }
+
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 async function validateOwnerPortfolio(companyId: number, eventIds: number[]) {
   const normalizedEventIds = normalizeEventIds(eventIds);
   if (!normalizedEventIds.length) return normalizedEventIds;
@@ -213,6 +239,8 @@ export const ownerDashboardRouter = router({
       }
     }
     const [group] = await rawQuery<{ id: number }>(`SELECT id FROM event_groups WHERE slug = ? LIMIT 1`, [input.groupSlug]);
+    const startDate = normalizeOwnerEventDate(input.startDate, "Start date");
+    const endDate = normalizeOwnerEventDate(input.endDate, "End date");
     const sharedSheet = await getSharedSheetDefault();
     let sheetTarget: { spreadsheetId: string | null; sheetTabName: string | null };
     try {
@@ -227,7 +255,7 @@ export const ownerDashboardRouter = router({
     const created = await rawExec(
       `INSERT INTO events (companyId, groupId, groupSlug, eventName, eventYear, status, startDate, endDate, bowlingDate, squadTime, sheetSpreadsheetId, sheetTabName, sheetTabNickname, createdByStaffId)
        VALUES (?, ?, ?, ?, ?, 'planning', ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, cleanText(input.startDate), cleanText(input.endDate), cleanText(input.bowlingDate), cleanText(input.squadTime), sheetTarget.spreadsheetId, sheetTarget.sheetTabName, cleanText(input.sheetTabNickname), assignedDirectorId]
+      [input.companyId, group?.id ?? null, input.groupSlug, input.eventName.trim(), input.eventYear, startDate, endDate, cleanText(input.bowlingDate), cleanText(input.squadTime), sheetTarget.spreadsheetId, sheetTarget.sheetTabName, cleanText(input.sheetTabNickname), assignedDirectorId]
     );
     if (assignedDirectorId) {
       await rawExec(`INSERT INTO event_director_assignments (staffId, eventId) VALUES (?, ?)`, [assignedDirectorId, created.insertId]);
@@ -475,13 +503,15 @@ export const ownerDashboardRouter = router({
 
   updateEvent: publicProcedure.input(eventEditorInput).mutation(async ({ input, ctx }) => {
     const session = await requireOwner(ctx);
+    const startDate = normalizeOwnerEventDate(input.startDate, "Start date");
+    const endDate = normalizeOwnerEventDate(input.endDate, "End date");
     await rawExec(
       `UPDATE events SET eventName=?, eventYear=?, status=?, startDate=?, endDate=?, bowlingDate=?, squadTime=?,
           banquetDay=?, banquetTime=?, banquetLocation=?, poolPartyEnabled=?, poolPartyTime=?,
           tshirtsProvided=?, tshirtPickupLocation=?, tshirtPickupTime=?, sheetSpreadsheetId=?, sheetTabName=?, sheetTabNickname=?
        WHERE id=?`,
       [
-        input.eventName.trim(), input.eventYear, input.status, cleanText(input.startDate), cleanText(input.endDate),
+        input.eventName.trim(), input.eventYear, input.status, startDate, endDate,
         cleanText(input.bowlingDate), cleanText(input.squadTime), cleanText(input.banquetDay), cleanText(input.banquetTime),
         cleanText(input.banquetLocation), input.poolPartyEnabled ? 1 : 0, cleanText(input.poolPartyTime),
         input.tshirtsProvided ? 1 : 0, cleanText(input.tshirtPickupLocation), cleanText(input.tshirtPickupTime),
