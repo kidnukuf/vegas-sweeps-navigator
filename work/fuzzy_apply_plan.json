@@ -1,0 +1,1023 @@
+{
+  "candidate_variants": 29,
+  "assignments": [
+    {
+      "source_row": 8,
+      "record_type": "Guest",
+      "source_name": "JUDITH AGAPITO",
+      "conf": "BXJLL",
+      "target_row": 80,
+      "target_name": "Judith Trixia Agapito",
+      "score": 83.3,
+      "center": "Lucky Strike Murrieta",
+      "existing": "BXJLL"
+    },
+    {
+      "source_row": 32,
+      "record_type": "Primary bowler",
+      "source_name": "MEGAN ANTONELLI",
+      "conf": "XF4N6",
+      "target_row": 255,
+      "target_name": "Megan Anti",
+      "score": 80.8,
+      "center": "Bowlero Moreno Valley",
+      "existing": ""
+    },
+    {
+      "source_row": 63,
+      "record_type": "Guest",
+      "source_name": "RUSSELL KRENZ",
+      "conf": "P4J3R",
+      "target_row": 772,
+      "target_name": "Russell Krenz Jr",
+      "score": 91.7,
+      "center": "Lucky Strike Manteca",
+      "existing": ""
+    },
+    {
+      "source_row": 103,
+      "record_type": "Guest",
+      "source_name": "ELYJAH BROOKS",
+      "conf": "3MYKG",
+      "target_row": 295,
+      "target_name": "Elijah Brooks",
+      "score": 91.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": ""
+    },
+    {
+      "source_row": 108,
+      "record_type": "Guest",
+      "source_name": "TYLER FALTERMEIR",
+      "conf": "QCQ46",
+      "target_row": 604,
+      "target_name": "Tyler Faltermeier",
+      "score": 97.6,
+      "center": "Lucky Strike Lakewood",
+      "existing": ""
+    },
+    {
+      "source_row": 114,
+      "record_type": "Primary bowler",
+      "source_name": "ORSHAWANTE OBBRYANT BRYANT",
+      "conf": "3MK4R",
+      "target_row": 396,
+      "target_name": "Orshawante \"OB\" Bryant",
+      "score": 90.0,
+      "center": "Bowlero Avondale W",
+      "existing": ""
+    },
+    {
+      "source_row": 116,
+      "record_type": "Guest",
+      "source_name": "JABOB BUCHANAN",
+      "conf": "ZJVGQ",
+      "target_row": 830,
+      "target_name": "Jacob Buchanan",
+      "score": 90.0,
+      "center": "Lucky Strike Manteca",
+      "existing": ""
+    },
+    {
+      "source_row": 164,
+      "record_type": "Guest",
+      "source_name": "DAVID CLARK",
+      "conf": "RSLJL",
+      "target_row": 331,
+      "target_name": "David Clark Jr",
+      "score": 91.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": ""
+    },
+    {
+      "source_row": 178,
+      "record_type": "Guest",
+      "source_name": "GREG COALY",
+      "conf": "JMNPZ",
+      "target_row": 574,
+      "target_name": "Steven Greg Coaly",
+      "score": 78.6,
+      "center": "Bowlero Bakersfield",
+      "existing": ""
+    },
+    {
+      "source_row": 189,
+      "record_type": "Guest",
+      "source_name": "MADDELYNN RAMOS",
+      "conf": "52VM3",
+      "target_row": 716,
+      "target_name": "Maldelynn Ramos",
+      "score": 94.4,
+      "center": "Lucky Strike Fontana",
+      "existing": ""
+    },
+    {
+      "source_row": 196,
+      "record_type": "Primary bowler",
+      "source_name": "SHERRY CRABTREE-VENEGA",
+      "conf": "FFDYR",
+      "target_row": 492,
+      "target_name": "Sherry Crabtree-Venegas",
+      "score": 98.3,
+      "center": "Lucky Strike Clovis",
+      "existing": ""
+    },
+    {
+      "source_row": 298,
+      "record_type": "Guest",
+      "source_name": "DREW WERSTOA",
+      "conf": "CLBHD",
+      "target_row": 300,
+      "target_name": "Drew Werosta",
+      "score": 92.9,
+      "center": "Bowlero Lancaster TH",
+      "existing": ""
+    },
+    {
+      "source_row": 353,
+      "record_type": "Primary bowler",
+      "source_name": "DAVID HANSEN",
+      "conf": "V4VNM",
+      "target_row": 796,
+      "target_name": "David Hansen  LH",
+      "score": 92.9,
+      "center": "Lucky Strike Manteca",
+      "existing": ""
+    },
+    {
+      "source_row": 371,
+      "record_type": "Primary bowler",
+      "source_name": "HOLLY HOLLINGSWORTH",
+      "conf": "Q6DRZ",
+      "target_row": 439,
+      "target_name": "Holly Hollingsworth LH",
+      "score": 96.4,
+      "center": "Lucky Strike Clovis",
+      "existing": ""
+    },
+    {
+      "source_row": 431,
+      "record_type": "Guest",
+      "source_name": "ROREY DOYL",
+      "conf": "C55SQ",
+      "target_row": 622,
+      "target_name": "Rorey Doyle",
+      "score": 94.4,
+      "center": "Lucky Strike Lakewood",
+      "existing": ""
+    },
+    {
+      "source_row": 440,
+      "record_type": "Guest",
+      "source_name": "ANTHONY LANGFORD",
+      "conf": "YG2QP",
+      "target_row": 340,
+      "target_name": "Anthonu Langford",
+      "score": 92.9,
+      "center": "Bowlero Lancaster TH",
+      "existing": ""
+    },
+    {
+      "source_row": 468,
+      "record_type": "Guest",
+      "source_name": "BRADEN WATSON",
+      "conf": "3X4BR",
+      "target_row": 166,
+      "target_name": "Branden Watson",
+      "score": 96.2,
+      "center": "Lucky Strike Visalia",
+      "existing": ""
+    },
+    {
+      "source_row": 470,
+      "record_type": "Guest",
+      "source_name": "DIANE LOPEZ",
+      "conf": "FZQQC",
+      "target_row": 167,
+      "target_name": "Angel Lopez",
+      "score": 80.0,
+      "center": "Lucky Strike Visalia",
+      "existing": ""
+    },
+    {
+      "source_row": 522,
+      "record_type": "Guest",
+      "source_name": "MARCOS GONZALEA",
+      "conf": "WSPLJ",
+      "target_row": 899,
+      "target_name": "Marcos Gonzalez",
+      "score": 93.8,
+      "center": "Bowlero Glendale",
+      "existing": ""
+    },
+    {
+      "source_row": 661,
+      "record_type": "Guest",
+      "source_name": "KANDICE QUINDT",
+      "conf": "BW3V2",
+      "target_row": 487,
+      "target_name": "Daniel Quindt",
+      "score": 80.8,
+      "center": "Lucky Strike Clovis",
+      "existing": ""
+    },
+    {
+      "source_row": 691,
+      "record_type": "Guest",
+      "source_name": "DAN MEHANEN",
+      "conf": "GVRJW",
+      "target_row": 615,
+      "target_name": "Dan Mehman",
+      "score": 88.5,
+      "center": "Lucky Strike Lakewood",
+      "existing": ""
+    },
+    {
+      "source_row": 753,
+      "record_type": "Guest",
+      "source_name": "ALBERT REECE",
+      "conf": "SWR3K",
+      "target_row": 835,
+      "target_name": "Albert Reece Sr.",
+      "score": 91.7,
+      "center": "Lucky Strike Manteca",
+      "existing": ""
+    },
+    {
+      "source_row": 760,
+      "record_type": "Guest",
+      "source_name": "TOM SCHWALBE",
+      "conf": "4DGJN",
+      "target_row": 98,
+      "target_name": "Thomas Schwalbe",
+      "score": 83.3,
+      "center": "Lucky Strike Hemet",
+      "existing": "4DGJN"
+    },
+    {
+      "source_row": 764,
+      "record_type": "Guest",
+      "source_name": "WEI CHANG YANG",
+      "conf": "FBM5Y",
+      "target_row": 26,
+      "target_name": "Wei-chang Yan",
+      "score": 92.9,
+      "center": "Lucky Strike Murrieta",
+      "existing": "FBM5Y"
+    },
+    {
+      "source_row": 783,
+      "record_type": "Guest",
+      "source_name": "ANDREW HISH",
+      "conf": "4HB2W",
+      "target_row": 546,
+      "target_name": "Andrew Hamisch",
+      "score": 86.4,
+      "center": "Bowlero Bakersfield",
+      "existing": ""
+    },
+    {
+      "source_row": 798,
+      "record_type": "Guest",
+      "source_name": "MARK HULSEY",
+      "conf": "SHDSX",
+      "target_row": 285,
+      "target_name": "Mark Husley",
+      "score": 91.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": ""
+    },
+    {
+      "source_row": 823,
+      "record_type": "Guest",
+      "source_name": "KIM HIINDMAN",
+      "conf": "CHJHC",
+      "target_row": 292,
+      "target_name": "Kim Hindman",
+      "score": 96.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": ""
+    },
+    {
+      "source_row": 827,
+      "record_type": "Guest",
+      "source_name": "JAMES TERKELSON",
+      "conf": "NB5RX",
+      "target_row": 690,
+      "target_name": "James Terkerlson",
+      "score": 97.4,
+      "center": "Lucky Strike Fontana",
+      "existing": ""
+    },
+    {
+      "source_row": 878,
+      "record_type": "Guest",
+      "source_name": "VICKIE WALTON",
+      "conf": "WKZMZ",
+      "target_row": 684,
+      "target_name": "Vickie Lobo-Walton",
+      "score": 87.5,
+      "center": "Lucky Strike Fontana",
+      "existing": ""
+    }
+  ],
+  "final": [
+    {
+      "source_row": 8,
+      "record_type": "Guest",
+      "source_name": "JUDITH AGAPITO",
+      "conf": "BXJLL",
+      "target_row": 80,
+      "target_name": "Judith Trixia Agapito",
+      "score": 83.3,
+      "center": "Lucky Strike Murrieta",
+      "existing": "BXJLL",
+      "all_assignments": [
+        {
+          "source_row": 8,
+          "record_type": "Guest",
+          "source_name": "JUDITH AGAPITO",
+          "conf": "BXJLL",
+          "target_row": 80,
+          "target_name": "Judith Trixia Agapito",
+          "score": 83.3,
+          "center": "Lucky Strike Murrieta",
+          "existing": "BXJLL"
+        }
+      ]
+    },
+    {
+      "source_row": 32,
+      "record_type": "Primary bowler",
+      "source_name": "MEGAN ANTONELLI",
+      "conf": "XF4N6",
+      "target_row": 255,
+      "target_name": "Megan Anti",
+      "score": 80.8,
+      "center": "Bowlero Moreno Valley",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 32,
+          "record_type": "Primary bowler",
+          "source_name": "MEGAN ANTONELLI",
+          "conf": "XF4N6",
+          "target_row": 255,
+          "target_name": "Megan Anti",
+          "score": 80.8,
+          "center": "Bowlero Moreno Valley",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 63,
+      "record_type": "Guest",
+      "source_name": "RUSSELL KRENZ",
+      "conf": "P4J3R",
+      "target_row": 772,
+      "target_name": "Russell Krenz Jr",
+      "score": 91.7,
+      "center": "Lucky Strike Manteca",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 63,
+          "record_type": "Guest",
+          "source_name": "RUSSELL KRENZ",
+          "conf": "P4J3R",
+          "target_row": 772,
+          "target_name": "Russell Krenz Jr",
+          "score": 91.7,
+          "center": "Lucky Strike Manteca",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 103,
+      "record_type": "Guest",
+      "source_name": "ELYJAH BROOKS",
+      "conf": "3MYKG",
+      "target_row": 295,
+      "target_name": "Elijah Brooks",
+      "score": 91.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 103,
+          "record_type": "Guest",
+          "source_name": "ELYJAH BROOKS",
+          "conf": "3MYKG",
+          "target_row": 295,
+          "target_name": "Elijah Brooks",
+          "score": 91.7,
+          "center": "Bowlero Lancaster TH",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 108,
+      "record_type": "Guest",
+      "source_name": "TYLER FALTERMEIR",
+      "conf": "QCQ46",
+      "target_row": 604,
+      "target_name": "Tyler Faltermeier",
+      "score": 97.6,
+      "center": "Lucky Strike Lakewood",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 108,
+          "record_type": "Guest",
+          "source_name": "TYLER FALTERMEIR",
+          "conf": "QCQ46",
+          "target_row": 604,
+          "target_name": "Tyler Faltermeier",
+          "score": 97.6,
+          "center": "Lucky Strike Lakewood",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 114,
+      "record_type": "Primary bowler",
+      "source_name": "ORSHAWANTE OBBRYANT BRYANT",
+      "conf": "3MK4R",
+      "target_row": 396,
+      "target_name": "Orshawante \"OB\" Bryant",
+      "score": 90.0,
+      "center": "Bowlero Avondale W",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 114,
+          "record_type": "Primary bowler",
+          "source_name": "ORSHAWANTE OBBRYANT BRYANT",
+          "conf": "3MK4R",
+          "target_row": 396,
+          "target_name": "Orshawante \"OB\" Bryant",
+          "score": 90.0,
+          "center": "Bowlero Avondale W",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 116,
+      "record_type": "Guest",
+      "source_name": "JABOB BUCHANAN",
+      "conf": "ZJVGQ",
+      "target_row": 830,
+      "target_name": "Jacob Buchanan",
+      "score": 90.0,
+      "center": "Lucky Strike Manteca",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 116,
+          "record_type": "Guest",
+          "source_name": "JABOB BUCHANAN",
+          "conf": "ZJVGQ",
+          "target_row": 830,
+          "target_name": "Jacob Buchanan",
+          "score": 90.0,
+          "center": "Lucky Strike Manteca",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 164,
+      "record_type": "Guest",
+      "source_name": "DAVID CLARK",
+      "conf": "RSLJL",
+      "target_row": 331,
+      "target_name": "David Clark Jr",
+      "score": 91.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 164,
+          "record_type": "Guest",
+          "source_name": "DAVID CLARK",
+          "conf": "RSLJL",
+          "target_row": 331,
+          "target_name": "David Clark Jr",
+          "score": 91.7,
+          "center": "Bowlero Lancaster TH",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 178,
+      "record_type": "Guest",
+      "source_name": "GREG COALY",
+      "conf": "JMNPZ",
+      "target_row": 574,
+      "target_name": "Steven Greg Coaly",
+      "score": 78.6,
+      "center": "Bowlero Bakersfield",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 178,
+          "record_type": "Guest",
+          "source_name": "GREG COALY",
+          "conf": "JMNPZ",
+          "target_row": 574,
+          "target_name": "Steven Greg Coaly",
+          "score": 78.6,
+          "center": "Bowlero Bakersfield",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 189,
+      "record_type": "Guest",
+      "source_name": "MADDELYNN RAMOS",
+      "conf": "52VM3",
+      "target_row": 716,
+      "target_name": "Maldelynn Ramos",
+      "score": 94.4,
+      "center": "Lucky Strike Fontana",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 189,
+          "record_type": "Guest",
+          "source_name": "MADDELYNN RAMOS",
+          "conf": "52VM3",
+          "target_row": 716,
+          "target_name": "Maldelynn Ramos",
+          "score": 94.4,
+          "center": "Lucky Strike Fontana",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 196,
+      "record_type": "Primary bowler",
+      "source_name": "SHERRY CRABTREE-VENEGA",
+      "conf": "FFDYR",
+      "target_row": 492,
+      "target_name": "Sherry Crabtree-Venegas",
+      "score": 98.3,
+      "center": "Lucky Strike Clovis",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 196,
+          "record_type": "Primary bowler",
+          "source_name": "SHERRY CRABTREE-VENEGA",
+          "conf": "FFDYR",
+          "target_row": 492,
+          "target_name": "Sherry Crabtree-Venegas",
+          "score": 98.3,
+          "center": "Lucky Strike Clovis",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 298,
+      "record_type": "Guest",
+      "source_name": "DREW WERSTOA",
+      "conf": "CLBHD",
+      "target_row": 300,
+      "target_name": "Drew Werosta",
+      "score": 92.9,
+      "center": "Bowlero Lancaster TH",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 298,
+          "record_type": "Guest",
+          "source_name": "DREW WERSTOA",
+          "conf": "CLBHD",
+          "target_row": 300,
+          "target_name": "Drew Werosta",
+          "score": 92.9,
+          "center": "Bowlero Lancaster TH",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 353,
+      "record_type": "Primary bowler",
+      "source_name": "DAVID HANSEN",
+      "conf": "V4VNM",
+      "target_row": 796,
+      "target_name": "David Hansen  LH",
+      "score": 92.9,
+      "center": "Lucky Strike Manteca",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 353,
+          "record_type": "Primary bowler",
+          "source_name": "DAVID HANSEN",
+          "conf": "V4VNM",
+          "target_row": 796,
+          "target_name": "David Hansen  LH",
+          "score": 92.9,
+          "center": "Lucky Strike Manteca",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 371,
+      "record_type": "Primary bowler",
+      "source_name": "HOLLY HOLLINGSWORTH",
+      "conf": "Q6DRZ",
+      "target_row": 439,
+      "target_name": "Holly Hollingsworth LH",
+      "score": 96.4,
+      "center": "Lucky Strike Clovis",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 371,
+          "record_type": "Primary bowler",
+          "source_name": "HOLLY HOLLINGSWORTH",
+          "conf": "Q6DRZ",
+          "target_row": 439,
+          "target_name": "Holly Hollingsworth LH",
+          "score": 96.4,
+          "center": "Lucky Strike Clovis",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 431,
+      "record_type": "Guest",
+      "source_name": "ROREY DOYL",
+      "conf": "C55SQ",
+      "target_row": 622,
+      "target_name": "Rorey Doyle",
+      "score": 94.4,
+      "center": "Lucky Strike Lakewood",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 431,
+          "record_type": "Guest",
+          "source_name": "ROREY DOYL",
+          "conf": "C55SQ",
+          "target_row": 622,
+          "target_name": "Rorey Doyle",
+          "score": 94.4,
+          "center": "Lucky Strike Lakewood",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 440,
+      "record_type": "Guest",
+      "source_name": "ANTHONY LANGFORD",
+      "conf": "YG2QP",
+      "target_row": 340,
+      "target_name": "Anthonu Langford",
+      "score": 92.9,
+      "center": "Bowlero Lancaster TH",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 440,
+          "record_type": "Guest",
+          "source_name": "ANTHONY LANGFORD",
+          "conf": "YG2QP",
+          "target_row": 340,
+          "target_name": "Anthonu Langford",
+          "score": 92.9,
+          "center": "Bowlero Lancaster TH",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 468,
+      "record_type": "Guest",
+      "source_name": "BRADEN WATSON",
+      "conf": "3X4BR",
+      "target_row": 166,
+      "target_name": "Branden Watson",
+      "score": 96.2,
+      "center": "Lucky Strike Visalia",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 468,
+          "record_type": "Guest",
+          "source_name": "BRADEN WATSON",
+          "conf": "3X4BR",
+          "target_row": 166,
+          "target_name": "Branden Watson",
+          "score": 96.2,
+          "center": "Lucky Strike Visalia",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 470,
+      "record_type": "Guest",
+      "source_name": "DIANE LOPEZ",
+      "conf": "FZQQC",
+      "target_row": 167,
+      "target_name": "Angel Lopez",
+      "score": 80.0,
+      "center": "Lucky Strike Visalia",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 470,
+          "record_type": "Guest",
+          "source_name": "DIANE LOPEZ",
+          "conf": "FZQQC",
+          "target_row": 167,
+          "target_name": "Angel Lopez",
+          "score": 80.0,
+          "center": "Lucky Strike Visalia",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 522,
+      "record_type": "Guest",
+      "source_name": "MARCOS GONZALEA",
+      "conf": "WSPLJ",
+      "target_row": 899,
+      "target_name": "Marcos Gonzalez",
+      "score": 93.8,
+      "center": "Bowlero Glendale",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 522,
+          "record_type": "Guest",
+          "source_name": "MARCOS GONZALEA",
+          "conf": "WSPLJ",
+          "target_row": 899,
+          "target_name": "Marcos Gonzalez",
+          "score": 93.8,
+          "center": "Bowlero Glendale",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 661,
+      "record_type": "Guest",
+      "source_name": "KANDICE QUINDT",
+      "conf": "BW3V2",
+      "target_row": 487,
+      "target_name": "Daniel Quindt",
+      "score": 80.8,
+      "center": "Lucky Strike Clovis",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 661,
+          "record_type": "Guest",
+          "source_name": "KANDICE QUINDT",
+          "conf": "BW3V2",
+          "target_row": 487,
+          "target_name": "Daniel Quindt",
+          "score": 80.8,
+          "center": "Lucky Strike Clovis",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 691,
+      "record_type": "Guest",
+      "source_name": "DAN MEHANEN",
+      "conf": "GVRJW",
+      "target_row": 615,
+      "target_name": "Dan Mehman",
+      "score": 88.5,
+      "center": "Lucky Strike Lakewood",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 691,
+          "record_type": "Guest",
+          "source_name": "DAN MEHANEN",
+          "conf": "GVRJW",
+          "target_row": 615,
+          "target_name": "Dan Mehman",
+          "score": 88.5,
+          "center": "Lucky Strike Lakewood",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 753,
+      "record_type": "Guest",
+      "source_name": "ALBERT REECE",
+      "conf": "SWR3K",
+      "target_row": 835,
+      "target_name": "Albert Reece Sr.",
+      "score": 91.7,
+      "center": "Lucky Strike Manteca",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 753,
+          "record_type": "Guest",
+          "source_name": "ALBERT REECE",
+          "conf": "SWR3K",
+          "target_row": 835,
+          "target_name": "Albert Reece Sr.",
+          "score": 91.7,
+          "center": "Lucky Strike Manteca",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 760,
+      "record_type": "Guest",
+      "source_name": "TOM SCHWALBE",
+      "conf": "4DGJN",
+      "target_row": 98,
+      "target_name": "Thomas Schwalbe",
+      "score": 83.3,
+      "center": "Lucky Strike Hemet",
+      "existing": "4DGJN",
+      "all_assignments": [
+        {
+          "source_row": 760,
+          "record_type": "Guest",
+          "source_name": "TOM SCHWALBE",
+          "conf": "4DGJN",
+          "target_row": 98,
+          "target_name": "Thomas Schwalbe",
+          "score": 83.3,
+          "center": "Lucky Strike Hemet",
+          "existing": "4DGJN"
+        }
+      ]
+    },
+    {
+      "source_row": 764,
+      "record_type": "Guest",
+      "source_name": "WEI CHANG YANG",
+      "conf": "FBM5Y",
+      "target_row": 26,
+      "target_name": "Wei-chang Yan",
+      "score": 92.9,
+      "center": "Lucky Strike Murrieta",
+      "existing": "FBM5Y",
+      "all_assignments": [
+        {
+          "source_row": 764,
+          "record_type": "Guest",
+          "source_name": "WEI CHANG YANG",
+          "conf": "FBM5Y",
+          "target_row": 26,
+          "target_name": "Wei-chang Yan",
+          "score": 92.9,
+          "center": "Lucky Strike Murrieta",
+          "existing": "FBM5Y"
+        }
+      ]
+    },
+    {
+      "source_row": 783,
+      "record_type": "Guest",
+      "source_name": "ANDREW HISH",
+      "conf": "4HB2W",
+      "target_row": 546,
+      "target_name": "Andrew Hamisch",
+      "score": 86.4,
+      "center": "Bowlero Bakersfield",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 783,
+          "record_type": "Guest",
+          "source_name": "ANDREW HISH",
+          "conf": "4HB2W",
+          "target_row": 546,
+          "target_name": "Andrew Hamisch",
+          "score": 86.4,
+          "center": "Bowlero Bakersfield",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 798,
+      "record_type": "Guest",
+      "source_name": "MARK HULSEY",
+      "conf": "SHDSX",
+      "target_row": 285,
+      "target_name": "Mark Husley",
+      "score": 91.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 798,
+          "record_type": "Guest",
+          "source_name": "MARK HULSEY",
+          "conf": "SHDSX",
+          "target_row": 285,
+          "target_name": "Mark Husley",
+          "score": 91.7,
+          "center": "Bowlero Lancaster TH",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 823,
+      "record_type": "Guest",
+      "source_name": "KIM HIINDMAN",
+      "conf": "CHJHC",
+      "target_row": 292,
+      "target_name": "Kim Hindman",
+      "score": 96.7,
+      "center": "Bowlero Lancaster TH",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 823,
+          "record_type": "Guest",
+          "source_name": "KIM HIINDMAN",
+          "conf": "CHJHC",
+          "target_row": 292,
+          "target_name": "Kim Hindman",
+          "score": 96.7,
+          "center": "Bowlero Lancaster TH",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 827,
+      "record_type": "Guest",
+      "source_name": "JAMES TERKELSON",
+      "conf": "NB5RX",
+      "target_row": 690,
+      "target_name": "James Terkerlson",
+      "score": 97.4,
+      "center": "Lucky Strike Fontana",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 827,
+          "record_type": "Guest",
+          "source_name": "JAMES TERKELSON",
+          "conf": "NB5RX",
+          "target_row": 690,
+          "target_name": "James Terkerlson",
+          "score": 97.4,
+          "center": "Lucky Strike Fontana",
+          "existing": ""
+        }
+      ]
+    },
+    {
+      "source_row": 878,
+      "record_type": "Guest",
+      "source_name": "VICKIE WALTON",
+      "conf": "WKZMZ",
+      "target_row": 684,
+      "target_name": "Vickie Lobo-Walton",
+      "score": 87.5,
+      "center": "Lucky Strike Fontana",
+      "existing": "",
+      "all_assignments": [
+        {
+          "source_row": 878,
+          "record_type": "Guest",
+          "source_name": "VICKIE WALTON",
+          "conf": "WKZMZ",
+          "target_row": 684,
+          "target_name": "Vickie Lobo-Walton",
+          "score": 87.5,
+          "center": "Lucky Strike Fontana",
+          "existing": ""
+        }
+      ]
+    }
+  ],
+  "conflicts": []
+}

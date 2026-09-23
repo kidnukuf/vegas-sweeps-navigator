@@ -1,0 +1,32 @@
+candidate_variants 29
+target_rows 29 final 29 conflicts 0
+final_rows
+26 Wei-chang Yan FBM5Y 92.9 764
+80 Judith Trixia Agapito BXJLL 83.3 8
+98 Thomas Schwalbe 4DGJN 83.3 760
+166 Branden Watson 3X4BR 96.2 468
+167 Angel Lopez FZQQC 80.0 470
+255 Megan Anti XF4N6 80.8 32
+285 Mark Husley SHDSX 91.7 798
+292 Kim Hindman CHJHC 96.7 823
+295 Elijah Brooks 3MYKG 91.7 103
+300 Drew Werosta CLBHD 92.9 298
+331 David Clark Jr RSLJL 91.7 164
+340 Anthonu Langford YG2QP 92.9 440
+396 Orshawante "OB" Bryant 3MK4R 90.0 114
+439 Holly Hollingsworth LH Q6DRZ 96.4 371
+487 Daniel Quindt BW3V2 80.8 661
+492 Sherry Crabtree-Venegas FFDYR 98.3 196
+546 Andrew Hamisch 4HB2W 86.4 783
+574 Steven Greg Coaly JMNPZ 78.6 178
+604 Tyler Faltermeier QCQ46 97.6 108
+615 Dan Mehman GVRJW 88.5 691
+622 Rorey Doyle C55SQ 94.4 431
+684 Vickie Lobo-Walton WKZMZ 87.5 878
+690 James Terkerlson NB5RX 97.4 827
+716 Maldelynn Ramos 52VM3 94.4 189
+772 Russell Krenz Jr P4J3R 91.7 63
+796 David Hansen  LH V4VNM 92.9 353
+830 Jacob Buchanan ZJVGQ 90.0 116
+835 Albert Reece Sr. SWR3K 91.7 753
+899 Marcos Gonzalez WSPLJ 93.8 522
