@@ -47,11 +47,11 @@ The strongest practical pricing model is a **standard price with a time-limited 
 | Pricing position | Setup fee | Per unique registered bowler | Approximate total for 902 bowlers |
 |---|---:|---:|---:|
 | Original idea | $299 | $1.99 | $2,093.98 |
-| Recommended Lucky Strike launch rate | $499 | $2.49 | $2,744.98 |
-| Recommended standard BowlVegas.com rate | $599 | $2.99 | $3,295.98 |
+| Approved Lucky Strike launch rate | $399 | $2.49 | $2,644.98 |
+| Approved standard BowlVegas.com rate | $499 | $2.99 | $3,195.98 |
 | High-touch / compressed timeline rate | $799 | $3.49 | $3,946.98 |
 
-My recommendation is to offer Lucky Strike a **one-event launch rate of $499 plus $2.49 per unique registered bowler**, with the agreement stating that BowlVegas.com’s standard rate is **$599 plus $2.99 per unique registered bowler** for future events. The launch rate should expire after this event or after a defined short period. It should not become an indefinite discount.
+The approved offer is a **one-event launch rate of $399 plus $2.49 per unique registered bowler**, with the agreement stating that BowlVegas.com’s standard rate is **$499 plus $2.99 per unique registered bowler** for future events. The launch rate should expire after this event or after a defined short period. It should not become an indefinite discount.
 
 The standard rate is still moderate compared with the operational value of a system that replaces manual claim-code preparation, supports multiple user portals, provides event-specific check-in controls, and includes technical preparation and event-day support. At 902 registered bowlers, the difference between the original idea and the recommended standard price is approximately $1,202. That additional revenue better compensates BowlVegas.com for development investment and high-volume operational risk without changing the pricing formula to something difficult for a client to understand.
 
@@ -139,7 +139,7 @@ The suggested version should retain the current commercial concept but use the f
 2. **Event schedule.** Name the B.O.B. November 2026 event and list the event dates, bowling date, support window, and any included banquet or pool-party operations.
 3. **Included services.** Describe setup, roster import, app-managed write-back, claim codes, QR materials, training, check-in support, documentation, and post-event export using only features confirmed for delivery.
 4. **Client responsibilities.** State roster deadlines, source-data accuracy, access permissions, staff availability, training participation, claim-code distribution, and timely issue reporting.
-5. **Fees.** State the agreed launch or standard setup fee and per-bowler fee. For the recommended Lucky Strike launch rate, use $499.00 plus $2.49 per unique registered bowler. Define duplicates, cancelled registrations, guests, and the final-count reconciliation process.
+5. **Fees.** State the agreed launch or standard setup fee and per-bowler fee. For the approved Lucky Strike launch rate, use $399.00 plus $2.49 per unique registered bowler. Define duplicates, cancelled registrations, guests, and the final-count reconciliation process.
 6. **Support and contingencies.** Define event support hours, response efforts, third-party outage limitations, hardware and network responsibilities, and the available offline or paper fallback process.
 7. **Data, privacy, and security.** Define ownership, permitted uses, access controls, incident notice, retention, deletion, anonymization, and the Google Sheet boundary.
 8. **Intellectual property.** Preserve Provider ownership of the platform and grant Lucky Strike a limited right to use the configured event materials and export its Client data.
@@ -156,7 +156,7 @@ Before a clean signature-ready revision is prepared, the parties should confirm 
 - Is Cassie Davis authorized to sign for Lucky Strike, and should the contract use “Cassie” or her legal name “Cassandra”?
 - What are the exact B.O.B. November 2026 event dates and which event operations are included?
 - Should the $249 setup fee become nonrefundable when material setup begins, or only after the initial roster is delivered?
-- Should Lucky Strike receive the one-event launch rate of $499 plus $2.49 per unique registered bowler, with the standard BowlVegas.com rate of $599 plus $2.99 applying afterward?
+- Should the contract reflect the approved one-event launch rate of $399 plus $2.49 per unique registered bowler, with the standard BowlVegas.com rate of $499 plus $2.99 applying afterward?
 - Is the per-bowler fee based on each unique bowler who completes registration, including a bowler who later cancels?
 - What data-retention period should apply after the event?
 - Should advertising lead capture and the 15% reference be removed from this agreement and placed in a separate addendum?
@@ -166,7 +166,7 @@ Before a clean signature-ready revision is prepared, the parties should confirm 
 
 ## Recommended next step
 
-Treat the uploaded document as the **current/original agreement** and do not circulate it as the final version until the issues above are resolved. The strongest next draft would use BowlVegas.com as the public-facing brand, identify the correct legal Provider, offer Lucky Strike the one-event launch rate of $499.00 plus $2.49 per unique registered bowler, preserve the event-management scope, remove or separately document the advertising revenue-share promise, reconcile the data-retention and cancellation provisions, and add a precise event schedule and privacy/security section.
+Treat the uploaded document as the **current/original agreement** and do not circulate it as the final version until the issues above are resolved. The strongest next draft would use BowlVegas.com as the public-facing brand, identify the correct legal Provider, offer Lucky Strike the approved one-event launch rate of $399.00 plus $2.49 per unique registered bowler, state the future standard rate of $499.00 plus $2.99, remove the 15% advertising revenue language in favor of a separate addendum, reconcile the data-retention and cancellation provisions, and add a precise event schedule and privacy/security section.
 
 This review is a business drafting aid, not legal advice. The parties should have a qualified attorney review the final agreement before signature, particularly the liability, privacy, payment, indemnity, and dispute provisions.
 
