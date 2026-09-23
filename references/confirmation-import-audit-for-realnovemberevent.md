@@ -7,8 +7,8 @@
 - Target column: `Hotel Confirmation` (column S)
 - Source primary records: **589**
 - Source guest records: **331**
-- Verified target rows proposed: **768**
-- New cell values to write: **666**
+- Verified target rows proposed: **772**
+- New cell values to write: **670**
 - Existing matching values preserved: **102**
 
 ## Exceptions withheld from writing
@@ -18,9 +18,9 @@ Only exact name matches, or uniquely resolved matches using the source arrival/d
 | Exception | Count |
 |---|---:|
 | primary-unmatched | 22 |
-| primary-ambiguous | 7 |
+| primary-ambiguous | 4 |
 | guest-unmatched | 100 |
-| guest-ambiguous | 2 |
+| guest-ambiguous | 1 |
 
 ### Primary records withheld
 
@@ -36,15 +36,12 @@ Only exact name matches, or uniquely resolved matches using the source arrival/d
 - Source row 219: **CASSIE DAVIS**, confirmation `RBHPJ` — unmatched. Candidates: [].
 - Source row 260: **MARIA ESCALERA**, confirmation `WZFJ4` — unmatched. Candidates: [].
 - Source row 266: **DEVIN FALCON**, confirmation `2F5RZ` — ambiguous. Candidates: [311, 356].
-- Source row 326: **TYLER GRAVOIS**, confirmation `3C3DK` — ambiguous. Candidates: [345, 370].
-- Source row 339: **RYAN GUINN**, confirmation `QR56H` — ambiguous. Candidates: [486, 742].
 - Source row 353: **DAVID HANSEN**, confirmation `V4VNM` — unmatched. Candidates: [].
 - Source row 371: **HOLLY HOLLINGSWORTH**, confirmation `Q6DRZ` — unmatched. Candidates: [].
 - Source row 392: **MICHELLE ISERI**, confirmation `LLT43` — unmatched. Candidates: [].
 - Source row 398: **VICTOR JASSI**, confirmation `GFYVH` — unmatched. Candidates: [].
 - Source row 409: **NATHANIEL JONES**, confirmation `XKFBC` — unmatched. Candidates: [].
 - Source row 417: **TRISTA KIMMES**, confirmation `KBWPZ` — unmatched. Candidates: [].
-- Source row 446: **CYRENA SUNSHINE LEE**, confirmation `6FTK4` — ambiguous. Candidates: [483, 744].
 - Source row 450: **TIM LEHL**, confirmation `NNV6L` — unmatched. Candidates: [].
 - Source row 529: **MANUEL MEZA**, confirmation `3QD63` — unmatched. Candidates: [].
 - Source row 591: **JORDAN OREAR**, confirmation `5FY5Q` — unmatched. Candidates: [].
@@ -105,7 +102,6 @@ Only exact name matches, or uniquely resolved matches using the source arrival/d
 - Source row 431: guest **ROREY DOYL**, confirmation `C55SQ`, associated primary **HEIDI KOSTERMAN** — unmatched. Candidates: [].
 - Source row 440: guest **ANTHONY LANGFORD**, confirmation `YG2QP`, associated primary **KELLY LANGFORD** — unmatched. Candidates: [].
 - Source row 442: guest **GABRIELA LARIOS**, confirmation `KM5L5`, associated primary **FRANK LARIOS** — unmatched. Candidates: [].
-- Source row 447: guest **CHRIS LEE**, confirmation `6FTK4`, associated primary **CYRENA SUNSHINE LEE** — ambiguous. Candidates: [484, 745].
 - Source row 458: guest **KRISTEN LOPEZ**, confirmation `M4JVH`, associated primary **SAMUEL LEYVA** — unmatched. Candidates: [].
 - Source row 466: guest **MICHAEL WARREN**, confirmation `QGC63`, associated primary **VINCE LOMBARDI** — unmatched. Candidates: [].
 - Source row 468: guest **BRADEN WATSON**, confirmation `3X4BR`, associated primary **ANGEL LOPEZ** — unmatched. Candidates: [].

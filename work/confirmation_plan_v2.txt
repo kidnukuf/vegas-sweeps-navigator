@@ -1,0 +1,10 @@
+source_primary_records 589
+source_guest_records 331
+proposed_assignments 793
+proposed_target_rows 772
+issues 127 conflicts 10
+guest-ambiguous 1
+guest-unmatched 100
+primary-ambiguous 4
+primary-unmatched 22
+existing_nonempty_target_rows 102

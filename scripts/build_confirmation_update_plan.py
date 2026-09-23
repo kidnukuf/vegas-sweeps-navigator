@@ -15,9 +15,14 @@ def norm(v):
  return re.sub(r'\s+',' ',re.sub(r'[^A-Z0-9]+',' ',s)).strip()
 def key(last,first): return f'{norm(first)}|{norm(last)}'
 def date_norm(v):
- if isinstance(v,datetime): return v.date().isoformat()
- s='' if v is None else str(v).strip()
- return s
+    if isinstance(v,datetime): return v.date().isoformat()
+    s='' if v is None else str(v).strip()
+    for fmt in ('%m/%d/%Y', '%m/%-d/%Y'):
+        try:
+            return datetime.strptime(s, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return s
 
 by_name=defaultdict(list)
 for r,row in enumerate(master[1:],2):

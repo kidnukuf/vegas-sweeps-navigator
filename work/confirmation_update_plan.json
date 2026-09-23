@@ -1,8 +1,8 @@
 {
   "source_primary_records": 589,
   "source_guest_records": 331,
-  "proposed_target_rows": 768,
-  "proposed_assignments": 789,
+  "proposed_target_rows": 772,
+  "proposed_assignments": 793,
   "issues": [
     {
       "type": "guest-unmatched",
@@ -93,7 +93,10 @@
         294,
         357
       ],
-      "date_candidates": []
+      "date_candidates": [
+        294,
+        357
+      ]
     },
     {
       "type": "guest-ambiguous",
@@ -115,7 +118,10 @@
         294,
         357
       ],
-      "date_candidates": []
+      "date_candidates": [
+        294,
+        357
+      ]
     },
     {
       "type": "guest-unmatched",
@@ -188,7 +194,10 @@
         332,
         359
       ],
-      "date_candidates": []
+      "date_candidates": [
+        332,
+        359
+      ]
     },
     {
       "type": "guest-unmatched",
@@ -385,7 +394,10 @@
         311,
         356
       ],
-      "date_candidates": []
+      "date_candidates": [
+        311,
+        356
+      ]
     },
     {
       "type": "guest-unmatched",
@@ -418,28 +430,6 @@
       "conf": "CLBHD",
       "primary": "SYLVIA GARCIA",
       "candidates": []
-    },
-    {
-      "type": "primary-ambiguous",
-      "source_row": 326,
-      "name": "TYLER GRAVOIS",
-      "conf": "3C3DK",
-      "candidates": [
-        345,
-        370
-      ],
-      "date_candidates": []
-    },
-    {
-      "type": "primary-ambiguous",
-      "source_row": 339,
-      "name": "RYAN GUINN",
-      "conf": "QR56H",
-      "candidates": [
-        486,
-        742
-      ],
-      "date_candidates": []
     },
     {
       "type": "guest-unmatched",
@@ -548,28 +538,6 @@
       "conf": "KM5L5",
       "primary": "FRANK LARIOS",
       "candidates": []
-    },
-    {
-      "type": "primary-ambiguous",
-      "source_row": 446,
-      "name": "CYRENA SUNSHINE LEE",
-      "conf": "6FTK4",
-      "candidates": [
-        483,
-        744
-      ],
-      "date_candidates": []
-    },
-    {
-      "type": "guest-ambiguous",
-      "source_row": 447,
-      "name": "CHRIS LEE",
-      "conf": "6FTK4",
-      "primary": "CYRENA SUNSHINE LEE",
-      "candidates": [
-        484,
-        745
-      ]
     },
     {
       "type": "primary-unmatched",
@@ -5319,6 +5287,21 @@
       ]
     },
     {
+      "target_row": 345,
+      "conf": "3C3DK",
+      "existing": "",
+      "assignments": [
+        {
+          "target_row": 345,
+          "conf": "3C3DK",
+          "source_row": 326,
+          "type": "primary",
+          "name": "TYLER GRAVOIS",
+          "method": "exact-name-and-dates"
+        }
+      ]
+    },
+    {
       "target_row": 343,
       "conf": "3C3DK",
       "existing": "",
@@ -5499,6 +5482,21 @@
           "name": "EMILY GUINN",
           "primary": "JOE GUINN",
           "method": "exact-name"
+        }
+      ]
+    },
+    {
+      "target_row": 742,
+      "conf": "QR56H",
+      "existing": "",
+      "assignments": [
+        {
+          "target_row": 742,
+          "conf": "QR56H",
+          "source_row": 339,
+          "type": "primary",
+          "name": "RYAN GUINN",
+          "method": "exact-name-and-dates"
         }
       ]
     },
@@ -6894,6 +6892,37 @@
           "name": "TERRI LINDSEY",
           "primary": "ROGER LAWRENCE",
           "method": "exact-name"
+        }
+      ]
+    },
+    {
+      "target_row": 744,
+      "conf": "6FTK4",
+      "existing": "",
+      "assignments": [
+        {
+          "target_row": 744,
+          "conf": "6FTK4",
+          "source_row": 446,
+          "type": "primary",
+          "name": "CYRENA SUNSHINE LEE",
+          "method": "exact-name-and-dates"
+        }
+      ]
+    },
+    {
+      "target_row": 745,
+      "conf": "6FTK4",
+      "existing": "",
+      "assignments": [
+        {
+          "target_row": 745,
+          "conf": "6FTK4",
+          "source_row": 447,
+          "type": "guest",
+          "name": "CHRIS LEE",
+          "primary": "CYRENA SUNSHINE LEE",
+          "method": "exact-name-and-primary-center"
         }
       ]
     },
