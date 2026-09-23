@@ -1,0 +1,148 @@
+Source Row	Record Type	Last Name	First Name	Name	Confirmation	Room Type	Arrival	Departure	Associated Primary	Status	Candidate Master Rows	Reason
+8	Guest	AGAPITO	JUDITH	JUDITH AGAPITO	BXJLL	D2	11/07/2026	11/10/2026	JULIE-ANNE AGAPITO	unmatched		Not written because exact guest match was unavailable or ambiguous
+10	Guest	A	TRISH	TRISH A	PRSNC	D1	11/08/2026	11/10/2026	SERGIO AGUILERA	unmatched		Not written because exact guest match was unavailable or ambiguous
+25	Guest	ANDRADE	DAN	DAN ANDRADE	JLGDM	D1	11/06/2026	11/10/2026	COLLEEN ANDRADE	unmatched		Not written because exact guest match was unavailable or ambiguous
+32	Primary bowler	ANTONELLI	MEGAN	MEGAN ANTONELLI	XF4N6	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+34	Primary bowler	ARAGON	TONY	TONY ARAGON	WXVRG	D2	11/07/2026	11/10/2026		conflict	750	Same master row received different source confirmations; withheld
+35	Guest	MOSES	ZACH	ZACH MOSES	WXVRG	D2	11/07/2026	11/10/2026	TONY ARAGON	conflict	753	Same master row received different source confirmations; withheld
+51	Primary bowler	BARNES	MARY LEANNA	MARY LEANNA BARNES	J2JTM	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+57	Guest	OCHOA	OZZY	OZZY OCHOA	L5VDS	D2	11/08/2026	11/10/2026	JACOB BARRIOS	unmatched		Not written because exact guest match was unavailable or ambiguous
+63	Guest	KRENZ	RUSSELL	RUSSELL KRENZ	P4J3R	D2	11/05/2026	11/10/2026	ASHTON BEATTIE	unmatched		Not written because exact guest match was unavailable or ambiguous
+65	Primary bowler	BELLIS	SHERI	SHERI BELLIS	M3WYL	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+84	Guest	-	RUBI	RUBI -	HRFYZ	D2	11/07/2026	11/10/2026	SAMANTHA BONE	unmatched		Not written because exact guest match was unavailable or ambiguous
+92	Guest	BOUNTHAPANYA	MELEANY	MELEANY BOUNTHAPANYA	TDMS5	D2	11/07/2026	11/10/2026	TIMOTHY BOUNTHAPANYA SR	unmatched		Not written because exact guest match was unavailable or ambiguous
+96	Primary bowler	BREVES	JOHN	JOHN BREVES	K64ZK	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+100	Primary bowler	BROOKS	KRISTINE	KRISTINE BROOKS	52RHR	D2	11/06/2026	11/11/2026		ambiguous	294, 357	Not written because exact master match was unavailable or ambiguous
+101	Guest	BROOKS	JAMAR	JAMAR BROOKS	52RHR	D2	11/06/2026	11/11/2026	KRISTINE BROOKS	ambiguous	297, 358	Not written because exact guest match was unavailable or ambiguous
+102	Primary bowler	BROOKS	KRISTINE	KRISTINE BROOKS	3MYKG	D2	11/06/2026	11/11/2026		ambiguous	294, 357	Not written because exact master match was unavailable or ambiguous
+103	Guest	BROOKS	ELYJAH	ELYJAH BROOKS	3MYKG	D2	11/06/2026	11/11/2026	KRISTINE BROOKS	unmatched		Not written because exact guest match was unavailable or ambiguous
+108	Guest	FALTERMEIR	TYLER	TYLER FALTERMEIR	QCQ46	D2	11/07/2026	11/10/2026	AUSTIN BROUSSARD	unmatched		Not written because exact guest match was unavailable or ambiguous
+114	Primary bowler	BRYANT	ORSHAWANTE OBBRYANT	ORSHAWANTE OBBRYANT BRYANT	3MK4R	D1	11/07/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+116	Guest	BUCHANAN	JABOB	JABOB BUCHANAN	ZJVGQ	D1	11/07/2026	11/10/2026	MORIAH BUCHANAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+135	Guest	DELUNA	KATHY	KATHY DELUNA	KFN64	D1	11/07/2026	11/10/2026	DANNY CABERA	unmatched		Not written because exact guest match was unavailable or ambiguous
+138	Guest	ABBY HINZMAN	KAYLA CAMPBELL	KAYLA CAMPBELL ABBY HINZMAN	RWMSD	D2	11/07/2026	11/10/2026	CINDY CAMPBELL	unmatched		Not written because exact guest match was unavailable or ambiguous
+140	Guest	CARPENTER	WENDY	WENDY CARPENTER	ZLXQV	D2	11/07/2026	11/10/2026	ANTHONY CARPENTER	unmatched		Not written because exact guest match was unavailable or ambiguous
+153	Guest	CHASE	KRIS	KRIS CHASE	NFPSJ	D1	11/08/2026	11/10/2026	JIM JAMES A. CHASE	unmatched		Not written because exact guest match was unavailable or ambiguous
+163	Primary bowler	CLARK	ALICIA	ALICIA CLARK	RSLJL	D2	11/06/2026	11/10/2026		ambiguous	332, 359	Not written because exact master match was unavailable or ambiguous
+164	Guest	CLARK	DAVID	DAVID CLARK	RSLJL	D2	11/06/2026	11/10/2026	ALICIA CLARK	unmatched		Not written because exact guest match was unavailable or ambiguous
+173	Primary bowler	CLEVELAND	KAREN	KAREN CLEVELAND	S36VB	D1	11/08/2026	11/10/2026		conflict	549	Same master row received different source confirmations; withheld
+174	Guest	-	BILL	BILL -	S36VB	D1	11/08/2026	11/10/2026	KAREN CLEVELAND	unmatched		Not written because exact guest match was unavailable or ambiguous
+178	Guest	COALY	GREG	GREG COALY	JMNPZ	D2	11/07/2026	11/10/2026	LAURA COALY	unmatched		Not written because exact guest match was unavailable or ambiguous
+180	Guest	-	REBECCA	REBECCA -	ZVQG5	D1	11/06/2026	11/10/2026	ROBERT BOBBY COHEN	unmatched		Not written because exact guest match was unavailable or ambiguous
+182	Guest	-	JENNIE	JENNIE -	XHYSX	D1	11/06/2026	11/10/2026	ROBERT CHOLLO COHEN	unmatched		Not written because exact guest match was unavailable or ambiguous
+185	Guest	RILEY	CURTIS	CURTIS RILEY	Q2XXS	D2	11/08/2026	11/10/2026	GARY COLE II	unmatched		Not written because exact guest match was unavailable or ambiguous
+189	Guest	RAMOS	MADDELYNN	MADDELYNN RAMOS	52VM3	D1	11/08/2026	11/10/2026	BRANDON COLLINS	unmatched		Not written because exact guest match was unavailable or ambiguous
+196	Primary bowler	CRABTREE-VENEGA	SHERRY	SHERRY CRABTREE-VENEGA	FFDYR	D1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+203	Guest	CRUZ	AMANDA	AMANDA CRUZ	36WNH	D1	11/08/2026	11/10/2026	MAURICIO CRUZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+205	Guest	MORA	ALEJANDRA	ALEJANDRA MORA	2HYGC	D2	11/08/2026	11/10/2026	NATHANIEL CRUZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+207	Guest	CRUZ	JOSEPHINE	JOSEPHINE CRUZ	5MCSJ	D2	11/08/2026	11/10/2026	PHILLIP CRUZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+216	Guest	ALEXIS COTA	DENNIECE AGUILA	DENNIECE AGUILA ALEXIS COTA	LYKTS	D2	11/07/2026	11/10/2026	HAILEY DANEL	unmatched		Not written because exact guest match was unavailable or ambiguous
+219	Primary bowler	DAVIS	CASSIE	CASSIE DAVIS	RBHPJ	31.0	11/05/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+220	Guest	DAVIS	BOB	BOB DAVIS	RBHPJ	31.0	11/05/2026	11/10/2026	CASSIE DAVIS	unmatched		Not written because exact guest match was unavailable or ambiguous
+226	Guest	BLUE	BETTY	BETTY BLUE	T6RSN	D2	11/08/2026	11/10/2026	SAM DE LA FUENTE	unmatched		Not written because exact guest match was unavailable or ambiguous
+229	Guest	-	GABY	GABY -	GD5X2	D2	11/05/2026	11/10/2026	MELINDA DELEON	unmatched		Not written because exact guest match was unavailable or ambiguous
+234	Guest	DI-PASQUALE	KATHY	KATHY DI-PASQUALE	NZDQL	D2	11/07/2026	11/10/2026	PATRICIA DI-PASQUALE	unmatched		Not written because exact guest match was unavailable or ambiguous
+236	Guest	DILEO	MAYA	MAYA DILEO	ZYM4F	D1	11/08/2026	11/10/2026	DYLAN DILEO	unmatched		Not written because exact guest match was unavailable or ambiguous
+239	Guest	DOLL	KIM	KIM DOLL	HCZNK	D2	11/08/2026	11/10/2026	ANDY DOLL	unmatched		Not written because exact guest match was unavailable or ambiguous
+243	Guest	DOSS	GLORIA	GLORIA DOSS	SG26X	D1	11/08/2026	11/10/2026	MAURICE DOSS	unmatched		Not written because exact guest match was unavailable or ambiguous
+247	Guest	DROST	JACOB	JACOB DROST	2VXYL	D2	11/08/2026	11/10/2026	DEANNA DROST	unmatched		Not written because exact guest match was unavailable or ambiguous
+260	Primary bowler	ESCALERA	MARIA	MARIA ESCALERA	WZFJ4	D2	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+263	Guest	-	MARCELLA	MARCELLA -	HQNNS	D1	11/06/2026	11/10/2026	HUGO ESPARZA	unmatched		Not written because exact guest match was unavailable or ambiguous
+265	Guest	KLIX	DOUG	DOUG KLIX	R3QPZ	D1	11/07/2026	11/10/2026	TERI EVANS	unmatched		Not written because exact guest match was unavailable or ambiguous
+266	Primary bowler	FALCON	DEVIN	DEVIN FALCON	2F5RZ	D1	11/08/2026	11/10/2026		ambiguous	311, 356	Not written because exact master match was unavailable or ambiguous
+274	Guest	FIERRO	LEONARD	LEONARD FIERRO	WR4M6	D1	11/08/2026	11/10/2026	GABRIELA FIERRO	unmatched		Not written because exact guest match was unavailable or ambiguous
+279	Guest	FLORES	MALORIE	MALORIE FLORES	LQSRP	D1	11/06/2026	11/10/2026	MATTHEW FLORES	unmatched		Not written because exact guest match was unavailable or ambiguous
+290	Guest	A	FRANCISCO	FRANCISCO A	5NRYK	D2	11/08/2026	11/10/2026	RAYNALDO GAITAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+298	Guest	WERSTOA	DREW	DREW WERSTOA	CLBHD	D2	11/06/2026	11/10/2026	SYLVIA GARCIA	unmatched		Not written because exact guest match was unavailable or ambiguous
+346	Guest	HAGMANN	MEGAN	MEGAN HAGMANN	DNYFD	D2	11/08/2026	11/10/2026	JAMES HAGMANN	unmatched		Not written because exact guest match was unavailable or ambiguous
+349	Guest	HALLMAN	CHARLES	CHARLES HALLMAN	KNC4M	D1	11/06/2026	11/10/2026	LYNN HALLMAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+351	Guest	JOHNS	TERRES	TERRES JOHNS	RKHSG	D1	11/07/2026	11/10/2026	KEVIN HANNA	unmatched		Not written because exact guest match was unavailable or ambiguous
+353	Primary bowler	HANSEN	DAVID	DAVID HANSEN	V4VNM	D1	11/08/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+360	Guest	HERNANDEZ	CATHY	CATHY HERNANDEZ	3XBPV	D1	11/07/2026	11/10/2026	CHRIS HERNANDEZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+364	Guest	HEWITT	ALLISON	ALLISON HEWITT	36LN5	D1	11/08/2026	11/10/2026	JORDAN HEWITT	unmatched		Not written because exact guest match was unavailable or ambiguous
+371	Primary bowler	HOLLINGSWORTH	HOLLY	HOLLY HOLLINGSWORTH	Q6DRZ	D2	11/08/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+392	Primary bowler	ISERI	MICHELLE	MICHELLE ISERI	LLT43	D2	11/05/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+398	Primary bowler	JASSI	VICTOR	VICTOR JASSI	GFYVH	D2	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+409	Primary bowler	JONES	NATHANIEL	NATHANIEL JONES	XKFBC	S1	11/05/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+414	Guest	RANDI	JOSEPH	JOSEPH RANDI	SGYBQ	D1	11/08/2026	11/10/2026	ERIC JORDAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+417	Primary bowler	KIMMES	TRISTA	TRISTA KIMMES	KBWPZ	31.0	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+431	Guest	DOYL	ROREY	ROREY DOYL	C55SQ	D1	11/06/2026	11/10/2026	HEIDI KOSTERMAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+440	Guest	LANGFORD	ANTHONY	ANTHONY LANGFORD	YG2QP	D2	11/08/2026	11/10/2026	KELLY LANGFORD	unmatched		Not written because exact guest match was unavailable or ambiguous
+442	Guest	LARIOS	GABRIELA	GABRIELA LARIOS	KM5L5	D1	11/07/2026	11/10/2026	FRANK LARIOS	unmatched		Not written because exact guest match was unavailable or ambiguous
+450	Primary bowler	LEHL	TIM	TIM LEHL	NNV6L	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+458	Guest	LOPEZ	KRISTEN	KRISTEN LOPEZ	M4JVH	D1	11/07/2026	11/10/2026	SAMUEL LEYVA	unmatched		Not written because exact guest match was unavailable or ambiguous
+466	Guest	WARREN	MICHAEL	MICHAEL WARREN	QGC63	D1	11/08/2026	11/10/2026	VINCE LOMBARDI	unmatched		Not written because exact guest match was unavailable or ambiguous
+467	Primary bowler	LOPEZ	ANGEL	ANGEL LOPEZ	3X4BR	D2	11/08/2026	11/10/2026		conflict	167	Same master row received different source confirmations; withheld
+468	Guest	WATSON	BRADEN	BRADEN WATSON	3X4BR	D2	11/08/2026	11/10/2026	ANGEL LOPEZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+470	Guest	LOPEZ	DIANE	DIANE LOPEZ	FZQQC	D1	11/07/2026	11/09/2026	JESS LOPEZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+482	Guest	W	CHRISTY	CHRISTY W	FL2MK	D2	11/08/2026	11/10/2026	LANCE MACKEY	unmatched		Not written because exact guest match was unavailable or ambiguous
+484	Guest	DANIEL CERVANTE	AMANDA MILLER	AMANDA MILLER DANIEL CERVANTE	YVMY4	D2	11/08/2026	11/10/2026	JONATHON MAFFEI	unmatched		Not written because exact guest match was unavailable or ambiguous
+488	Guest	MAGANA	RAUL	RAUL MAGANA	556HN	D2	11/07/2026	11/10/2026	LINDSEY MAGANA	unmatched		Not written because exact guest match was unavailable or ambiguous
+494	Primary bowler	MARTIN	JOSH	JOSH MARTIN	3ZDJV	D1	11/07/2026	11/10/2026		conflict	583	Same master row received different source confirmations; withheld
+495	Guest	MULLICAN-MARTIN	KASSIE	KASSIE MULLICAN-MARTIN	3ZDJV	D1	11/07/2026	11/10/2026	JOSH MARTIN	conflict	584	Same master row received different source confirmations; withheld
+515	Guest	MEANS	LEONARD	LEONARD MEANS	B3MGY	S1	11/08/2026	11/10/2026	JENNIFER MEANS	unmatched		Not written because exact guest match was unavailable or ambiguous
+522	Guest	GONZALEA	MARCOS	MARCOS GONZALEA	WSPLJ	D2	11/06/2026	11/10/2026	RUTH MENDEZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+524	Guest	ANELA AMORSOLO	RAY MAFNAS	RAY MAFNAS ANELA AMORSOLO	KPSL4	D2	11/08/2026	11/10/2026	DAMIAN MENDOZA	unmatched		Not written because exact guest match was unavailable or ambiguous
+526	Guest	MESCHI	SHARON	SHARON MESCHI	GLBMW	S1	11/07/2026	11/10/2026	MANSOUR MESCHI	unmatched		Not written because exact guest match was unavailable or ambiguous
+529	Primary bowler	MEZA	MANUEL	MANUEL MEZA	3QD63	D2	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+532	Primary bowler	MILLER	JAMES	JAMES MILLER	RDZ2Q	D2	11/07/2026	11/10/2026		conflict	758	Same master row received different source confirmations; withheld
+533	Guest	MILLER	MELISSA	MELISSA MILLER	RDZ2Q	D2	11/07/2026	11/10/2026	JAMES MILLER	conflict	759	Same master row received different source confirmations; withheld
+534	Primary bowler	MILLER	MELISSA	MELISSA MILLER	G6WXK	D2	11/07/2026	11/10/2026		conflict	759	Same master row received different source confirmations; withheld
+535	Guest	MILLER	JAMES	JAMES MILLER	G6WXK	D2	11/07/2026	11/10/2026	MELISSA MILLER	conflict	758	Same master row received different source confirmations; withheld
+549	Primary bowler	MOSES	ZACH	ZACH MOSES	VD2JG	D2	11/07/2026	11/10/2026		conflict	753	Same master row received different source confirmations; withheld
+550	Guest	ARAGON	TONY	TONY ARAGON	VD2JG	D2	11/07/2026	11/10/2026	ZACH MOSES	conflict	750	Same master row received different source confirmations; withheld
+555	Primary bowler	MULLICAN-MARTIN	KASSIE	KASSIE MULLICAN-MARTIN	2BBTY	S1	11/07/2026	11/10/2026		conflict	584	Same master row received different source confirmations; withheld
+556	Guest	MARTIN	JOSH	JOSH MARTIN	2BBTY	S1	11/07/2026	11/10/2026	KASSIE MULLICAN-MARTIN	conflict	583	Same master row received different source confirmations; withheld
+558	Guest	MUNOZ	CYNTHIA	CYNTHIA MUNOZ	H6VR3	D2	11/07/2026	11/10/2026	DAVID MUNOZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+579	Guest	NORMAN	PREZHANN	PREZHANN NORMAN	GRZNT	D2	11/08/2026	11/10/2026	MICHAEL NORMAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+591	Primary bowler	OREAR	JORDAN	JORDAN OREAR	5FY5Q	S1	11/07/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+593	Guest	PORTA	IGNACIO	IGNACIO PORTA	HMJJT	D2	11/06/2026	11/09/2026	BROOKE OROZCO	unmatched		Not written because exact guest match was unavailable or ambiguous
+596	Guest	WOODS	SHAY	SHAY WOODS	CY4QP	D2	11/07/2026	11/10/2026	NICK ORR	unmatched		Not written because exact guest match was unavailable or ambiguous
+598	Guest	-	KRISTEN	KRISTEN -	6KDV2	S1	11/07/2026	11/10/2026	GILBERT ORTEGA	unmatched		Not written because exact guest match was unavailable or ambiguous
+614	Guest	PAYAN	KARLA	KARLA PAYAN	4LJPX	S1	11/08/2026	11/10/2026	ANGEL PAYAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+618	Guest	JOHNSON	MATTHEW	MATTHEW JOHNSON	LKL6B	D2	11/06/2026	11/10/2026	MEGAN PEASE	unmatched		Not written because exact guest match was unavailable or ambiguous
+621	Guest	LYNN	KATHY	KATHY LYNN	LZMWQ	D2	11/06/2026	11/10/2026	SHAINE PENDERGRAFT	unmatched		Not written because exact guest match was unavailable or ambiguous
+623	Guest	PENNINGTON	BARBARA	BARBARA PENNINGTON	Y5PLH	S1	11/08/2026	11/10/2026	KAITLYN PENNINGTON	unmatched		Not written because exact guest match was unavailable or ambiguous
+624	Primary bowler	PEREZ	ILEANA	ILEANA PEREZ	J4NNC	D2	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+626	Guest	FRANCO	JESSICA	JESSICA FRANCO	RMNXV	S1	11/07/2026	11/10/2026	MIKE PEREZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+627	Primary bowler	PETERSON	DAWN	DAWN PETERSON	KZ6YY	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+629	Guest	TANDY	NOAH	NOAH TANDY	GC33B	D2	11/08/2026	11/10/2026	TYLER PETERSON	unmatched		Not written because exact guest match was unavailable or ambiguous
+653	Guest	-	DENISE	DENISE -	R4XCV	S1	11/07/2026	11/10/2026	EDDIE PULIDO	unmatched		Not written because exact guest match was unavailable or ambiguous
+659	Guest	SANCHEZ	JESSICA	JESSICA SANCHEZ	DBTZX	S1	11/07/2026	11/10/2026	DANIEL QUINDT	unmatched		Not written because exact guest match was unavailable or ambiguous
+661	Guest	QUINDT	KANDICE	KANDICE QUINDT	BW3V2	S1	11/07/2026	11/10/2026	DENNIS QUINDT	unmatched		Not written because exact guest match was unavailable or ambiguous
+665	Guest	RAMOS	NANCY	NANCY RAMOS	PZ6Q2	S1	11/07/2026	11/10/2026	BEN RAMOS	unmatched		Not written because exact guest match was unavailable or ambiguous
+667	Guest	RAMOS	ANGEL	ANGEL RAMOS	SLSDR	D2	11/06/2026	11/10/2026	SAL RAMOS	unmatched		Not written because exact guest match was unavailable or ambiguous
+691	Guest	MEHANEN	DAN	DAN MEHANEN	GVRJW	D2	11/06/2026	11/10/2026	LEXI RICHARDSON	unmatched		Not written because exact guest match was unavailable or ambiguous
+701	Guest	RITTER	GLENN	GLENN RITTER	533SF	S1	11/08/2026	11/10/2026	MARISELA RITTER	unmatched		Not written because exact guest match was unavailable or ambiguous
+718	Guest	CLAYANNA NEWBER	LOUIE ROJAS	LOUIE ROJAS CLAYANNA NEWBER	TP3RN	D2	11/08/2026	11/10/2026	TIFFANY ROJAS	unmatched		Not written because exact guest match was unavailable or ambiguous
+722	Guest	ROMERO	AULANA	AULANA ROMERO	XQYTP	S1	11/09/2026	11/10/2026	ANDREW ROMERO	unmatched		Not written because exact guest match was unavailable or ambiguous
+730	Guest	-	RACHEL	RACHEL -	56Z5T	S1	11/07/2026	11/10/2026	KYLE ROSS	unmatched		Not written because exact guest match was unavailable or ambiguous
+746	Guest	SANCHEZ	CYNTHIA	CYNTHIA SANCHEZ	HJ4WJ	S1	11/08/2026	11/10/2026	RON SANCHEZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+753	Guest	REECE	ALBERT	ALBERT REECE	SWR3K	D2	11/06/2026	11/10/2026	KAMSAT SAO	unmatched		Not written because exact guest match was unavailable or ambiguous
+756	Primary bowler	SCHMIDT	EDDIE	EDDIE SCHMIDT	QWGJB	D2	11/06/2026	11/10/2026		conflict	193	Same master row received different source confirmations; withheld
+757	Guest	SHAFFER	EDDIE	EDDIE SHAFFER	QWGJB	D2	11/06/2026	11/10/2026	EDDIE SCHMIDT	conflict	190	Same master row received different source confirmations; withheld
+760	Guest	SCHWALBE	TOM	TOM SCHWALBE	4DGJN	D2	11/06/2026	11/10/2026	PAT SCHWALBE	unmatched		Not written because exact guest match was unavailable or ambiguous
+764	Guest	YANG	WEI CHANG	WEI CHANG YANG	FBM5Y	S1	11/08/2026	11/10/2026	CHRIS SEINTURIER	unmatched		Not written because exact guest match was unavailable or ambiguous
+768	Primary bowler	SHAFFER	EDDIE	EDDIE SHAFFER	C2MS3	D2	11/06/2026	11/10/2026		conflict	190	Same master row received different source confirmations; withheld
+769	Guest	SCHMIDT	EDDIE	EDDIE SCHMIDT	C2MS3	D2	11/06/2026	11/10/2026	EDDIE SHAFFER	conflict	193	Same master row received different source confirmations; withheld
+773	Primary bowler	SHULL	LANGLEY	LANGLEY SHULL	C6PGZ	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+783	Guest	HISH	ANDREW	ANDREW HISH	4HB2W	D2	11/08/2026	11/10/2026	QUINTO SONGCUAN	unmatched		Not written because exact guest match was unavailable or ambiguous
+789	Guest	ODELL	JACOB	JACOB ODELL	J2KJS	D2	11/08/2026	11/10/2026	DANIEL SPENCER	unmatched		Not written because exact guest match was unavailable or ambiguous
+798	Guest	HULSEY	MARK	MARK HULSEY	SHDSX	D2	11/07/2026	11/10/2026	CHERYL STAHL	unmatched		Not written because exact guest match was unavailable or ambiguous
+821	Guest	TANDY	MARY	MARY TANDY	5SMMJ	S1	11/08/2026	11/10/2026	CHRIS TANDY	unmatched		Not written because exact guest match was unavailable or ambiguous
+823	Guest	HIINDMAN	KIM	KIM HIINDMAN	CHJHC	S1	11/06/2026	11/10/2026	KIM TARLTON	unmatched		Not written because exact guest match was unavailable or ambiguous
+827	Guest	TERKELSON	JAMES	JAMES TERKELSON	NB5RX	D2	11/06/2026	11/10/2026	LISA TERKERLSON	unmatched		Not written because exact guest match was unavailable or ambiguous
+832	Guest	YANG	KA	KA YANG	QZJ3V	D2	11/07/2026	11/10/2026	MAI THOR	unmatched		Not written because exact guest match was unavailable or ambiguous
+837	Guest	-	MELINDA	MELINDA -	62CD3	D2	11/07/2026	11/10/2026	JANA TOUSIGNANT	unmatched		Not written because exact guest match was unavailable or ambiguous
+843	Guest	VALENZUELA	GRICELDA	GRICELDA VALENZUELA	PZVK5	S1	11/07/2026	11/10/2026	ANGEL VALENZUELA	unmatched		Not written because exact guest match was unavailable or ambiguous
+845	Primary bowler	VANCE	BRIAN	BRIAN VANCE	NQFFX	S1	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+847	Guest	VUE	YANG GER	YANG GER VUE	346HR	D2	11/07/2026	11/10/2026	CHU VANG	unmatched		Not written because exact guest match was unavailable or ambiguous
+849	Guest	VANG	LEE	LEE VANG	SQVBJ	D2	11/07/2026	11/10/2026	LARTY VANG	unmatched		Not written because exact guest match was unavailable or ambiguous
+869	Guest	VILLALUZ	MICHAELA	MICHAELA VILLALUZ	TDTS2	S1	11/07/2026	11/10/2026	JONATHAN VILLALUZ	unmatched		Not written because exact guest match was unavailable or ambiguous
+874	Primary bowler	WALKER	ROZLYN (RENEE)	ROZLYN (RENEE) WALKER	SYRLR	11.0	11/06/2026	11/10/2026		unmatched		Not written because exact master match was unavailable or ambiguous
+878	Guest	WALTON	VICKIE	VICKIE WALTON	WKZMZ	D2	11/08/2026	11/10/2026	TAMICKA WALTON	unmatched		Not written because exact guest match was unavailable or ambiguous
+891	Guest	THOMAS	EJ	EJ THOMAS	QDBVH	D2	11/08/2026	11/10/2026	BRADLEY WATSON	unmatched		Not written because exact guest match was unavailable or ambiguous
+893	Guest	LOPEZ	ANGEL	ANGEL LOPEZ	3QWLL	D2	11/08/2026	11/10/2026	BRANDEN WATSON	conflict	167	Same master row received different source confirmations; withheld
+902	Guest	CLEVELAND	KAREN	KAREN CLEVELAND	VTVPT	S1	11/08/2026	11/10/2026	STACY WILLARD	conflict	549	Same master row received different source confirmations; withheld
+909	Guest	WILSON	KELLY	KELLY WILSON	V22XL	S1	11/08/2026	11/10/2026	JERAD WILSON	unmatched		Not written because exact guest match was unavailable or ambiguous
+921	Guest	XIONG	SHENG	SHENG XIONG	SWQPW	D2	11/07/2026	11/10/2026	TONG YANG	unmatched		Not written because exact guest match was unavailable or ambiguous
