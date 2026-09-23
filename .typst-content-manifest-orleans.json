@@ -1,0 +1,11 @@
+{
+  "task_kind": "markdown-to-pdf",
+  "output": "pdf",
+  "signals": ["contract", "one-event-agreement"],
+  "hard_constraints": ["include-integrated-advertising-addendum", "event-dates-november-6-to-9-2026"],
+  "content_features": {
+    "code_blocks": 0,
+    "defined_terms": 30,
+    "portrait_images": 0
+  }
+}
