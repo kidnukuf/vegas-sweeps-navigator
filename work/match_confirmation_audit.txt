@@ -1,0 +1,152 @@
+source_primary_records 589
+source_guest_records 331
+master_name_keys 895
+master_guest_name_keys 0
+
+UNMATCHED_PRIMARY
+{'source_row': 32, 'last': 'ANTONELLI', 'first': 'MEGAN', 'conf': 'XF4N6', 'master_rows': [], 'guests': []}
+{'source_row': 51, 'last': 'BARNES', 'first': 'MARY LEANNA', 'conf': 'J2JTM', 'master_rows': [], 'guests': []}
+{'source_row': 65, 'last': 'BELLIS', 'first': 'SHERI', 'conf': 'M3WYL', 'master_rows': [], 'guests': []}
+{'source_row': 96, 'last': 'BREVES', 'first': 'JOHN', 'conf': 'K64ZK', 'master_rows': [], 'guests': []}
+{'source_row': 100, 'last': 'BROOKS', 'first': 'KRISTINE', 'conf': '52RHR', 'master_rows': [294, 357], 'guests': [{'source_row': 101, 'last': 'BROOKS', 'first': 'JAMAR', 'master_name_rows': [297, 358], 'master_guest_rows': []}]}
+{'source_row': 102, 'last': 'BROOKS', 'first': 'KRISTINE', 'conf': '3MYKG', 'master_rows': [294, 357], 'guests': [{'source_row': 103, 'last': 'BROOKS', 'first': 'ELYJAH', 'master_name_rows': [], 'master_guest_rows': []}]}
+{'source_row': 114, 'last': 'BRYANT', 'first': 'ORSHAWANTE OBBRYANT', 'conf': '3MK4R', 'master_rows': [], 'guests': []}
+{'source_row': 163, 'last': 'CLARK', 'first': 'ALICIA', 'conf': 'RSLJL', 'master_rows': [332, 359], 'guests': [{'source_row': 164, 'last': 'CLARK', 'first': 'DAVID', 'master_name_rows': [], 'master_guest_rows': []}]}
+{'source_row': 196, 'last': 'CRABTREE-VENEGA', 'first': 'SHERRY', 'conf': 'FFDYR', 'master_rows': [], 'guests': [{'source_row': 197, 'last': 'VENEGAS', 'first': 'MICHAEL', 'master_name_rows': [494], 'master_guest_rows': []}]}
+{'source_row': 219, 'last': 'DAVIS', 'first': 'CASSIE', 'conf': 'RBHPJ', 'master_rows': [], 'guests': [{'source_row': 220, 'last': 'DAVIS', 'first': 'BOB', 'master_name_rows': [], 'master_guest_rows': []}]}
+{'source_row': 260, 'last': 'ESCALERA', 'first': 'MARIA', 'conf': 'WZFJ4', 'master_rows': [], 'guests': []}
+{'source_row': 266, 'last': 'FALCON', 'first': 'DEVIN', 'conf': '2F5RZ', 'master_rows': [311, 356], 'guests': [{'source_row': 267, 'last': 'BENNETT', 'first': 'ANNETTE', 'master_name_rows': [310], 'master_guest_rows': []}]}
+{'source_row': 326, 'last': 'GRAVOIS', 'first': 'TYLER', 'conf': '3C3DK', 'master_rows': [345, 370], 'guests': [{'source_row': 327, 'last': 'CALABRESE', 'first': 'SARA', 'master_name_rows': [343], 'master_guest_rows': []}]}
+{'source_row': 339, 'last': 'GUINN', 'first': 'RYAN', 'conf': 'QR56H', 'master_rows': [486, 742], 'guests': [{'source_row': 340, 'last': 'GUINN', 'first': 'BONNIE', 'master_name_rows': [743], 'master_guest_rows': []}]}
+{'source_row': 353, 'last': 'HANSEN', 'first': 'DAVID', 'conf': 'V4VNM', 'master_rows': [], 'guests': []}
+{'source_row': 371, 'last': 'HOLLINGSWORTH', 'first': 'HOLLY', 'conf': 'Q6DRZ', 'master_rows': [], 'guests': [{'source_row': 372, 'last': 'HOLLINGSWORTH', 'first': 'EDDY SR', 'master_name_rows': [441], 'master_guest_rows': []}]}
+{'source_row': 392, 'last': 'ISERI', 'first': 'MICHELLE', 'conf': 'LLT43', 'master_rows': [], 'guests': []}
+{'source_row': 398, 'last': 'JASSI', 'first': 'VICTOR', 'conf': 'GFYVH', 'master_rows': [], 'guests': []}
+{'source_row': 409, 'last': 'JONES', 'first': 'NATHANIEL', 'conf': 'XKFBC', 'master_rows': [], 'guests': []}
+{'source_row': 417, 'last': 'KIMMES', 'first': 'TRISTA', 'conf': 'KBWPZ', 'master_rows': [], 'guests': []}
+{'source_row': 446, 'last': 'LEE', 'first': 'CYRENA SUNSHINE', 'conf': '6FTK4', 'master_rows': [483, 744], 'guests': [{'source_row': 447, 'last': 'LEE', 'first': 'CHRIS', 'master_name_rows': [484, 745], 'master_guest_rows': []}]}
+{'source_row': 450, 'last': 'LEHL', 'first': 'TIM', 'conf': 'NNV6L', 'master_rows': [], 'guests': []}
+{'source_row': 529, 'last': 'MEZA', 'first': 'MANUEL', 'conf': '3QD63', 'master_rows': [], 'guests': []}
+{'source_row': 591, 'last': 'OREAR', 'first': 'JORDAN', 'conf': '5FY5Q', 'master_rows': [], 'guests': []}
+{'source_row': 624, 'last': 'PEREZ', 'first': 'ILEANA', 'conf': 'J4NNC', 'master_rows': [], 'guests': []}
+{'source_row': 627, 'last': 'PETERSON', 'first': 'DAWN', 'conf': 'KZ6YY', 'master_rows': [], 'guests': []}
+{'source_row': 773, 'last': 'SHULL', 'first': 'LANGLEY', 'conf': 'C6PGZ', 'master_rows': [], 'guests': []}
+{'source_row': 845, 'last': 'VANCE', 'first': 'BRIAN', 'conf': 'NQFFX', 'master_rows': [], 'guests': []}
+{'source_row': 874, 'last': 'WALKER', 'first': 'ROZLYN (RENEE)', 'conf': 'SYRLR', 'master_rows': [], 'guests': []}
+
+GUEST_MATCH_SUMMARY
+{'primary': 'JULIE-ANNE AGAPITO', 'conf': 'BXJLL', 'source_row': 8, 'last': 'AGAPITO', 'first': 'JUDITH', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'SERGIO AGUILERA', 'conf': 'PRSNC', 'source_row': 10, 'last': 'A', 'first': 'TRISH', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'COLLEEN ANDRADE', 'conf': 'JLGDM', 'source_row': 25, 'last': 'ANDRADE', 'first': 'DAN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JACOB BARRIOS', 'conf': 'L5VDS', 'source_row': 57, 'last': 'OCHOA', 'first': 'OZZY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ASHTON BEATTIE', 'conf': 'P4J3R', 'source_row': 63, 'last': 'KRENZ', 'first': 'RUSSELL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'SAMANTHA BONE', 'conf': 'HRFYZ', 'source_row': 84, 'last': '-', 'first': 'RUBI', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'TIMOTHY BOUNTHAPANYA SR', 'conf': 'TDMS5', 'source_row': 92, 'last': 'BOUNTHAPANYA', 'first': 'MELEANY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KRISTINE BROOKS', 'conf': '52RHR', 'source_row': 101, 'last': 'BROOKS', 'first': 'JAMAR', 'master_name_rows': [297, 358], 'master_guest_rows': []}
+{'primary': 'KRISTINE BROOKS', 'conf': '3MYKG', 'source_row': 103, 'last': 'BROOKS', 'first': 'ELYJAH', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'AUSTIN BROUSSARD', 'conf': 'QCQ46', 'source_row': 108, 'last': 'FALTERMEIR', 'first': 'TYLER', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MORIAH BUCHANAN', 'conf': 'ZJVGQ', 'source_row': 116, 'last': 'BUCHANAN', 'first': 'JABOB', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DANNY CABERA', 'conf': 'KFN64', 'source_row': 135, 'last': 'DELUNA', 'first': 'KATHY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CINDY CAMPBELL', 'conf': 'RWMSD', 'source_row': 138, 'last': 'ABBY HINZMAN', 'first': 'KAYLA CAMPBELL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ANTHONY CARPENTER', 'conf': 'ZLXQV', 'source_row': 140, 'last': 'CARPENTER', 'first': 'WENDY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JIM JAMES A. CHASE', 'conf': 'NFPSJ', 'source_row': 153, 'last': 'CHASE', 'first': 'KRIS', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ALICIA CLARK', 'conf': 'RSLJL', 'source_row': 164, 'last': 'CLARK', 'first': 'DAVID', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DAMETRE CLARK', 'conf': '25NRN', 'source_row': 166, 'last': 'CLARK SR', 'first': 'DAVID', 'master_name_rows': [333, 360], 'master_guest_rows': []}
+{'primary': 'DAVID CLARK JR', 'conf': '5T4MD', 'source_row': 168, 'last': 'CLARK', 'first': 'ALICIA', 'master_name_rows': [332, 359], 'master_guest_rows': []}
+{'primary': 'KAREN CLEVELAND', 'conf': 'S36VB', 'source_row': 174, 'last': '-', 'first': 'BILL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LAURA COALY', 'conf': 'JMNPZ', 'source_row': 178, 'last': 'COALY', 'first': 'GREG', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ROBERT BOBBY COHEN', 'conf': 'ZVQG5', 'source_row': 180, 'last': '-', 'first': 'REBECCA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ROBERT CHOLLO COHEN', 'conf': 'XHYSX', 'source_row': 182, 'last': '-', 'first': 'JENNIE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'GARY COLE II', 'conf': 'Q2XXS', 'source_row': 185, 'last': 'RILEY', 'first': 'CURTIS', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'BRANDON COLLINS', 'conf': '52VM3', 'source_row': 189, 'last': 'RAMOS', 'first': 'MADDELYNN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MAURICIO CRUZ', 'conf': '36WNH', 'source_row': 203, 'last': 'CRUZ', 'first': 'AMANDA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'NATHANIEL CRUZ', 'conf': '2HYGC', 'source_row': 205, 'last': 'MORA', 'first': 'ALEJANDRA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'PHILLIP CRUZ', 'conf': '5MCSJ', 'source_row': 207, 'last': 'CRUZ', 'first': 'JOSEPHINE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'HAILEY DANEL', 'conf': 'LYKTS', 'source_row': 216, 'last': 'ALEXIS COTA', 'first': 'DENNIECE AGUILA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CASSIE DAVIS', 'conf': 'RBHPJ', 'source_row': 220, 'last': 'DAVIS', 'first': 'BOB', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'SAM DE LA FUENTE', 'conf': 'T6RSN', 'source_row': 226, 'last': 'BLUE', 'first': 'BETTY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MELINDA DELEON', 'conf': 'GD5X2', 'source_row': 229, 'last': '-', 'first': 'GABY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'PATRICIA DI-PASQUALE', 'conf': 'NZDQL', 'source_row': 234, 'last': 'DI-PASQUALE', 'first': 'KATHY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DYLAN DILEO', 'conf': 'ZYM4F', 'source_row': 236, 'last': 'DILEO', 'first': 'MAYA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ANDY DOLL', 'conf': 'HCZNK', 'source_row': 239, 'last': 'DOLL', 'first': 'KIM', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MAURICE DOSS', 'conf': 'SG26X', 'source_row': 243, 'last': 'DOSS', 'first': 'GLORIA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DEANNA DROST', 'conf': '2VXYL', 'source_row': 247, 'last': 'DROST', 'first': 'JACOB', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'HUGO ESPARZA', 'conf': 'HQNNS', 'source_row': 263, 'last': '-', 'first': 'MARCELLA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'TERI EVANS', 'conf': 'R3QPZ', 'source_row': 265, 'last': 'KLIX', 'first': 'DOUG', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'GABRIELA FIERRO', 'conf': 'WR4M6', 'source_row': 274, 'last': 'FIERRO', 'first': 'LEONARD', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MATTHEW FLORES', 'conf': 'LQSRP', 'source_row': 279, 'last': 'FLORES', 'first': 'MALORIE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'RAYNALDO GAITAN', 'conf': '5NRYK', 'source_row': 290, 'last': 'A', 'first': 'FRANCISCO', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'SYLVIA GARCIA', 'conf': 'CLBHD', 'source_row': 298, 'last': 'WERSTOA', 'first': 'DREW', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JAMES HAGMANN', 'conf': 'DNYFD', 'source_row': 346, 'last': 'HAGMANN', 'first': 'MEGAN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LYNN HALLMAN', 'conf': 'KNC4M', 'source_row': 349, 'last': 'HALLMAN', 'first': 'CHARLES', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KEVIN HANNA', 'conf': 'RKHSG', 'source_row': 351, 'last': 'JOHNS', 'first': 'TERRES', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CHRIS HERNANDEZ', 'conf': '3XBPV', 'source_row': 360, 'last': 'HERNANDEZ', 'first': 'CATHY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JORDAN HEWITT', 'conf': '36LN5', 'source_row': 364, 'last': 'HEWITT', 'first': 'ALLISON', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ERIC JORDAN', 'conf': 'SGYBQ', 'source_row': 414, 'last': 'RANDI', 'first': 'JOSEPH', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'HEIDI KOSTERMAN', 'conf': 'C55SQ', 'source_row': 431, 'last': 'DOYL', 'first': 'ROREY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KELLY LANGFORD', 'conf': 'YG2QP', 'source_row': 440, 'last': 'LANGFORD', 'first': 'ANTHONY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'FRANK LARIOS', 'conf': 'KM5L5', 'source_row': 442, 'last': 'LARIOS', 'first': 'GABRIELA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CYRENA SUNSHINE LEE', 'conf': '6FTK4', 'source_row': 447, 'last': 'LEE', 'first': 'CHRIS', 'master_name_rows': [484, 745], 'master_guest_rows': []}
+{'primary': 'SAMUEL LEYVA', 'conf': 'M4JVH', 'source_row': 458, 'last': 'LOPEZ', 'first': 'KRISTEN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'VINCE LOMBARDI', 'conf': 'QGC63', 'source_row': 466, 'last': 'WARREN', 'first': 'MICHAEL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ANGEL LOPEZ', 'conf': '3X4BR', 'source_row': 468, 'last': 'WATSON', 'first': 'BRADEN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JESS LOPEZ', 'conf': 'FZQQC', 'source_row': 470, 'last': 'LOPEZ', 'first': 'DIANE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LANCE MACKEY', 'conf': 'FL2MK', 'source_row': 482, 'last': 'W', 'first': 'CHRISTY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JONATHON MAFFEI', 'conf': 'YVMY4', 'source_row': 484, 'last': 'DANIEL CERVANTE', 'first': 'AMANDA MILLER', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LINDSEY MAGANA', 'conf': '556HN', 'source_row': 488, 'last': 'MAGANA', 'first': 'RAUL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KEVIN MCGIUIRE', 'conf': 'SS5KC', 'source_row': 506, 'last': 'BROOKS', 'first': 'JAMAR', 'master_name_rows': [297, 358], 'master_guest_rows': []}
+{'primary': 'JENNIFER MEANS', 'conf': 'B3MGY', 'source_row': 515, 'last': 'MEANS', 'first': 'LEONARD', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'RUTH MENDEZ', 'conf': 'WSPLJ', 'source_row': 522, 'last': 'GONZALEA', 'first': 'MARCOS', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DAMIAN MENDOZA', 'conf': 'KPSL4', 'source_row': 524, 'last': 'ANELA AMORSOLO', 'first': 'RAY MAFNAS', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MANSOUR MESCHI', 'conf': 'GLBMW', 'source_row': 526, 'last': 'MESCHI', 'first': 'SHARON', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DAVID MUNOZ', 'conf': 'H6VR3', 'source_row': 558, 'last': 'MUNOZ', 'first': 'CYNTHIA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MICHAEL NORMAN', 'conf': 'GRZNT', 'source_row': 579, 'last': 'NORMAN', 'first': 'PREZHANN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'BROOKE OROZCO', 'conf': 'HMJJT', 'source_row': 593, 'last': 'PORTA', 'first': 'IGNACIO', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'NICK ORR', 'conf': 'CY4QP', 'source_row': 596, 'last': 'WOODS', 'first': 'SHAY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'GILBERT ORTEGA', 'conf': '6KDV2', 'source_row': 598, 'last': '-', 'first': 'KRISTEN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ANGEL PAYAN', 'conf': '4LJPX', 'source_row': 614, 'last': 'PAYAN', 'first': 'KARLA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MEGAN PEASE', 'conf': 'LKL6B', 'source_row': 618, 'last': 'JOHNSON', 'first': 'MATTHEW', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'SHAINE PENDERGRAFT', 'conf': 'LZMWQ', 'source_row': 621, 'last': 'LYNN', 'first': 'KATHY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KAITLYN PENNINGTON', 'conf': 'Y5PLH', 'source_row': 623, 'last': 'PENNINGTON', 'first': 'BARBARA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MIKE PEREZ', 'conf': 'RMNXV', 'source_row': 626, 'last': 'FRANCO', 'first': 'JESSICA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'TYLER PETERSON', 'conf': 'GC33B', 'source_row': 629, 'last': 'TANDY', 'first': 'NOAH', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'EDDIE PULIDO', 'conf': 'R4XCV', 'source_row': 653, 'last': '-', 'first': 'DENISE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DANIEL QUINDT', 'conf': 'DBTZX', 'source_row': 659, 'last': 'SANCHEZ', 'first': 'JESSICA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DENNIS QUINDT', 'conf': 'BW3V2', 'source_row': 661, 'last': 'QUINDT', 'first': 'KANDICE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'BEN RAMOS', 'conf': 'PZ6Q2', 'source_row': 665, 'last': 'RAMOS', 'first': 'NANCY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'SAL RAMOS', 'conf': 'SLSDR', 'source_row': 667, 'last': 'RAMOS', 'first': 'ANGEL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LEXI RICHARDSON', 'conf': 'GVRJW', 'source_row': 691, 'last': 'MEHANEN', 'first': 'DAN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MARISELA RITTER', 'conf': '533SF', 'source_row': 701, 'last': 'RITTER', 'first': 'GLENN', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'TIFFANY ROJAS', 'conf': 'TP3RN', 'source_row': 718, 'last': 'CLAYANNA NEWBER', 'first': 'LOUIE ROJAS', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ANDREW ROMERO', 'conf': 'XQYTP', 'source_row': 722, 'last': 'ROMERO', 'first': 'AULANA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KYLE ROSS', 'conf': '56Z5T', 'source_row': 730, 'last': '-', 'first': 'RACHEL', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'RON SANCHEZ', 'conf': 'HJ4WJ', 'source_row': 746, 'last': 'SANCHEZ', 'first': 'CYNTHIA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KAMSAT SAO', 'conf': 'SWR3K', 'source_row': 753, 'last': 'REECE', 'first': 'ALBERT', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'PAT SCHWALBE', 'conf': '4DGJN', 'source_row': 760, 'last': 'SCHWALBE', 'first': 'TOM', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CHRIS SEINTURIER', 'conf': 'FBM5Y', 'source_row': 764, 'last': 'YANG', 'first': 'WEI CHANG', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'QUINTO SONGCUAN', 'conf': '4HB2W', 'source_row': 783, 'last': 'HISH', 'first': 'ANDREW', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'DANIEL SPENCER', 'conf': 'J2KJS', 'source_row': 789, 'last': 'ODELL', 'first': 'JACOB', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CHERYL STAHL', 'conf': 'SHDSX', 'source_row': 798, 'last': 'HULSEY', 'first': 'MARK', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CHRIS TANDY', 'conf': '5SMMJ', 'source_row': 821, 'last': 'TANDY', 'first': 'MARY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'KIM TARLTON', 'conf': 'CHJHC', 'source_row': 823, 'last': 'HIINDMAN', 'first': 'KIM', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LISA TERKERLSON', 'conf': 'NB5RX', 'source_row': 827, 'last': 'TERKELSON', 'first': 'JAMES', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'MAI THOR', 'conf': 'QZJ3V', 'source_row': 832, 'last': 'YANG', 'first': 'KA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JANA TOUSIGNANT', 'conf': '62CD3', 'source_row': 837, 'last': '-', 'first': 'MELINDA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'ANGEL VALENZUELA', 'conf': 'PZVK5', 'source_row': 843, 'last': 'VALENZUELA', 'first': 'GRICELDA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'CHU VANG', 'conf': '346HR', 'source_row': 847, 'last': 'VUE', 'first': 'YANG GER', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'LARTY VANG', 'conf': 'SQVBJ', 'source_row': 849, 'last': 'VANG', 'first': 'LEE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JONATHAN VILLALUZ', 'conf': 'TDTS2', 'source_row': 869, 'last': 'VILLALUZ', 'first': 'MICHAELA', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'TAMICKA WALTON', 'conf': 'WKZMZ', 'source_row': 878, 'last': 'WALTON', 'first': 'VICKIE', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'BRADLEY WATSON', 'conf': 'QDBVH', 'source_row': 891, 'last': 'THOMAS', 'first': 'EJ', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'JERAD WILSON', 'conf': 'V22XL', 'source_row': 909, 'last': 'WILSON', 'first': 'KELLY', 'master_name_rows': [], 'master_guest_rows': []}
+{'primary': 'TONG YANG', 'conf': 'SWQPW', 'source_row': 921, 'last': 'XIONG', 'first': 'SHENG', 'master_name_rows': [], 'master_guest_rows': []}
+guest_match_counts {'unmatched': 100, 'master_bowler_name': 226, 'ambiguous': 5}
+
+DUPLICATE_CONF
+52RHR [294, 357]
+3MYKG [294, 357]
+RSLJL [332, 359]
+2F5RZ [311, 356]
+3C3DK [345, 370]
+QR56H [486, 742]
+6FTK4 [483, 744]

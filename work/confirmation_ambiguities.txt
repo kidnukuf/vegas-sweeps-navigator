@@ -1,0 +1,19 @@
+primary exact unique 560
+primary unmatched 22
+primary ambiguous 7
+
+AMBIGUOUS_PRIMARY_GROUPS
+SOURCE KRISTINE|BROOKS [(100, '52RHR', datetime.datetime(2026, 11, 6, 0, 0), datetime.datetime(2026, 11, 11, 0, 0)), (102, '3MYKG', datetime.datetime(2026, 11, 6, 0, 0), datetime.datetime(2026, 11, 11, 0, 0))]
+MASTER [(294, 'Bowlero Lancaster TH', '4', '11/6/2026', '11/11/2026'), (357, 'Bowlero Lancaster Su', '1', '11/6/2026', '11/11/2026')]
+SOURCE ALICIA|CLARK [(163, 'RSLJL', datetime.datetime(2026, 11, 6, 0, 0), datetime.datetime(2026, 11, 10, 0, 0))]
+MASTER [(332, 'Bowlero Lancaster TH', '13', '11/6/2026', '11/10/2026'), (359, 'Bowlero Lancaster Su', '2', '11/6/2026', '11/10/2026')]
+SOURCE DEVIN|FALCON [(266, '2F5RZ', datetime.datetime(2026, 11, 8, 0, 0), datetime.datetime(2026, 11, 10, 0, 0))]
+MASTER [(311, 'Bowlero Lancaster TH', '8', '11/8/2026', '11/10/2026'), (356, 'Bowlero Lancaster Su', '1', '11/8/2026', '11/10/2026')]
+SOURCE TYLER|GRAVOIS [(326, '3C3DK', datetime.datetime(2026, 11, 6, 0, 0), datetime.datetime(2026, 11, 10, 0, 0))]
+MASTER [(345, 'Bowlero Lancaster TH', '16', '11/6/2026', '11/10/2026'), (370, 'Bowlero Lancaster Su', '4', '11/8/2026', '11/10/2026')]
+SOURCE RYAN|GUINN [(339, 'QR56H', datetime.datetime(2026, 11, 6, 0, 0), datetime.datetime(2026, 11, 10, 0, 0))]
+MASTER [(486, 'Lucky Strike Clovis', '14', '', ''), (742, 'Lucky Strike Fresno', '1', '11/6/2026', '11/10/2026')]
+SOURCE CYRENA SUNSHINE|LEE [(446, '6FTK4', datetime.datetime(2026, 11, 6, 0, 0), datetime.datetime(2026, 11, 10, 0, 0))]
+MASTER [(483, 'Lucky Strike Clovis', '14', '', ''), (744, 'Lucky Strike Fresno', '1', '11/6/2026', '11/10/2026')]
+
+PRIMARY_CONF_DUPLICATES

@@ -1,0 +1,8 @@
+NONEMPTY_GUEST_NAME
+DUPLICATE_BOWLER_NAMES_OF_INTEREST
+('BROOKS', 'KRISTINE') [(294, 'Bowlero Lancaster TH', '4', '11/6/2026', '11/11/2026', '', ''), (357, 'Bowlero Lancaster Su', '1', '11/6/2026', '11/11/2026', '', '')]
+('CLARK', 'ALICIA') [(332, 'Bowlero Lancaster TH', '13', '11/6/2026', '11/10/2026', '', ''), (359, 'Bowlero Lancaster Su', '2', '11/6/2026', '11/10/2026', '', '')]
+('FALCON', 'DEVIN') [(311, 'Bowlero Lancaster TH', '8', '11/8/2026', '11/10/2026', '', ''), (356, 'Bowlero Lancaster Su', '1', '11/8/2026', '11/10/2026', '', '')]
+('GRAVOIS', 'TYLER') [(345, 'Bowlero Lancaster TH', '16', '11/6/2026', '11/10/2026', '', ''), (370, 'Bowlero Lancaster Su', '4', '11/8/2026', '11/10/2026', '', '')]
+('GUINN', 'RYAN') [(486, 'Lucky Strike Clovis', '14', '', '', '', ''), (742, 'Lucky Strike Fresno', '1', '11/6/2026', '11/10/2026', '', '')]
+('LEE', 'CYRENA SUNSHINE') [(483, 'Lucky Strike Clovis', '14', '', '', '', ''), (744, 'Lucky Strike Fresno', '1', '11/6/2026', '11/10/2026', '', '')]
