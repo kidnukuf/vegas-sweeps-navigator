@@ -22,7 +22,7 @@ The Client engages the Provider to configure and support the BowlVegas.com event
 | Client | Lucky Strike Entertainment Corporation |
 | Event start date | November 6, 2026 |
 | Event end date | November 9, 2026 |
-| Bowling date | November 7, 2026 |
+| Bowling date | November 8, 2026 |
 | Banquet or pool-party dates | November 8, 2026 or as confirmed by the event schedule |
 | Primary Event Director | [Insert name] |
 | Primary Client contact | Cassie Davis / Cassandra Davis |
