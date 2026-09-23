@@ -1,0 +1,1647 @@
+[
+  {
+    "source_row": "8",
+    "type": "Guest",
+    "name": "JUDITH AGAPITO",
+    "conf": "BXJLL",
+    "candidates": [
+      {
+        "score": 83.3,
+        "first_score": 66.7,
+        "last_score": 100.0,
+        "row": 80,
+        "name": "Judith Trixia Agapito",
+        "center": "Lucky Strike Murrieta"
+      }
+    ]
+  },
+  {
+    "source_row": "10",
+    "type": "Guest",
+    "name": "TRISH A",
+    "conf": "PRSNC",
+    "candidates": []
+  },
+  {
+    "source_row": "25",
+    "type": "Guest",
+    "name": "DAN ANDRADE",
+    "conf": "JLGDM",
+    "candidates": []
+  },
+  {
+    "source_row": "32",
+    "type": "Primary bowler",
+    "name": "MEGAN ANTONELLI",
+    "conf": "XF4N6",
+    "candidates": [
+      {
+        "score": 80.8,
+        "first_score": 100.0,
+        "last_score": 61.5,
+        "row": 255,
+        "name": "Megan Anti",
+        "center": "Bowlero Moreno Valley"
+      }
+    ]
+  },
+  {
+    "source_row": "34",
+    "type": "Primary bowler",
+    "name": "TONY ARAGON",
+    "conf": "WXVRG",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 750,
+        "name": "Tony Aragon",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "35",
+    "type": "Guest",
+    "name": "ZACH MOSES",
+    "conf": "WXVRG",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 753,
+        "name": "Zach Moses",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "51",
+    "type": "Primary bowler",
+    "name": "MARY LEANNA BARNES",
+    "conf": "J2JTM",
+    "candidates": []
+  },
+  {
+    "source_row": "57",
+    "type": "Guest",
+    "name": "OZZY OCHOA",
+    "conf": "L5VDS",
+    "candidates": []
+  },
+  {
+    "source_row": "63",
+    "type": "Guest",
+    "name": "RUSSELL KRENZ",
+    "conf": "P4J3R",
+    "candidates": [
+      {
+        "score": 91.7,
+        "first_score": 100.0,
+        "last_score": 83.3,
+        "row": 772,
+        "name": "Russell Krenz Jr",
+        "center": "Lucky Strike Manteca"
+      }
+    ]
+  },
+  {
+    "source_row": "65",
+    "type": "Primary bowler",
+    "name": "SHERI BELLIS",
+    "conf": "M3WYL",
+    "candidates": []
+  },
+  {
+    "source_row": "84",
+    "type": "Guest",
+    "name": "RUBI -",
+    "conf": "HRFYZ",
+    "candidates": []
+  },
+  {
+    "source_row": "92",
+    "type": "Guest",
+    "name": "MELEANY BOUNTHAPANYA",
+    "conf": "TDMS5",
+    "candidates": []
+  },
+  {
+    "source_row": "96",
+    "type": "Primary bowler",
+    "name": "JOHN BREVES",
+    "conf": "K64ZK",
+    "candidates": []
+  },
+  {
+    "source_row": "100",
+    "type": "Primary bowler",
+    "name": "KRISTINE BROOKS",
+    "conf": "52RHR",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 294,
+        "name": "Kristine Brooks",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 357,
+        "name": "Kristine Brooks",
+        "center": "Bowlero Lancaster Su"
+      }
+    ]
+  },
+  {
+    "source_row": "101",
+    "type": "Guest",
+    "name": "JAMAR BROOKS",
+    "conf": "52RHR",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 297,
+        "name": "Jamar Brooks",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 358,
+        "name": "Jamar Brooks",
+        "center": "Bowlero Lancaster Su"
+      }
+    ]
+  },
+  {
+    "source_row": "102",
+    "type": "Primary bowler",
+    "name": "KRISTINE BROOKS",
+    "conf": "3MYKG",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 294,
+        "name": "Kristine Brooks",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 357,
+        "name": "Kristine Brooks",
+        "center": "Bowlero Lancaster Su"
+      }
+    ]
+  },
+  {
+    "source_row": "103",
+    "type": "Guest",
+    "name": "ELYJAH BROOKS",
+    "conf": "3MYKG",
+    "candidates": [
+      {
+        "score": 91.7,
+        "first_score": 83.3,
+        "last_score": 100.0,
+        "row": 295,
+        "name": "Elijah Brooks",
+        "center": "Bowlero Lancaster TH"
+      }
+    ]
+  },
+  {
+    "source_row": "108",
+    "type": "Guest",
+    "name": "TYLER FALTERMEIR",
+    "conf": "QCQ46",
+    "candidates": [
+      {
+        "score": 97.6,
+        "first_score": 100.0,
+        "last_score": 95.2,
+        "row": 604,
+        "name": "Tyler Faltermeier",
+        "center": "Lucky Strike Lakewood"
+      }
+    ]
+  },
+  {
+    "source_row": "114",
+    "type": "Primary bowler",
+    "name": "ORSHAWANTE OBBRYANT BRYANT",
+    "conf": "3MK4R",
+    "candidates": [
+      {
+        "score": 90.0,
+        "first_score": 80.0,
+        "last_score": 100.0,
+        "row": 396,
+        "name": "Orshawante \"OB\" Bryant",
+        "center": "Bowlero Avondale W"
+      }
+    ]
+  },
+  {
+    "source_row": "116",
+    "type": "Guest",
+    "name": "JABOB BUCHANAN",
+    "conf": "ZJVGQ",
+    "candidates": [
+      {
+        "score": 90.0,
+        "first_score": 80.0,
+        "last_score": 100.0,
+        "row": 830,
+        "name": "Jacob Buchanan",
+        "center": "Lucky Strike Manteca"
+      }
+    ]
+  },
+  {
+    "source_row": "135",
+    "type": "Guest",
+    "name": "KATHY DELUNA",
+    "conf": "KFN64",
+    "candidates": []
+  },
+  {
+    "source_row": "138",
+    "type": "Guest",
+    "name": "KAYLA CAMPBELL ABBY HINZMAN",
+    "conf": "RWMSD",
+    "candidates": []
+  },
+  {
+    "source_row": "140",
+    "type": "Guest",
+    "name": "WENDY CARPENTER",
+    "conf": "ZLXQV",
+    "candidates": []
+  },
+  {
+    "source_row": "153",
+    "type": "Guest",
+    "name": "KRIS CHASE",
+    "conf": "NFPSJ",
+    "candidates": []
+  },
+  {
+    "source_row": "163",
+    "type": "Primary bowler",
+    "name": "ALICIA CLARK",
+    "conf": "RSLJL",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 332,
+        "name": "Alicia Clark",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 359,
+        "name": "Alicia Clark",
+        "center": "Bowlero Lancaster Su"
+      }
+    ]
+  },
+  {
+    "source_row": "164",
+    "type": "Guest",
+    "name": "DAVID CLARK",
+    "conf": "RSLJL",
+    "candidates": [
+      {
+        "score": 91.7,
+        "first_score": 100.0,
+        "last_score": 83.3,
+        "row": 331,
+        "name": "David Clark Jr",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 91.7,
+        "first_score": 100.0,
+        "last_score": 83.3,
+        "row": 333,
+        "name": "David Clark Sr",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 91.7,
+        "first_score": 100.0,
+        "last_score": 83.3,
+        "row": 360,
+        "name": "David Clark Sr",
+        "center": "Bowlero Lancaster Su"
+      }
+    ]
+  },
+  {
+    "source_row": "173",
+    "type": "Primary bowler",
+    "name": "KAREN CLEVELAND",
+    "conf": "S36VB",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 549,
+        "name": "Karen Cleveland",
+        "center": "Bowlero Bakersfield"
+      }
+    ]
+  },
+  {
+    "source_row": "174",
+    "type": "Guest",
+    "name": "BILL -",
+    "conf": "S36VB",
+    "candidates": []
+  },
+  {
+    "source_row": "178",
+    "type": "Guest",
+    "name": "GREG COALY",
+    "conf": "JMNPZ",
+    "candidates": [
+      {
+        "score": 78.6,
+        "first_score": 57.1,
+        "last_score": 100.0,
+        "row": 574,
+        "name": "Steven Greg Coaly",
+        "center": "Bowlero Bakersfield"
+      }
+    ]
+  },
+  {
+    "source_row": "180",
+    "type": "Guest",
+    "name": "REBECCA -",
+    "conf": "ZVQG5",
+    "candidates": []
+  },
+  {
+    "source_row": "182",
+    "type": "Guest",
+    "name": "JENNIE -",
+    "conf": "XHYSX",
+    "candidates": []
+  },
+  {
+    "source_row": "185",
+    "type": "Guest",
+    "name": "CURTIS RILEY",
+    "conf": "Q2XXS",
+    "candidates": []
+  },
+  {
+    "source_row": "189",
+    "type": "Guest",
+    "name": "MADDELYNN RAMOS",
+    "conf": "52VM3",
+    "candidates": [
+      {
+        "score": 94.4,
+        "first_score": 88.9,
+        "last_score": 100.0,
+        "row": 716,
+        "name": "Maldelynn Ramos",
+        "center": "Lucky Strike Fontana"
+      }
+    ]
+  },
+  {
+    "source_row": "196",
+    "type": "Primary bowler",
+    "name": "SHERRY CRABTREE-VENEGA",
+    "conf": "FFDYR",
+    "candidates": [
+      {
+        "score": 98.3,
+        "first_score": 100.0,
+        "last_score": 96.6,
+        "row": 492,
+        "name": "Sherry Crabtree-Venegas",
+        "center": "Lucky Strike Clovis"
+      }
+    ]
+  },
+  {
+    "source_row": "203",
+    "type": "Guest",
+    "name": "AMANDA CRUZ",
+    "conf": "36WNH",
+    "candidates": []
+  },
+  {
+    "source_row": "205",
+    "type": "Guest",
+    "name": "ALEJANDRA MORA",
+    "conf": "2HYGC",
+    "candidates": []
+  },
+  {
+    "source_row": "207",
+    "type": "Guest",
+    "name": "JOSEPHINE CRUZ",
+    "conf": "5MCSJ",
+    "candidates": []
+  },
+  {
+    "source_row": "216",
+    "type": "Guest",
+    "name": "DENNIECE AGUILA ALEXIS COTA",
+    "conf": "LYKTS",
+    "candidates": []
+  },
+  {
+    "source_row": "219",
+    "type": "Primary bowler",
+    "name": "CASSIE DAVIS",
+    "conf": "RBHPJ",
+    "candidates": []
+  },
+  {
+    "source_row": "220",
+    "type": "Guest",
+    "name": "BOB DAVIS",
+    "conf": "RBHPJ",
+    "candidates": []
+  },
+  {
+    "source_row": "226",
+    "type": "Guest",
+    "name": "BETTY BLUE",
+    "conf": "T6RSN",
+    "candidates": []
+  },
+  {
+    "source_row": "229",
+    "type": "Guest",
+    "name": "GABY -",
+    "conf": "GD5X2",
+    "candidates": []
+  },
+  {
+    "source_row": "234",
+    "type": "Guest",
+    "name": "KATHY DI-PASQUALE",
+    "conf": "NZDQL",
+    "candidates": []
+  },
+  {
+    "source_row": "236",
+    "type": "Guest",
+    "name": "MAYA DILEO",
+    "conf": "ZYM4F",
+    "candidates": []
+  },
+  {
+    "source_row": "239",
+    "type": "Guest",
+    "name": "KIM DOLL",
+    "conf": "HCZNK",
+    "candidates": []
+  },
+  {
+    "source_row": "243",
+    "type": "Guest",
+    "name": "GLORIA DOSS",
+    "conf": "SG26X",
+    "candidates": []
+  },
+  {
+    "source_row": "247",
+    "type": "Guest",
+    "name": "JACOB DROST",
+    "conf": "2VXYL",
+    "candidates": []
+  },
+  {
+    "source_row": "260",
+    "type": "Primary bowler",
+    "name": "MARIA ESCALERA",
+    "conf": "WZFJ4",
+    "candidates": []
+  },
+  {
+    "source_row": "263",
+    "type": "Guest",
+    "name": "MARCELLA -",
+    "conf": "HQNNS",
+    "candidates": []
+  },
+  {
+    "source_row": "265",
+    "type": "Guest",
+    "name": "DOUG KLIX",
+    "conf": "R3QPZ",
+    "candidates": []
+  },
+  {
+    "source_row": "266",
+    "type": "Primary bowler",
+    "name": "DEVIN FALCON",
+    "conf": "2F5RZ",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 311,
+        "name": "Devin Falcon",
+        "center": "Bowlero Lancaster TH"
+      },
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 356,
+        "name": "Devin Falcon",
+        "center": "Bowlero Lancaster Su"
+      }
+    ]
+  },
+  {
+    "source_row": "274",
+    "type": "Guest",
+    "name": "LEONARD FIERRO",
+    "conf": "WR4M6",
+    "candidates": []
+  },
+  {
+    "source_row": "279",
+    "type": "Guest",
+    "name": "MALORIE FLORES",
+    "conf": "LQSRP",
+    "candidates": []
+  },
+  {
+    "source_row": "290",
+    "type": "Guest",
+    "name": "FRANCISCO A",
+    "conf": "5NRYK",
+    "candidates": []
+  },
+  {
+    "source_row": "298",
+    "type": "Guest",
+    "name": "DREW WERSTOA",
+    "conf": "CLBHD",
+    "candidates": [
+      {
+        "score": 92.9,
+        "first_score": 100.0,
+        "last_score": 85.7,
+        "row": 300,
+        "name": "Drew Werosta",
+        "center": "Bowlero Lancaster TH"
+      }
+    ]
+  },
+  {
+    "source_row": "346",
+    "type": "Guest",
+    "name": "MEGAN HAGMANN",
+    "conf": "DNYFD",
+    "candidates": []
+  },
+  {
+    "source_row": "349",
+    "type": "Guest",
+    "name": "CHARLES HALLMAN",
+    "conf": "KNC4M",
+    "candidates": []
+  },
+  {
+    "source_row": "351",
+    "type": "Guest",
+    "name": "TERRES JOHNS",
+    "conf": "RKHSG",
+    "candidates": []
+  },
+  {
+    "source_row": "353",
+    "type": "Primary bowler",
+    "name": "DAVID HANSEN",
+    "conf": "V4VNM",
+    "candidates": [
+      {
+        "score": 92.9,
+        "first_score": 100.0,
+        "last_score": 85.7,
+        "row": 796,
+        "name": "David Hansen  LH",
+        "center": "Lucky Strike Manteca"
+      },
+      {
+        "score": 80.8,
+        "first_score": 100.0,
+        "last_score": 61.5,
+        "row": 217,
+        "name": "David Johnson",
+        "center": "Lucky Strike Mesa W"
+      }
+    ]
+  },
+  {
+    "source_row": "360",
+    "type": "Guest",
+    "name": "CATHY HERNANDEZ",
+    "conf": "3XBPV",
+    "candidates": []
+  },
+  {
+    "source_row": "364",
+    "type": "Guest",
+    "name": "ALLISON HEWITT",
+    "conf": "36LN5",
+    "candidates": []
+  },
+  {
+    "source_row": "371",
+    "type": "Primary bowler",
+    "name": "HOLLY HOLLINGSWORTH",
+    "conf": "Q6DRZ",
+    "candidates": [
+      {
+        "score": 96.4,
+        "first_score": 100.0,
+        "last_score": 92.9,
+        "row": 439,
+        "name": "Holly Hollingsworth LH",
+        "center": "Lucky Strike Clovis"
+      }
+    ]
+  },
+  {
+    "source_row": "392",
+    "type": "Primary bowler",
+    "name": "MICHELLE ISERI",
+    "conf": "LLT43",
+    "candidates": []
+  },
+  {
+    "source_row": "398",
+    "type": "Primary bowler",
+    "name": "VICTOR JASSI",
+    "conf": "GFYVH",
+    "candidates": []
+  },
+  {
+    "source_row": "409",
+    "type": "Primary bowler",
+    "name": "NATHANIEL JONES",
+    "conf": "XKFBC",
+    "candidates": []
+  },
+  {
+    "source_row": "414",
+    "type": "Guest",
+    "name": "JOSEPH RANDI",
+    "conf": "SGYBQ",
+    "candidates": []
+  },
+  {
+    "source_row": "417",
+    "type": "Primary bowler",
+    "name": "TRISTA KIMMES",
+    "conf": "KBWPZ",
+    "candidates": []
+  },
+  {
+    "source_row": "431",
+    "type": "Guest",
+    "name": "ROREY DOYL",
+    "conf": "C55SQ",
+    "candidates": [
+      {
+        "score": 94.4,
+        "first_score": 100.0,
+        "last_score": 88.9,
+        "row": 622,
+        "name": "Rorey Doyle",
+        "center": "Lucky Strike Lakewood"
+      }
+    ]
+  },
+  {
+    "source_row": "440",
+    "type": "Guest",
+    "name": "ANTHONY LANGFORD",
+    "conf": "YG2QP",
+    "candidates": [
+      {
+        "score": 92.9,
+        "first_score": 85.7,
+        "last_score": 100.0,
+        "row": 340,
+        "name": "Anthonu Langford",
+        "center": "Bowlero Lancaster TH"
+      }
+    ]
+  },
+  {
+    "source_row": "442",
+    "type": "Guest",
+    "name": "GABRIELA LARIOS",
+    "conf": "KM5L5",
+    "candidates": []
+  },
+  {
+    "source_row": "450",
+    "type": "Primary bowler",
+    "name": "TIM LEHL",
+    "conf": "NNV6L",
+    "candidates": []
+  },
+  {
+    "source_row": "458",
+    "type": "Guest",
+    "name": "KRISTEN LOPEZ",
+    "conf": "M4JVH",
+    "candidates": []
+  },
+  {
+    "source_row": "466",
+    "type": "Guest",
+    "name": "MICHAEL WARREN",
+    "conf": "QGC63",
+    "candidates": []
+  },
+  {
+    "source_row": "467",
+    "type": "Primary bowler",
+    "name": "ANGEL LOPEZ",
+    "conf": "3X4BR",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 167,
+        "name": "Angel Lopez",
+        "center": "Lucky Strike Visalia"
+      },
+      {
+        "score": 80.0,
+        "first_score": 60.0,
+        "last_score": 100.0,
+        "row": 859,
+        "name": "Janet Lopez",
+        "center": "Bowlero Avondale Mon"
+      }
+    ]
+  },
+  {
+    "source_row": "468",
+    "type": "Guest",
+    "name": "BRADEN WATSON",
+    "conf": "3X4BR",
+    "candidates": [
+      {
+        "score": 96.2,
+        "first_score": 92.3,
+        "last_score": 100.0,
+        "row": 166,
+        "name": "Branden Watson",
+        "center": "Lucky Strike Visalia"
+      },
+      {
+        "score": 88.5,
+        "first_score": 76.9,
+        "last_score": 100.0,
+        "row": 181,
+        "name": "Bradley Watson",
+        "center": "Lucky Strike Visalia"
+      }
+    ]
+  },
+  {
+    "source_row": "470",
+    "type": "Guest",
+    "name": "DIANE LOPEZ",
+    "conf": "FZQQC",
+    "candidates": [
+      {
+        "score": 80.0,
+        "first_score": 60.0,
+        "last_score": 100.0,
+        "row": 167,
+        "name": "Angel Lopez",
+        "center": "Lucky Strike Visalia"
+      },
+      {
+        "score": 80.0,
+        "first_score": 60.0,
+        "last_score": 100.0,
+        "row": 859,
+        "name": "Janet Lopez",
+        "center": "Bowlero Avondale Mon"
+      }
+    ]
+  },
+  {
+    "source_row": "482",
+    "type": "Guest",
+    "name": "CHRISTY W",
+    "conf": "FL2MK",
+    "candidates": []
+  },
+  {
+    "source_row": "484",
+    "type": "Guest",
+    "name": "AMANDA MILLER DANIEL CERVANTE",
+    "conf": "YVMY4",
+    "candidates": []
+  },
+  {
+    "source_row": "488",
+    "type": "Guest",
+    "name": "RAUL MAGANA",
+    "conf": "556HN",
+    "candidates": []
+  },
+  {
+    "source_row": "494",
+    "type": "Primary bowler",
+    "name": "JOSH MARTIN",
+    "conf": "3ZDJV",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 583,
+        "name": "Josh Martin",
+        "center": "Bowlero Bakersfield"
+      },
+      {
+        "score": 80.4,
+        "first_score": 75.0,
+        "last_score": 85.7,
+        "row": 56,
+        "name": "John Martinez",
+        "center": "Lucky Strike Murrieta"
+      }
+    ]
+  },
+  {
+    "source_row": "495",
+    "type": "Guest",
+    "name": "KASSIE MULLICAN-MARTIN",
+    "conf": "3ZDJV",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 584,
+        "name": "Kassie Mullican-Martin",
+        "center": "Bowlero Bakersfield"
+      }
+    ]
+  },
+  {
+    "source_row": "515",
+    "type": "Guest",
+    "name": "LEONARD MEANS",
+    "conf": "B3MGY",
+    "candidates": []
+  },
+  {
+    "source_row": "522",
+    "type": "Guest",
+    "name": "MARCOS GONZALEA",
+    "conf": "WSPLJ",
+    "candidates": [
+      {
+        "score": 93.8,
+        "first_score": 100.0,
+        "last_score": 87.5,
+        "row": 899,
+        "name": "Marcos Gonzalez",
+        "center": "Bowlero Glendale"
+      }
+    ]
+  },
+  {
+    "source_row": "524",
+    "type": "Guest",
+    "name": "RAY MAFNAS ANELA AMORSOLO",
+    "conf": "KPSL4",
+    "candidates": []
+  },
+  {
+    "source_row": "526",
+    "type": "Guest",
+    "name": "SHARON MESCHI",
+    "conf": "GLBMW",
+    "candidates": []
+  },
+  {
+    "source_row": "529",
+    "type": "Primary bowler",
+    "name": "MANUEL MEZA",
+    "conf": "3QD63",
+    "candidates": []
+  },
+  {
+    "source_row": "532",
+    "type": "Primary bowler",
+    "name": "JAMES MILLER",
+    "conf": "RDZ2Q",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 758,
+        "name": "James Miller",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "533",
+    "type": "Guest",
+    "name": "MELISSA MILLER",
+    "conf": "RDZ2Q",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 759,
+        "name": "Melissa Miller",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "534",
+    "type": "Primary bowler",
+    "name": "MELISSA MILLER",
+    "conf": "G6WXK",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 759,
+        "name": "Melissa Miller",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "535",
+    "type": "Guest",
+    "name": "JAMES MILLER",
+    "conf": "G6WXK",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 758,
+        "name": "James Miller",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "549",
+    "type": "Primary bowler",
+    "name": "ZACH MOSES",
+    "conf": "VD2JG",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 753,
+        "name": "Zach Moses",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "550",
+    "type": "Guest",
+    "name": "TONY ARAGON",
+    "conf": "VD2JG",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 750,
+        "name": "Tony Aragon",
+        "center": "Lucky Strike Fresno"
+      }
+    ]
+  },
+  {
+    "source_row": "555",
+    "type": "Primary bowler",
+    "name": "KASSIE MULLICAN-MARTIN",
+    "conf": "2BBTY",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 584,
+        "name": "Kassie Mullican-Martin",
+        "center": "Bowlero Bakersfield"
+      }
+    ]
+  },
+  {
+    "source_row": "556",
+    "type": "Guest",
+    "name": "JOSH MARTIN",
+    "conf": "2BBTY",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 583,
+        "name": "Josh Martin",
+        "center": "Bowlero Bakersfield"
+      },
+      {
+        "score": 80.4,
+        "first_score": 75.0,
+        "last_score": 85.7,
+        "row": 56,
+        "name": "John Martinez",
+        "center": "Lucky Strike Murrieta"
+      }
+    ]
+  },
+  {
+    "source_row": "558",
+    "type": "Guest",
+    "name": "CYNTHIA MUNOZ",
+    "conf": "H6VR3",
+    "candidates": []
+  },
+  {
+    "source_row": "579",
+    "type": "Guest",
+    "name": "PREZHANN NORMAN",
+    "conf": "GRZNT",
+    "candidates": []
+  },
+  {
+    "source_row": "591",
+    "type": "Primary bowler",
+    "name": "JORDAN OREAR",
+    "conf": "5FY5Q",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 783,
+        "name": "Jordan O'Rear",
+        "center": "Lucky Strike Manteca"
+      }
+    ]
+  },
+  {
+    "source_row": "593",
+    "type": "Guest",
+    "name": "IGNACIO PORTA",
+    "conf": "HMJJT",
+    "candidates": []
+  },
+  {
+    "source_row": "596",
+    "type": "Guest",
+    "name": "SHAY WOODS",
+    "conf": "CY4QP",
+    "candidates": []
+  },
+  {
+    "source_row": "598",
+    "type": "Guest",
+    "name": "KRISTEN -",
+    "conf": "6KDV2",
+    "candidates": []
+  },
+  {
+    "source_row": "614",
+    "type": "Guest",
+    "name": "KARLA PAYAN",
+    "conf": "4LJPX",
+    "candidates": []
+  },
+  {
+    "source_row": "618",
+    "type": "Guest",
+    "name": "MATTHEW JOHNSON",
+    "conf": "LKL6B",
+    "candidates": []
+  },
+  {
+    "source_row": "621",
+    "type": "Guest",
+    "name": "KATHY LYNN",
+    "conf": "LZMWQ",
+    "candidates": []
+  },
+  {
+    "source_row": "623",
+    "type": "Guest",
+    "name": "BARBARA PENNINGTON",
+    "conf": "Y5PLH",
+    "candidates": []
+  },
+  {
+    "source_row": "624",
+    "type": "Primary bowler",
+    "name": "ILEANA PEREZ",
+    "conf": "J4NNC",
+    "candidates": []
+  },
+  {
+    "source_row": "626",
+    "type": "Guest",
+    "name": "JESSICA FRANCO",
+    "conf": "RMNXV",
+    "candidates": []
+  },
+  {
+    "source_row": "627",
+    "type": "Primary bowler",
+    "name": "DAWN PETERSON",
+    "conf": "KZ6YY",
+    "candidates": []
+  },
+  {
+    "source_row": "629",
+    "type": "Guest",
+    "name": "NOAH TANDY",
+    "conf": "GC33B",
+    "candidates": []
+  },
+  {
+    "source_row": "653",
+    "type": "Guest",
+    "name": "DENISE -",
+    "conf": "R4XCV",
+    "candidates": []
+  },
+  {
+    "source_row": "659",
+    "type": "Guest",
+    "name": "JESSICA SANCHEZ",
+    "conf": "DBTZX",
+    "candidates": []
+  },
+  {
+    "source_row": "661",
+    "type": "Guest",
+    "name": "KANDICE QUINDT",
+    "conf": "BW3V2",
+    "candidates": [
+      {
+        "score": 80.8,
+        "first_score": 61.5,
+        "last_score": 100.0,
+        "row": 487,
+        "name": "Daniel Quindt",
+        "center": "Lucky Strike Clovis"
+      }
+    ]
+  },
+  {
+    "source_row": "665",
+    "type": "Guest",
+    "name": "NANCY RAMOS",
+    "conf": "PZ6Q2",
+    "candidates": []
+  },
+  {
+    "source_row": "667",
+    "type": "Guest",
+    "name": "ANGEL RAMOS",
+    "conf": "SLSDR",
+    "candidates": []
+  },
+  {
+    "source_row": "691",
+    "type": "Guest",
+    "name": "DAN MEHANEN",
+    "conf": "GVRJW",
+    "candidates": [
+      {
+        "score": 88.5,
+        "first_score": 100.0,
+        "last_score": 76.9,
+        "row": 615,
+        "name": "Dan Mehman",
+        "center": "Lucky Strike Lakewood"
+      }
+    ]
+  },
+  {
+    "source_row": "701",
+    "type": "Guest",
+    "name": "GLENN RITTER",
+    "conf": "533SF",
+    "candidates": []
+  },
+  {
+    "source_row": "718",
+    "type": "Guest",
+    "name": "LOUIE ROJAS CLAYANNA NEWBER",
+    "conf": "TP3RN",
+    "candidates": []
+  },
+  {
+    "source_row": "722",
+    "type": "Guest",
+    "name": "AULANA ROMERO",
+    "conf": "XQYTP",
+    "candidates": []
+  },
+  {
+    "source_row": "730",
+    "type": "Guest",
+    "name": "RACHEL -",
+    "conf": "56Z5T",
+    "candidates": []
+  },
+  {
+    "source_row": "746",
+    "type": "Guest",
+    "name": "CYNTHIA SANCHEZ",
+    "conf": "HJ4WJ",
+    "candidates": []
+  },
+  {
+    "source_row": "753",
+    "type": "Guest",
+    "name": "ALBERT REECE",
+    "conf": "SWR3K",
+    "candidates": [
+      {
+        "score": 91.7,
+        "first_score": 100.0,
+        "last_score": 83.3,
+        "row": 835,
+        "name": "Albert Reece Sr.",
+        "center": "Lucky Strike Manteca"
+      }
+    ]
+  },
+  {
+    "source_row": "756",
+    "type": "Primary bowler",
+    "name": "EDDIE SCHMIDT",
+    "conf": "QWGJB",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 193,
+        "name": "Eddie Schmidt",
+        "center": "Lucky Strike Mesa W"
+      }
+    ]
+  },
+  {
+    "source_row": "757",
+    "type": "Guest",
+    "name": "EDDIE SHAFFER",
+    "conf": "QWGJB",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 190,
+        "name": "Eddie Shaffer",
+        "center": "Lucky Strike Mesa W"
+      }
+    ]
+  },
+  {
+    "source_row": "760",
+    "type": "Guest",
+    "name": "TOM SCHWALBE",
+    "conf": "4DGJN",
+    "candidates": [
+      {
+        "score": 83.3,
+        "first_score": 66.7,
+        "last_score": 100.0,
+        "row": 98,
+        "name": "Thomas Schwalbe",
+        "center": "Lucky Strike Hemet"
+      }
+    ]
+  },
+  {
+    "source_row": "764",
+    "type": "Guest",
+    "name": "WEI CHANG YANG",
+    "conf": "FBM5Y",
+    "candidates": [
+      {
+        "score": 92.9,
+        "first_score": 100.0,
+        "last_score": 85.7,
+        "row": 26,
+        "name": "Wei-chang Yan",
+        "center": "Lucky Strike Murrieta"
+      }
+    ]
+  },
+  {
+    "source_row": "768",
+    "type": "Primary bowler",
+    "name": "EDDIE SHAFFER",
+    "conf": "C2MS3",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 190,
+        "name": "Eddie Shaffer",
+        "center": "Lucky Strike Mesa W"
+      }
+    ]
+  },
+  {
+    "source_row": "769",
+    "type": "Guest",
+    "name": "EDDIE SCHMIDT",
+    "conf": "C2MS3",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 193,
+        "name": "Eddie Schmidt",
+        "center": "Lucky Strike Mesa W"
+      }
+    ]
+  },
+  {
+    "source_row": "773",
+    "type": "Primary bowler",
+    "name": "LANGLEY SHULL",
+    "conf": "C6PGZ",
+    "candidates": []
+  },
+  {
+    "source_row": "783",
+    "type": "Guest",
+    "name": "ANDREW HISH",
+    "conf": "4HB2W",
+    "candidates": [
+      {
+        "score": 86.4,
+        "first_score": 100.0,
+        "last_score": 72.7,
+        "row": 546,
+        "name": "Andrew Hamisch",
+        "center": "Bowlero Bakersfield"
+      }
+    ]
+  },
+  {
+    "source_row": "789",
+    "type": "Guest",
+    "name": "JACOB ODELL",
+    "conf": "J2KJS",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 790,
+        "name": "Jacob O'Dell",
+        "center": "Lucky Strike Manteca"
+      }
+    ]
+  },
+  {
+    "source_row": "798",
+    "type": "Guest",
+    "name": "MARK HULSEY",
+    "conf": "SHDSX",
+    "candidates": [
+      {
+        "score": 91.7,
+        "first_score": 100.0,
+        "last_score": 83.3,
+        "row": 285,
+        "name": "Mark Husley",
+        "center": "Bowlero Lancaster TH"
+      }
+    ]
+  },
+  {
+    "source_row": "821",
+    "type": "Guest",
+    "name": "MARY TANDY",
+    "conf": "5SMMJ",
+    "candidates": []
+  },
+  {
+    "source_row": "823",
+    "type": "Guest",
+    "name": "KIM HIINDMAN",
+    "conf": "CHJHC",
+    "candidates": [
+      {
+        "score": 96.7,
+        "first_score": 100.0,
+        "last_score": 93.3,
+        "row": 292,
+        "name": "Kim Hindman",
+        "center": "Bowlero Lancaster TH"
+      }
+    ]
+  },
+  {
+    "source_row": "827",
+    "type": "Guest",
+    "name": "JAMES TERKELSON",
+    "conf": "NB5RX",
+    "candidates": [
+      {
+        "score": 97.4,
+        "first_score": 100.0,
+        "last_score": 94.7,
+        "row": 690,
+        "name": "James Terkerlson",
+        "center": "Lucky Strike Fontana"
+      }
+    ]
+  },
+  {
+    "source_row": "832",
+    "type": "Guest",
+    "name": "KA YANG",
+    "conf": "QZJ3V",
+    "candidates": []
+  },
+  {
+    "source_row": "837",
+    "type": "Guest",
+    "name": "MELINDA -",
+    "conf": "62CD3",
+    "candidates": []
+  },
+  {
+    "source_row": "843",
+    "type": "Guest",
+    "name": "GRICELDA VALENZUELA",
+    "conf": "PZVK5",
+    "candidates": []
+  },
+  {
+    "source_row": "845",
+    "type": "Primary bowler",
+    "name": "BRIAN VANCE",
+    "conf": "NQFFX",
+    "candidates": []
+  },
+  {
+    "source_row": "847",
+    "type": "Guest",
+    "name": "YANG GER VUE",
+    "conf": "346HR",
+    "candidates": []
+  },
+  {
+    "source_row": "849",
+    "type": "Guest",
+    "name": "LEE VANG",
+    "conf": "SQVBJ",
+    "candidates": []
+  },
+  {
+    "source_row": "869",
+    "type": "Guest",
+    "name": "MICHAELA VILLALUZ",
+    "conf": "TDTS2",
+    "candidates": []
+  },
+  {
+    "source_row": "874",
+    "type": "Primary bowler",
+    "name": "ROZLYN (RENEE) WALKER",
+    "conf": "SYRLR",
+    "candidates": []
+  },
+  {
+    "source_row": "878",
+    "type": "Guest",
+    "name": "VICKIE WALTON",
+    "conf": "WKZMZ",
+    "candidates": [
+      {
+        "score": 87.5,
+        "first_score": 100.0,
+        "last_score": 75.0,
+        "row": 684,
+        "name": "Vickie Lobo-Walton",
+        "center": "Lucky Strike Fontana"
+      }
+    ]
+  },
+  {
+    "source_row": "891",
+    "type": "Guest",
+    "name": "EJ THOMAS",
+    "conf": "QDBVH",
+    "candidates": []
+  },
+  {
+    "source_row": "893",
+    "type": "Guest",
+    "name": "ANGEL LOPEZ",
+    "conf": "3QWLL",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 167,
+        "name": "Angel Lopez",
+        "center": "Lucky Strike Visalia"
+      },
+      {
+        "score": 80.0,
+        "first_score": 60.0,
+        "last_score": 100.0,
+        "row": 859,
+        "name": "Janet Lopez",
+        "center": "Bowlero Avondale Mon"
+      }
+    ]
+  },
+  {
+    "source_row": "902",
+    "type": "Guest",
+    "name": "KAREN CLEVELAND",
+    "conf": "VTVPT",
+    "candidates": [
+      {
+        "score": 100.0,
+        "first_score": 100.0,
+        "last_score": 100.0,
+        "row": 549,
+        "name": "Karen Cleveland",
+        "center": "Bowlero Bakersfield"
+      }
+    ]
+  },
+  {
+    "source_row": "909",
+    "type": "Guest",
+    "name": "KELLY WILSON",
+    "conf": "V22XL",
+    "candidates": []
+  },
+  {
+    "source_row": "921",
+    "type": "Guest",
+    "name": "SHENG XIONG",
+    "conf": "SWQPW",
+    "candidates": []
+  }
+]
