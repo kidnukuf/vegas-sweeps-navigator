@@ -80,6 +80,8 @@ export function LaneToBanquetPlacard({
 
   const showHotelCard = !ev || ev.showHotelInfoCard === undefined || ev.showHotelInfoCard === null ? true : Boolean(ev.showHotelInfoCard);
   const additionalSquad = getAdditionalSquadDisplay(squadTime2, laneNumber2);
+  const personalCheckinLabel = checkinDate || null;
+  const personalCheckoutLabel = checkoutDate || null;
 
   return (
     <div
@@ -104,14 +106,17 @@ export function LaneToBanquetPlacard({
 
         <div className="space-y-3 pt-1 border-t border-white/10">
           {hasHotel && (
-            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <p className="text-blue-300 text-xs font-semibold mb-2">🏨 Reg: Hotel Registration</p>
+            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20" aria-label="Personal hotel arrival information">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <p className="text-blue-300 text-xs font-semibold">🏨 Hotel Arrival Details</p>
+                <span className="text-[10px] uppercase tracking-wide text-blue-200/60">Personal record</span>
+              </div>
               <div className="space-y-1.5">
                 {confirmationCode && (
                   <div className="flex items-center gap-2">
                     <span className="text-base">🔑</span>
                     <div>
-                      <p className="text-white/60 text-xs">Registration #</p>
+                      <p className="text-white/60 text-xs">Hotel Confirmation #</p>
                       <p className="text-amber-300 font-mono font-bold text-lg tracking-widest">{confirmationCode}</p>
                     </div>
                   </div>
@@ -135,21 +140,31 @@ export function LaneToBanquetPlacard({
                   </div>
                 )}
               </div>
-              {(checkinLabel || checkoutLabel) && (
+              {(personalCheckinLabel || personalCheckoutLabel) && (
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  {checkinLabel && (
+                  {personalCheckinLabel && (
                     <div className="rounded-lg bg-black/20 px-2 py-1.5">
-                      <p className="text-white/60 text-[11px]">Check-In</p>
-                      <p className="text-white font-semibold text-xs">{checkinLabel}</p>
+                      <p className="text-white/60 text-[11px]">Hotel Check-In</p>
+                      <p className="text-white font-semibold text-xs">{personalCheckinLabel}</p>
                     </div>
                   )}
-                  {checkoutLabel && (
+                  {personalCheckoutLabel && (
                     <div className="rounded-lg bg-black/20 px-2 py-1.5">
-                      <p className="text-white/60 text-[11px]">Check-Out</p>
-                      <p className="text-white font-semibold text-xs">{checkoutLabel}</p>
+                      <p className="text-white/60 text-[11px]">Hotel Check-Out</p>
+                      <p className="text-white font-semibold text-xs">{personalCheckoutLabel}</p>
                     </div>
                   )}
                 </div>
+              )}
+              {!personalCheckinLabel && (checkinLabel || ev?.hotelCheckinDay || ev?.hotelCheckinTime) && (
+                <p className="mt-2 text-[11px] leading-relaxed text-blue-100/70">
+                  Event hotel check-in schedule: {[ev?.hotelCheckinDay, ev?.hotelCheckinTime].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              {!personalCheckoutLabel && (checkoutLabel || ev?.hotelCheckoutDay || ev?.hotelCheckoutTime) && (
+                <p className="mt-1 text-[11px] leading-relaxed text-blue-100/70">
+                  Event hotel check-out schedule: {[ev?.hotelCheckoutDay, ev?.hotelCheckoutTime].filter(Boolean).join(" · ")}
+                </p>
               )}
               {showHotelCard && (
                 <button
