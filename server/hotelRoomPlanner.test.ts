@@ -18,7 +18,16 @@ describe("Hotel Room ID planning", () => {
     expect(plan.assignments[1]?.status).toBe("solo");
     expect(plan.assignments[3]?.status).toBe("guest_roommate");
     expect(plan.assignments[4]?.status).toBe("ambiguous_solo");
-    expect(plan.summary).toMatchObject({ rosterRows: 7, uniqueRooms: 6, guestRooms: 1, ambiguousSoloRows: 1 });
+    expect(plan.summary).toMatchObject({ rosterRows: 7, uniqueRooms: 6, roomsWithOvernightGuests: 1, ambiguousSoloRows: 1 });
+  });
+
+  it("counts a listed overnight guest in the bowler's room, not as a second room", () => {
+    const plan = buildHotelRoomPlan([
+      { rowNumber: 2, firstName: "Bowler", lastName: "One", roommateFirstName: "Guest", roommateLastName: "Person" },
+    ]);
+
+    expect(plan.assignments[0]?.roomId).toBe("1G");
+    expect(plan.summary).toMatchObject({ rosterRows: 1, uniqueRooms: 1, roomsWithOvernightGuests: 1, soloRooms: 0 });
   });
 
   it("treats incomplete or placeholder roommate values as individual numeric rooms", () => {

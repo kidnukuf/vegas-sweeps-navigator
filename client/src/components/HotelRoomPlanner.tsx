@@ -73,7 +73,7 @@ export default function HotelRoomPlanner({ eventId, sheetTabOverride, hasSheetTa
           <p className="text-xs font-bold uppercase tracking-wider text-fuchsia-300">Hotel room planning</p>
           <h3 className="mt-1 text-base font-semibold text-white">Shared room IDs and reservation total</h3>
           <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-400">
-            The planner reads the selected sheet tab’s roommate names. Exact unique bowler matches share one numeric ID. A complete name not found in the roster receives a <span className="font-mono text-violet-300">G</span> suffix for an overnight guest. Missing, placeholder, and ambiguous names receive an individual room number rather than being joined incorrectly. Banquet and pool guests are not treated as hotel guests automatically.
+            The planner reads the selected sheet tab’s roommate names. Exact unique bowler matches share one numeric ID. A complete name not found in the roster receives a <span className="font-mono text-violet-300">G</span> suffix on the bowler’s room ID for an overnight guest sharing that same room. The guest does not create an additional room reservation. Missing, placeholder, and ambiguous names receive an individual room number rather than being joined incorrectly. Banquet and pool guests are not treated as hotel guests automatically.
           </p>
         </div>
         <Button onClick={requestPreview} disabled={preview.isFetching || !hasSheetTarget} className="w-full shrink-0 bg-fuchsia-700 hover:bg-fuchsia-600 sm:w-auto">
@@ -90,7 +90,7 @@ export default function HotelRoomPlanner({ eventId, sheetTabOverride, hasSheetTa
               ["Bowlers", data.summary.rosterRows, "text-white"],
               ["Rooms to reserve", data.summary.uniqueRooms, "text-fuchsia-200"],
               ["Shared rooms", data.summary.sharedBowlerRooms, "text-cyan-200"],
-              ["Guest rooms", data.summary.guestRooms, "text-violet-200"],
+              ["Bowler rooms with overnight guests", data.summary.roomsWithOvernightGuests, "text-violet-200"],
               ["Solo rooms", data.summary.soloRooms, "text-slate-200"],
               ["Review names", data.summary.ambiguousSoloRows, "text-amber-200"],
             ].map(([label, value, color]) => (

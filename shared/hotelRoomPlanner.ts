@@ -28,7 +28,7 @@ export type HotelRoomPlan = {
     rosterRows: number;
     uniqueRooms: number;
     sharedBowlerRooms: number;
-    guestRooms: number;
+    roomsWithOvernightGuests: number;
     soloRooms: number;
     ambiguousSoloRows: number;
   };
@@ -56,8 +56,9 @@ function isPlaceholderRoommate(name: string): boolean {
 /**
  * Builds one deterministic room ID per connected exact-name roommate group.
  * A complete roommate name that does not exactly match one unique roster name
- * is treated as a non-bowler guest and receives a G suffix. Ambiguous roster
- * names and incomplete / placeholder roommate entries are conservatively solo.
+ * is treated as an overnight guest sharing the bowler's room and receives a G
+ * suffix on that same room ID. It does not create an additional room. Ambiguous
+ * roster names and incomplete / placeholder roommate entries are conservatively solo.
  */
 export function buildHotelRoomPlan(inputRows: HotelRoomRosterRow[]): HotelRoomPlan {
   const rows = inputRows.filter((row) => clean(row.firstName) && clean(row.lastName));
@@ -154,7 +155,7 @@ export function buildHotelRoomPlan(inputRows: HotelRoomRosterRow[]): HotelRoomPl
       rosterRows: assignments.length,
       uniqueRooms: groups.length,
       sharedBowlerRooms: groups.filter((group) => group.memberRows.length > 1 && !group.hasGuest).length,
-      guestRooms: groups.filter((group) => group.hasGuest).length,
+      roomsWithOvernightGuests: groups.filter((group) => group.hasGuest).length,
       soloRooms: groups.filter((group) => group.memberRows.length === 1 && !group.hasGuest).length,
       ambiguousSoloRows: assignments.filter((assignment) => assignment.status === "ambiguous_solo").length,
     },
