@@ -1149,7 +1149,7 @@
 - [x] Add short-lived, single-use claim-verification and paper-ticket request records without storing raw verification tokens
 - [x] Require a valid claim code plus the roster email address before issuing a verification-button email
 - [x] Add secured Bowler Portal confirmation and Event Director paper-ticket queue controls
-- [ ] Activate the authenticated Bowl Vegas SMTP sender after credentials are supplied and validate successful delivery
+- [x] Cancel SMTP activation because the user selected direct claim-code plus roster email-or-phone matching instead
 
 ## Event Director League-Name Prompt Disclosure
 - [x] Hide league-name prompts inside a clear click-to-expand control in the Event Director Portal
@@ -1241,37 +1241,44 @@
 - [x] Validate the revised schedule hierarchy and responsive display before publishing
 
 ## Active Branded Email Verification Sender Setup
-- [ ] Inspect Cloudflare Email Routing availability for a Bowl Vegas inbound address without changing DNS or routing
-- [x] Identify Cloudflare Email Sending as an authenticated outbound option for verification-button email from a Bowl Vegas address
-- [x] Prepare the secure claim-code email verification activation plan and request only the approved sender credentials
+- [x] Close the email-link verification scope at the user’s direction; no Cloudflare DNS, routing, or sender setup is required
+- [x] Retain the direct claim-code plus roster-contact identity check as the final registration path
+- [x] Remove the email-link UI, sender code, router procedures, and schema definition
 
 ## Active Cloudflare Token Policy Validation
 - [x] Verify that the supplied permission group is Account API Tokens Write, not an email-sending permission
 - [x] Distinguish the policy payload from the required non-disclosed API-token credential and forwarding destination
-- [ ] Prepare a least-privilege sender setup request without changing Cloudflare DNS, routing, or sending state
+- [x] Cancel sender setup without changing Cloudflare DNS, routing, or sending state
 
 ## Active Supplied Cloudflare Credential Verification
-- [ ] Verify the supplied API token’s actual Cloudflare permission scope without exposing it
+- [x] Do not reuse the supplied token after the user canceled email verification
 - [x] Keep R2 endpoint and storage credentials out of the verification-email sender configuration
-- [ ] Store only an approved Email Sending credential through the project secret workflow
+- [x] Store no Email Sending credential because the email path was canceled
 
 ## Active Replacement Cloudflare Sender Token
-- [ ] Separate the Bowl Vegas account identifier from the newly supplied Cloudflare sender token
-- [ ] Verify the new sender token securely before any outbound email, DNS, or routing action
+- [x] Cancel replacement-token setup because no outbound email will be sent
+- [x] Leave Cloudflare account and sender state unchanged
 
 ## Active New Cloudflare Sender Token Verification
-- [ ] Store the newly supplied standalone Cloudflare sender token through the secure project secret workflow
-- [ ] Run the focused read-only Cloudflare authentication test and verify active token status
+- [x] Do not store a new sender token after email verification was canceled
+- [x] Do not run outbound sender verification after email verification was canceled
 
 ## Active Latest Cloudflare Credential Set
-- [ ] Store only the latest standalone Cloudflare sender token for email verification
-- [ ] Verify the latest sender token; the supplied R2 credentials remain unused for email delivery
+- [x] Store no latest sender token because direct claim matching is the final flow
+- [x] Keep the supplied R2 credentials unused for email delivery
 
 ## Active Provider-Independent Claim Verification and Paper Tickets
 - [x] Preserve the Cloudflare token failure as a blocked sender configuration without requesting further manual token retries
-- [x] Complete claim-code and roster-email verification state handling independently of delivery-provider credentials
+- [x] Complete claim-code and roster-email-or-phone verification without delivery-provider credentials
 - [x] Add Event Director paper-ticket queue and printable substitute records for bowlers who do not use the app
-- [ ] Connect a separately approved transactional-email sender and verify a live secure-button delivery
+- [x] Cancel transactional-email sender setup at the user’s direction
+
+## Active Direct Claim-Code Identity Matching
+- [x] Match the claim code to the exact event, bowler name, and bowling center
+- [x] Require either the roster email or normalized roster phone before account creation
+- [x] Redeem the code only after account creation succeeds, with one-time-use race protection
+- [x] Remove active email-link routes and clear legacy verification records
+- [x] Add regression coverage for valid phone matching and mismatched contact rejection
 
 ## Active Second-Squad Lane Header Update
 - [x] Map Column Y, headed #2 Lane, as the lane assignment for a bowler's second squad without changing first-squad lane assignments
