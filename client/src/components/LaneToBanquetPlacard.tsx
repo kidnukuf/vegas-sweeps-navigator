@@ -284,10 +284,9 @@ export function LaneToBanquetPlacard({
 
           <div className="mt-3 space-y-2">
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <p className="text-amber-300 text-xs font-semibold mb-1">⏰ Arrive 30 Minutes Early</p>
+              <p className="text-amber-300 text-xs font-semibold mb-1">⏰ Beat the Line</p>
               <p className="text-white/70 text-xs leading-relaxed">
-                Lines can be long at event entry. Please plan to arrive at least 30 minutes before your squad time.
-                Have your QR Passport ready on your phone for quick scanning at the door.
+                Those first in line usually spend less time waiting. Have your QR Passport ready on your phone for quick scanning at the door.
               </p>
             </div>
             <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
