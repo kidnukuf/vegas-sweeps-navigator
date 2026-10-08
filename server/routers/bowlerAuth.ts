@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, writeAuditLog } from "../db";
+import { rawExec, rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, writeAuditLog } from "../db";
 import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
@@ -36,6 +36,10 @@ function verifyToken(token: string) {
   } catch {
     return null;
   }
+}
+
+function normalizePhone(value: string | null | undefined): string {
+  return String(value ?? "").replace(/\D/g, "");
 }
 
 /** Accept the legacy Event Director token or the authenticated staff/owner session. */
@@ -280,10 +284,10 @@ export const bowlerAuthRouter = router({
       // Look up bowler by first name + last name + center (3-field match)
       let bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId, input.centerId);
 
-      // ── CLAIM-CODE SECURITY (fall-season) ───────────────────────────────────
-      // Events with issued claim codes must use the separate email-verified
-      // claim flow. This legacy endpoint never receives a verified-email token,
-      // so refusing it here prevents a direct call from redeeming a code early.
+      // ── CLAIM-CODE SECURITY ─────────────────────────────────────────────────
+      // Match the code to the exact roster name and center, plus either the
+      // roster email or phone. The code is redeemed only after the account
+      // update succeeds, and the conditional update makes it one-time-use.
       const codesForEvent = await rawQuery<{ c: number }>(
         `SELECT COUNT(*) AS c FROM bowler_claim_codes WHERE eventId = ?`,
         [input.eventId]
@@ -292,10 +296,27 @@ export const bowlerAuthRouter = router({
       let redeemedCodeId: number | null = null;
 
       if (claimRequired) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Claim-code registration now requires roster-email verification. Start with the verification step on the Create Account form.",
-        });
+        const claimCode = input.claimCode?.trim().toUpperCase() ?? "";
+        const candidateRows = claimCode
+          ? await rawQuery<{ id: number; bowlerId: number; status: string; rosterEmail: string | null; rosterPhone: string | null }>(
+              `SELECT c.id, c.bowlerId, c.status, b.email AS rosterEmail, b.phone AS rosterPhone
+               FROM bowler_claim_codes c
+               INNER JOIN bowlers b ON b.id = c.bowlerId AND b.eventId = c.eventId
+               WHERE c.eventId = ? AND c.code = ? AND c.bowlerId = ?
+               LIMIT 1`,
+              [input.eventId, claimCode, bowler?.id ?? 0],
+            )
+          : [];
+        const candidate = candidateRows[0];
+        const emailMatches = Boolean(input.email?.trim() && candidate?.rosterEmail && input.email.trim().toLowerCase() === candidate.rosterEmail.trim().toLowerCase());
+        const phoneMatches = Boolean(input.phone?.trim() && candidate?.rosterPhone && normalizePhone(input.phone) === normalizePhone(candidate.rosterPhone));
+        if (!bowler || !candidate || candidate.status !== "unused" || (!emailMatches && !phoneMatches)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Your claim code, name, bowling center, and roster email or phone did not match. Check your information or contact your Event Director.",
+          });
+        }
+        redeemedCodeId = candidate.id;
       }
 
       if (!bowler) {
@@ -377,10 +398,13 @@ export const bowlerAuthRouter = router({
       // Redeem the claim code (one-time). Guard on status='unused' so a race
       // can never double-redeem; affectedRows>0 confirms we won the redemption.
       if (redeemedCodeId !== null) {
-        await rawQuery(
+        const redemption = await rawExec(
           `UPDATE bowler_claim_codes SET status = 'redeemed', redeemedByAppUserId = ?, redeemedAt = ? WHERE id = ? AND status = 'unused'`,
           [(bowler as { appUserId?: number | null }).appUserId ?? null, Date.now(), redeemedCodeId]
         );
+        if (redemption.affectedRows !== 1) {
+          throw new TRPCError({ code: "CONFLICT", message: "That claim code has already been used. Contact your Event Director for help." });
+        }
       }
 
       // Notify ED of successful sign-up (differentiate captain vs bowler)
