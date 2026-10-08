@@ -28,6 +28,7 @@ import {
 import { writeScanUsedToSheet } from "../googleSheets";
 import { generateOfflineBundle } from "../offlineBundleGenerator";
 import { buildOfflineRelayGuide, buildOfflineRelayScript } from "../offlineRelayPackage";
+import { buildPiScannerZip } from "../piScannerPackage";
 
 const modeSchema = z.enum(["banquet", "pool"]);
 const zoneSchema = z.enum(["N", "E", "S", "W"]);
@@ -298,6 +299,31 @@ export const offlineDoorRouter = router({
       const modeLabel = input.mode === "banquet" ? "Banquet" : "PoolParty";
       const filename = `VSN-OfflineScanner-Event${input.eventId}-${modeLabel}-${new Date().toISOString().slice(0, 10)}.html`;
       return { html, filename, generatedAtMs: Date.now() };
+    }),
+
+  /**
+   * Generate a one-file Raspberry Pi package. The ZIP serves the scanner from
+   * localhost so Pi Chromium does not need to open the downloaded HTML as a
+   * raw file. Android can continue using generateBundle directly.
+   */
+  generatePiScannerPackage: publicProcedure
+    .input(z.object({ eventId: z.number(), mode: modeSchema }))
+    .mutation(async ({ input }) => {
+      const html = await generateOfflineBundle(input.eventId, input.mode);
+      const modeLabel = input.mode === "banquet" ? "Banquet" : "PoolParty";
+      const scannerFilename = `VSN-OfflineScanner-Event${input.eventId}-${modeLabel}-${new Date().toISOString().slice(0, 10)}.html`;
+      const zip = buildPiScannerZip({
+        scannerFilename,
+        scannerHtml: html,
+        relayScript: buildOfflineRelayScript(),
+        relayGuide: buildOfflineRelayGuide(),
+      });
+      return {
+        filename: `VSN-RaspberryPi-Scanner-Event${input.eventId}-${modeLabel}.zip`,
+        contentBase64: zip.toString("base64"),
+        scannerFilename,
+        generatedAtMs: Date.now(),
+      };
     }),
 
   /**

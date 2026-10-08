@@ -804,6 +804,12 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       URL.revokeObjectURL(url);
     }, 1500);
   };
+  const downloadBase64 = (filename: string, contentBase64: string, mimeType: string) => {
+    const binary = window.atob(contentBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    downloadBlob(filename, bytes, mimeType);
+  };
   const downloadCSVString = (filename: string, csv: string) => downloadBlob(filename, csv, "text/csv;charset=utf-8");
   const downloadTextFile = (filename: string, content: string, mimeType: string) => downloadBlob(filename, content, mimeType);
   /** Legacy helper kept for any callers that build rows client-side. */
@@ -878,6 +884,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   const generateLocalRelayMut = trpc.offlineDoor.generateLocalRelayPackage.useMutation({
     onError: (e) => toast.error(`Pi live monitor package failed: ${e.message}`),
   });
+  const generatePiScannerPackageMut = trpc.offlineDoor.generatePiScannerPackage.useMutation({
+    onError: (e) => toast.error(`Raspberry Pi scanner package failed: ${e.message}`),
+  });
 
   const downloadOfflineScanner = async (mode: "banquet" | "pool") => {
     const modeLabel = mode === "banquet" ? "Banquet" : "Pool Party";
@@ -888,6 +897,17 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       downloadBlob(res.filename, res.html, "text/html;charset=utf-8");
       toast.success(`${modeLabel} scanner downloaded — open the HTML in Raspberry Pi Chromium or Android Chrome; no internet is required`, { id: toastId, duration: 7000 });
     } catch { toast.dismiss(toastId); }
+  };
+
+  const downloadPiScannerPackage = async (mode: "banquet" | "pool") => {
+    const modeLabel = mode === "banquet" ? "Banquet" : "Pool Party";
+    const toastId = toast.loading(`Building Raspberry Pi ${modeLabel.toLowerCase()} package…`);
+    try {
+      const res = await generatePiScannerPackageMut.mutateAsync({ eventId: EVENT_ID, mode });
+      downloadBase64(res.filename, res.contentBase64, "application/zip");
+      toast.success(`${modeLabel} Raspberry Pi package downloaded — extract it and run START_PI_SCANNER.sh`, { id: toastId, duration: 8000 });
+    } catch { toast.dismiss(toastId); }
+    setShowExportMenu(false);
   };
 
   const downloadPiLiveMonitor = async () => {
@@ -1070,14 +1090,28 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   disabled={generateBundleMut.isPending}
                   className="text-purple-300 focus:bg-purple-500/10 focus:text-purple-300 cursor-pointer"
                 >
-                  🍽️ Download Banquet Scanner (Pi / Android)
+                  🍽️ Download Banquet Scanner (Android / HTML)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => downloadOfflineScanner("pool")}
                   disabled={generateBundleMut.isPending}
                   className="text-blue-300 focus:bg-blue-500/10 focus:text-blue-300 cursor-pointer"
                 >
-                  🏊 Download Pool Party Scanner (Pi / Android)
+                  🏊 Download Pool Party Scanner (Android / HTML)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => downloadPiScannerPackage("banquet")}
+                  disabled={generatePiScannerPackageMut.isPending}
+                  className="text-fuchsia-300 focus:bg-fuchsia-500/10 focus:text-fuchsia-300 cursor-pointer"
+                >
+                  🥧 Download Banquet Scanner Package (Raspberry Pi)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => downloadPiScannerPackage("pool")}
+                  disabled={generatePiScannerPackageMut.isPending}
+                  className="text-sky-300 focus:bg-sky-500/10 focus:text-sky-300 cursor-pointer"
+                >
+                  🥧 Download Pool Party Package (Raspberry Pi)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={downloadPiLiveMonitor}
@@ -1087,7 +1121,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   📡 Download Pi Live Monitor Relay
                 </DropdownMenuItem>
                 <div className="px-2 py-1 text-[10px] text-gray-500 leading-tight">
-                  Scanner: self-contained HTML for Raspberry Pi Chromium or Android Chrome · USB keyboard capture · dual-scanner · race-lock. Download the Pi relay separately for live laptop monitoring.
+                  Android: standalone HTML. Raspberry Pi: use the ZIP package so Chromium opens the scanner through the local relay; USB keyboard capture, dual-scanner, and race-lock remain available.
                 </div>
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem

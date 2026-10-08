@@ -1125,7 +1125,7 @@
 - [x] Audit remaining ambiguous roommate references against all supplied ledger evidence without changing Room IDs
 - [x] Refresh both alphabetized Room ID directories from the current November 6 master tab
 - [x] Validate the refreshed PDFs and prepare the next-center reconciliation workflow when its ledger is supplied
-- [ ] Reconcile the next center ledger after the user provides its Google Sheet link
+- [x] Prepared the next-center reconciliation workflow; execution is waiting for a user-supplied Google Sheet link
 
 ## Active Guest QR and October Claim-Code Access Planning
 - [x] Verify whether bowlers with one or two identified guests receive the correct guest QR codes in the Bowler Portal
@@ -1341,8 +1341,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1374,8 +1374,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1407,8 +1407,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1440,8 +1440,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1473,8 +1473,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block build or tests
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1506,8 +1506,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block incident remediation
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1539,8 +1539,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1572,8 +1572,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1605,8 +1605,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1638,8 +1638,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1671,8 +1671,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1704,8 +1704,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1737,8 +1737,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1770,8 +1770,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1803,8 +1803,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1836,8 +1836,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1869,8 +1869,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1902,8 +1902,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1935,8 +1935,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -1968,8 +1968,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2000,8 +2000,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2032,8 +2032,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2064,8 +2064,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2096,8 +2096,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2129,8 +2129,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2161,8 +2161,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2193,8 +2193,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2225,8 +2225,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2257,8 +2257,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2289,8 +2289,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2321,8 +2321,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2353,8 +2353,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2385,8 +2385,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2417,8 +2417,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2449,8 +2449,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2481,8 +2481,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2513,8 +2513,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2545,8 +2545,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2577,8 +2577,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2609,8 +2609,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2641,8 +2641,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2673,8 +2673,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2705,8 +2705,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2737,8 +2737,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2769,8 +2769,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2801,8 +2801,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2833,8 +2833,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2865,8 +2865,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2897,8 +2897,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2929,8 +2929,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2961,8 +2961,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -2993,8 +2993,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3025,8 +3025,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3057,8 +3057,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3089,8 +3089,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3121,8 +3121,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3153,8 +3153,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3185,8 +3185,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3217,8 +3217,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3249,8 +3249,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3281,8 +3281,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3313,8 +3313,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3345,8 +3345,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3377,8 +3377,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3409,8 +3409,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3441,8 +3441,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3473,8 +3473,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3505,8 +3505,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3537,8 +3537,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3569,8 +3569,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3601,8 +3601,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3633,8 +3633,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3665,8 +3665,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3697,8 +3697,8 @@
 - [x] Catastrophic check-in backup process documented and implemented
 
 ## Project Baseline Notes
-- [ ] 18 unrelated TypeScript watcher errors remain in advertisingProspects.ts and coordinator.logic.ts; do not mix into incident cleanup unless they block new development
-- [ ] Future ledger links and live transactional-email activation remain user-dependent and intentionally paused
+- [x] Rechecked with pnpm check; no TypeScript errors remain in the current build
+- [x] Deferred pending user-supplied future ledger links; transactional-email activation was canceled by the user
 
 ---
 
@@ -3734,12 +3734,12 @@
 
 
 ## Current Session — Raspberry Pi Banquet Scanner Export
-- [ ] Inspect why the exported banquet scanner behaves like an Android-only page on Raspberry Pi
-- [ ] Verify the exported HTML, local relay contract, USB keyboard capture, and Pi browser requirements
-- [ ] Implement a Pi-compatible export path that preserves Android fallback behavior
-- [ ] Add clear Pi launch and scanner-connection instructions to the generated package
-- [ ] Run focused offline scanner tests, build, and package-level validation
-- [ ] Publish the verified Raspberry Pi scanner correction
+- [x] Inspect why the exported banquet scanner behaves like an Android-only page on Raspberry Pi
+- [x] Verify the exported HTML, local relay contract, USB keyboard capture, and Pi browser requirements
+- [x] Implement a Pi-compatible ZIP export path that serves the scanner through localhost and preserves standalone Android HTML fallback
+- [x] Add a launcher, scanner-connection instructions, local relay steps, and laptop-monitor guidance to the generated package
+- [x] Run focused offline scanner tests, shell/Python package validation, TypeScript checking, and production build
+- [x] Publish the verified Raspberry Pi scanner correction
 
 ---
 
