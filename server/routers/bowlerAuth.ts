@@ -281,7 +281,9 @@ export const bowlerAuthRouter = router({
         ?? (ctx as any)?.req?.ip as string | undefined;
       await verifyTurnstileToken(input.turnstileToken, ip);
 
-      // Look up bowler by first name + last name + center (3-field match)
+      // For normal registration, look up the bowler by name + center. When
+      // claim codes are active, the code is the authoritative roster key and
+      // is resolved first below before the entered identity is checked.
       let bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId, input.centerId);
 
       // ── CLAIM-CODE SECURITY ─────────────────────────────────────────────────
@@ -298,22 +300,60 @@ export const bowlerAuthRouter = router({
       if (claimRequired) {
         const claimCode = input.claimCode?.trim().toUpperCase() ?? "";
         const candidateRows = claimCode
-          ? await rawQuery<{ id: number; bowlerId: number; status: string; rosterEmail: string | null; rosterPhone: string | null }>(
-              `SELECT c.id, c.bowlerId, c.status, b.email AS rosterEmail, b.phone AS rosterPhone
+          ? await rawQuery<{
+              id: number;
+              bowlerId: number;
+              status: string;
+              legalFirstName: string;
+              legalLastName: string;
+              centerId: number | null;
+              rosterEmail: string | null;
+              rosterPhone: string | null;
+            }>(
+              `SELECT c.id, c.bowlerId, c.status,
+                      b.legalFirstName, b.legalLastName, b.centerId,
+                      b.email AS rosterEmail, b.phone AS rosterPhone
                FROM bowler_claim_codes c
                INNER JOIN bowlers b ON b.id = c.bowlerId AND b.eventId = c.eventId
-               WHERE c.eventId = ? AND c.code = ? AND c.bowlerId = ?
+               WHERE c.eventId = ? AND c.code = ?
                LIMIT 1`,
-              [input.eventId, claimCode, bowler?.id ?? 0],
+              [input.eventId, claimCode],
             )
           : [];
         const candidate = candidateRows[0];
+        // Resolve the entered identity against the bowler attached to the
+        // code. This avoids rejecting a valid code before the code lookup has
+        // had a chance to identify the correct roster row.
+        if (candidate) {
+          bowler = await findBowlerByName(
+            input.firstName,
+            input.lastName,
+            input.eventId,
+            input.centerId,
+            candidate.bowlerId,
+          );
+        }
         const emailMatches = Boolean(input.email?.trim() && candidate?.rosterEmail && input.email.trim().toLowerCase() === candidate.rosterEmail.trim().toLowerCase());
         const phoneMatches = Boolean(input.phone?.trim() && candidate?.rosterPhone && normalizePhone(input.phone) === normalizePhone(candidate.rosterPhone));
-        if (!bowler || !candidate || candidate.status !== "unused" || (!emailMatches && !phoneMatches)) {
+        if (!candidate) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Your claim code, name, bowling center, and roster email or phone did not match. Check your information or contact your Event Director.",
+            message: "That claim code was not found for this event. Check the code and contact your Event Director if it is incorrect.",
+          });
+        }
+        if (candidate.status !== "unused") {
+          throw new TRPCError({ code: "CONFLICT", message: "That claim code has already been used. Contact your Event Director for help." });
+        }
+        if (!bowler) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "The name or bowling center does not match the roster assigned to that claim code. Check your information or contact your Event Director.",
+          });
+        }
+        if (!emailMatches && !phoneMatches) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "The claim code and name match, but the email or phone does not match the event roster. Enter the roster contact information or contact your Event Director.",
           });
         }
         redeemedCodeId = candidate.id;

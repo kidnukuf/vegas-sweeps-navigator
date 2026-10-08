@@ -102,4 +102,42 @@ describe("direct bowler claim-code sign-up", () => {
       await rawExec("DELETE FROM events WHERE id = ?", [secondEvent.insertId]);
     }
   }, 15000);
+
+  it("resolves the claim code before rejecting a mismatched name", async () => {
+    const secondEvent = await rawExec("INSERT INTO events (eventName, eventYear, status) VALUES (?, ?, 'active')", [`Direct Claim Name ${stamp}`, 2099]);
+    const secondBowler = await rawExec(
+      `INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, email, phone, registrationStatus)
+       VALUES (?, ?, ?, ?, ?, ?, 'pre_registered')`,
+      [secondEvent.insertId, centerId, "Code", `Owner${stamp}`, `code-owner-${stamp}@example.test`, "7025555656"],
+    );
+    const secondClaim = await rawExec(
+      "INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, createdAt) VALUES (?, ?, ?, 'unused', ?)",
+      [secondEvent.insertId, secondBowler.insertId, `BOB-N${String(stamp).slice(-3)}`, stamp],
+    );
+    try {
+      const caller = appRouter.createCaller(anonymousContext());
+      await expect(caller.bowlerAuth.signUp({
+        firstName: "Wrong",
+        lastName: `Name${stamp}`,
+        eventId: secondEvent.insertId,
+        centerId,
+        password: "SecurePassword123",
+        email: `code-owner-${stamp}@example.test`,
+        claimCode: `BOB-N${String(stamp).slice(-3)}`,
+        turnstileToken: "test-turnstile",
+      })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringContaining("name or bowling center"),
+      });
+      const [state] = await rawQuery<{ status: string; passwordHash: string | null }>(
+        "SELECT c.status, b.passwordHash FROM bowler_claim_codes c JOIN bowlers b ON b.id = c.bowlerId WHERE c.id = ?",
+        [secondClaim.insertId],
+      );
+      expect(state).toMatchObject({ status: "unused", passwordHash: null });
+    } finally {
+      await rawExec("DELETE FROM bowler_claim_codes WHERE id = ?", [secondClaim.insertId]);
+      await rawExec("DELETE FROM bowlers WHERE id = ?", [secondBowler.insertId]);
+      await rawExec("DELETE FROM events WHERE id = ?", [secondEvent.insertId]);
+    }
+  }, 15000);
 });
