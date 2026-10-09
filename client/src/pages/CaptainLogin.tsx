@@ -19,6 +19,7 @@ import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
 
 export default function CaptainLogin() {
   const [, navigate] = useLocation();
@@ -110,6 +111,7 @@ export default function CaptainLogin() {
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) { toast.error("Event not loaded yet."); return; }
+    if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!siToken) { toast.error("Please complete the security check."); return; }
     signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass, turnstileToken: siToken });
   }
@@ -119,6 +121,7 @@ export default function CaptainLogin() {
     if (!eventId) { toast.error("Event not loaded yet."); return; }
     if (!suCenterId) { toast.error("Please select your bowling center."); return; }
     if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
+    if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!suToken) { toast.error("Please complete the security check."); return; }
     signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken });
   }
@@ -200,14 +203,20 @@ export default function CaptainLogin() {
 
                 {/* Turnstile widget */}
                 <div className="flex justify-center pt-1">
-                  <Turnstile
-                    ref={siTurnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setSiToken(token)}
-                    onExpire={() => setSiToken("")}
-                    onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
-                    options={{ theme: "dark", size: "normal" }}
-                  />
+                  {TURNSTILE_CONFIGURED ? (
+                    <Turnstile
+                      ref={siTurnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setSiToken(token)}
+                      onExpire={() => setSiToken("")}
+                      onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
+                      options={{ theme: "dark", size: "normal" }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">
+                      Security verification is temporarily unavailable. Please contact your Event Director.
+                    </div>
+                  )}
                 </div>
 
                 <Button
@@ -311,14 +320,20 @@ export default function CaptainLogin() {
 
                 {/* Turnstile widget */}
                 <div className="flex justify-center pt-1">
-                  <Turnstile
-                    ref={suTurnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setSuToken(token)}
-                    onExpire={() => setSuToken("")}
-                    onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
-                    options={{ theme: "dark", size: "normal" }}
-                  />
+                  {TURNSTILE_CONFIGURED ? (
+                    <Turnstile
+                      ref={suTurnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setSuToken(token)}
+                      onExpire={() => setSuToken("")}
+                      onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
+                      options={{ theme: "dark", size: "normal" }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">
+                      Security verification is temporarily unavailable. Please contact your Event Director.
+                    </div>
+                  )}
                 </div>
 
                 <Button

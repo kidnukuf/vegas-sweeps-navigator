@@ -32,6 +32,7 @@ export function clearBowlerSession() {
 }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function BowlerLogin() {
@@ -158,6 +159,7 @@ export default function BowlerLogin() {
     e.preventDefault();
     if (!eventId) return toast.error("Open your event’s registration link to sign in.");
     if (!siFirst || !siLast || !siPass) return toast.error("Please fill in all fields.");
+    if (!TURNSTILE_CONFIGURED) return toast.error("The security check is temporarily unavailable. Please contact your Event Director.");
     if (!siToken) return toast.error("Please complete the security check.");
     signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId, turnstileToken: siToken });
   }
@@ -167,6 +169,7 @@ export default function BowlerLogin() {
     if (!eventId) return toast.error("Open your event’s registration link to create an account.");
     if (!suFirst || !suLast) return toast.error("Please enter your first and last name.");
     if (!suCenterId) return toast.error("Please select your bowling center.");
+    if (!TURNSTILE_CONFIGURED) return toast.error("The security check is temporarily unavailable. Please contact your Event Director.");
     if (!suToken) return toast.error("Please complete the security check.");
     if (claimPolicy.isLoading) return toast.info("Checking your event’s registration requirements…");
     if (claimCodeRequired) {
@@ -275,14 +278,20 @@ export default function BowlerLogin() {
 
                 {/* Turnstile widget */}
                 <div className="flex justify-center pt-1">
-                  <Turnstile
-                    ref={siTurnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setSiToken(token)}
-                    onExpire={() => setSiToken("")}
-                    onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
-                    options={{ theme: "dark", size: "normal" }}
-                  />
+                  {TURNSTILE_CONFIGURED ? (
+                    <Turnstile
+                      ref={siTurnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setSiToken(token)}
+                      onExpire={() => setSiToken("")}
+                      onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
+                      options={{ theme: "dark", size: "normal" }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">
+                      Security verification is temporarily unavailable. Please contact your Event Director.
+                    </div>
+                  )}
                 </div>
 
                 <Button
@@ -389,14 +398,20 @@ export default function BowlerLogin() {
 
                 {/* Turnstile widget */}
                 <div className="flex justify-center pt-1">
-                  <Turnstile
-                    ref={suTurnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setSuToken(token)}
-                    onExpire={() => setSuToken("")}
-                    onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
-                    options={{ theme: "dark", size: "normal" }}
-                  />
+                  {TURNSTILE_CONFIGURED ? (
+                    <Turnstile
+                      ref={suTurnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setSuToken(token)}
+                      onExpire={() => setSuToken("")}
+                      onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
+                      options={{ theme: "dark", size: "normal" }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">
+                      Security verification is temporarily unavailable. Please contact your Event Director.
+                    </div>
+                  )}
                 </div>
 
                 <Button
