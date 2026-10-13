@@ -113,7 +113,7 @@ export default function CaptainLogin() {
     if (!eventId) { toast.error("Event not loaded yet."); return; }
     if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!siToken) { toast.error("Please complete the security check."); return; }
-    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass, turnstileToken: siToken });
+    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass, turnstileToken: siToken, turnstileAction: "captain_login" });
   }
 
   function handleSignUp(e: React.FormEvent) {
@@ -123,7 +123,7 @@ export default function CaptainLogin() {
     if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
     if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!suToken) { toast.error("Please complete the security check."); return; }
-    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken });
+    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken, turnstileAction: "captain_signup" });
   }
 
   const filteredCenters = (centersQuery.data ?? []).filter((c) =>
@@ -210,7 +210,7 @@ export default function CaptainLogin() {
                       onSuccess={(token) => setSiToken(token)}
                       onExpire={() => setSiToken("")}
                       onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
-                      options={{ theme: "dark", size: "normal" }}
+                      options={{ theme: "dark", size: "normal", action: "captain_login" }}
                     />
                   ) : (
                     <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">
@@ -327,7 +327,7 @@ export default function CaptainLogin() {
                       onSuccess={(token) => setSuToken(token)}
                       onExpire={() => setSuToken("")}
                       onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
-                      options={{ theme: "dark", size: "normal" }}
+                      options={{ theme: "dark", size: "normal", action: "captain_signup" }}
                     />
                   ) : (
                     <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">

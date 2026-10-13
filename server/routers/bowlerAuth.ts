@@ -273,13 +273,14 @@ export const bowlerAuthRouter = router({
         phone: z.string().optional(),
         claimCode: z.string().optional(),
         turnstileToken: z.string().min(1, "Security check is required"),
+        turnstileAction: z.enum(["bowler_signup", "captain_signup"]),
       })
     )
     .mutation(async ({ input, ctx }) => {
       // Verify Turnstile token first
       const ip = (ctx as any)?.req?.headers?.["cf-connecting-ip"] as string | undefined
         ?? (ctx as any)?.req?.ip as string | undefined;
-      await verifyTurnstileToken(input.turnstileToken, ip);
+      await verifyTurnstileToken(input.turnstileToken, ip, input.turnstileAction);
 
       // For normal registration, look up the bowler by name + center. When
       // claim codes are active, the code is the authoritative roster key and
@@ -469,13 +470,14 @@ export const bowlerAuthRouter = router({
         eventId: z.number(),
         password: z.string().min(1),
         turnstileToken: z.string().min(1, "Security check is required"),
+        turnstileAction: z.enum(["bowler_login", "captain_login"]),
       })
     )
     .mutation(async ({ input, ctx }) => {
       // Verify Turnstile token first
       const ip = (ctx as any)?.req?.headers?.["cf-connecting-ip"] as string | undefined
         ?? (ctx as any)?.req?.ip as string | undefined;
-      await verifyTurnstileToken(input.turnstileToken, ip);
+      await verifyTurnstileToken(input.turnstileToken, ip, input.turnstileAction);
 
       const bowler = await findBowlerByName(input.firstName, input.lastName, input.eventId);
 

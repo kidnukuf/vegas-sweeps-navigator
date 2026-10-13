@@ -161,7 +161,7 @@ export default function BowlerLogin() {
     if (!siFirst || !siLast || !siPass) return toast.error("Please fill in all fields.");
     if (!TURNSTILE_CONFIGURED) return toast.error("The security check is temporarily unavailable. Please contact your Event Director.");
     if (!siToken) return toast.error("Please complete the security check.");
-    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId, turnstileToken: siToken });
+    signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId, turnstileToken: siToken, turnstileAction: "bowler_login" });
   }
 
   function handleSignUp(e: React.FormEvent) {
@@ -187,6 +187,7 @@ export default function BowlerLogin() {
       eventId,
       centerId: suCenterId,
       turnstileToken: suToken,
+      turnstileAction: "bowler_signup",
       claimCode: suClaimCode.trim() ? suClaimCode.trim().toUpperCase() : undefined,
     });
   }
@@ -285,7 +286,7 @@ export default function BowlerLogin() {
                       onSuccess={(token) => setSiToken(token)}
                       onExpire={() => setSiToken("")}
                       onError={() => { setSiToken(""); toast.error("Security check failed. Please try again."); }}
-                      options={{ theme: "dark", size: "normal" }}
+                      options={{ theme: "dark", size: "normal", action: "bowler_login" }}
                     />
                   ) : (
                     <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">
@@ -405,7 +406,7 @@ export default function BowlerLogin() {
                       onSuccess={(token) => setSuToken(token)}
                       onExpire={() => setSuToken("")}
                       onError={() => { setSuToken(""); toast.error("Security check failed. Please try again."); }}
-                      options={{ theme: "dark", size: "normal" }}
+                      options={{ theme: "dark", size: "normal", action: "bowler_signup" }}
                     />
                   ) : (
                     <div className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-center text-xs text-amber-100">

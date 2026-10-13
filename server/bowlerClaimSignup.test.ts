@@ -55,6 +55,7 @@ describe("direct bowler claim-code sign-up", () => {
       phone: "(702) 555-1212",
       claimCode: code.toLowerCase(),
       turnstileToken: "test-turnstile",
+        turnstileAction: "bowler_signup",
     });
     expect(result).toMatchObject({ bowlerId, isCapitain: false });
     expect(result.token).toEqual(expect.any(String));
@@ -90,6 +91,7 @@ describe("direct bowler claim-code sign-up", () => {
         email: "wrong@example.test",
         claimCode: `BOB-M${String(stamp).slice(-3)}`,
         turnstileToken: "test-turnstile",
+        turnstileAction: "bowler_signup",
       })).rejects.toMatchObject({ code: "BAD_REQUEST" });
       const [state] = await rawQuery<{ status: string; passwordHash: string | null }>(
         "SELECT c.status, b.passwordHash FROM bowler_claim_codes c JOIN bowlers b ON b.id = c.bowlerId WHERE c.id = ?",
@@ -125,6 +127,7 @@ describe("direct bowler claim-code sign-up", () => {
         email: `code-owner-${stamp}@example.test`,
         claimCode: `BOB-N${String(stamp).slice(-3)}`,
         turnstileToken: "test-turnstile",
+        turnstileAction: "bowler_signup",
       })).rejects.toMatchObject({
         code: "BAD_REQUEST",
         message: expect.stringContaining("name or bowling center"),
