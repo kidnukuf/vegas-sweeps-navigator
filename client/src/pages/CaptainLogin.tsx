@@ -38,6 +38,7 @@ export default function CaptainLogin() {
   // Sign-up state
   const [suFirst, setSuFirst] = useState("");
   const [suLast, setSuLast] = useState("");
+  const [suClaimCode, setSuClaimCode] = useState(() => new URLSearchParams(search).get("claimCode")?.trim().toUpperCase() ?? "");
   const [suEmail, setSuEmail] = useState("");
   const [suPhone, setSuPhone] = useState("");
   const [suPass, setSuPass] = useState("");
@@ -65,6 +66,11 @@ export default function CaptainLogin() {
     ? registrationEventId
     : sessionEventId ?? (groupEventData as any)?.id ?? 0;
   const centersQuery = trpc.bowlerAuth.listCenters.useQuery({ eventId: Number(eventId) }, { enabled: tab === "signup" && Number(eventId) > 0 });
+  const claimPolicy = trpc.claimAccess.policy.useQuery(
+    { eventId: Number(eventId) },
+    { enabled: tab === "signup" && Number(eventId) > 0 }
+  );
+  const claimCodeRequired = Boolean(claimPolicy.data?.claimCodeRequired);
 
   const signIn = trpc.bowlerAuth.signIn.useMutation({
     onSuccess: (data) => {
@@ -119,11 +125,17 @@ export default function CaptainLogin() {
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) { toast.error("Event not loaded yet."); return; }
+    if (!suFirst.trim() || !suLast.trim()) { toast.error("Please enter your first and last name."); return; }
     if (!suCenterId) { toast.error("Please select your bowling center."); return; }
+    if (claimPolicy.isLoading) { toast.info("Checking your event’s registration requirements…"); return; }
+    if (claimCodeRequired) {
+      if (!suClaimCode.trim()) { toast.error("Enter the claim code provided at league night."); return; }
+      if (!suEmail.trim() && !suPhone.trim()) { toast.error("Enter the email address or phone number listed on your event roster."); return; }
+    }
     if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
     if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!suToken) { toast.error("Please complete the security check."); return; }
-    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken, turnstileAction: "captain_signup" });
+    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken, turnstileAction: "captain_signup", claimCode: suClaimCode.trim() ? suClaimCode.trim().toUpperCase() : undefined });
   }
 
   const filteredCenters = (centersQuery.data ?? []).filter((c) =>
@@ -234,6 +246,7 @@ export default function CaptainLogin() {
               <form onSubmit={handleSignUp} className="space-y-4 pt-4">
                 <div className="captain-notice">
                   <span className="text-yellow-400 font-bold">Captains only.</span> Your name must be on the event roster as a Team Captain.
+                  {claimCodeRequired && <span className="block mt-1 text-white/75">Enter the claim code and the email or phone number listed on your roster.</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -271,11 +284,21 @@ export default function CaptainLogin() {
                       <span className="text-white/40">Select your bowling center…</span>
                     )}
                     <span className="text-white/50 text-xs shrink-0">▼</span>
-                  </button>
+                    </button>
+                </div>
+                <div>
+                  <Label className="captain-label">Claim Code {claimCodeRequired ? "(required)" : "(if provided)"}</Label>
+                  <Input
+                    value={suClaimCode}
+                    onChange={(e) => setSuClaimCode(e.target.value.toUpperCase())}
+                    placeholder="BOB-XXXX"
+                    autoCapitalize="characters"
+                    className="captain-input tracking-widest"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="captain-label">Email (optional)</Label>
+                    <Label className="captain-label">Roster Email {claimCodeRequired ? "(required if no phone)" : "(optional)"}</Label>
                     <Input
                       type="email"
                       value={suEmail}
@@ -285,7 +308,7 @@ export default function CaptainLogin() {
                     />
                   </div>
                   <div>
-                    <Label className="captain-label">Phone (optional)</Label>
+                    <Label className="captain-label">Roster Phone {claimCodeRequired ? "(required if no email)" : "(optional)"}</Label>
                     <Input
                       value={suPhone}
                       onChange={(e) => setSuPhone(e.target.value)}
