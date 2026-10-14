@@ -343,7 +343,7 @@ export default function OperatorSetupGuide() {
       content: (
         <>
           <p>
-            Claim codes are unique one-time codes (e.g. <code className="bg-black/40 px-1 rounded text-yellow-200">BOB-A1B2</code>) that you hand to each bowler. When enabled, bowlers must enter their code to complete sign-up — preventing anyone not on your roster from creating an account.
+            Claim codes are unique one-time codes (e.g. <code className="bg-black/40 px-1 rounded text-yellow-200">BOB-A1B2</code>) that you hand to each bowler. When enabled, bowlers must enter their code and match the roster name, bowling center, and either the roster email or phone to complete sign-up — preventing anyone not on your roster from creating an account.
           </p>
 
           <div className="space-y-2">
@@ -357,7 +357,7 @@ export default function OperatorSetupGuide() {
             </div>
             <div className="flex gap-3">
               <span className="flex-none w-6 h-6 rounded-full bg-gray-500/20 border border-gray-500/40 text-gray-300 text-xs font-bold flex items-center justify-center">3</span>
-              <p>Click <strong className="text-white">Print Distribution Sheet</strong> to get a printable page with each bowler's name, lane, code, and QR code. Hand these out at registration.</p>
+              <p>Click <strong className="text-white">Print Distribution Sheet</strong> to get a printable page with each bowler's name, lane, code, and QR code. The QR code opens the Bowl Vegas claim-code introduction page and carries the event and code into Bowler signup. Hand these out at registration.</p>
             </div>
             <div className="flex gap-3">
               <span className="flex-none w-6 h-6 rounded-full bg-gray-500/20 border border-gray-500/40 text-gray-300 text-xs font-bold flex items-center justify-center">4</span>
@@ -366,7 +366,7 @@ export default function OperatorSetupGuide() {
           </div>
 
           <Callout type="tip">
-            Claim codes are optional. If you don't generate them, sign-up is open to anyone with the link. Enable them for tighter roster control at larger events.
+            Claim codes are optional. If you don't generate them, sign-up is open to anyone with the link. Enable them for tighter roster control at larger events. A code is redeemed only after the account is successfully created.
           </Callout>
         </>
       ),
