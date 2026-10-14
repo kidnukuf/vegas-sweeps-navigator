@@ -21,6 +21,12 @@ import AppFooter from "@/components/AppFooter";
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
 
+function formatClaimCode(value: string) {
+  const clean = value.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 7);
+  if (clean.length <= 3) return clean;
+  return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+}
+
 export default function CaptainLogin() {
   const [, navigate] = useLocation();
   const search = useSearch();
@@ -290,7 +296,7 @@ export default function CaptainLogin() {
                   <Label className="captain-label">Claim Code {claimCodeRequired ? "(required)" : "(if provided)"}</Label>
                   <Input
                     value={suClaimCode}
-                    onChange={(e) => setSuClaimCode(e.target.value.toUpperCase())}
+                    onChange={(e) => setSuClaimCode(formatClaimCode(e.target.value))}
                     placeholder="BOB-XXXX"
                     autoCapitalize="characters"
                     className="captain-input tracking-widest"

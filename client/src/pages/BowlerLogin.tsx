@@ -34,6 +34,12 @@ export function clearBowlerSession() {
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
 
+function formatClaimCode(value: string) {
+  const clean = value.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 7);
+  if (clean.length <= 3) return clean;
+  return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function BowlerLogin() {
   const [, navigate] = useLocation();
@@ -366,7 +372,7 @@ export default function BowlerLogin() {
                     className="bowler-input uppercase tracking-widest"
                     placeholder="e.g. BOB-7F3K"
                     value={suClaimCode}
-                    onChange={(e) => setSuClaimCode(e.target.value.toUpperCase())}
+                    onChange={(e) => setSuClaimCode(formatClaimCode(e.target.value))}
                     autoComplete="off"
                   />
                   <p className="text-white/40 text-[11px] mt-1">
