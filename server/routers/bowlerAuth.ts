@@ -1396,6 +1396,31 @@ export const bowlerAuthRouter = router({
       return profile;
     }),
 
+  /** ED-only: revoke the primary banquet QR for a bowler/captain. */
+  edRemoveBanquetQr: publicProcedure
+    .input(z.object({ bowlerId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const session = await assertBowlerAccess(ctx, input.bowlerId);
+      const rows = await rawQuery<{ eventId: number; legalFirstName: string; legalLastName: string; banquetToken: string | null }>(
+        `SELECT eventId, legalFirstName, legalLastName, banquetToken FROM bowlers WHERE id = ? LIMIT 1`,
+        [input.bowlerId],
+      );
+      const bowler = rows[0];
+      if (!bowler) throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
+      if (!bowler.banquetToken) return { success: true, alreadyRemoved: true };
+      await rawExec(`UPDATE bowlers SET banquetToken = NULL, banquetUsed = 0 WHERE id = ?`, [input.bowlerId]);
+      await writeAuditLog({
+        eventId: bowler.eventId,
+        actorRole: session.type === "owner" ? "Owner" : "EventDirector",
+        actorId: session.type === "owner" ? session.userId : session.staffId,
+        action: "ed_remove_banquet_qr",
+        targetId: input.bowlerId,
+        targetType: "bowler",
+        details: `Removed primary banquet QR for ${bowler.legalFirstName} ${bowler.legalLastName}`,
+      });
+      return { success: true, alreadyRemoved: false };
+    }),
+
   /**
    * ED-only: update any field visible in the bowler portal.
    * Routes hotel/payment fields to the correct tables automatically.

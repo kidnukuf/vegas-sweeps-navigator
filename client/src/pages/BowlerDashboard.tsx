@@ -360,6 +360,13 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
     onSuccess: () => { setContactSent(true); setContactFormOpen(false); setPopupOpen(false); toast.success("Contact info submitted! The Event Director will review and confirm it shortly."); },
     onError: (e) => toast.error(e.message),
   });
+  const removeBanquetQr = trpc.bowlerAuth.edRemoveBanquetQr.useMutation({
+    onSuccess: (result) => {
+      toast.success(result.alreadyRemoved ? "Banquet QR was already removed." : "Banquet QR removed from the bowler and captain portals.");
+      edProfileQuery.refetch();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   // Missing-phone popup — shown once per session when phone is absent and no request already sent
   const [popupOpen, setPopupOpen] = useState(false);
@@ -760,6 +767,27 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
             <div className="flex-1 h-px bg-white/20" />
           </div>
         </div>
+
+        {isEDMode && (
+          <div className="mb-4 rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-left">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-300">Event Director edit</p>
+            <p className="mt-1 text-sm leading-5 text-white/70">
+              Remove this bowler&apos;s primary banquet QR from both the bowler and team captain portals. The existing QR will no longer validate; pool access and guest passes are unchanged.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!p.banquetToken || removeBanquetQr.isPending}
+              onClick={() => {
+                if (!window.confirm(`Remove the banquet QR for ${displayName}? This will invalidate the current QR.`)) return;
+                removeBanquetQr.mutate({ bowlerId: Number(p.id) });
+              }}
+              className="mt-3 border-rose-400/35 text-rose-200 hover:bg-rose-400/15 hover:text-rose-100"
+            >
+              {removeBanquetQr.isPending ? "Removing…" : p.banquetToken ? "Remove banquet QR" : "Banquet QR already removed"}
+            </Button>
+          </div>
+        )}
 
         {/* ── 7. My Entry Ticket (bowling check-in QR) ── */}
         <div className="bowler-card text-center">
