@@ -4,13 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
-import { getClaimCodeIntroductionUrl } from "@/lib/claimCodeLinks";
 import { getClaimCardInstructionLines } from "@/lib/claimCardLayout";
 
 /**
  * ClaimCodesTab — Event Director tool to generate, view, look up, and reissue
- * per-bowler claim codes, plus print a distribution sheet (name · team · code · QR)
+ * per-bowler claim codes, plus print a distribution sheet (name · team · code · website)
  * that program directors hand out on league night.
  */
 type ClaimCodeEventDetails = {
@@ -105,7 +103,6 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
   }, [rows]);
 
   const eventTitle = eventDetails?.name || "B.O.B. Roll-Off";
-  const signUpUrl = getClaimCodeIntroductionUrl(eventId);
   const eventDateWindow = useMemo(() => {
     const start = eventDetails?.startDate?.trim();
     const end = eventDetails?.endDate?.trim();
@@ -121,9 +118,6 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
       toast.error("Pop-up blocked — allow pop-ups to print.");
       return;
     }
-    const qr = (code: string) =>
-      `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(code)}`;
-
     const teamsHtml = byTeam
       .map(([team, members]) => {
         const cards = members
@@ -131,7 +125,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           .map(
             (m) => `
             <div class="card">
-              <img src="${qr(getClaimCodeIntroductionUrl(eventId, m.code))}" alt="Open Bowl Vegas introduction" />
+              <div class="website">www.BowlVegas.com</div>
               <div class="info">
                 <div class="name">${m.firstName} ${m.lastName}</div>
                 <div class="center">${m.center || ""}</div>
@@ -155,7 +149,7 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
         .team h2 { font-size: 14px; background: #f3c100; color: #111; padding: 6px 10px; border-radius: 6px; margin: 0 0 10px; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .card { border: 1px solid #ccc; border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center; page-break-inside: avoid; }
-        .card img { width: 70px; height: 70px; }
+        .website { width: 70px; color: #155e75; font-size: 9px; line-height: 1.15; font-weight: bold; text-align: center; overflow-wrap: anywhere; }
         .name { font-weight: bold; font-size: 13px; }
         .center { color: #666; font-size: 10px; }
         .code { font-family: 'Courier New', monospace; font-weight: bold; font-size: 15px; letter-spacing: 1px; margin-top: 4px; }
@@ -179,16 +173,6 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
     const activeTeams = Array.from(teams.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
     const doc = new jsPDF({ unit: "pt", format: "letter" });
-    const signUpQrs = new Map<string, string>();
-    for (const member of centerMembers) {
-      if (!signUpQrs.has(member.code)) {
-        signUpQrs.set(member.code, await QRCode.toDataURL(getClaimCodeIntroductionUrl(eventId, member.code), {
-          width: 160,
-          margin: 1,
-          color: { dark: "#000000", light: "#FFFFFF" },
-        }));
-      }
-    }
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 24;
@@ -267,8 +251,6 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           doc.setDrawColor(220);
           doc.setLineWidth(0.35);
           doc.line(memberX, memberY, memberX + bowlerColumnWidth, memberY);
-          const signUpQr = signUpQrs.get(member.code);
-          if (signUpQr) doc.addImage(signUpQr, "PNG", memberX + 2, memberY + 4, 27, 27);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(7.7);
           doc.text(`${member.firstName} ${member.lastName}`, memberX + 33, memberY + 13, { maxWidth: bowlerColumnWidth - 35 });
@@ -276,9 +258,9 @@ export default function ClaimCodesTab({ eventId, eventDetails }: { eventId: numb
           doc.setFontSize(8.7);
           doc.text(member.code, memberX + 33, memberY + 26, { maxWidth: bowlerColumnWidth - 35 });
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(4.9);
-          doc.setTextColor(90);
-          doc.text("SCAN TO SIGN UP", memberX + 15.5, memberY + 35, { align: "center" });
+          doc.setFontSize(5.2);
+          doc.setTextColor(21, 94, 117);
+          doc.text("www.BowlVegas.com", memberX + 33, memberY + 36, { maxWidth: bowlerColumnWidth - 35 });
           doc.setTextColor(0);
           memberY += 47;
         }
