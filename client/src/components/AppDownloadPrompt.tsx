@@ -2,7 +2,7 @@
  * AppDownloadPrompt
  *
  * Full-screen modal that appears every time a bowler signs in or signs up,
- * until they click "I Downloaded It!" which calls bowlerAuth.dismissAppPrompt
+ * until they click "I Added It to My Home Screen" which calls bowlerAuth.dismissAppPrompt
  * and permanently suppresses the prompt for that bowler.
  *
  * Usage:
@@ -82,51 +82,51 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
             </div>
           </div>
           <DialogTitle className="text-xl font-bold text-yellow-400">
-            Download the B.O.B. App!
+            Download the B.O.B. App
           </DialogTitle>
           <DialogDescription className="text-gray-300 text-sm leading-relaxed">
-            Get the <strong className="text-white">Bowlers Orleans Bound</strong> mobile app for
-            instant access to your QR passport, event schedule, and real-time updates — right on
-            your phone.
+            The App Store and Google Play versions are <strong className="text-yellow-300">coming soon</strong>.
+            Until then, add this web app to your phone's home screen for quick access to your QR
+            passport, event schedule, and updates.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Store badges */}
-        <div className="flex flex-col gap-3 mt-2">
-          <a
-            href="https://apps.apple.com/us/app/bob-roll-off-passport/id6744882967"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 bg-black border border-gray-600 hover:border-yellow-500 rounded-xl px-4 py-3 transition-colors group"
-          >
+        {/* Native app stores are not available yet. Keep these visibly disabled
+            so participants do not follow stale or unavailable download links. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+          <div className="flex items-center justify-center gap-3 bg-black/60 border border-gray-700 rounded-xl px-4 py-3 opacity-90">
             {/* Apple logo SVG */}
-            <svg className="w-7 h-7 text-white group-hover:text-yellow-400 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-7 h-7 text-white/80" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
             </svg>
             <div className="text-left">
-              <div className="text-xs text-gray-400 leading-none">Download on the</div>
-              <div className="text-base font-semibold text-white leading-tight">App Store</div>
+              <div className="text-xs text-gray-400 leading-none">iPhone app</div>
+              <div className="text-sm font-semibold text-yellow-300 leading-tight">Download coming soon</div>
             </div>
-          </a>
+          </div>
 
-          <a
-            href="https://play.google.com/store/apps/details?id=com.lsent.bobrolloffpassport"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 bg-black border border-gray-600 hover:border-yellow-500 rounded-xl px-4 py-3 transition-colors group"
-          >
+          <div className="flex items-center justify-center gap-3 bg-black/60 border border-gray-700 rounded-xl px-4 py-3 opacity-90">
             {/* Google Play logo SVG */}
-            <svg className="w-7 h-7 group-hover:opacity-90 transition-opacity" viewBox="0 0 24 24" fill="none">
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
               <path d="M3.18 23.76A2 2 0 0 1 2 22V2a2 2 0 0 1 1.18-1.76l11.7 11.76L3.18 23.76z" fill="#EA4335"/>
               <path d="M20.82 10.5 17.5 8.6 13.5 12l4 4 3.32-1.9a2 2 0 0 0 0-3.6z" fill="#FBBC05"/>
               <path d="M3.18.24 14.88 12 3.18 23.76A2 2 0 0 1 2 22V2A2 2 0 0 1 3.18.24z" fill="#4285F4"/>
               <path d="M14.88 12 17.5 8.6 3.18.24A2 2 0 0 0 2 2v.24L14.88 12z" fill="#34A853"/>
             </svg>
             <div className="text-left">
-              <div className="text-xs text-gray-400 leading-none">Get it on</div>
-              <div className="text-base font-semibold text-white leading-tight">Google Play</div>
+              <div className="text-xs text-gray-400 leading-none">Android app</div>
+              <div className="text-sm font-semibold text-yellow-300 leading-tight">Download coming soon</div>
             </div>
-          </a>
+          </div>
+        </div>
+
+        {/* Current web-app installation instructions */}
+        <div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-950/30 p-4 text-sm text-gray-200">
+          <p className="font-bold text-cyan-300 mb-2">Add the web app to your home screen now</p>
+          <div className="space-y-2">
+            <p><span className="font-semibold text-white">iPhone:</span> Open this page in Safari, tap the Share button <span aria-label="share">⬆</span>, choose <span className="font-semibold text-cyan-200">Add to Home Screen</span>, then tap <span className="font-semibold text-cyan-200">Add</span>.</p>
+            <p><span className="font-semibold text-white">Android:</span> Open this page in Chrome, tap the three-dot menu <span className="font-semibold text-cyan-200">⋮</span>, choose <span className="font-semibold text-cyan-200">Add to Home screen</span> or <span className="font-semibold text-cyan-200">Install app</span>, then follow the prompts.</p>
+          </div>
         </div>
 
         {/* CTA */}
@@ -137,7 +137,7 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
             className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-base py-3 rounded-xl flex items-center justify-center gap-2"
           >
             <Download className="w-5 h-5" />
-            {dismiss.isPending ? "Saving…" : "I Downloaded It! ✓"}
+            {dismiss.isPending ? "Saving…" : "I Added It to My Home Screen ✓"}
           </Button>
           <button
             onClick={handleSkip}

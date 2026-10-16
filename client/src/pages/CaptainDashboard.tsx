@@ -19,6 +19,7 @@ import PortalSignInRequired from "@/components/PortalSignInRequired";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { CenterBulletinBoard } from "@/components/CenterBulletinBoard";
 import { isPoolPartyVisible } from "@/lib/eventVisibility";
+import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -353,6 +354,12 @@ export default function CaptainDashboard() {
           </div>
         </div>
 
+        {/* ── App download / home-screen guidance ── */}
+        <AppDownloadPrompt
+          token={token}
+          dismissed={Boolean((p as any).appDownloadDismissed)}
+          onDismissed={() => teamQuery.refetch()}
+        />
 
         {/* ── Sponsor ad (slot A) ── */}
         <AdRotator eventId={captainEventId} slot={0} />
