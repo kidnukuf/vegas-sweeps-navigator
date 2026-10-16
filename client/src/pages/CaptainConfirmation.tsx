@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { normalizeSquadTime } from "@/lib/squadTime";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
+import { isPoolPartyVisible } from "@/lib/eventVisibility";
 
 const BOWLER_TOKEN_KEY = "vsn_bowler_token";
 
@@ -259,6 +260,7 @@ function PassportStep({ profile, onViewTeam, onDone }: { profile: any; onViewTea
   const eventDates = profile.startDate && profile.endDate
     ? `${profile.startDate} – ${profile.endDate}`
     : profile.bowlingDate ?? "Date TBD";
+  const poolPartyVisible = isPoolPartyVisible(profile.eventId, profile.eventName);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a0533] via-[#2d0a5e] to-[#0a1a3d] p-4 pb-10">
@@ -311,14 +313,14 @@ function PassportStep({ profile, onViewTeam, onDone }: { profile: any; onViewTea
 
         {/* Passport Boxes */}
         <div className="space-y-4 mb-5">
-          <PassportBox
+          {poolPartyVisible && <PassportBox
             title="Pool Party Passport"
             icon="🏊"
             color="from-cyan-500 to-blue-600"
             qrDataUrl={profile.poolPartyQR}
             isUsed={Boolean(profile.poolPartyUsed)}
             isDisabled={!profile.poolPartyToken}
-          />
+          />}
           <PassportBox
             title="Banquet Dinner Passport"
             icon="🍽️"
@@ -328,7 +330,7 @@ function PassportStep({ profile, onViewTeam, onDone }: { profile: any; onViewTea
             isDisabled={!profile.banquetToken}
           />
           {/* Guest Pool Party Passes */}
-          {Array.isArray(profile.guestPoolQRs) && profile.guestPoolQRs.length > 0 && (
+          {poolPartyVisible && Array.isArray(profile.guestPoolQRs) && profile.guestPoolQRs.length > 0 && (
             <>
               <div className="flex items-center gap-3 mt-2">
                 <div className="flex-1 h-px bg-white/20" />

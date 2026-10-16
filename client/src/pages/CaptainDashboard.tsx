@@ -18,6 +18,7 @@ import AdRotator from "@/components/AdRotator";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { CenterBulletinBoard } from "@/components/CenterBulletinBoard";
+import { isPoolPartyVisible } from "@/lib/eventVisibility";
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function downloadQR(dataUrl: string, filename: string) {
@@ -266,6 +267,10 @@ export default function CaptainDashboard() {
   const { profile: p, roster } = teamQuery.data ?? { profile: null, roster: [] };
   if (!p) return null;
   const captainEventSettings = (captainEventSettingsQuery.data ?? null) as EventTripSettings | null;
+  const poolPartyVisible = isPoolPartyVisible(captainEventId, (p as any).eventName);
+  const portalEventSettings = poolPartyVisible || !captainEventSettings
+    ? captainEventSettings
+    : { ...captainEventSettings, poolPartyEnabled: false, poolPartyTime: null };
 
   const verifiedCount = roster.filter((b) => b.captainVerified || b.registrationStatus === "verified" || b.registrationStatus === "checked_in").length;
   const signedUpCount = roster.filter((b) => b.registrationStatus !== "pre_registered").length;
@@ -365,7 +370,7 @@ export default function CaptainDashboard() {
           banquetTable={(p as any).banquetTable}
           banquetLocation={(p as any).banquetLocation}
           banquetTime={(p as any).banquetTime}
-          ev={captainEventSettings}
+          ev={portalEventSettings}
         />
 
         {/* ── Sponsor ad (slot B) ── */}
@@ -533,7 +538,7 @@ export default function CaptainDashboard() {
           eligible={p.banquetToken !== null && p.banquetToken !== undefined}
         />
 
-        <PassportBox
+        {poolPartyVisible && <PassportBox
           title="Pool Party Passport"
           icon="🏊"
           subtitle="Funtime Team Challenge 2026 — Pool Party"
@@ -542,10 +547,10 @@ export default function CaptainDashboard() {
           qrDataUrl={p.poolPartyQR}
           tokenUsed={Boolean((p as any).poolPartyUsed)}
           eligible={p.poolPartyToken !== null && p.poolPartyToken !== undefined}
-        />
+        />}
 
         {/* ── Guest Pool Party Passes (A, B, C...) ── */}
-        {Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
+        {poolPartyVisible && Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
           <>
             <div className="flex items-center gap-3 mt-2">
               <div className="flex-1 h-px bg-white/20" />

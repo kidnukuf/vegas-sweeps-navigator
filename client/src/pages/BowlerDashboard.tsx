@@ -31,6 +31,7 @@ import AppDownloadPrompt from "@/components/AppDownloadPrompt";
 import PortalSignInRequired from "@/components/PortalSignInRequired";
 import { CommunicationsPanel } from "@/components/CommunicationsPanel";
 import { CenterBulletinBoard } from "@/components/CenterBulletinBoard";
+import { isPoolPartyVisible } from "@/lib/eventVisibility";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -433,10 +434,14 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
   const displayName = p.preferredName || `${p.legalFirstName} ${p.legalLastName}`;
   const eventSettings = (eventSettingsQuery.data ?? null) as EventTripSettings | null;
   const surveyAvailable = Boolean(surveyStatusQuery.data?.available) && !surveyStatusQuery.data?.alreadySubmitted;
+  const poolPartyVisible = isPoolPartyVisible(bowlerEventId, (p as any).eventName);
+  const portalEventSettings = poolPartyVisible || !eventSettings
+    ? eventSettings
+    : { ...eventSettings, poolPartyEnabled: false, poolPartyTime: null };
 
   // Eligibility: token present means eligible (null = disabled by Event Director)
   const banquetEligible = p.banquetToken !== null && p.banquetToken !== undefined;
-  const poolPartyEnabled = Boolean((p as any).poolPartyEnabled);
+  const poolPartyEnabled = poolPartyVisible && Boolean((p as any).poolPartyEnabled);
   const poolEligible = poolPartyEnabled && p.poolPartyToken !== null && p.poolPartyToken !== undefined;
 
   return (
@@ -607,7 +612,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
             onOpenChange={setSurveyOpen}
             eventId={bowlerEventId}
             bowlerId={p.id}
-            poolPartyEnabled={Boolean(surveyStatusQuery.data?.poolPartyEnabled)}
+            poolPartyEnabled={poolPartyVisible && Boolean(surveyStatusQuery.data?.poolPartyEnabled)}
           />
         )}
 
@@ -630,7 +635,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           banquetTable={(p as any).banquetTable}
           banquetLocation={(p as any).banquetLocation}
           banquetTime={(p as any).banquetTime}
-          ev={eventSettings}
+          ev={portalEventSettings}
         />
 
         {/* ── Sponsor ad (slot B) ── */}
