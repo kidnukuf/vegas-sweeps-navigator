@@ -1,3 +1,4 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -16,7 +17,7 @@ function statusLabel(status?: string) {
 }
 
 function dateLabel(value?: string | Date | null) {
-  return value ? new Date(value).toLocaleString() : "—";
+  return value ? formatPacificDateTime(value) : "—";
 }
 
 export default function CoordinatorManagement() {

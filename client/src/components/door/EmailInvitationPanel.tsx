@@ -10,7 +10,7 @@
  * Respects existing Google Sheets reader patterns: backend fetches email from sheet,
  * frontend only passes bowler identity (first/last name).
  */
-
+import { PACIFIC_TIME_ZONE } from "@/lib/timezone";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,7 @@ export function EmailInvitationPanel({
     // Construct RSVP URL (can be customized per deployment)
     const rsrvpUrl = `${window.location.origin}/events/${eventId}/rsvp`;
     // Event date: use today's date as fallback (in production, fetch from event details)
-    const eventDate = new Date().toLocaleDateString("en-US", {
+    const eventDate = new Date().toLocaleDateString("en-US", { timeZone: PACIFIC_TIME_ZONE,
       weekday: "long",
       month: "long",
       day: "numeric",

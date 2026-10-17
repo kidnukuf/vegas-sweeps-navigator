@@ -1,8 +1,9 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 
 function statusLabel(status?: string) { return (status ?? "draft").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-function displayDate(value?: Date | string | null) { return value ? new Date(value).toLocaleString() : "—"; }
+function displayDate(value?: Date | string | null) { return value ? formatPacificDateTime(value) : "—"; }
 
 export function CoordinatorHandoffPanel() {
   const utils = trpc.useUtils();

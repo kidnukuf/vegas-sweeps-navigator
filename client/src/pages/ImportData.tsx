@@ -1,3 +1,4 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -850,7 +851,7 @@ export default function ImportData() {
                 {Boolean(selectedEvent.sheetTabName) && (
                   <p className="text-xs mt-1 ml-8">
                     {selectedEvent.sheetLastSyncedAt ? (
-                      <span className="text-gray-400">Last synced: <span className="text-green-300">{new Date(Number(selectedEvent.sheetLastSyncedAt as number)).toLocaleString()}</span></span>
+                      <span className="text-gray-400">Last synced: <span className="text-green-300">{formatPacificDateTime(Number(selectedEvent.sheetLastSyncedAt as number))}</span></span>
                     ) : (
                       <span className="text-gray-500 italic">Not yet synced to this sheet</span>
                     )}

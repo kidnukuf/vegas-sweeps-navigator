@@ -1,3 +1,4 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
@@ -56,7 +57,7 @@ export default function SurveyResultsTab({ eventId }: { eventId: number }) {
     const lines = [cols.join(",")];
     for (const r of responses) {
       lines.push(cols.map((c) => {
-        if (c === "submittedAt" && r[c]) return escape(new Date(r[c] as number).toLocaleString());
+        if (c === "submittedAt" && r[c]) return escape(formatPacificDateTime(r[c] as number));
         return escape(r[c]);
       }).join(","));
     }
@@ -131,7 +132,7 @@ export default function SurveyResultsTab({ eventId }: { eventId: number }) {
                   <Card key={r.id as number} className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        {r.submittedAt ? new Date(r.submittedAt as number).toLocaleString() : ""}
+                        {r.submittedAt ? formatPacificDateTime(r.submittedAt as number) : ""}
                       </span>
                       {Boolean(r.testimonialPermission) && (
                         <Badge variant="secondary" className="text-xs">Testimonial OK</Badge>

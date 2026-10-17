@@ -7,6 +7,7 @@
  * indicator, Load Door Data, Sync Now, PIN setup/override, guest lookup, ED flagging,
  * and the directional reentry manager.
  */
+import { formatPacificDateTime, formatPacificTime } from "@/lib/timezone";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,7 +140,7 @@ export function DoorConsole({ eventId }: { eventId: number }) {
               {mode === "banquet" ? "Banquet" : "Pool Party"}
             </span>{" "}
             · {guestCount > 0 ? `${guestCount} passes loaded` : "no data loaded"}
-            {loadedAt && ` · loaded ${new Date(loadedAt).toLocaleTimeString()}`}
+            {loadedAt && ` · loaded ${formatPacificTime(loadedAt)}`}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -413,7 +414,7 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
     const g = groups[col];
     if (!g || g.rows.length === 0) return;
     // One scan-time value per line, in sheet-row order, ready to paste down the column.
-    const text = g.rows.map((r) => new Date(r.scannedAtMs).toLocaleString()).join("\n");
+    const text = g.rows.map((r) => formatPacificDateTime(r.scannedAtMs)).join("\n");
     const ok = await copyText(text);
     if (ok) toast.success(`Copied ${g.rows.length} value(s) for column ${col}. Click cell ${col}<row> in your sheet and paste.`);
     else toast.error("Copy failed — use the CSV download instead.");
@@ -454,7 +455,7 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
         "Team",
         "Sheet Column",
         "Paste This Value",
-        "Scanned At (local)",
+        "Scanned At (Pacific)",
         "Re-entry?",
       ];
       const lines: string[] = [];
@@ -472,8 +473,8 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
             csvCell(r.laneNumber),
             csvCell(r.teamNumber),
             csvCell(r.targetColumn),
-            csvCell(new Date(r.scannedAtMs).toLocaleString()),
-            csvCell(new Date(r.scannedAtMs).toLocaleString()),
+            csvCell(formatPacificDateTime(r.scannedAtMs)),
+            csvCell(formatPacificDateTime(r.scannedAtMs)),
             csvCell(r.isReentry ? "yes" : ""),
           ].join(",")
         );
@@ -481,9 +482,9 @@ function ExportPanel({ eventId, mode }: { eventId: number; mode: DoorMode }) {
       if (data.unmatched.length > 0) {
         lines.push("");
         lines.push(csvCell(`UNMATCHED (${data.unmatched.length}) — could not find a name for these tokens; review manually:`));
-        lines.push(["Token", "Scanned At (local)", "Result"].map(csvCell).join(","));
+        lines.push(["Token", "Scanned At (Pacific)", "Result"].map(csvCell).join(","));
         for (const u of data.unmatched) {
-          lines.push([csvCell(u.token), csvCell(new Date(u.scannedAtMs).toLocaleString()), csvCell(u.result)].join(","));
+          lines.push([csvCell(u.token), csvCell(formatPacificDateTime(u.scannedAtMs)), csvCell(u.result)].join(","));
         }
       }
       const csv = lines.join("\r\n");

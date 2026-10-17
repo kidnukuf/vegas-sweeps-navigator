@@ -1,3 +1,4 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ export default function AdvertiserLeadsTab() {
                   <div className="mt-1 text-sm text-sky-300">{lead.contact}</div>
                   <p className="mt-2 text-sm text-gray-300 whitespace-pre-wrap">{lead.message}</p>
                   <div className="mt-2 text-xs text-gray-600">
-                    {new Date(lead.createdAt).toLocaleString()}
+                    {formatPacificDateTime(lead.createdAt)}
                     {lead.slotLabel ? ` · from ${lead.slotLabel}` : ""}
                   </div>
                 </div>

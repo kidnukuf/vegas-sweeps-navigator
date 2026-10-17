@@ -1,3 +1,4 @@
+import { formatPacificDate } from "@/lib/timezone";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -227,7 +228,7 @@ export default function AdManagerTab({ eventId }: { eventId: number }) {
                         </div>
                         {ad.linkUrl && <p className="mt-0.5 truncate text-xs text-blue-400">{ad.linkUrl}</p>}
                         <p className="mt-0.5 text-xs text-gray-500">
-                          {ad.runUntil ? `Runs until ${new Date(ad.runUntil).toLocaleDateString()}` : "No end date"}
+                          {ad.runUntil ? `Runs until ${formatPacificDate(ad.runUntil)}` : "No end date"}
                           {expired && <span className="ml-1 text-red-400">(expired)</span>}
                         </p>
                         <div className="mt-2 flex items-center gap-2">

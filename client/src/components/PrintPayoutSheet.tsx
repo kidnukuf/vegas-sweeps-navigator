@@ -8,7 +8,7 @@
  *
  * Columns: Place | Team # | Team Name | Center | Score | Payout | Per-Bowler Bills | Team Bills
  */
-
+import { PACIFIC_TIME_ZONE } from "@/lib/timezone";
 import { useEffect } from "react";
 import {
   calcDenominations,
@@ -85,7 +85,7 @@ export default function PrintPayoutSheet({ rows, eventName, totalPrizePool, onCl
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const today = new Date().toLocaleDateString("en-US", { timeZone: PACIFIC_TIME_ZONE, year: "numeric", month: "long", day: "numeric" });
 
   return (
     <>

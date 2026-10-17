@@ -8,7 +8,7 @@
  * Section 4 — Grand Total Bill Counts (card grid per denomination)
  * Section 5 — Write Payouts to Google Sheet button
  */
-
+import { formatPacificDateTime, formatPacificTime } from "@/lib/timezone";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -583,7 +583,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
           {isSavingPool ? "Saving…" : "Save Prize Pool & Paytable"}
         </button>
         {poolData?.pool && (
-          <span className="text-xs text-gray-500">Last saved: {new Date(poolData.pool.updatedAt).toLocaleString()}</span>
+          <span className="text-xs text-gray-500">Last saved: {formatPacificDateTime(poolData.pool.updatedAt)}</span>
         )}
       </div>
 
@@ -723,7 +723,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
                           Save
                         </button>
                       ) : draft.savedAt ? (
-                        <span className="text-green-500 text-xs" title={`Saved ${draft.savedAt.toLocaleTimeString()}`}>✓</span>
+                        <span className="text-green-500 text-xs" title={`Saved ${formatPacificTime(draft.savedAt)}`}>✓</span>
                       ) : (
                         <span className="text-gray-700 text-xs">—</span>
                       )}

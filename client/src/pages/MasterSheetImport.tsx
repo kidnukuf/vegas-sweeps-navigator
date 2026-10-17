@@ -1,3 +1,4 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ function SheetTargetBanner({ event }: { event: EventRecord | null }) {
   const nickname = String(event.sheetTabNickname ?? "");
   const hasSheet = spreadsheetId && tabName;
   const lastSyncedMs = event.sheetLastSyncedAt ? Number(event.sheetLastSyncedAt) : null;
-  const lastSyncedStr = lastSyncedMs ? new Date(lastSyncedMs).toLocaleString() : null;
+  const lastSyncedStr = lastSyncedMs ? formatPacificDateTime(lastSyncedMs) : null;
 
   return (
     <div

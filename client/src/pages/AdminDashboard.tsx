@@ -1,3 +1,4 @@
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { resolveAccessibleEventId } from "@/lib/eventAccess";
@@ -1436,7 +1437,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                             </td>
                             <td className="px-4 py-3 text-cyan-300 font-mono text-sm">{r.phone}</td>
                             <td className="px-4 py-3 text-cyan-300 text-sm">{r.email}</td>
-                            <td className="px-4 py-3 text-gray-400 text-xs">{new Date(r.createdAt).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-gray-400 text-xs">{formatPacificDateTime(r.createdAt)}</td>
                             <td className="px-4 py-3">
                               {r.status === "pending" ? (
                                 <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 text-xs font-bold">⏳ Pending</span>
@@ -2033,7 +2034,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                     <div className="flex-1 min-w-[200px]">
                       <div className="font-bold text-white">{String(b.legalFirstName ?? "")} {String(b.legalLastName ?? "")}</div>
                       <div className="text-gray-400 text-sm">{String(b.phone ?? "")} · {String(b.email ?? "No email")}</div>
-                      <div className="text-gray-500 text-xs mt-1">Signed up: {b.createdAt ? new Date(b.createdAt as string).toLocaleString() : "—"}</div>
+                      <div className="text-gray-500 text-xs mt-1">Signed up: {b.createdAt ? formatPacificDateTime(b.createdAt as string) : "—"}</div>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => { setEditingBowler(b); setEditFields({ legalFirstName: String(b.legalFirstName ?? ""), legalLastName: String(b.legalLastName ?? ""), phone: String(b.phone ?? ""), email: String(b.email ?? ""), notes: String(b.notes ?? ""), registrationStatus: "signed_up", sanctionNumber: String(b.sanctionNumber ?? ""), gamesPlayed: String(b.gamesPlayed ?? ""), bestAverage: String(b.bestAverage ?? ""), tshirtSize: String(b.tshirtSize ?? ""), under21: b.under21 ? "true" : "false", leagueMember: b.leagueMember ? "true" : "false", banquetTable: String((b as Record<string,unknown>).banquetTable ?? ""), confirmationCode: String((b as Record<string,unknown>).confirmationCode ?? "") }); setShowAllFields(true); }}
@@ -2115,7 +2116,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   <tbody>
                     {(auditLog as Record<string, unknown>[]).map((log) => (
                       <tr key={String(log.id)} className="border-b border-white/5 hover:bg-white/5">
-                        <td className="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{new Date(log.timestamp as string).toLocaleString()}</td>
+                        <td className="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{formatPacificDateTime(log.timestamp as string)}</td>
                         <td className="px-4 py-2 text-cyan-400 text-xs">{String(log.actorRole ?? "")}</td>
                         <td className="px-4 py-2 font-mono text-xs text-yellow-400">{String(log.action ?? "")}</td>
                         <td className="px-4 py-2 text-gray-400 text-xs">{log.targetId ? `${log.targetType}#${log.targetId}` : "—"}</td>
@@ -2623,7 +2624,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colorClass}`}>{catLabel[cat] ?? cat}</span>
                             {!notif.isRead && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black">NEW</span>}
-                            <span className="text-white/30 text-xs">{new Date(notif.createdAt).toLocaleString()}</span>
+                            <span className="text-white/30 text-xs">{formatPacificDateTime(notif.createdAt)}</span>
                           </div>
                           <p className="text-white font-semibold text-sm mb-1">{notif.title}</p>
                           <p className="text-white/60 text-xs whitespace-pre-wrap leading-relaxed">{notif.content}</p>
@@ -2695,7 +2696,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-white/30 text-xs">{new Date(msg.createdAt).toLocaleString()}</div>
+                      <div className="text-white/30 text-xs">{formatPacificDateTime(msg.createdAt)}</div>
                     </div>
                   </div>
                   {/* Reply area */}

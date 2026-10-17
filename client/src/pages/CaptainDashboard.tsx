@@ -3,6 +3,7 @@
  * Shows: captain profile, team roster, verify buttons, completion ring, shareable link
  * Design: bold, organized — darker navy with gold team accents, table-centric layout
  */
+import { formatPacificDateTime } from "@/lib/timezone";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -628,7 +629,7 @@ export default function CaptainDashboard() {
                   <span>✅</span> Shirts received
                   {tshirtStatusQuery.data.receivedAt && (
                     <span className="text-purple-300/70 text-xs font-normal">
-                      {new Date(tshirtStatusQuery.data.receivedAt).toLocaleString()}
+                      {formatPacificDateTime(tshirtStatusQuery.data.receivedAt)}
                     </span>
                   )}
                 </span>

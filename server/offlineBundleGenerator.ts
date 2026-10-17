@@ -617,7 +617,7 @@ function showResult(lane, decision) {
   const logEl = document.getElementById('logPanel');
   const entry = document.createElement('div');
   entry.className = 'log-entry ' + cls;
-  const ts = new Date().toLocaleTimeString();
+  const ts = new Date().toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' });
   entry.textContent = '[' + ts + '] Lane ' + lane + ' · ' + decision.result.toUpperCase() + ' · ' + (decision.displayName || decision.detail || decision.token || '');
   logEl.insertBefore(entry, logEl.firstChild);
 

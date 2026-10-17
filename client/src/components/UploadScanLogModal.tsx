@@ -6,6 +6,7 @@
  * preview of what will be synced, then calls offlineDoor.sync to write all
  * offline admits to the database and Google Sheet.
  */
+import { formatPacificDateTime, formatPacificTime } from "@/lib/timezone";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -225,7 +226,7 @@ export function UploadScanLogModal({ open, onClose }: Props) {
                     {parsed.mode === "banquet" ? "🍽️ Banquet" : "🏊 Pool Party"}
                   </Badge>
                   {parsed.generatedAt && (
-                    <span className="text-xs text-gray-500">Generated {new Date(parsed.generatedAt).toLocaleString()}</span>
+                    <span className="text-xs text-gray-500">Generated {formatPacificDateTime(parsed.generatedAt)}</span>
                   )}
                 </div>
 
@@ -258,7 +259,7 @@ export function UploadScanLogModal({ open, onClose }: Props) {
                             : "bg-red-900 text-red-300"
                         }`}>{s.result.toUpperCase()}</span>
                         <span className="text-gray-400 font-mono truncate max-w-[180px]">{s.token}</span>
-                        <span className="text-gray-600 ml-auto">{new Date(s.scannedAtMs).toLocaleTimeString()}</span>
+                        <span className="text-gray-600 ml-auto">{formatPacificTime(s.scannedAtMs)}</span>
                       </div>
                     ))}
                     {parsed.scans.length > 5 && (
