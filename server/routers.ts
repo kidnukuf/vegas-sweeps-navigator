@@ -640,13 +640,38 @@ export const appRouter = router({
         await assertBowlerAccess(ctx, input.id);
         const HOTEL_FIELDS = ["checkinDate","checkoutDate","roomType","roomNumber","roommateRequested","roommateFirstName","roommateLastName","roomAmount","confirmationCode"];
         const PAYMENT_FIELDS = ["banquetAmount","poolParty","totalAmountDue","paid"];
+        const INTEGER_BOWLER_FIELDS = new Set(["gamesPlayed", "bestAverage", "laneNumber", "laneNumber2"]);
+        const BOOLEAN_BOWLER_FIELDS = new Set(["under21", "leagueMember", "isCapitain"]);
+        const PLACEHOLDER_VALUES = new Set(["", "?", "—", "-", "n/a", "na", "none", "null"]);
+        const normalizeNumericValue = (value: unknown): number | null => {
+          if (value === null || value === undefined) return null;
+          const text = String(value).trim();
+          if (PLACEHOLDER_VALUES.has(text.toLowerCase())) return null;
+          const parsed = Number(text.replace(/[$,]/g, ""));
+          return Number.isFinite(parsed) ? parsed : null;
+        };
+        const normalizeBooleanValue = (value: unknown): number => {
+          if (typeof value === "boolean") return value ? 1 : 0;
+          const text = String(value ?? "").trim().toLowerCase();
+          return ["1", "true", "yes", "y", "x"].includes(text) ? 1 : 0;
+        };
         const bowlerFields: Record<string, unknown> = {};
         const hotelFields: Record<string, unknown> = {};
         const paymentFields: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(input.fields)) {
-          if (HOTEL_FIELDS.includes(k)) hotelFields[k] = v;
-          else if (PAYMENT_FIELDS.includes(k)) paymentFields[k] = v;
-          else bowlerFields[k] = v;
+          if (HOTEL_FIELDS.includes(k)) {
+            hotelFields[k] = k === "roomAmount" ? normalizeNumericValue(v) : v;
+          } else if (PAYMENT_FIELDS.includes(k)) {
+            paymentFields[k] = ["banquetAmount", "totalAmountDue"].includes(k)
+              ? normalizeNumericValue(v)
+              : ["poolParty", "paid"].includes(k) ? normalizeBooleanValue(v) : v;
+          } else if (INTEGER_BOWLER_FIELDS.has(k)) {
+            bowlerFields[k] = normalizeNumericValue(v);
+          } else if (BOOLEAN_BOWLER_FIELDS.has(k)) {
+            bowlerFields[k] = normalizeBooleanValue(v);
+          } else {
+            bowlerFields[k] = v;
+          }
         }
         if (Object.keys(bowlerFields).length > 0) await updateBowler(input.id, bowlerFields);
         if (Object.keys(hotelFields).length > 0) await upsertHotelRecord(input.id, hotelFields);
