@@ -123,6 +123,8 @@ export default function CaptainLogin() {
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) { toast.error("Event not loaded yet."); return; }
+    if (!siFirst.trim() || !siLast.trim()) { toast.error("Please enter your first and last name."); return; }
+    if (!siPass) { toast.error("Please enter your password."); return; }
     if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!siToken) { toast.error("Please complete the security check."); return; }
     signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), eventId: Number(eventId), password: siPass, turnstileToken: siToken, turnstileAction: "captain_login" });
@@ -183,7 +185,7 @@ export default function CaptainLogin() {
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4 pt-4">
                 <p className="text-sm text-white/80 text-center mb-4">
-                  Sign in with the name on your event registration.
+                  Enter the first and last name on your event registration. For a new account, use Create Account and select your bowling center from the dropdown list.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -252,6 +254,7 @@ export default function CaptainLogin() {
               <form onSubmit={handleSignUp} className="space-y-4 pt-4">
                 <div className="captain-notice">
                   <span className="text-yellow-400 font-bold">Captains only.</span> Your name must be on the event roster as a Team Captain.
+                  <span className="block mt-1 text-white/75">Enter your first and last name exactly as listed. Select your bowling center from the dropdown list; do not type it manually.</span>
                   {claimCodeRequired && <span className="block mt-1 text-white/75">Enter the claim code and the email or phone number listed on your roster.</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -278,7 +281,7 @@ export default function CaptainLogin() {
                 </div>
                 {/* ── Bowling Center picker ── */}
                 <div>
-                  <Label className="captain-label">Bowling Center</Label>
+                  <Label className="captain-label">Bowling Center (choose from dropdown)</Label>
                   <button
                     type="button"
                     onClick={() => { setCenterSearch(""); setShowCenterPicker(true); }}
@@ -287,10 +290,11 @@ export default function CaptainLogin() {
                     {suCenterName ? (
                       <span className="text-white truncate">{suCenterName}</span>
                     ) : (
-                      <span className="text-white/40">Select your bowling center…</span>
+                      <span className="text-white/40">Choose your bowling center from the list…</span>
                     )}
                     <span className="text-white/50 text-xs shrink-0">▼</span>
                     </button>
+                    <p className="text-white/50 text-xs mt-1">Required: choose the center from the dropdown list so it matches the event roster.</p>
                 </div>
                 <div>
                   <Label className="captain-label">Claim Code {claimCodeRequired ? "(required)" : "(if provided)"}</Label>

@@ -164,7 +164,8 @@ export default function BowlerLogin() {
   function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) return toast.error("Open your event’s registration link to sign in.");
-    if (!siFirst || !siLast || !siPass) return toast.error("Please fill in all fields.");
+    if (!siFirst.trim() || !siLast.trim()) return toast.error("Please enter your first and last name.");
+    if (!siPass) return toast.error("Please enter your password.");
     if (!TURNSTILE_CONFIGURED) return toast.error("The security check is temporarily unavailable. Please contact your Event Director.");
     if (!siToken) return toast.error("Please complete the security check.");
     signIn.mutate({ firstName: siFirst.trim(), lastName: siLast.trim(), password: siPass, eventId, turnstileToken: siToken, turnstileAction: "bowler_login" });
@@ -173,7 +174,7 @@ export default function BowlerLogin() {
   function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!eventId) return toast.error("Open your event’s registration link to create an account.");
-    if (!suFirst || !suLast) return toast.error("Please enter your first and last name.");
+    if (!suFirst.trim() || !suLast.trim()) return toast.error("Please enter your first and last name.");
     if (!suCenterId) return toast.error("Please select your bowling center.");
     if (!TURNSTILE_CONFIGURED) return toast.error("The security check is temporarily unavailable. Please contact your Event Director.");
     if (!suToken) return toast.error("Please complete the security check.");
@@ -249,6 +250,9 @@ export default function BowlerLogin() {
             {/* ── SIGN IN ── */}
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
+                <p className="text-white/65 text-xs text-center -mt-1">
+                  Enter the first and last name used on your event registration. For a new account, use the Create Account tab and select your bowling center from the dropdown list.
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="bowler-label">First Name</Label>
@@ -258,6 +262,7 @@ export default function BowlerLogin() {
                       value={siFirst}
                       onChange={(e) => setSiFirst(e.target.value)}
                       autoComplete="given-name"
+                      required
                     />
                   </div>
                   <div>
@@ -268,6 +273,7 @@ export default function BowlerLogin() {
                       value={siLast}
                       onChange={(e) => setSiLast(e.target.value)}
                       autoComplete="family-name"
+                      required
                     />
                   </div>
                 </div>
@@ -280,6 +286,7 @@ export default function BowlerLogin() {
                     value={siPass}
                     onChange={(e) => setSiPass(e.target.value)}
                     autoComplete="current-password"
+                    required
                   />
                 </div>
 
@@ -322,7 +329,7 @@ export default function BowlerLogin() {
                 <div className="bowler-info-box mb-4">
                 <span className="text-amber-300 font-semibold text-sm">📋 Name Verification</span>
                 <p className="text-white/70 text-xs mt-1">
-                  Your first name, last name, and bowling center must match the roster exactly. When claim codes are active, enter the code and either the email address or phone number already listed on the event roster before creating your password.
+                  Enter your first and last name exactly as they appear on the roster. Select your bowling center from the dropdown list; do not type a center name manually. When claim codes are active, enter the code and either the email address or phone number already listed on the event roster before creating your password.
                 </p>
               </div>
               <form onSubmit={handleSignUp} className="space-y-4">
@@ -335,6 +342,7 @@ export default function BowlerLogin() {
                       value={suFirst}
                       onChange={(e) => setSuFirst(e.target.value)}
                       autoComplete="given-name"
+                      required
                     />
                   </div>
                   <div>
@@ -345,12 +353,13 @@ export default function BowlerLogin() {
                       value={suLast}
                       onChange={(e) => setSuLast(e.target.value)}
                       autoComplete="family-name"
+                      required
                     />
                   </div>
                 </div>
                 {/* ── Bowling Center picker ── */}
                 <div>
-                  <Label className="bowler-label">Bowling Center</Label>
+                  <Label className="bowler-label">Bowling Center (choose from dropdown)</Label>
                   <button
                     type="button"
                     onClick={() => { setCenterSearch(""); setShowCenterPicker(true); }}
@@ -359,10 +368,11 @@ export default function BowlerLogin() {
                     {suCenterName ? (
                       <span className="text-white truncate">{suCenterName}</span>
                     ) : (
-                      <span className="text-white/40">Select your bowling center…</span>
+                      <span className="text-white/40">Choose your bowling center from the list…</span>
                     )}
                     <span className="text-white/50 text-xs shrink-0">▼</span>
                   </button>
+                  <p className="text-white/50 text-xs mt-1">Required: choose the center from the dropdown list so it matches the event roster.</p>
                 </div>
                 <div>
                   <Label className="bowler-label">
