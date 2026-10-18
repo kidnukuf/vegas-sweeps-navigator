@@ -110,7 +110,7 @@ export default function CaptainConfirmation() {
                 You will handle all interactions with the <strong className="text-amber-300">Event Director</strong> on behalf of your team.
               </p>
               <div className="bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 text-amber-200">
-                <span className="font-bold">⏰ Arrive Early!</span> Bring your team <strong>30 minutes early</strong> — lines form quickly!
+                <span className="font-bold">🍽️ Banquet at {profile?.banquetTime ?? "the scheduled banquet time"}</span> — check-in begins 30 minutes early.
               </div>
             </div>
             <Button
@@ -194,7 +194,7 @@ function ContactStep({ token, phone, setPhone, email, setEmail, onSubmit, isLoad
             </div>
 
             <div className="bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 text-amber-200 text-sm">
-              <span className="font-bold">⏰ Arrive Early!</span> Bring your team <strong>30 minutes early</strong> — lines form quickly at check-in!
+              <span className="font-bold">🍽️ Banquet at {me?.banquetTime ?? "the scheduled banquet time"}</span> — check-in begins 30 minutes early.
             </div>
 
             <Button
@@ -306,9 +306,9 @@ function PassportStep({ profile, onViewTeam, onDone }: { profile: any; onViewTea
           </div>
         </div>
 
-        {/* Early Arrival */}
+        {/* Banquet timing reminder */}
         <div className="bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 text-amber-200 text-sm mb-5">
-          <span className="font-bold">⏰ Arrive Early!</span> Bring your team <strong>30 minutes early</strong> — lines form quickly at check-in!
+          <span className="font-bold">🍽️ Banquet at {profile.banquetTime ?? "the scheduled banquet time"}</span> — check-in begins 30 minutes early.
         </div>
 
         {/* Passport Boxes */}

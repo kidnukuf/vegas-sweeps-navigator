@@ -86,6 +86,7 @@ interface PassportBoxProps {
   icon: string;
   subtitle: string;
   checkInTime?: string;
+  timingLabel?: string;
   entranceFlow: string;
   qrDataUrl: string | null | undefined;
   tokenUsed: boolean;
@@ -93,7 +94,7 @@ interface PassportBoxProps {
   under21?: boolean;
 }
 
-function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataUrl, tokenUsed, eligible, under21 = false }: PassportBoxProps) {
+function PassportBox({ title, icon, subtitle, checkInTime, timingLabel, entranceFlow, qrDataUrl, tokenUsed, eligible, under21 = false }: PassportBoxProps) {
   const [revealed, setRevealed] = useState(false);
   const [animating, setAnimating] = useState(false);
 
@@ -119,7 +120,7 @@ function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataU
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(255,180,0,0.12)", border: "1px solid rgba(255,180,0,0.3)" }}>
           <span className="text-xl">⏰</span>
           <div>
-            <p className="text-amber-200 text-sm font-semibold">Check-in Begins</p>
+            <p className="text-amber-200 text-sm font-semibold">{timingLabel ?? "Event Timing"}</p>
             <p className="text-amber-300 font-bold text-base">{checkInTime}</p>
           </div>
         </div>
@@ -754,7 +755,8 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           title="Banquet Dinner Passport"
           icon="🍽️"
           subtitle={(p as any).eventName ? `${(p as any).eventName} — Banquet Dinner` : "Banquet Dinner"}
-          checkInTime={(p as any).banquetTime ? `${(p as any).banquetTime} — Check-in begins 30 min early` : "Check-in begins 30 minutes before dinner"}
+          timingLabel="Banquet Time"
+          checkInTime={(p as any).banquetTime ? `Banquet at ${(p as any).banquetTime} — Check-in begins 30 minutes early` : "Banquet time to be announced — Check-in begins 30 minutes early"}
           entranceFlow={[
             (p as any).banquetLocation ? `📍 Location: ${(p as any).banquetLocation}` : null,
             (p as any).banquetTable ? `🪑 ${(p as any).banquetTable}` : null,
@@ -772,6 +774,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
             title="Pool Party Passport"
             icon="🏊"
             subtitle={(p as any).eventName ? `${(p as any).eventName} — Pool Party` : "Pool Party"}
+            timingLabel="Pool Party Check-in"
             checkInTime={(p as any).poolPartyTime ? `Pool Party — Check-in begins ${(p as any).poolPartyTime}` : undefined}
             entranceFlow="Show this QR code to the pool party doorman. Your code will be scanned and marked as used — one scan per person. A wristband will be issued for re-entry. If you believe you should be eligible but don't see a QR code, please contact your team captain or the Event Director."
             qrDataUrl={p.poolPartyQR}
