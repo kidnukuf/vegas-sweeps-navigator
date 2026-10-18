@@ -204,7 +204,7 @@ export default function BowlerLogin() {
   );
 
   return (
-    <div className="bowler-portal-bg min-h-screen flex flex-col">
+    <div className="bowler-portal-bg min-h-[100dvh] overflow-y-auto overscroll-contain flex flex-col">
       {/* ── Header ── */}
       <header className="bowler-portal-header px-6 py-4 flex items-center justify-between">
         <button
@@ -221,7 +221,7 @@ export default function BowlerLogin() {
       </header>
 
       {/* ── Hero ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <div className="flex-1 flex flex-col items-center justify-start sm:justify-center px-4 py-8 pb-24 touch-pan-y">
         {/* Decorative bowling graphic */}
         <div className="bowler-hero-icon mb-6">
           <div className="bowling-ball-large">
