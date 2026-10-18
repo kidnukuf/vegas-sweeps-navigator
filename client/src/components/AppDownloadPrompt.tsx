@@ -62,14 +62,14 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleSkip(); }}>
       <DialogContent
-        className="max-w-sm mx-auto rounded-2xl border-2 border-yellow-500/60 bg-gray-900 text-white shadow-2xl"
+        className="w-[calc(100vw-1rem)] max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain mx-auto rounded-2xl border-2 border-yellow-500/60 bg-gray-900 p-4 text-white shadow-2xl sm:p-6"
         // Prevent closing by clicking outside — we want them to see this
         onInteractOutside={(e) => e.preventDefault()}
       >
         {/* Close (skip) button */}
         <button
           onClick={handleSkip}
-          className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
+          className="absolute right-3 top-3 z-10 rounded-full bg-gray-900/90 p-1 text-gray-300 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
           aria-label="Skip for now"
         >
           <X className="w-5 h-5" />
@@ -77,11 +77,11 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
 
         <DialogHeader className="text-center space-y-2 pt-2">
           <div className="flex justify-center">
-            <div className="bg-yellow-500/20 rounded-full p-4 ring-2 ring-yellow-500/40">
-              <Smartphone className="w-10 h-10 text-yellow-400" />
+            <div className="rounded-full bg-yellow-500/20 p-3 ring-2 ring-yellow-500/40">
+              <Smartphone className="h-8 w-8 text-yellow-400" />
             </div>
           </div>
-          <DialogTitle className="text-xl font-bold text-yellow-400">
+          <DialogTitle className="pr-8 text-lg font-bold text-yellow-400 sm:text-xl">
             Download the B.O.B. App
           </DialogTitle>
           <DialogDescription className="text-gray-300 text-sm leading-relaxed">
@@ -93,7 +93,7 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
 
         {/* Native app stores are not available yet. Keep these visibly disabled
             so participants do not follow stale or unavailable download links. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
           <div className="flex items-center justify-center gap-3 bg-black/60 border border-gray-700 rounded-xl px-4 py-3 opacity-90">
             {/* Apple logo SVG */}
             <svg className="w-7 h-7 text-white/80" viewBox="0 0 24 24" fill="currentColor">
@@ -121,9 +121,9 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
         </div>
 
         {/* Current web-app installation instructions */}
-        <div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-950/30 p-4 text-sm text-gray-200">
-          <p className="font-bold text-cyan-300 mb-2">Add the web app to your home screen now</p>
-          <div className="space-y-2">
+        <div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-950/30 p-3 text-sm text-gray-200 sm:p-4">
+          <p className="mb-2 font-bold text-cyan-300">Add the web app to your home screen</p>
+          <div className="space-y-2 leading-relaxed">
             <p><span className="font-semibold text-white">iPhone:</span> Open this page in Safari, tap the Share button <span aria-label="share">⬆</span>, choose <span className="font-semibold text-cyan-200">Add to Home Screen</span>, then tap <span className="font-semibold text-cyan-200">Add</span>.</p>
             <p><span className="font-semibold text-white">Android:</span> Open this page in Chrome, tap the three-dot menu <span className="font-semibold text-cyan-200">⋮</span>, choose <span className="font-semibold text-cyan-200">Add to Home screen</span> or <span className="font-semibold text-cyan-200">Install app</span>, then follow the prompts.</p>
           </div>
