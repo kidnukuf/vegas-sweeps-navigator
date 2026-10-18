@@ -8,9 +8,8 @@
  *  5. Hotel card (if present)
  *  6. Contact Info card
  *  7. ── QR PASSPORT SECTION ──
- *     a. My Entry Ticket (bowling check-in)
- *     b. Banquet Dinner Passport QR
- *     c. Pool Party Passport QR
+ *     a. Banquet Dinner Passport QR
+ *     b. Pool Party Passport QR
  */
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -79,50 +78,6 @@ function downloadQR(dataUrl: string, filename: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-// ─── QR Ticket (bowling entry) ────────────────────────────────────────────────
-function QRTicket({ bowlerId, scantronId }: { bowlerId: number; scantronId?: string | null }) {
-  const tokenQuery = trpc.tokens.getForBowler.useQuery({ bowlerId });
-  const generateToken = trpc.tokens.generate.useMutation({
-    onSuccess: () => tokenQuery.refetch(),
-    onError: (e) => toast.error(e.message),
-  });
-
-  if (tokenQuery.isLoading) return <Skeleton className="h-48 w-48 mx-auto rounded-xl" />;
-
-  if (!tokenQuery.data?.qrDataUrl) {
-    return (
-      <div className="text-center">
-        <p className="text-white/50 text-sm mb-3">No QR ticket yet</p>
-        <Button
-          className="bowler-btn-secondary"
-          onClick={() => generateToken.mutate({ bowlerId, eventId: 1 })}
-          disabled={generateToken.isPending}
-        >
-          {generateToken.isPending ? "Generating…" : "Generate My QR Ticket"}
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="qr-ticket-frame p-3 rounded-2xl bg-white shadow-2xl">
-        <img src={tokenQuery.data.qrDataUrl} alt="QR Ticket" className="w-44 h-44 rounded-lg" />
-      </div>
-      <p className="text-white/50 text-xs text-center">
-        Show this at the door{scantronId ? <> · Scantron: <span className="font-mono text-amber-300">{scantronId}</span></> : null}
-      </p>
-      <Button
-        size="sm"
-        className="bowler-btn-secondary w-full mt-1"
-        onClick={() => downloadQR(tokenQuery.data!.qrDataUrl!, "BOB-Entry-Ticket.png")}
-      >
-        ⬇ Download Ticket
-      </Button>
-    </div>
-  );
 }
 
 // ─── Passport QR box (banquet / pool party) ───────────────────────────────────
@@ -794,26 +749,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           </div>
         )}
 
-        {/* ── 7. My Entry Ticket (bowling check-in QR) ── */}
-        <div className="bowler-card text-center">
-          <h3 className="text-white font-semibold mb-4 flex items-center justify-center gap-2">
-            <span>🎫</span> My Entry Ticket
-          </h3>
-          <p className="text-white/50 text-xs mb-4">
-            Present this QR code at the bowling center entrance on your squad day.
-          </p>
-          <QRTicket bowlerId={p.id} scantronId={p.scantronId} />
-          <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10 text-left">
-            <p className="text-white/50 text-xs font-semibold mb-1">🚪 How Entry Works</p>
-            <p className="text-white/70 text-xs leading-relaxed">
-              A doorman will scan your QR code at the entrance. Once scanned, your ticket is marked as used.
-              You will receive a wristband for re-entry. Please arrive at least 30 minutes before your squad time — lines can be long.
-              Practice starts <span className="text-amber-300 font-semibold">10 minutes before</span> your squad time. Side pots &amp; brackets are available at the <span className="text-amber-300 font-semibold">front desk</span>.
-            </p>
-          </div>
-        </div>
-
-        {/* ── 8. Banquet Dinner Passport ── */}
+        {/* ── 7. Banquet Dinner Passport ── */}
         <PassportBox
           title="Banquet Dinner Passport"
           icon="🍽️"
@@ -830,7 +766,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           under21={Boolean((p as any).under21)}
         />
 
-        {/* ── 9. Pool Party Passport ── */}
+        {/* ── 8. Pool Party Passport ── */}
         {poolPartyEnabled && (
           <PassportBox
             title="Pool Party Passport"
@@ -844,7 +780,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           />
         )}
 
-        {/* ── 10. Guest Pool Party Passes (A, B, C...) ── */}
+        {/* ── 9. Guest Pool Party Passes (A, B, C...) ── */}
         {poolPartyEnabled && Array.isArray((p as any).guestPoolQRs) && (p as any).guestPoolQRs.length > 0 && (
           <>
             <div className="flex items-center gap-3 mt-2">
@@ -867,7 +803,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
           </>
         )}
 
-        {/* ── 11. Guest Banquet Passes (A, B, C...) ── */}
+        {/* ── 10. Guest Banquet Passes (A, B, C...) ── */}
         {Array.isArray((p as any).guestBanquetQRs) && (p as any).guestBanquetQRs.length > 0 && (
           <>
             <div className="flex items-center gap-3 mt-2">
