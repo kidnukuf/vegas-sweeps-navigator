@@ -2461,8 +2461,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Reset Staff Password Modal ── */}
       {resetStaffModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4" onClick={() => setResetStaffModal(null)}>
-          <div className="bg-[#1a1a1a] border border-yellow-500/50 rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/80 p-4 pt-8 pb-8 sm:items-center" onClick={() => setResetStaffModal(null)}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-yellow-500/50 bg-[#1a1a1a] p-4 pb-6 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-black text-yellow-400 mb-4">🔑 Reset Password — {resetStaffModal.name}</h3>
             <input
               type="password"
@@ -2472,7 +2472,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               onChange={(e) => setResetStaffPw(e.target.value)}
               autoFocus
             />
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => {
                   if (resetStaffPw.length < 8) return toast.error("Password must be at least 8 characters");
