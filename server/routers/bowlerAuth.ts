@@ -619,7 +619,6 @@ export const bowlerAuthRouter = router({
         squadTime: string | null; laneNumber: number | null; laneToEvent: string | null;
         teamName: string | null; centerName: string | null;
         eventName: string | null; startDate: string | null; endDate: string | null; bowlingDate: string | null;
-        banquetTime: string | null;
         poolPartyToken: string | null; poolPartyUsed: number;
         banquetToken: string | null; banquetUsed: number;
         isCapitain: number; eventId: number | null;
@@ -629,7 +628,7 @@ export const bowlerAuthRouter = router({
                 b.poolPartyToken, b.poolPartyUsed, b.banquetToken, b.banquetUsed,
                 b.isCapitain, b.eventId,
                 t.teamName, bc.centerName,
-                e.eventName, e.startDate, e.endDate, e.bowlingDate, e.banquetTime
+                e.eventName, e.startDate, e.endDate, e.bowlingDate
          FROM bowlers b
          LEFT JOIN teams t ON t.id = b.teamId
          LEFT JOIN bowling_centers bc ON bc.id = b.centerId

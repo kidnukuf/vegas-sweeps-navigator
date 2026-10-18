@@ -263,8 +263,8 @@ export function LaneToBanquetPlacard({
                   <div className="flex items-center gap-2">
                     <span className="text-base">🕐</span>
                     <div>
-                      <p className="text-white/60 text-xs">Banquet Time</p>
-                      <p className="text-white font-semibold text-sm">Banquet at {banquetTime} — Check-in begins 30 minutes early</p>
+                      <p className="text-white/60 text-xs">Dinner Time</p>
+                      <p className="text-white font-semibold text-sm">{banquetTime}</p>
                     </div>
                   </div>
                 )}

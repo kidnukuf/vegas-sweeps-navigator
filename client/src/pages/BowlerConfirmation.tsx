@@ -147,9 +147,9 @@ function ContactStep({ token, phone, setPhone, email, setEmail, onSubmit, isLoad
               />
             </div>
 
-            {/* Banquet timing reminder */}
+            {/* Early arrival prompt */}
             <div className="bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 text-amber-200 text-sm">
-              <span className="font-bold">🍽️ Banquet at {me?.banquetTime ?? "the scheduled banquet time"}</span> — check-in begins 30 minutes early.
+              <span className="font-bold">⏰ Arrive Early!</span> We recommend arriving <strong>30 minutes early</strong> — lines form quickly at check-in!
             </div>
 
             <Button
@@ -368,21 +368,13 @@ function PassportStep({ profile, onDone }: { profile: any; onDone: () => void })
                 <span className="text-white font-medium">{profile.centerName}</span>
               </div>
             )}
-            {profile.banquetTime && (
-              <div className="flex justify-between gap-4">
-                <span className="text-purple-300">Banquet Time</span>
-                <span className="text-white font-medium text-right">Banquet at {profile.banquetTime} — Check-in begins 30 minutes early</span>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Banquet timing reminder */}
-        {profile.banquetTime && (
-          <div className="bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 text-amber-200 text-sm mb-5">
-            <span className="font-bold">🍽️ Banquet at {profile.banquetTime}</span> — check-in begins 30 minutes early.
-          </div>
-        )}
+        {/* Early Arrival Prompt */}
+        <div className="bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 text-amber-200 text-sm mb-5">
+          <span className="font-bold">⏰ Arrive Early!</span> We recommend arriving <strong>30 minutes early</strong> — lines form quickly at check-in!
+        </div>
 
         {/* Passport Boxes */}
         <div className="space-y-4">

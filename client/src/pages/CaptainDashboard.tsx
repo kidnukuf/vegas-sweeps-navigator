@@ -37,14 +37,13 @@ interface PassportBoxProps {
   icon: string;
   subtitle: string;
   checkInTime?: string;
-  timingLabel?: string;
   entranceFlow: string;
   qrDataUrl: string | null | undefined;
   tokenUsed: boolean;
   eligible: boolean;
 }
 
-function PassportBox({ title, icon, subtitle, checkInTime, timingLabel, entranceFlow, qrDataUrl, tokenUsed, eligible }: PassportBoxProps) {
+function PassportBox({ title, icon, subtitle, checkInTime, entranceFlow, qrDataUrl, tokenUsed, eligible }: PassportBoxProps) {
   const [revealed, setRevealed] = useState(false);
   const [animating, setAnimating] = useState(false);
 
@@ -67,7 +66,7 @@ function PassportBox({ title, icon, subtitle, checkInTime, timingLabel, entrance
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(255,180,0,0.12)", border: "1px solid rgba(255,180,0,0.3)" }}>
           <span className="text-xl">⏰</span>
           <div>
-            <p className="text-amber-200 text-sm font-semibold">{timingLabel ?? "Event Timing"}</p>
+            <p className="text-amber-200 text-sm font-semibold">Check-in Begins</p>
             <p className="text-amber-300 font-bold text-base">{checkInTime}</p>
           </div>
         </div>
@@ -536,8 +535,7 @@ export default function CaptainDashboard() {
           title="Banquet Dinner Passport"
           icon="🍽️"
           subtitle={(p as any).eventName ? `${(p as any).eventName} — Banquet Dinner` : "Banquet Dinner"}
-          timingLabel="Banquet Time"
-          checkInTime={(p as any).banquetTime ? `Banquet at ${(p as any).banquetTime} — Check-in begins 30 minutes early` : "Banquet time to be announced — Check-in begins 30 minutes early"}
+          checkInTime={(p as any).banquetTime ? `${(p as any).banquetTime} — Check-in begins 30 min early` : "Check-in begins 30 minutes before dinner"}
           entranceFlow={[
             (p as any).banquetLocation ? `📍 Location: ${(p as any).banquetLocation}` : null,
             (p as any).banquetTable ? `🪑 ${(p as any).banquetTable}` : null,
@@ -552,7 +550,6 @@ export default function CaptainDashboard() {
           title="Pool Party Passport"
           icon="🏊"
           subtitle="Funtime Team Challenge 2026 — Pool Party"
-          timingLabel="Pool Party Check-in"
           checkInTime="Pool Party — Check-in begins at 7:00 PM"
           entranceFlow="Show this QR code to the pool party doorman. Your code will be scanned and marked as used — one scan per person. A wristband will be issued for re-entry."
           qrDataUrl={p.poolPartyQR}
