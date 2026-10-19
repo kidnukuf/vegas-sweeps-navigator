@@ -286,6 +286,7 @@ export default function BowlerLogin() {
                     value={siPass}
                     onChange={(e) => setSiPass(e.target.value)}
                     autoComplete="current-password"
+                    minLength={6}
                     required
                   />
                 </div>
@@ -310,11 +311,14 @@ export default function BowlerLogin() {
 
                 <Button
                   type="submit"
-                  disabled={signIn.isPending || !siToken}
+                  disabled={signIn.isPending}
                   className="bowler-btn-primary w-full"
                 >
                   {signIn.isPending ? "Signing in…" : "Sign In →"}
                 </Button>
+                <p className="text-center text-white/45 text-[11px] leading-relaxed">
+                  If the button is dimmed, finish the security check above. You can scroll this page to reach the button after entering your password.
+                </p>
               </form>
               <p className="text-center text-white/40 text-xs mt-4">
                 Don't have an account?{" "}
@@ -406,11 +410,11 @@ export default function BowlerLogin() {
                 </div>
                 <div>
                   <Label className="bowler-label">Create Password</Label>
-                  <Input className="bowler-input" type="password" placeholder="At least 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} autoComplete="new-password" />
+                  <Input className="bowler-input" type="password" placeholder="At least 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} autoComplete="new-password" minLength={6} required />
                 </div>
                 <div>
                   <Label className="bowler-label">Confirm Password</Label>
-                  <Input className="bowler-input" type="password" placeholder="Repeat password" value={suPass2} onChange={(e) => setSuPass2(e.target.value)} autoComplete="new-password" />
+                  <Input className="bowler-input" type="password" placeholder="Repeat password" value={suPass2} onChange={(e) => setSuPass2(e.target.value)} autoComplete="new-password" minLength={6} required />
                 </div>
 
                 {/* Turnstile widget */}
@@ -433,11 +437,14 @@ export default function BowlerLogin() {
 
                 <Button
                   type="submit"
-                  disabled={signUp.isPending || !suToken || claimPolicy.isLoading}
+                  disabled={signUp.isPending || claimPolicy.isLoading}
                   className="bowler-btn-primary w-full"
                 >
                   {signUp.isPending ? "Verifying claim…" : "Create My Account →"}
                 </Button>
+                <p className="text-center text-white/45 text-[11px] leading-relaxed">
+                  Finish the security check, then scroll down and tap Create My Account.
+                </p>
               </form>
               {claimCodeRequired && (
                 <div className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-relaxed text-amber-100">

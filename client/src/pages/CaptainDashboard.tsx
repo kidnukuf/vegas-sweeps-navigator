@@ -274,7 +274,12 @@ export default function CaptainDashboard() {
     ? captainEventSettings
     : { ...captainEventSettings, poolPartyEnabled: false, poolPartyTime: null };
 
-  const verifiedCount = roster.filter((b) => b.captainVerified || b.registrationStatus === "verified" || b.registrationStatus === "checked_in").length;
+  const verifiedCount = roster.filter((b) =>
+    b.captainVerified ||
+    b.registrationStatus === "verified" ||
+    b.registrationStatus === "checked_in" ||
+    (b.id === p.id && Boolean(b.isCapitain))
+  ).length;
   const signedUpCount = roster.filter((b) => b.registrationStatus !== "pre_registered").length;
   const displayName = p.preferredName || `${p.legalFirstName} ${p.legalLastName}`;
 
@@ -395,8 +400,9 @@ export default function CaptainDashboard() {
           ) : (
             <div className="space-y-2">
               {roster.map((bowler) => {
-                const isVerified = bowler.captainVerified || bowler.registrationStatus === "verified" || bowler.registrationStatus === "checked_in";
                 const isMe = bowler.id === p.id;
+                const isCaptainSelf = isMe && Boolean(bowler.isCapitain);
+                const isVerified = bowler.captainVerified || bowler.registrationStatus === "verified" || bowler.registrationStatus === "checked_in" || isCaptainSelf;
                 return (
                   <div
                     key={bowler.id}
@@ -411,7 +417,7 @@ export default function CaptainDashboard() {
                           {bowler.preferredName || `${bowler.legalFirstName} ${bowler.legalLastName}`}
                           {isMe && <span className="text-amber-400 text-xs ml-1">(you)</span>}
                         </p>
-                        <StatusBadge status={bowler.registrationStatus} verified={Boolean(bowler.captainVerified)} />
+                        <StatusBadge status={bowler.registrationStatus} verified={Boolean(bowler.captainVerified) || isCaptainSelf} />
                       </div>
                     </div>
                     {!isVerified && !isMe && (

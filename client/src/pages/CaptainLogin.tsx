@@ -241,7 +241,7 @@ export default function CaptainLogin() {
 
                 <Button
                   type="submit"
-                  disabled={signIn.isPending || !eventId || !siToken}
+                  disabled={signIn.isPending || !eventId}
                   className="captain-submit-btn w-full"
                 >
                   {signIn.isPending ? "Signing in…" : "⭐ Enter Command Center"}
@@ -371,7 +371,7 @@ export default function CaptainLogin() {
 
                 <Button
                   type="submit"
-                  disabled={signUp.isPending || !eventId || !suToken}
+                  disabled={signUp.isPending || !eventId || claimPolicy.isLoading}
                   className="captain-submit-btn w-full"
                 >
                   {signUp.isPending ? "Verifying…" : "⭐ Activate Captain Account"}

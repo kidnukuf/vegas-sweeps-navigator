@@ -411,6 +411,11 @@ export const bowlerAuthRouter = router({
       if (bowler.registrationStatus === "pre_registered") {
         updates.push("registrationStatus = 'signed_up'");
       }
+      // The captain has authenticated their own roster identity through the
+      // claim/sign-up flow. Count them as the first verified team member.
+      if (bowler.isCapitain) {
+        updates.push("captainVerified = 1");
+      }
       params.push(bowler.id);
 
       await rawQuery(`UPDATE bowlers SET ${updates.join(", ")} WHERE id = ?`, params);
@@ -503,6 +508,13 @@ export const bowlerAuthRouter = router({
       const valid = await bcrypt.compare(input.password, bowler.passwordHash);
       if (!valid) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Incorrect password." });
+      }
+
+      // A captain who successfully authenticates has verified their own
+      // roster identity. Persist that state so the captain is counted as the
+      // first verified member on the team dashboard.
+      if (bowler.isCapitain) {
+        await rawQuery("UPDATE bowlers SET captainVerified = 1 WHERE id = ?", [bowler.id]);
       }
 
       const token = signToken({ bowlerId: bowler.id, role: "Bowler" });
