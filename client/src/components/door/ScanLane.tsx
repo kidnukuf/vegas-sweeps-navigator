@@ -153,7 +153,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
       )}
     >
       {/* Lane label */}
-      <div className="absolute left-4 top-3 rounded-full bg-black/40 px-4 py-1 text-lg font-bold tracking-wide text-white">
+      <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-black/40 px-3 py-1 text-base font-bold tracking-wide text-white sm:left-4 sm:px-4 sm:text-lg">
         {label}
         {zone && <span className="ml-2 rounded bg-white/20 px-2 py-0.5 text-sm">Zone {zone}</span>}
       </div>
@@ -174,7 +174,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
       )}
 
       {/* Center status */}
-      <div className="flex flex-col items-center px-6 text-center">
+      <div className="flex max-w-full flex-col items-center px-4 text-center sm:px-6">
         {flash === "idle" && (
           <>
             <div className="text-3xl font-semibold text-slate-300">Ready to Scan</div>
@@ -183,10 +183,10 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
         )}
         {flash !== "idle" && decision && (
           <>
-            <div className="text-6xl font-black uppercase tracking-tight text-white drop-shadow">
+            <div className="break-words text-[clamp(2rem,8vw,3.75rem)] font-black uppercase leading-tight tracking-tight text-white drop-shadow">
               {decision.headline}
             </div>
-            <div className="mt-3 max-w-[90%] text-2xl font-medium text-white/95">{decision.detail}</div>
+            <div className="mt-3 max-w-[90%] break-words text-xl font-medium text-white/95 sm:text-2xl">{decision.detail}</div>
             {!decision.admit && (
               <div className="mt-4 rounded-lg bg-black/30 px-4 py-2 text-lg font-semibold text-white">
                 Ask guest to STEP ASIDE → resolve at laptop

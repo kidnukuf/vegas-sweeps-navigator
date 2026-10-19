@@ -423,9 +423,9 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
   }, [s]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/75 p-4 py-8 sm:items-center" onClick={onClose}>
       <div
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-yellow-500/30 bg-[#161616]"
+        className="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-yellow-500/30 bg-[#161616]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header + progress */}

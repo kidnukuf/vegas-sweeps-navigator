@@ -20,14 +20,14 @@ export function OrleansHotelModal({ open, onClose, checkinLabel, checkoutLabel }
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/75 p-4 py-8 backdrop-blur-sm sm:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="The Orleans Hotel information"
     >
       <div
-        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border-2 border-[#caa84a] bg-white shadow-2xl"
+        className="relative my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border-2 border-[#caa84a] bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "orleansPop 220ms cubic-bezier(0.23,1,0.32,1)" }}
       >

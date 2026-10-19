@@ -166,7 +166,7 @@ export function UploadScanLogModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-      <DialogContent className="bg-[#1a1a1a] border-cyan-500/30 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-[#1a1a1a] border-cyan-500/30 text-white max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle className="text-cyan-400 text-lg">📤 Upload Offline Scan Log</DialogTitle>
           <DialogDescription className="text-gray-400 text-sm">

@@ -215,7 +215,7 @@ export default function AddBowlerModal({ open, onClose, centers, eventId, onSucc
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
-        className="bg-[#141414] border border-yellow-500/20 text-white max-w-2xl w-full max-h-[90vh] overflow-y-auto p-0"
+        className="bg-[#141414] border border-yellow-500/20 text-white max-w-2xl w-full max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain p-0"
         style={{ boxShadow: "0 0 40px rgba(255,215,0,0.08)" }}
       >
         {/* Header */}
@@ -367,7 +367,7 @@ export default function AddBowlerModal({ open, onClose, centers, eventId, onSucc
               Event Options
               <span className="flex-1 h-px bg-amber-500/10 inline-block" />
             </h3>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <FieldLabel>Has Guest?</FieldLabel>
                 <YesNoSelect id="hasGuest" value={form.hasGuest} onChange={set("hasGuest")} />

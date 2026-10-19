@@ -15,6 +15,7 @@
  *
  * Designed for TV display with high-contrast, large text suitable for 10+ feet viewing.
  */
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type ScanResultState = "used" | "pool" | "banquet" | "mismatch" | "notfound";
@@ -39,10 +40,19 @@ export interface ScanResultProps {
 export function ScanResult({ state, ageCode = "21", message, duration, onDismiss, flashClass, displayName, teamNumber }: ScanResultProps) {
   const isUnder21 = ageCode === "00";
   const identity = displayName ? `${displayName}${teamNumber ? ` · Team ${teamNumber}` : ""}` : null;
-  // Auto-dismiss after duration
-  if (duration && onDismiss) {
-    setTimeout(onDismiss, duration);
-  }
+  const onDismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  // Create exactly one controlled timer per result state. Rendering must not create
+  // extra timers, which can prematurely clear a newer scan result.
+  useEffect(() => {
+    if (!duration || !onDismissRef.current) return;
+    const timer = window.setTimeout(() => onDismissRef.current?.(), duration);
+    return () => window.clearTimeout(timer);
+  }, [duration, state]);
 
   // Flash overlay element (animated color flash behind main content)
   const flashOverlay = flashClass ? (
@@ -88,7 +98,7 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
         <>
           {flashOverlay}
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#90EE90]"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-[#90EE90] p-4 py-6 sm:items-center"
             role="status"
             aria-label="Accepted-UNDER 21"
           >
@@ -99,14 +109,14 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
                 background: "linear-gradient(45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%), linear-gradient(-45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%)",
               }}
             />
-            <div className="relative z-10 w-full max-w-6xl px-8 text-center">
+            <div className="relative z-10 my-auto w-full max-w-6xl px-1 text-center sm:px-8">
               <div className="text-2xl font-black uppercase tracking-[0.18em] text-slate-900 sm:text-4xl">
                 {isBanquet ? "BANQUET ENTRY" : "POOL PARTY ENTRY"}
               </div>
-              <div className="mt-8 text-[clamp(3.2rem,10vw,9rem)] font-black leading-none tracking-tight text-red-700 drop-shadow-[0_3px_0_rgba(255,255,255,0.7)]">
+              <div className="mt-6 break-words text-[clamp(2.6rem,10vw,9rem)] font-black leading-none tracking-tight text-red-700 drop-shadow-[0_3px_0_rgba(255,255,255,0.7)]">
                 Accepted-UNDER 21
               </div>
-              {identity && <div className="mt-8 text-3xl font-black text-slate-950 sm:text-5xl">{identity}</div>}
+              {identity && <div className="mt-6 break-words text-2xl font-black text-slate-950 sm:text-5xl">{identity}</div>}
               <div className="mt-4 text-xl font-black uppercase tracking-wide text-red-800 sm:text-3xl">Age restriction — verify wristband/eligibility</div>
             </div>
           </div>
@@ -116,8 +126,8 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
     return (
       <>
         {flashOverlay}
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: isBanquet ? "#90EE90" : "#ADD8E6" }}>
-          <div className="w-full max-w-5xl px-8 text-center">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-4 py-6 sm:items-center" style={{ backgroundColor: isBanquet ? "#90EE90" : "#ADD8E6" }}>
+          <div className="my-auto w-full max-w-5xl px-1 text-center sm:px-8">
             <div className="text-3xl font-black uppercase tracking-[0.18em] text-slate-800">
               {isBanquet ? "BANQUET ENTRY" : "POOL PARTY ENTRY"}
             </div>
@@ -125,7 +135,7 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
               {ageCode}
             </div>
             <div className="text-4xl font-black text-slate-900">21+</div>
-            {identity && <div className="mt-6 text-4xl font-black text-slate-950">{identity}</div>}
+            {identity && <div className="mt-6 break-words text-2xl font-black text-slate-950 sm:text-4xl">{identity}</div>}
           </div>
         </div>
       </>
@@ -137,11 +147,11 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
     return (
       <>
         {flashOverlay}
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-amber-600">
-          <div className="px-8 text-center">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-amber-600 p-4 py-6 sm:items-center">
+          <div className="my-auto w-full max-w-5xl px-1 text-center sm:px-8">
             <div className="mb-6 text-6xl font-black text-white">⚠️</div>
             <div className="mb-4 text-5xl font-black text-white">QR NOT LOADED</div>
-            <div className="text-3xl font-semibold text-white/90">
+            <div className="break-words text-2xl font-semibold text-white/90 sm:text-3xl">
               {message || "This QR code is not in the loaded scanner bundle."}
             </div>
             <div className="mt-8 text-2xl font-bold text-white/80">Check the event ID and download a fresh scanner.</div>
@@ -156,11 +166,11 @@ export function ScanResult({ state, ageCode = "21", message, duration, onDismiss
     return (
       <>
         {flashOverlay}
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-red-600">
-          <div className="text-center px-8">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-red-600 p-4 py-6 sm:items-center">
+          <div className="my-auto w-full max-w-5xl px-1 text-center sm:px-8">
             <div className="text-6xl font-black text-white mb-6">⚠️</div>
             <div className="text-5xl font-black text-white mb-4">WRONG STATION</div>
-            <div className="text-3xl font-semibold text-white/90">
+            <div className="break-words text-2xl font-semibold text-white/90 sm:text-3xl">
               {message || "This QR does not match this station"}
             </div>
             <div className="mt-8 text-2xl font-bold text-white/80">

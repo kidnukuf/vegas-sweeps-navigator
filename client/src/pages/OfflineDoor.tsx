@@ -76,8 +76,8 @@ export default function OfflineDoor() {
     const label = view === "A" ? "Door A" : "Door B";
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => setView("console")}>
               ← Console
             </Button>
@@ -85,7 +85,7 @@ export default function OfflineDoor() {
               {label} — dedicated scanner display · Event {eventId} · Zone {zone}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <span className="mr-1 text-xs text-slate-500">Re-entry zone:</span>
             {(["N", "E", "S", "W"] as ReentryZone[]).map((z) => (
               <Button

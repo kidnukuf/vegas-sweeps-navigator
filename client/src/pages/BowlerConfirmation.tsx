@@ -342,30 +342,30 @@ function PassportStep({ profile, onDone }: { profile: any; onDone: () => void })
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20 mb-5">
           <h2 className="text-amber-400 font-bold text-sm uppercase tracking-widest mb-3">Event Details</h2>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-purple-300">Event</span>
-              <span className="text-white font-medium">{profile.eventName ?? "B.O.B. Roll-off"}</span>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+              <span className="shrink-0 text-purple-300">Event</span>
+              <span className="min-w-0 break-words text-white font-medium sm:text-right">{profile.eventName ?? "B.O.B. Roll-off"}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-purple-300">Event Dates</span>
-              <span className="text-white font-medium">{eventDates}</span>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+              <span className="shrink-0 text-purple-300">Event Dates</span>
+              <span className="min-w-0 break-words text-white font-medium sm:text-right">{eventDates}</span>
             </div>
             {profile.squadTime && (
-              <div className="flex justify-between">
-                <span className="text-purple-300">Squad Time</span>
-                <span className="text-white font-medium">{normalizeSquadTime(profile.squadTime)}</span>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <span className="shrink-0 text-purple-300">Squad Time</span>
+                <span className="min-w-0 break-words text-white font-medium sm:text-right">{normalizeSquadTime(profile.squadTime)}</span>
               </div>
             )}
             {profile.laneNumber && (
-              <div className="flex justify-between">
-                <span className="text-purple-300">Starting Lane</span>
-                <span className="text-white font-bold text-lg">{profile.laneNumber}</span>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <span className="shrink-0 text-purple-300">Starting Lane</span>
+                <span className="min-w-0 break-words text-white font-bold text-lg sm:text-right">{profile.laneNumber}</span>
               </div>
             )}
             {profile.centerName && (
-              <div className="flex justify-between">
-                <span className="text-purple-300">Bowling Center</span>
-                <span className="text-white font-medium">{profile.centerName}</span>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <span className="shrink-0 text-purple-300">Bowling Center</span>
+                <span className="min-w-0 break-words text-white font-medium sm:text-right">{profile.centerName}</span>
               </div>
             )}
           </div>
@@ -477,7 +477,7 @@ function PassportBox({ title, icon, color, qrDataUrl, isUsed, isDisabled }: {
           ) : isUsed ? (
             <div className="py-4">
               <div className="text-4xl mb-3">✅</div>
-              <p className="text-white font-bold text-lg">Already Redeemed</p>
+              <p className="min-w-0 break-words text-white font-bold text-lg sm:text-right">Already Redeemed</p>
               <p className="text-white/60 text-sm mt-1">This passport has been used for entry.</p>
             </div>
           ) : qrDataUrl ? (

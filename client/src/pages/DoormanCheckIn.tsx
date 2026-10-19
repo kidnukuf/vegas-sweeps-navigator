@@ -255,26 +255,26 @@ export default function DoormanCheckIn() {
     <div className="min-h-screen bg-[#0d0d0d] text-white relative">
       {/* DENIED FLASH OVERLAY */}
       {showDenied && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 pointer-events-none sm:items-center"
           style={{ animation: "deniedFlash 0.4s ease-in-out 3", background: "rgba(220,0,0,0.15)" }}>
-          <div className="text-center">
-            <div className="text-8xl font-black text-red-500 tracking-widest" style={{ textShadow: "0 0 40px rgba(255,0,0,0.9), 0 0 80px rgba(255,0,0,0.5)" }}>
+          <div className="my-auto max-w-full text-center">
+            <div className="break-words text-[clamp(3rem,15vw,6rem)] font-black text-red-500 tracking-widest" style={{ textShadow: "0 0 40px rgba(255,0,0,0.9), 0 0 80px rgba(255,0,0,0.5)" }}>
               ⛔ DENIED
             </div>
-            {checkInResult && <div className="text-red-300 text-xl mt-2 font-semibold">{checkInResult.message}</div>}
+            {checkInResult && <div className="mt-2 break-words text-xl font-semibold text-red-300">{checkInResult.message}</div>}
           </div>
         </div>
       )}
 
       {/* GRANTED FLASH */}
       {checkInResult?.success && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 pointer-events-none sm:items-center"
           style={{ background: "rgba(0,200,0,0.08)" }}>
-          <div className="text-center bg-[#0a1a0a] border-2 border-green-500 rounded-3xl px-10 py-8 shadow-[0_0_60px_rgba(0,255,0,0.4)]">
-            <div className="text-7xl font-black text-green-400 tracking-widest" style={{ textShadow: "0 0 30px rgba(0,255,0,0.8)" }}>
+          <div className="my-auto max-w-full rounded-3xl border-2 border-green-500 bg-[#0a1a0a] px-6 py-6 text-center shadow-[0_0_60px_rgba(0,255,0,0.4)] sm:px-10 sm:py-8">
+            <div className="break-words text-[clamp(2.5rem,13vw,4.5rem)] font-black text-green-400 tracking-widest" style={{ textShadow: "0 0 30px rgba(0,255,0,0.8)" }}>
               ✅ GRANTED
             </div>
-            <div className="text-green-300 text-2xl mt-2 font-bold">{checkInResult.bowlerName}</div>
+            <div className="mt-2 break-words text-2xl font-bold text-green-300">{checkInResult.bowlerName}</div>
           </div>
         </div>
       )}
@@ -294,19 +294,19 @@ export default function DoormanCheckIn() {
       </div>
 
       {/* Header */}
-      <div className="bg-[#1a1a1a] border-b border-yellow-500/30 px-4 py-4 sticky top-[52px] z-40">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="relative z-40 border-b border-yellow-500/30 bg-[#1a1a1a] px-4 py-4">
+        <div className="mx-auto flex max-w-3xl flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="font-bold" style={{ color: "#00ffff" }}>{designation}</span>
             <span className="text-gray-600">|</span>
-            <h1 className="text-xl font-black" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 15px rgba(255,215,0,0.5)" }}>
+            <h1 className="min-w-0 break-words text-xl font-black" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#ffd700", textShadow: "0 0 15px rgba(255,215,0,0.5)" }}>
               🚪 DOORMAN CHECK-IN
             </h1>
             <span title={sseConnected ? "Live sync active" : "Connecting..."}
               className={`w-2 h-2 rounded-full ${sseConnected ? "bg-green-400" : "bg-gray-600"}`} />
           </div>
           <button onClick={() => setWristbandMode(!wristbandMode)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${wristbandMode ? "bg-green-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
+            className={`w-full px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors sm:w-auto ${wristbandMode ? "bg-green-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
             {wristbandMode ? "✅ Wristband Mode ON" : "🔄 Reentry Mode"}
           </button>
         </div>
@@ -392,7 +392,7 @@ export default function DoormanCheckIn() {
               {/* Manual entry */}
               <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
                 <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Shared Bowler & Guest Scanner</p>
-                <form onSubmit={handlePassportManualSubmit} className="flex gap-2">
+                <form onSubmit={handlePassportManualSubmit} className="flex flex-col gap-2 sm:flex-row">
                   <input
                     ref={passportInputRef}
                     autoFocus
@@ -404,7 +404,7 @@ export default function DoormanCheckIn() {
                   />
                   <button type="submit"
                     disabled={passportScanMutation.isPending || !passportManualToken.trim()}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-900 font-black rounded-lg disabled:opacity-50">
+                    className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-900 font-black rounded-lg disabled:opacity-50 sm:w-auto">
                     {passportScanMutation.isPending ? "..." : "Scan"}
                   </button>
                 </form>
@@ -465,7 +465,7 @@ export default function DoormanCheckIn() {
         <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-5">
           <h2 className="text-sm font-semibold text-gray-400 mb-3">QR Code / Bluetooth Scanner / Manual Token</h2>
           <p className="text-xs text-gray-600 mb-3">Bluetooth HID scanners auto-input here. Camera scan or type token manually.</p>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <input ref={tokenInputRef} value={scannedToken} onChange={(e) => setScannedToken(e.target.value)}
               placeholder="Scan QR or enter token..."
               className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500 font-mono"
@@ -477,7 +477,7 @@ export default function DoormanCheckIn() {
               }} />
             <button onClick={() => { if (!scannedToken) return; validateToken.mutate({ tokenValue: scannedToken, method: "QR", doormanId: doormanId || undefined }); setScannedToken(""); }}
               disabled={validateToken.isPending || !scannedToken}
-              className="px-5 py-2 font-black rounded-lg text-sm transition-all active:scale-95 disabled:opacity-50"
+              className="w-full px-5 py-2 font-black rounded-lg text-sm transition-all active:scale-95 disabled:opacity-50 sm:w-auto"
               style={{ background: "linear-gradient(135deg, #ffd700, #ffaa00)", color: "#000", boxShadow: "0 0 15px rgba(255,215,0,0.3)" }}>
               {validateToken.isPending ? "..." : "SCAN"}
             </button>
@@ -556,8 +556,8 @@ export default function DoormanCheckIn() {
 
       {/* Check-in Confirmation Modal */}
       {selectedBowler && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1a] rounded-2xl border border-yellow-500/40 p-6 max-w-sm w-full text-center shadow-[0_0_40px_rgba(255,215,0,0.15)]">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" role="dialog" aria-modal="true" aria-label="Confirm bowler check-in">
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-yellow-500/40 bg-[#1a1a1a] p-4 text-center shadow-[0_0_40px_rgba(255,215,0,0.15)] sm:p-6">
             <div className="text-5xl mb-3">🎳</div>
             <h3 className="text-xl font-black mb-1" style={{ color: "#ffd700" }}>Confirm Check-In</h3>
             <div className="bg-[#111] rounded-xl p-4 mb-5">
@@ -565,7 +565,7 @@ export default function DoormanCheckIn() {
               <div className="text-sm text-gray-400">{String(selectedBowler.centerName ?? "")} • Team {String(selectedBowler.teamCode ?? "")}</div>
               <div className="font-mono text-sm mt-1" style={{ color: "#ffd700" }}>{String(selectedBowler.scantronId ?? "")}</div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button onClick={() => {
                 validateToken.mutate({ tokenValue: `MANUAL:${selectedBowler.id}`, method: "manual", doormanId: doormanId || undefined });
                 setSelectedBowler(null);

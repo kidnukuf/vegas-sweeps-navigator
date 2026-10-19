@@ -477,23 +477,23 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
 
       {/* DENIED flash */}
       {showDenied && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 pointer-events-none sm:items-center"
           style={{ background: "rgba(220,0,0,0.15)" }}>
-          <div className="text-center">
-            <div className="text-8xl font-black text-red-500 tracking-widest" style={{ textShadow: "0 0 40px rgba(255,0,0,0.9)" }}>
+          <div className="my-auto max-w-full text-center">
+            <div className="break-words text-[clamp(3rem,15vw,6rem)] font-black text-red-500 tracking-widest" style={{ textShadow: "0 0 40px rgba(255,0,0,0.9)" }}>
               ⛔ DENIED
             </div>
-            {checkInResult && <div className="text-red-300 text-xl mt-2 font-semibold">{checkInResult.message}</div>}
+            {checkInResult && <div className="mt-2 break-words text-xl font-semibold text-red-300">{checkInResult.message}</div>}
           </div>
         </div>
       )}
 
       {/* GRANTED flash — animated checkmark pop-up */}
       {checkInResult?.success && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 pointer-events-none sm:items-center"
           style={{ background: "rgba(0,200,0,0.10)" }}>
           <div
-            className="text-center rounded-3xl px-10 py-8"
+            className="my-auto max-w-full rounded-3xl px-6 py-6 text-center sm:px-10 sm:py-8"
             style={{
               background: "linear-gradient(135deg, #052e16, #14532d)",
               border: "3px solid #22c55e",
@@ -510,19 +510,19 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
             >
               ✅
             </div>
-            <div className="text-5xl font-black text-green-400 tracking-widest mb-2" style={{ textShadow: "0 0 30px rgba(0,255,0,0.8)" }}>
+            <div className="mb-2 break-words text-[clamp(2.5rem,12vw,3.75rem)] font-black text-green-400 tracking-widest" style={{ textShadow: "0 0 30px rgba(0,255,0,0.8)" }}>
               GRANTED
             </div>
             {checkInResult.bowlerName && (
-              <div className="text-green-200 text-2xl font-bold mt-1">{checkInResult.bowlerName}</div>
+              <div className="mt-1 break-words text-2xl font-bold text-green-200">{checkInResult.bowlerName}</div>
             )}
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-[#111] border-b border-cyan-500/30 px-4 py-3 sticky top-0 z-40 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/30 bg-[#111] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span className="text-lg font-black" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#00ffff" }}>🚪 DOORMAN TABLET</span>
           <span title={sseConnected ? "Live sync" : "Connecting"} className={`w-2 h-2 rounded-full ${sseConnected ? "bg-green-400" : "bg-gray-600"}`} />
         </div>
@@ -610,11 +610,11 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
               {/* Manual entry */}
               <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
                 <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Shared Bowler & Guest Scanner</p>
-                <form onSubmit={(e) => { e.preventDefault(); const scan = resolveDoorPassportScan(manualToken, passportMode); if (!scan) return; passportScan.mutate({ ...scan, doorMode: passportMode }); setManualToken(""); }} className="flex gap-2">
+                <form onSubmit={(e) => { e.preventDefault(); const scan = resolveDoorPassportScan(manualToken, passportMode); if (!scan) return; passportScan.mutate({ ...scan, doorMode: passportMode }); setManualToken(""); }} className="flex flex-col gap-2 sm:flex-row">
                   <input ref={passportInputRef} autoFocus type="text" placeholder="Scan any bowler or guest QR..." value={manualToken} onChange={(e) => setManualToken(e.target.value)}
                     className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500 font-mono" />
                   <button type="submit" disabled={passportScan.isPending || !manualToken.trim()}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-900 font-black rounded-lg disabled:opacity-50 transition-colors">
+                    className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-900 font-black rounded-lg disabled:opacity-50 transition-colors sm:w-auto">
                     {passportScan.isPending ? "..." : "Scan"}
                   </button>
                 </form>
@@ -662,7 +662,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
           {/* Manual / Bluetooth HID */}
           <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
             <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Manual / Bluetooth Scanner</p>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <input ref={tokenInputRef} value={scannedToken} onChange={(e) => setScannedToken(e.target.value)}
                 placeholder="Scan QR or enter token..."
                 className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500 font-mono"
@@ -674,7 +674,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
                 }} />
               <button onClick={() => { if (!scannedToken) return; validateToken.mutate({ tokenValue: scannedToken, method: "QR" }); setScannedToken(""); }}
                 disabled={validateToken.isPending || !scannedToken}
-                className="px-5 py-2 font-black rounded-lg text-sm transition-all active:scale-95 disabled:opacity-50"
+                className="w-full px-5 py-2 font-black rounded-lg text-sm transition-all active:scale-95 disabled:opacity-50 sm:w-auto"
                 style={{ background: "linear-gradient(135deg, #ffd700, #ffaa00)", color: "#000" }}>
                 {validateToken.isPending ? "..." : "SCAN"}
               </button>
@@ -772,14 +772,14 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
                 <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-4">
                   <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Scan / Enter Re-Entry Code</p>
                   <p className="text-gray-500 text-xs mb-3">Scan the patron's re-entry QR (or paste the code). The bracelet number entered at issuance will be shown so you can match it to their wristband.</p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <input value={reentryScanToken} onChange={(e) => setReentryScanToken(e.target.value)}
                       placeholder="Scan QR or paste code..."
                       className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 font-mono"
                       onKeyDown={(e) => { if (e.key === "Enter" && reentryScanToken.trim()) { reentryVerify.mutate({ token: reentryScanToken.trim() }); } }} />
                     <button onClick={() => { if (reentryScanToken.trim()) reentryVerify.mutate({ token: reentryScanToken.trim() }); }}
                       disabled={reentryVerify.isPending || !reentryScanToken.trim()}
-                      className="px-5 py-2 font-black rounded-lg text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white disabled:opacity-50 transition-all active:scale-95">
+                      className="w-full px-5 py-2 font-black rounded-lg text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white disabled:opacity-50 transition-all active:scale-95 sm:w-auto">
                       {reentryVerify.isPending ? "..." : "VERIFY"}
                     </button>
                   </div>

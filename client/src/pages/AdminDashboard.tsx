@@ -1140,20 +1140,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 <button className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">🗓️ Events ▾</button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="center"
+                align="start"
                 side="bottom"
-                avoidCollisions={false}
-                style={{
-                  position: "fixed",
-                  left: "50%",
-                  top: "60px",
-                  transform: "translateX(-50%)",
-                  width: "min(340px, calc(100vw - 1rem))",
-                  maxHeight: "70vh",
-                  overflowY: "auto",
-                  zIndex: 9999,
-                }}
-                className="bg-[#1a1a1a] border border-yellow-500/30 text-white rounded-xl shadow-2xl"
+                className="w-[min(340px,calc(100vw-1rem))] max-h-[calc(100dvh-8rem)] overflow-y-auto rounded-xl border border-yellow-500/30 bg-[#1a1a1a] text-white shadow-2xl"
               >
                 <DropdownMenuLabel className="text-gray-500 text-[10px] uppercase tracking-wider">Switch active event</DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
@@ -2133,10 +2122,13 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       </div>
 
       {editingBowler && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1a] rounded-2xl border border-yellow-500/30 p-6 w-full max-w-lg">
-            <h3 className="text-xl font-bold text-yellow-400 mb-4">Edit Bowler — {String(editingBowler.scantronId ?? "")}</h3>
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" role="dialog" aria-modal="true" aria-label="Edit bowler">
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-yellow-500/30 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h3 className="text-xl font-bold text-yellow-400">Edit Bowler — {String(editingBowler.scantronId ?? "")}</h3>
+              <button type="button" onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close bowler editor">Close</button>
+            </div>
+            <div className="space-y-3">
               {(["legalFirstName", "legalLastName", "phone", "email"] as const).map((field) => (
                 <div key={field}>
                   <label className="text-xs text-gray-400 mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1")}</label>
@@ -2372,8 +2364,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Delete Event Confirmation Modal ── */}
       {deleteEventModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4" onClick={() => setDeleteEventModal(null)}>
-          <div className="bg-[#1a1a1a] border border-red-500/50 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" onClick={() => setDeleteEventModal(null)}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-red-500/50 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">⚠️</span>
               <h3 className="text-xl font-black text-red-400">Delete Event</h3>
@@ -2417,8 +2409,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Clear Bowlers Confirmation Modal ── */}
       {clearBowlersModal && activeEvent && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4" onClick={() => setClearBowlersModal(false)}>
-          <div className="bg-[#1a1a1a] border border-orange-500/50 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" onClick={() => setClearBowlersModal(false)}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-orange-500/50 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">🧹</span>
               <h3 className="text-xl font-black text-orange-400">Clear All Bowlers</h3>
@@ -2507,8 +2499,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
       {/* Event create / rename modal */}
       {eventModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={() => setEventModal(null)}>
-          <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8 sm:items-center" onClick={() => setEventModal(null)}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-yellow-500/30 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-yellow-400 mb-4">{eventModal.mode === "create" ? "Create New Event" : "Rename Event"}</h3>
             <div className="space-y-3">
               <div>
