@@ -818,3 +818,62 @@
   border-radius: 0.5rem;
   padding: 0.75rem 0.5rem;
 }
+
+/* ─── Mobile authentication keyboard safety ──────────────────────────────── */
+/*
+   Password keyboards change the visual viewport asynchronously. Keep the
+   page itself scrollable, avoid clipped flex children, and leave enough room
+   for the sticky action above iOS/Android safe-area controls.
+*/
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.bowler-portal-bg,
+.captain-login-bg {
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.bowler-auth-card,
+.captain-auth-card {
+  overflow: visible;
+}
+
+.mobile-auth-submit {
+  position: sticky !important;
+  bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
+  z-index: 20;
+  min-height: 2.9rem !important;
+  margin-top: 0.35rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55) !important;
+}
+
+@media (max-width: 640px) {
+  .bowler-auth-card,
+  .captain-auth-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .bowler-portal-bg > .flex-1,
+  .captain-login-bg > .captain-login-hero {
+    padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom)));
+    touch-action: pan-y;
+  }
+
+  .bowler-input,
+  .captain-input {
+    min-height: 3rem;
+    scroll-margin-top: 1rem;
+    scroll-margin-bottom: 9rem;
+  }
+}

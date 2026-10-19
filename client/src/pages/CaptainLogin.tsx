@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
+import { focusNextMobileAuthField, scrollMobileAuthFieldIntoView } from "@/lib/mobileAuth";
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
@@ -215,7 +216,9 @@ export default function CaptainLogin() {
                     type="password"
                     value={siPass}
                     onChange={(e) => setSiPass(e.target.value)}
+                    onFocus={(e) => scrollMobileAuthFieldIntoView(e.currentTarget)}
                     placeholder="Your password"
+                    enterKeyHint="done"
                     required
                     className="captain-input"
                   />
@@ -242,7 +245,7 @@ export default function CaptainLogin() {
                 <Button
                   type="submit"
                   disabled={signIn.isPending || !eventId}
-                  className="captain-submit-btn w-full"
+                  className="captain-submit-btn mobile-auth-submit w-full"
                 >
                   {signIn.isPending ? "Signing in…" : "⭐ Enter Command Center"}
                 </Button>
@@ -333,7 +336,10 @@ export default function CaptainLogin() {
                     type="password"
                     value={suPass}
                     onChange={(e) => setSuPass(e.target.value)}
+                    onFocus={(e) => scrollMobileAuthFieldIntoView(e.currentTarget)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); focusNextMobileAuthField(e.currentTarget); } }}
                     placeholder="Min. 6 characters"
+                    enterKeyHint="next"
                     required
                     minLength={6}
                     className="captain-input"
@@ -345,7 +351,9 @@ export default function CaptainLogin() {
                     type="password"
                     value={suConfirm}
                     onChange={(e) => setSuConfirm(e.target.value)}
+                    onFocus={(e) => scrollMobileAuthFieldIntoView(e.currentTarget)}
                     placeholder="Repeat password"
+                    enterKeyHint="done"
                     required
                     className="captain-input"
                   />
@@ -372,7 +380,7 @@ export default function CaptainLogin() {
                 <Button
                   type="submit"
                   disabled={signUp.isPending || !eventId || claimPolicy.isLoading}
-                  className="captain-submit-btn w-full"
+                  className="captain-submit-btn mobile-auth-submit w-full"
                 >
                   {signUp.isPending ? "Verifying…" : "⭐ Activate Captain Account"}
                 </Button>

@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
+import { focusNextMobileAuthField, scrollMobileAuthFieldIntoView } from "@/lib/mobileAuth";
 
 // ─── Local storage keys ───────────────────────────────────────────────────────
 export const BOWLER_TOKEN_KEY = "vsn_bowler_token";
@@ -280,14 +281,16 @@ export default function BowlerLogin() {
                 <div>
                   <Label className="bowler-label">Password</Label>
                   <Input
-                    className="bowler-input"
-                    type="password"
-                    placeholder="Your password"
-                    value={siPass}
-                    onChange={(e) => setSiPass(e.target.value)}
-                    autoComplete="current-password"
-                    minLength={6}
-                    required
+                      className="bowler-input"
+                      type="password"
+                      placeholder="Your password"
+                      value={siPass}
+                      onChange={(e) => setSiPass(e.target.value)}
+                      onFocus={(e) => scrollMobileAuthFieldIntoView(e.currentTarget)}
+                      autoComplete="current-password"
+                      enterKeyHint="done"
+                      minLength={6}
+                      required
                   />
                 </div>
 
@@ -312,7 +315,7 @@ export default function BowlerLogin() {
                 <Button
                   type="submit"
                   disabled={signIn.isPending}
-                  className="bowler-btn-primary w-full"
+                  className="bowler-btn-primary mobile-auth-submit w-full"
                 >
                   {signIn.isPending ? "Signing in…" : "Sign In →"}
                 </Button>
@@ -410,11 +413,11 @@ export default function BowlerLogin() {
                 </div>
                 <div>
                   <Label className="bowler-label">Create Password</Label>
-                  <Input className="bowler-input" type="password" placeholder="At least 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} autoComplete="new-password" minLength={6} required />
+                    <Input className="bowler-input" type="password" placeholder="At least 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} onFocus={(e) => scrollMobileAuthFieldIntoView(e.currentTarget)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); focusNextMobileAuthField(e.currentTarget); } }} autoComplete="new-password" enterKeyHint="next" minLength={6} required />
                 </div>
                 <div>
                   <Label className="bowler-label">Confirm Password</Label>
-                  <Input className="bowler-input" type="password" placeholder="Repeat password" value={suPass2} onChange={(e) => setSuPass2(e.target.value)} autoComplete="new-password" minLength={6} required />
+                  <Input className="bowler-input" type="password" placeholder="Repeat password" value={suPass2} onChange={(e) => setSuPass2(e.target.value)} onFocus={(e) => scrollMobileAuthFieldIntoView(e.currentTarget)} autoComplete="new-password" enterKeyHint="done" minLength={6} required />
                 </div>
 
                 {/* Turnstile widget */}
@@ -438,7 +441,7 @@ export default function BowlerLogin() {
                 <Button
                   type="submit"
                   disabled={signUp.isPending || claimPolicy.isLoading}
-                  className="bowler-btn-primary w-full"
+                  className="bowler-btn-primary mobile-auth-submit w-full"
                 >
                   {signUp.isPending ? "Verifying claim…" : "Create My Account →"}
                 </Button>
