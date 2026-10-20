@@ -22,7 +22,7 @@ import { formatPassportScannerName } from "../passportDisplay";
 import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
 import { isPassportTypeAllowedAtDoor } from "@shared/doorPassportScan";
 import { verifyTurnstileToken } from "../turnstile";
-import { buildBanquetQrUrl } from "../banquetQr";
+import { buildBanquetQrUrl, DEFAULT_APP_ORIGIN } from "../banquetQr";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const TOKEN_TTL = "30d";
 
@@ -1246,6 +1246,127 @@ export const bowlerAuthRouter = router({
           disabled: Boolean(g.disabled),
         })),
       }));
+    }),
+
+  // ── EVENT DIRECTOR QR BUSINESS-CARD ROSTER ───────────────────────────────────
+  // Uses only the exact active tokens already assigned to an authorized event.
+  // It never generates, rotates, or redeems a QR token.
+  getQrBusinessCardRoster: publicProcedure
+    .input(z.object({ token: z.string(), eventId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      await requireEventDirectorToolAccess(ctx, input.token);
+      await assertEventAccess(ctx, input.eventId);
+
+      const bowlers = await rawQuery<{
+        id: number;
+        legalFirstName: string;
+        legalLastName: string;
+        under21: number | boolean | null;
+        poolPartyEnabled: number | boolean | null;
+        poolPartyToken: string | null;
+        poolPartyUsed: number | boolean;
+        banquetToken: string | null;
+        banquetUsed: number | boolean;
+      }>(
+        `SELECT b.id, b.legalFirstName, b.legalLastName, b.under21,
+                e.poolPartyEnabled, b.poolPartyToken, b.poolPartyUsed,
+                b.banquetToken, b.banquetUsed
+           FROM bowlers b
+           INNER JOIN events e ON e.id = b.eventId
+          WHERE b.eventId = ?
+          ORDER BY b.legalLastName, b.legalFirstName, b.id`,
+        [input.eventId],
+      );
+      const guests = await rawQuery<{
+        id: number;
+        bowlerId: number;
+        legalFirstName: string;
+        legalLastName: string;
+        guestName: string | null;
+        suffix: string;
+        under21: number | boolean | null;
+        poolPartyEnabled: number | boolean | null;
+        token: string | null;
+        used: number | boolean;
+        banquetToken: string | null;
+        banquetUsed: number | boolean;
+      }>(
+        `SELECT g.id, g.bowlerId, b.legalFirstName, b.legalLastName,
+                g.guestName, g.suffix, g.under21, e.poolPartyEnabled,
+                g.token, g.used, g.banquetToken, g.banquetUsed
+           FROM guest_pool_party_tokens g
+           INNER JOIN bowlers b ON b.id = g.bowlerId
+           INNER JOIN events e ON e.id = b.eventId
+          WHERE b.eventId = ? AND g.disabled = 0
+          ORDER BY b.legalLastName, b.legalFirstName, g.suffix, g.id`,
+        [input.eventId],
+      );
+
+      type QrBusinessCard = {
+        cardId: string;
+        bowlerId: number;
+        attendeeName: string;
+        attendeeType: "bowler" | "guest";
+        passType: "banquet" | "pool";
+        qrUrl: string;
+        under21: boolean;
+        hostName: string | null;
+        sortName: string;
+      };
+      const cards: QrBusinessCard[] = [];
+      const appOrigin = DEFAULT_APP_ORIGIN;
+
+      for (const row of bowlers) {
+        const attendeeName = `${row.legalFirstName} ${row.legalLastName}`.trim() || `Bowler ${row.id}`;
+        const add = (passType: "banquet" | "pool", qrUrl: string) => cards.push({
+          cardId: `bowler-${row.id}-${passType}`,
+          bowlerId: row.id,
+          attendeeName,
+          attendeeType: "bowler",
+          passType,
+          qrUrl,
+          under21: Boolean(row.under21),
+          hostName: null,
+          sortName: `${row.legalLastName}\u0000${row.legalFirstName}`,
+        });
+        if (row.banquetToken && !row.banquetUsed) add("banquet", buildBanquetQrUrl(row.banquetToken, appOrigin));
+        if (Boolean(row.poolPartyEnabled) && row.poolPartyToken && !row.poolPartyUsed) {
+          add("pool", `${appOrigin}/scan/pool/${encodeURIComponent(row.poolPartyToken)}`);
+        }
+      }
+
+      for (const guest of guests) {
+        const hostName = `${guest.legalFirstName} ${guest.legalLastName}`.trim() || `Bowler ${guest.bowlerId}`;
+        const attendeeName = guest.guestName?.trim() || `${hostName} — Guest ${guest.suffix}`;
+        const add = (passType: "banquet" | "pool", qrUrl: string) => cards.push({
+          cardId: `guest-${guest.id}-${passType}`,
+          bowlerId: guest.bowlerId,
+          attendeeName,
+          attendeeType: "guest",
+          passType,
+          qrUrl,
+          under21: Boolean(guest.under21),
+          hostName,
+          sortName: `${guest.legalLastName}\u0000${guest.legalFirstName}\u0000${guest.suffix}`,
+        });
+        if (guest.banquetToken && !guest.banquetUsed) add("banquet", `${appOrigin}/scan/guest-banquet/${encodeURIComponent(guest.banquetToken)}`);
+        if (Boolean(guest.poolPartyEnabled) && guest.token && !guest.used && !guest.token.endsWith("-BQ")) {
+          add("pool", `${appOrigin}/scan/guest-pool/${encodeURIComponent(guest.token)}`);
+        }
+      }
+
+      cards.sort((left, right) => left.sortName.localeCompare(right.sortName) || left.passType.localeCompare(right.passType));
+      const output = cards.map(({ sortName: _sortName, ...card }) => card);
+      return {
+        cards: output,
+        summary: {
+          total: output.length,
+          bowlerCards: output.filter((card) => card.attendeeType === "bowler").length,
+          guestCards: output.filter((card) => card.attendeeType === "guest").length,
+          banquetCards: output.filter((card) => card.passType === "banquet").length,
+          poolCards: output.filter((card) => card.passType === "pool").length,
+        },
+      };
     }),
 
   // ── EVENT DIRECTOR BANQUET QR ROSTER ─────────────────────────────────────────

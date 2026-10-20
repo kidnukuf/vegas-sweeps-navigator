@@ -23,6 +23,7 @@ import IncompleteGuestInformationPanel from "@/components/IncompleteGuestInforma
 import LeagueNameManager from "@/components/LeagueNameManager";
 import PaperTicketQueue from "@/components/PaperTicketQueue";
 import BanquetQrPacketPanel from "@/components/BanquetQrPacketPanel";
+import QrBusinessCardPacketPanel from "@/components/QrBusinessCardPacketPanel";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -2059,6 +2060,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               eventYear={activeEvent?.eventYear ? Number(activeEvent.eventYear) : null}
               startDate={activeEvent?.startDate ? String(activeEvent.startDate) : null}
               endDate={activeEvent?.endDate ? String(activeEvent.endDate) : null}
+            />
+            <QrBusinessCardPacketPanel
+              eventId={EVENT_ID}
+              eventName={String(activeEvent?.eventName ?? "Bowl Vegas Event")}
             />
             <PassportManager
               bowlers={bowlers as Bowler[]}
