@@ -1252,15 +1252,62 @@ export const bowlerAuthRouter = router({
   // Uses only the exact active tokens already assigned to an authorized event.
   // It never generates, rotates, or redeems a QR token.
   getQrBusinessCardRoster: publicProcedure
-    .input(z.object({ token: z.string(), eventId: z.number() }))
+    .input(z.object({
+      token: z.string(),
+      eventId: z.number().int().positive(),
+      centerId: z.number().int().positive().optional(),
+      teamId: z.number().int().positive().optional(),
+      bowlerId: z.number().int().positive().optional(),
+    }))
     .query(async ({ input, ctx }) => {
       await requireEventDirectorToolAccess(ctx, input.token);
       await assertEventAccess(ctx, input.eventId);
+      if (input.bowlerId) await assertBowlerAccess(ctx, input.bowlerId);
+
+      const whereParts = ["b.eventId = ?"];
+      const whereParams: unknown[] = [input.eventId];
+      if (input.centerId) {
+        whereParts.push("b.centerId = ?");
+        whereParams.push(input.centerId);
+      }
+      if (input.teamId) {
+        whereParts.push("b.teamId = ?");
+        whereParams.push(input.teamId);
+      }
+      if (input.bowlerId) {
+        whereParts.push("b.id = ?");
+        whereParams.push(input.bowlerId);
+      }
+      const whereClause = whereParts.join(" AND ");
+
+      const [availableCenters, availableTeams] = await Promise.all([
+        rawQuery<{ id: number; centerName: string }>(
+          `SELECT DISTINCT b.centerId AS id, COALESCE(NULLIF(bc.centerName, ''), 'Unassigned center') AS centerName
+             FROM bowlers b
+             LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+            WHERE b.eventId = ? AND b.centerId IS NOT NULL
+            ORDER BY centerName`,
+          [input.eventId],
+        ),
+        rawQuery<{ id: number; centerId: number | null; teamName: string }>(
+          `SELECT DISTINCT b.teamId AS id, b.centerId,
+                  COALESCE(NULLIF(t.teamName, ''), NULLIF(t.teamCode, ''), CONCAT('Team ', b.teamId)) AS teamName
+             FROM bowlers b
+             LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId
+            WHERE b.eventId = ? AND b.teamId IS NOT NULL
+            ORDER BY teamName`,
+          [input.eventId],
+        ),
+      ]);
 
       const bowlers = await rawQuery<{
         id: number;
         legalFirstName: string;
         legalLastName: string;
+        centerId: number | null;
+        centerName: string | null;
+        teamId: number | null;
+        teamName: string | null;
         under21: number | boolean | null;
         poolPartyEnabled: number | boolean | null;
         poolPartyToken: string | null;
@@ -1268,20 +1315,27 @@ export const bowlerAuthRouter = router({
         banquetToken: string | null;
         banquetUsed: number | boolean;
       }>(
-        `SELECT b.id, b.legalFirstName, b.legalLastName, b.under21,
+        `SELECT b.id, b.legalFirstName, b.legalLastName, b.centerId,
+                bc.centerName, b.teamId, t.teamName, b.under21,
                 e.poolPartyEnabled, b.poolPartyToken, b.poolPartyUsed,
                 b.banquetToken, b.banquetUsed
            FROM bowlers b
            INNER JOIN events e ON e.id = b.eventId
-          WHERE b.eventId = ?
+           LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+           LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId
+          WHERE ${whereClause}
           ORDER BY b.legalLastName, b.legalFirstName, b.id`,
-        [input.eventId],
+        whereParams,
       );
       const guests = await rawQuery<{
         id: number;
         bowlerId: number;
         legalFirstName: string;
         legalLastName: string;
+        centerId: number | null;
+        centerName: string | null;
+        teamId: number | null;
+        teamName: string | null;
         guestName: string | null;
         suffix: string;
         under21: number | boolean | null;
@@ -1292,14 +1346,17 @@ export const bowlerAuthRouter = router({
         banquetUsed: number | boolean;
       }>(
         `SELECT g.id, g.bowlerId, b.legalFirstName, b.legalLastName,
+                b.centerId, bc.centerName, b.teamId, t.teamName,
                 g.guestName, g.suffix, g.under21, e.poolPartyEnabled,
                 g.token, g.used, g.banquetToken, g.banquetUsed
            FROM guest_pool_party_tokens g
            INNER JOIN bowlers b ON b.id = g.bowlerId
            INNER JOIN events e ON e.id = b.eventId
-          WHERE b.eventId = ? AND g.disabled = 0
+           LEFT JOIN bowling_centers bc ON bc.id = b.centerId
+           LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId
+          WHERE ${whereClause} AND g.disabled = 0
           ORDER BY b.legalLastName, b.legalFirstName, g.suffix, g.id`,
-        [input.eventId],
+        whereParams,
       );
 
       type QrBusinessCard = {
@@ -1311,6 +1368,10 @@ export const bowlerAuthRouter = router({
         qrUrl: string;
         under21: boolean;
         hostName: string | null;
+        centerId: number | null;
+        centerName: string | null;
+        teamId: number | null;
+        teamName: string | null;
         sortName: string;
       };
       const cards: QrBusinessCard[] = [];
@@ -1327,6 +1388,10 @@ export const bowlerAuthRouter = router({
           qrUrl,
           under21: Boolean(row.under21),
           hostName: null,
+          centerId: row.centerId,
+          centerName: row.centerName,
+          teamId: row.teamId,
+          teamName: row.teamName,
           sortName: `${row.legalLastName}\u0000${row.legalFirstName}`,
         });
         if (row.banquetToken && !row.banquetUsed) add("banquet", buildBanquetQrUrl(row.banquetToken, appOrigin));
@@ -1347,6 +1412,10 @@ export const bowlerAuthRouter = router({
           qrUrl,
           under21: Boolean(guest.under21),
           hostName,
+          centerId: guest.centerId,
+          centerName: guest.centerName,
+          teamId: guest.teamId,
+          teamName: guest.teamName,
           sortName: `${guest.legalLastName}\u0000${guest.legalFirstName}\u0000${guest.suffix}`,
         });
         if (guest.banquetToken && !guest.banquetUsed) add("banquet", `${appOrigin}/scan/guest-banquet/${encodeURIComponent(guest.banquetToken)}`);
@@ -1359,6 +1428,8 @@ export const bowlerAuthRouter = router({
       const output = cards.map(({ sortName: _sortName, ...card }) => card);
       return {
         cards: output,
+        availableCenters,
+        availableTeams,
         summary: {
           total: output.length,
           bowlerCards: output.filter((card) => card.attendeeType === "bowler").length,

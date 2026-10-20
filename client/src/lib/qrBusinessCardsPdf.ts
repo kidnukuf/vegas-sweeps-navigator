@@ -10,11 +10,16 @@ export type QrBusinessCardRecord = {
   qrUrl: string;
   under21: boolean;
   hostName?: string | null;
+  centerId?: number | null;
+  centerName?: string | null;
+  teamId?: number | null;
+  teamName?: string | null;
 };
 
 export type QrBusinessCardsOptions = {
   eventName: string;
   eventId: number;
+  batchLabel?: string | null;
 };
 
 const POINTS_PER_INCH = 72;
@@ -125,7 +130,7 @@ function drawBusinessCard(
 export async function createQrBusinessCardsPdf(records: QrBusinessCardRecord[], options: QrBusinessCardsOptions) {
   const cards = records.filter((record) => record.qrUrl && record.attendeeName);
   if (cards.length === 0) return null;
-
+  const headerLabel = [options.eventName, options.batchLabel].filter(Boolean).join(" · ");
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -144,7 +149,7 @@ export async function createQrBusinessCardsPdf(records: QrBusinessCardRecord[], 
       margin: 2,
       errorCorrectionLevel: "H",
     });
-    drawBusinessCard(doc, cards[index], x, y, qrDataUrl, options.eventName);
+    drawBusinessCard(doc, cards[index], x, y, qrDataUrl, headerLabel);
   }
 
   return doc;
@@ -153,7 +158,7 @@ export async function createQrBusinessCardsPdf(records: QrBusinessCardRecord[], 
 export async function downloadQrBusinessCards(records: QrBusinessCardRecord[], options: QrBusinessCardsOptions) {
   const doc = await createQrBusinessCardsPdf(records, options);
   if (!doc) return false;
-  doc.save(`${safeFilePart(options.eventName)}-QR-Business-Cards.pdf`);
+  doc.save(`${safeFilePart([options.eventName, options.batchLabel].filter(Boolean).join("-"))}-QR-Business-Cards.pdf`);
   return true;
 }
 
@@ -163,7 +168,7 @@ export async function printQrBusinessCards(records: QrBusinessCardRecord[], opti
   const blobUrl = URL.createObjectURL(doc.output("blob"));
   const printWindow = window.open(blobUrl, "_blank", "noopener,noreferrer");
   if (!printWindow) {
-    doc.save(`${safeFilePart(options.eventName)}-QR-Business-Cards.pdf`);
+    doc.save(`${safeFilePart([options.eventName, options.batchLabel].filter(Boolean).join("-"))}-QR-Business-Cards.pdf`);
     return true;
   }
   window.setTimeout(() => {

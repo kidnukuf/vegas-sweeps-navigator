@@ -24,6 +24,7 @@ import LeagueNameManager from "@/components/LeagueNameManager";
 import PaperTicketQueue from "@/components/PaperTicketQueue";
 import BanquetQrPacketPanel from "@/components/BanquetQrPacketPanel";
 import QrBusinessCardPacketPanel from "@/components/QrBusinessCardPacketPanel";
+import QrBusinessCardReprintPanel from "@/components/QrBusinessCardReprintPanel";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -2134,6 +2135,12 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               <button type="button" onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close bowler editor">Close</button>
             </div>
             <div className="space-y-3">
+              <QrBusinessCardReprintPanel
+                eventId={EVENT_ID}
+                eventName={String(activeEvent?.eventName ?? "BowlVegas Event")}
+                bowlerId={Number(editingBowler.id)}
+                bowlerName={`${String(editingBowler.legalFirstName ?? "")} ${String(editingBowler.legalLastName ?? "")}`.trim() || "selected bowler"}
+              />
               {(["legalFirstName", "legalLastName", "phone", "email"] as const).map((field) => (
                 <div key={field}>
                   <label className="text-xs text-gray-400 mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1")}</label>
