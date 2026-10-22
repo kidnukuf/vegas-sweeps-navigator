@@ -105,6 +105,27 @@ describe("direct bowler claim-code sign-up", () => {
     }
   }, 15000);
 
+  it("lists every recognized database center for signup, including a center outside the event roster", async () => {
+    const [otherCenter] = await rawQuery<{ id: number; centerName: string }>(
+      `SELECT bc.id, bc.centerName
+       FROM bowling_centers bc
+       WHERE NOT EXISTS (
+         SELECT 1 FROM bowlers b WHERE b.centerId = bc.id AND b.eventId = ?
+       )
+       ORDER BY bc.id
+       LIMIT 1`,
+      [eventId],
+    );
+    expect(otherCenter).toBeDefined();
+
+    const caller = appRouter.createCaller(anonymousContext());
+    const centers = await caller.bowlerAuth.listCenters({ eventId });
+
+    expect(centers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: otherCenter.id, centerName: otherCenter.centerName }),
+    ]));
+  });
+
   it("resolves the claim code before rejecting a mismatched name", async () => {
     const secondEvent = await rawExec("INSERT INTO events (eventName, eventYear, status) VALUES (?, ?, 'active')", [`Direct Claim Name ${stamp}`, 2099]);
     const secondBowler = await rawExec(

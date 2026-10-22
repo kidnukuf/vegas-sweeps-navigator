@@ -249,13 +249,11 @@ export const bowlerAuthRouter = router({
   // ── LIST CENTERS for sign-up popup ─────────────────────────────────────────
   listCenters: publicProcedure
     .input(z.object({ eventId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async () => {
       const rows = await rawQuery<{ id: number; centerName: string }>(
-        `SELECT DISTINCT bc.id, bc.centerName
-         FROM bowling_centers bc
-         INNER JOIN bowlers b ON b.centerId = bc.id AND b.eventId = ?
-         ORDER BY bc.centerName`,
-        [input.eventId]
+        `SELECT id, centerName
+         FROM bowling_centers
+         ORDER BY centerName ASC, id ASC`
       );
       return rows;
     }),
