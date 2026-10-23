@@ -1,51 +1,39 @@
 import { X, MapPin, Phone, Clock, BedDouble } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /**
- * Orleans Hotel info pop-up shown in the Bowler & Captain portals when a patron
- * taps the Hotel Check-In or Check-Out step inside the Lane to Banquet placard.
- *
- * The content is rendered as readable HTML (not a flat image) so all fee text is
- * legible on small phones and tablets. Check-in / check-out times are passed in
- * from the event settings so they stay event-specific.
+ * Orleans Hotel info dialog shown in the Bowler & Captain portals when a patron
+ * opens the hotel details from the Lane to Banquet placard.
  */
 export interface OrleansHotelModalProps {
   open: boolean;
   onClose: () => void;
-  checkinLabel?: string | null; // e.g. "Thursday, 4:00 PM"
-  checkoutLabel?: string | null; // e.g. "Sunday, 11:00 AM"
+  checkinLabel?: string | null;
+  checkoutLabel?: string | null;
 }
 
 export function OrleansHotelModal({ open, onClose, checkinLabel, checkoutLabel }: OrleansHotelModalProps) {
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/75 p-4 py-8 backdrop-blur-sm sm:items-center"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="The Orleans Hotel information"
-    >
-      <div
-        className="relative my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border-2 border-[#caa84a] bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-        style={{ animation: "orleansPop 220ms cubic-bezier(0.23,1,0.32,1)" }}
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-md overflow-y-auto rounded-3xl border-2 border-[#caa84a] bg-white p-0 text-gray-900 shadow-2xl"
       >
         <button
+          type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Close hotel information"
           className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[#caa84a] bg-white/90 text-[#4a2d6b] transition-transform active:scale-90"
         >
           <X className="h-5 w-5" />
         </button>
 
-        {/* Header */}
-        <div className="px-6 pt-7 text-center">
+        <DialogHeader className="px-6 pt-7 text-center">
           <div className="mx-auto mb-1 text-3xl font-extrabold tracking-tight text-[#1f6b3a]" style={{ fontFamily: "Georgia, serif" }}>
             The <span className="text-[#0f5a2e]">ORLEANS</span>
           </div>
-          <div className="text-xs font-semibold uppercase tracking-[0.4em] text-[#caa84a]">Hotel</div>
-          <h2 className="mt-4 text-2xl font-extrabold text-[#4a2d6b]">HOTEL — The Orleans Hotel</h2>
+          <DialogDescription className="text-xs font-semibold uppercase tracking-[0.4em] text-[#caa84a]">Hotel</DialogDescription>
+          <DialogTitle className="mt-4 text-2xl font-extrabold text-[#4a2d6b]">HOTEL — The Orleans Hotel</DialogTitle>
           <div className="mt-3 space-y-1.5 text-[15px] font-medium text-gray-700">
             <p className="flex items-center justify-center gap-2">
               <MapPin className="h-4 w-4 text-[#4a2d6b]" /> 4500 W. Tropicana Avenue, Las Vegas, NV 89103
@@ -54,11 +42,10 @@ export function OrleansHotelModal({ open, onClose, checkinLabel, checkoutLabel }
               <Phone className="h-4 w-4 text-[#4a2d6b]" /> (702) 365-7111
             </p>
           </div>
-        </div>
+        </DialogHeader>
 
         <div className="mx-6 my-4 border-t border-[#caa84a]/40" />
 
-        {/* Rooms */}
         <div className="px-6 pb-6">
           <div className="overflow-hidden rounded-xl border border-[#4a2d6b]/20">
             <div className="flex items-center gap-2 bg-[#4a2d6b] px-4 py-2.5 text-white">
@@ -80,7 +67,6 @@ export function OrleansHotelModal({ open, onClose, checkinLabel, checkoutLabel }
             </div>
           </div>
 
-          {/* Early check-in */}
           <table className="mt-4 w-full overflow-hidden rounded-lg text-sm">
             <thead>
               <tr className="bg-[#1f6b3a] text-white">
@@ -100,7 +86,6 @@ export function OrleansHotelModal({ open, onClose, checkinLabel, checkoutLabel }
             </tbody>
           </table>
 
-          {/* Late check-out */}
           <table className="mt-3 w-full overflow-hidden rounded-lg text-sm">
             <thead>
               <tr className="bg-[#4a2d6b] text-white">
@@ -128,18 +113,8 @@ export function OrleansHotelModal({ open, onClose, checkinLabel, checkoutLabel }
             Fees are set by The Orleans Hotel and are subject to change. Confirm current rates at check-in.
           </p>
         </div>
-      </div>
-
-      <style>{`
-        @keyframes orleansPop {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [role="dialog"] > div { animation: none !important; }
-        }
-      `}</style>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

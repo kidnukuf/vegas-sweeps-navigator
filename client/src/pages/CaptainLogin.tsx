@@ -7,7 +7,7 @@
 import { useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
 import { BOWLER_TOKEN_KEY, BOWLER_ID_KEY, BOWLER_IS_CAPTAIN_KEY } from "./BowlerLogin";
-import { Turnstile } from "@marsidev/react-turnstile";
+import Turnstile from "@/components/ResponsiveTurnstile";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,7 +152,7 @@ export default function CaptainLogin() {
   );
 
   return (
-    <div className="captain-login-bg min-h-[100dvh] overflow-y-auto overscroll-contain flex flex-col">
+    <div className="captain-login-bg min-h-[100dvh] flex flex-col">
       {/* Header */}
       <header className="captain-login-header px-6 py-4 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="text-sm text-gold-400 hover:text-gold-300 transition-colors">
@@ -163,7 +163,7 @@ export default function CaptainLogin() {
       </header>
 
       {/* Hero */}
-      <div className="captain-login-hero flex-1 flex flex-col items-center justify-start sm:justify-center px-4 py-8 pb-24 touch-pan-y">
+      <div className="captain-login-hero flex-1 flex flex-col items-center justify-start px-4 py-8 pb-24">
         {/* Badge */}
         <div className="captain-badge mb-8">
           <div className="captain-badge-inner">

@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AppFooter from "@/components/AppFooter";
 import EventWizard from "@/components/EventWizard";
 import EDBowlerView from "@/components/EDBowlerView";
@@ -2127,13 +2128,25 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         )}
       </div>
 
-      {editingBowler && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" role="dialog" aria-modal="true" aria-label="Edit bowler">
-          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-yellow-500/30 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <h3 className="text-xl font-bold text-yellow-400">Edit Bowler — {String(editingBowler.scantronId ?? "")}</h3>
-              <button type="button" onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close bowler editor">Close</button>
-            </div>
+      <Dialog
+        open={Boolean(editingBowler)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingBowler(null);
+            setConfirmReset(false);
+          }
+        }}
+      >
+        <DialogContent showCloseButton={false} className="max-w-lg rounded-2xl border-yellow-500/30 bg-[#1a1a1a] p-4 text-white shadow-2xl sm:p-6">
+          {editingBowler && (
+            <>
+              <DialogHeader className="mb-4 text-left">
+                <DialogDescription className="sr-only">Edit the selected bowler's profile, registration details, and guest tickets.</DialogDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <DialogTitle className="text-xl font-bold text-yellow-400">Edit Bowler — {String(editingBowler.scantronId ?? "")}</DialogTitle>
+                  <button type="button" onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close bowler editor">Close</button>
+                </div>
+              </DialogHeader>
             <div className="space-y-3">
               <QrBusinessCardReprintPanel
                 eventId={EVENT_ID}
@@ -2143,8 +2156,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               />
               {(["legalFirstName", "legalLastName", "phone", "email"] as const).map((field) => (
                 <div key={field}>
-                  <label className="text-xs text-gray-400 mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1")}</label>
-                  <input value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
+                  <label htmlFor={`edit-bowler-${field}`} className="text-xs text-gray-400 mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1")}</label>
+                  <input id={`edit-bowler-${field}`} value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
                     className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500" />
                 </div>
               ))}
@@ -2156,8 +2169,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   {/* Hotel Confirmation Code */}
                   <div className="pt-1 border-t border-blue-500/20">
                     <p className="text-xs text-blue-400/80 mb-2 uppercase tracking-wide">🏨 Hotel Registration</p>
-                    <label className="text-xs text-gray-400 mb-1 block">Confirmation #</label>
+                    <label htmlFor="edit-bowler-confirmation-code" className="text-xs text-gray-400 mb-1 block">Confirmation #</label>
                     <input
+                      id="edit-bowler-confirmation-code"
                       value={editFields.confirmationCode ?? ""}
                       onChange={(e) => setEditFields({ ...editFields, confirmationCode: e.target.value })}
                       placeholder="e.g. XTEST7"
@@ -2166,8 +2180,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   </div>
                   {(["checkinDate", "checkoutDate", "roomType", "roomNumber", "banquetAmount", "laneAssignment", "squadTime", "notes"] as const).map((field) => (
                     <div key={field}>
-                      <label className="text-xs text-gray-400 mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1")}</label>
-                      <input value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
+                      <label htmlFor={`edit-bowler-${field}`} className="text-xs text-gray-400 mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1")}</label>
+                      <input id={`edit-bowler-${field}`} value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
                         className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500" />
                     </div>
                   ))}
@@ -2177,8 +2191,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                     <div className="grid grid-cols-2 gap-2">
                       {(["sanctionNumber", "gamesPlayed", "bestAverage", "tshirtSize"] as const).map((field) => (
                         <div key={field}>
-                          <label className="text-xs text-gray-400 mb-1 block">{field === "sanctionNumber" ? "Sanction #" : field === "gamesPlayed" ? "# Games" : field === "bestAverage" ? "Best Avg" : "T-Shirt Size"}</label>
-                          <input value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
+                          <label htmlFor={`edit-bowler-${field}`} className="text-xs text-gray-400 mb-1 block">{field === "sanctionNumber" ? "Sanction #" : field === "gamesPlayed" ? "# Games" : field === "bestAverage" ? "Best Avg" : "T-Shirt Size"}</label>
+                          <input id={`edit-bowler-${field}`} value={editFields[field] ?? ""} onChange={(e) => setEditFields({ ...editFields, [field]: e.target.value })}
                             className="w-full px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-sm focus:outline-none focus:border-yellow-500" />
                         </div>
                       ))}
@@ -2201,8 +2215,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   {/* Banquet Table Assignment */}
                   <div className="pt-2 border-t border-yellow-500/20">
                     <p className="text-xs text-yellow-400/80 mb-2 uppercase tracking-wide">🍽️ Banquet Table Assignment</p>
-                    <label className="text-xs text-gray-400 mb-1 block">Banquet Table (e.g. "Choose a seat at Tables 1, 2, 3, or 4")</label>
+                    <label htmlFor="edit-bowler-banquet-table" className="text-xs text-gray-400 mb-1 block">Banquet Table (e.g. "Choose a seat at Tables 1, 2, 3, or 4")</label>
                     <input
+                      id="edit-bowler-banquet-table"
                       value={editFields.banquetTable ?? ""}
                       onChange={(e) => setEditFields({ ...editFields, banquetTable: e.target.value })}
                       placeholder="e.g. Choose a seat at Tables 1, 2, 3, or 4"
@@ -2210,8 +2225,8 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                     <p className="text-xs text-gray-500 mt-1">This message will appear on the bowler's dashboard under Banquet Dinner info.</p>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Registration Status Override</label>
-                    <select value={editFields.registrationStatus ?? ""} onChange={(e) => setEditFields({ ...editFields, registrationStatus: e.target.value })}
+                    <label htmlFor="edit-bowler-registration-status" className="text-xs text-gray-400 mb-1 block">Registration Status Override</label>
+                    <select id="edit-bowler-registration-status" value={editFields.registrationStatus ?? ""} onChange={(e) => setEditFields({ ...editFields, registrationStatus: e.target.value })}
                       className="w-full px-3 py-2 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-yellow-500">
                       <option value="">— no change —</option>
                       <option value="pre_registered">Pre-Registered</option>
@@ -2249,8 +2264,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
                 <div className="rounded-xl bg-[#111] border border-purple-400/20 p-3 space-y-3">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Guest full name</label>
+                    <label htmlFor="edit-bowler-guest-name" className="text-xs text-gray-400 mb-1 block">Guest full name</label>
                     <input
+                      id="edit-bowler-guest-name"
                       value={newGuestTicket.name}
                       onChange={(e) => setNewGuestTicket({ ...newGuestTicket, name: e.target.value })}
                       placeholder="e.g. Jordan Smith"
@@ -2350,8 +2366,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                   <p className="text-gray-300 text-xs">
                     This will permanently delete <span className="text-white font-semibold">{String(editingBowler.legalFirstName ?? "")} {String(editingBowler.legalLastName ?? "")}</span> and all of their related records (hotel, payment, tokens, wristbands, check-ins). <span className="text-red-300 font-semibold">The data cannot be recovered.</span>
                   </p>
-                  <label className="block text-xs text-gray-400 mt-2">Type <span className="font-mono text-red-300 font-bold">DELETE</span> to confirm:</label>
+                  <label htmlFor="delete-bowler-confirm" className="block text-xs text-gray-400 mt-2">Type <span className="font-mono text-red-300 font-bold">DELETE</span> to confirm:</label>
                   <input
+                    id="delete-bowler-confirm"
                     value={deleteConfirmText}
                     onChange={(e) => setDeleteConfirmText(e.target.value)}
                     placeholder="DELETE"
@@ -2370,18 +2387,31 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Delete Event Confirmation Modal ── */}
-      {deleteEventModal && (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" onClick={() => setDeleteEventModal(null)}>
-          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-red-500/50 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">⚠️</span>
-              <h3 className="text-xl font-black text-red-400">Delete Event</h3>
-            </div>
+      <Dialog
+        open={Boolean(deleteEventModal)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteEventModal(null);
+            setDeleteEventConfirmText("");
+          }
+        }}
+      >
+        <DialogContent showCloseButton={false} className="max-w-md rounded-2xl border-red-500/50 bg-[#1a1a1a] p-4 text-white shadow-2xl sm:p-6">
+          {deleteEventModal && (
+            <>
+              <DialogHeader className="mb-4 text-left">
+                <DialogDescription className="sr-only">Permanently delete this event after typing the required confirmation word.</DialogDescription>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl" aria-hidden="true">⚠️</span>
+                  <DialogTitle className="text-xl font-black text-red-400">Delete Event</DialogTitle>
+                </div>
+              </DialogHeader>
             <div className="rounded-xl px-4 py-3 mb-4 text-sm"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)" }}>
               <p className="text-red-300 font-bold mb-1">🚨 This action is permanent and cannot be undone.</p>
@@ -2394,7 +2424,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <p className="text-white/60 text-sm mb-2">
               To confirm, type <span className="font-black text-red-400 tracking-widest">delete</span> in the box below:
             </p>
+            <label htmlFor="delete-event-confirm" className="sr-only">Type delete to confirm permanent event deletion</label>
             <input
+              id="delete-event-confirm"
               className="w-full bg-black/50 border border-red-500/40 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-red-400 mb-4"
               placeholder='Type "delete" to confirm'
               value={deleteEventConfirmText}
@@ -2415,18 +2447,31 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors"
               >Cancel</button>
             </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Clear Bowlers Confirmation Modal ── */}
-      {clearBowlersModal && activeEvent && (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 sm:items-center" onClick={() => setClearBowlersModal(false)}>
-          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-orange-500/50 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🧹</span>
-              <h3 className="text-xl font-black text-orange-400">Clear All Bowlers</h3>
-            </div>
+      <Dialog
+        open={Boolean(clearBowlersModal && activeEvent)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setClearBowlersModal(false);
+            setClearBowlersConfirmText("");
+          }
+        }}
+      >
+        <DialogContent showCloseButton={false} className="max-w-md rounded-2xl border-orange-500/50 bg-[#1a1a1a] p-4 text-white shadow-2xl sm:p-6">
+          {clearBowlersModal && activeEvent && (
+            <>
+              <DialogHeader className="mb-4 text-left">
+                <DialogDescription className="sr-only">Clear all bowler data for this event after typing the required confirmation word.</DialogDescription>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl" aria-hidden="true">🧹</span>
+                  <DialogTitle className="text-xl font-black text-orange-400">Clear All Bowlers</DialogTitle>
+                </div>
+              </DialogHeader>
             <div className="rounded-xl px-4 py-3 mb-4 text-sm"
               style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.3)" }}>
               <p className="text-orange-300 font-bold mb-1">⚠️ This will permanently delete all bowler data for this event.</p>
@@ -2438,7 +2483,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
             <p className="text-white/60 text-sm mb-2">
               To confirm, type <span className="font-black text-orange-400 tracking-widest">clear</span> in the box below:
             </p>
+            <label htmlFor="clear-bowlers-confirm" className="sr-only">Type clear to confirm removal of all bowlers</label>
             <input
+              id="clear-bowlers-confirm"
               className="w-full bg-black/50 border border-orange-500/40 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-orange-400 mb-4"
               placeholder='Type "clear" to confirm'
               value={clearBowlersConfirmText}
@@ -2459,17 +2506,24 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors"
               >Cancel</button>
             </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Reset Staff Password Modal ── */}
-      {resetStaffModal && (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/80 p-4 pt-8 pb-8 sm:items-center" onClick={() => setResetStaffModal(null)}>
-          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-yellow-500/50 bg-[#1a1a1a] p-4 pb-6 sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-black text-yellow-400 mb-4">🔑 Reset Password — {resetStaffModal.name}</h3>
-            <input
-              type="password"
+      <Dialog open={Boolean(resetStaffModal)} onOpenChange={(open) => { if (!open) setResetStaffModal(null); }}>
+        <DialogContent showCloseButton={false} className="max-w-sm rounded-2xl border-yellow-500/50 bg-[#1a1a1a] p-4 text-white shadow-2xl sm:p-6">
+          {resetStaffModal && (
+            <>
+              <DialogHeader className="mb-4 text-left">
+                <DialogDescription className="sr-only">Set a new password for the selected staff member.</DialogDescription>
+                <DialogTitle className="text-lg font-black text-yellow-400">🔑 Reset Password — {resetStaffModal.name}</DialogTitle>
+              </DialogHeader>
+              <label htmlFor="reset-staff-password" className="sr-only">New password for {resetStaffModal.name}</label>
+              <input
+                id="reset-staff-password"
+                type="password"
               className="w-full bg-black/50 border border-yellow-500/40 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-yellow-400 mb-4"
               placeholder="New password (min 8 chars)"
               value={resetStaffPw}
@@ -2490,9 +2544,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </button>
               <button onClick={() => setResetStaffModal(null)} className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-semibold transition-colors">Cancel</button>
             </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Event Wizard (create new event + edit settings) */}
       {wizard && (
@@ -2510,14 +2565,19 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
       )}
 
       {/* Event create / rename modal */}
-      {eventModal && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8 sm:items-center" onClick={() => setEventModal(null)}>
-          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-yellow-500/30 bg-[#1a1a1a] p-4 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-yellow-400 mb-4">{eventModal.mode === "create" ? "Create New Event" : "Rename Event"}</h3>
-            <div className="space-y-3">
+      <Dialog open={Boolean(eventModal)} onOpenChange={(open) => { if (!open) setEventModal(null); }}>
+        <DialogContent showCloseButton={false} className="max-w-md rounded-2xl border-yellow-500/30 bg-[#1a1a1a] p-4 text-white shadow-2xl sm:p-6">
+          {eventModal && (
+            <>
+              <DialogHeader className="mb-4 text-left">
+                <DialogDescription className="sr-only">Enter the event name and year, then save the event details.</DialogDescription>
+                <DialogTitle className="text-xl font-bold text-yellow-400">{eventModal.mode === "create" ? "Create New Event" : "Rename Event"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Event Name</label>
+                <label htmlFor="event-modal-name" className="block text-xs text-gray-400 mb-1">Event Name</label>
                 <input
+                  id="event-modal-name"
                   value={eventModal.name}
                   onChange={(e) => setEventModal({ ...eventModal, name: e.target.value })}
                   placeholder="e.g. Funtime Team Challenge 2027"
@@ -2525,8 +2585,9 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Year</label>
+                <label htmlFor="event-modal-year" className="block text-xs text-gray-400 mb-1">Year</label>
                 <input
+                  id="event-modal-year"
                   type="number"
                   value={eventModal.year}
                   onChange={(e) => setEventModal({ ...eventModal, year: e.target.value })}
@@ -2551,9 +2612,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
               </button>
               <button onClick={() => setEventModal(null)} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
             </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Role-scoped Communication Inbox Tab ── */}
       {activeTab === "messages" && (

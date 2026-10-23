@@ -75,8 +75,8 @@ export default function OfflineDoor() {
     const zone = view === "A" ? zoneA : zoneB;
     const label = view === "A" ? "Door A" : "Door B";
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 p-3">
-        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="fixed inset-0 z-50 flex min-h-0 flex-col overflow-y-auto bg-slate-950 p-3">
+        <div className="mb-2 shrink-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => setView("console")}>
               ← Console
@@ -101,14 +101,14 @@ export default function OfflineDoor() {
           </div>
         </div>
         {!hasData ? (
-          <div className="flex flex-1 items-center justify-center text-center text-slate-300">
+          <div className="flex min-h-[20rem] flex-1 items-center justify-center text-center text-slate-300">
             <div>
               <div className="text-2xl font-semibold">No data loaded for Event ID {eventId}</div>
               <div className="mt-2 text-slate-500">Go to the Console and load Banquet or Pool Party data for this event before scanning.</div>
             </div>
           </div>
         ) : (
-          <div className="flex-1">
+          <div className="flex min-h-[20rem] flex-1">
             {/* One capturing lane fills the TV. */}
             <ScanLane
               lane={view === "A" ? 1 : 2}

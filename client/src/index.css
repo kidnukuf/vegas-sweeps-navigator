@@ -845,14 +845,99 @@ body {
   overflow-x: hidden;
 }
 
+/* Clip sideways page bleed without creating an accidental vertical scroller.
+   Do not override inline body locks: Radix must still own modal focus/scroll. */
+@supports (overflow: clip) {
+  html, body { overflow-x: clip; }
+}
+
+:root {
+  --app-viewport-height: 100vh;
+  --app-viewport-top: 0px;
+}
+@supports (height: 100dvh) {
+  :root { --app-viewport-height: 100dvh; }
+}
+
+.viewport-dialog,
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"] {
+  top: calc(var(--app-viewport-top) + var(--app-viewport-height) / 2) !important;
+  max-height: max(3rem, calc(var(--app-viewport-height) - 2rem)) !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+  transition-property: opacity, transform;
+}
+
+/* Opt-in for custom full-screen form overlays, not transient scanner flashes. */
+.viewport-overlay {
+  top: var(--app-viewport-top);
+  bottom: auto;
+  height: var(--app-viewport-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.viewport-overlay > * { flex-shrink: 0; }
+
+[data-slot="sheet-content"] {
+  max-height: var(--app-viewport-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot="sheet-content"] > * { flex-shrink: 0; }
+
+[data-slot="drawer-content"][data-vaul-drawer] {
+  max-height: max(3rem, calc(var(--app-viewport-height) - 2rem)) !important;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot="drawer-content"]::after { display: none; }
+[data-slot="drawer-content"][data-vaul-drawer-direction="bottom"] {
+  bottom: calc(100% - var(--app-viewport-top) - var(--app-viewport-height));
+  margin-top: 0;
+}
+[data-slot="drawer-content"][data-vaul-drawer-direction="top"] {
+  top: var(--app-viewport-top);
+  margin-bottom: 0;
+}
+[data-slot="drawer-content"][data-vaul-drawer-direction="left"],
+[data-slot="drawer-content"][data-vaul-drawer-direction="right"] {
+  top: var(--app-viewport-top);
+  bottom: auto;
+  height: var(--app-viewport-height);
+}
+[data-slot="drawer-scroll-body"] {
+  flex-shrink: 1;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-slot="command-list"] {
+  min-height: 0;
+  max-height: min(300px, max(3rem, calc(var(--app-viewport-height) - 7rem)));
+}
+
+/* Horizontal table swipes must not trap the parent page's vertical scrolling. */
+[data-slot="table-container"] {
+  max-width: 100%;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .bowler-portal-bg,
 .captain-login-bg {
   min-height: 100svh;
   min-height: 100dvh;
   height: auto;
-  overflow-x: hidden;
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
 }
 
 .bowler-auth-card,
@@ -879,7 +964,7 @@ body {
   .bowler-portal-bg > .flex-1,
   .captain-login-bg > .captain-login-hero {
     padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom)));
-    touch-action: pan-y;
+    touch-action: auto;
   }
 
   .bowler-input,

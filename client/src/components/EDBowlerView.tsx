@@ -5,6 +5,7 @@
  */
 import BowlerDashboard from "@/pages/BowlerDashboard";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface EDBowlerViewProps {
   bowlerId: number | null;
@@ -12,29 +13,37 @@ interface EDBowlerViewProps {
 }
 
 export default function EDBowlerView({ bowlerId, onClose }: EDBowlerViewProps) {
-  if (bowlerId == null) return null;
+  const open = bowlerId !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
-      {/* Close bar */}
-      <div className="flex items-center justify-between bg-zinc-900 border-b border-amber-500/30 px-4 py-2 shrink-0">
-        <span className="text-amber-400 font-bold text-sm tracking-wide">
-          🔑 ED Impersonation View — Bowler Portal
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-white/70 hover:text-white"
-          onClick={onClose}
-        >
-          ✕ Close
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-[calc(var(--app-viewport-height)-1rem)] w-[calc(100vw-1rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-xl border border-amber-500/30 bg-black p-0 text-white sm:h-[calc(var(--app-viewport-height)-2rem)]"
+      >
+        <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-amber-500/30 bg-zinc-900 px-4 py-2 text-left">
+          <div>
+            <DialogTitle className="text-sm font-bold tracking-wide text-amber-400">
+              🔑 ED Impersonation View — Bowler Portal
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Event Director preview and editing view of the selected bowler&apos;s portal.
+            </DialogDescription>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0 text-white/70 hover:text-white"
+            onClick={onClose}
+          >
+            ✕ Close
+          </Button>
+        </DialogHeader>
 
-      {/* Scrollable bowler portal — identical to what the bowler sees */}
-      <div className="flex-1 overflow-y-auto">
-        <BowlerDashboard edBowlerId={bowlerId} />
-      </div>
-    </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {bowlerId !== null && <BowlerDashboard edBowlerId={bowlerId} />}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

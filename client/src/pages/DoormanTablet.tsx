@@ -279,6 +279,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
   const checkinDivId = "tablet-checkin-qr";
   const tokenInputRef = useRef<HTMLInputElement>(null);
   const passportInputRef = useRef<HTMLInputElement>(null);
+  const reentryInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-lock after 10 minutes of inactivity
   function resetInactivity() {
@@ -324,7 +325,6 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
         setScanResult(null);
         setBowlerName("");
         setScanMessage("");
-        passportInputRef.current?.focus();
       }, data.result === "granted" ? 2500 : 4000);
     },
     onError: (err) => {
@@ -334,7 +334,6 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
       window.setTimeout(() => {
         setScanResult(null);
         setScanMessage("");
-        passportInputRef.current?.focus();
       }, 4000);
     },
   });
@@ -469,6 +468,27 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
       if (checkinScannerRef.current) { try { checkinScannerRef.current.stop(); } catch { /* ignore */ } checkinScannerRef.current = null; }
     };
   }, [checkinScanning]);
+
+  // A keyboard-wedge scanner follows browser focus. Return it to the input for
+  // the active workflow after a tab change or result clears, but never pull focus
+  // away from an active camera or an on-screen scan result.
+  useEffect(() => {
+    if (tab === "passport") {
+      if (!scanning && !checkinScanning && !scanResult && !checkInResult && !showDenied) {
+        passportInputRef.current?.focus({ preventScroll: true });
+      }
+      return;
+    }
+    if (tab === "checkin") {
+      if (!scanning && !checkinScanning && !scanResult && !checkInResult && !showDenied) {
+        tokenInputRef.current?.focus({ preventScroll: true });
+      }
+      return;
+    }
+    if (!scanning && !checkinScanning && !scanResult && !checkInResult && !showDenied && reentryMode === "verify" && !reentryVerifyResult) {
+      reentryInputRef.current?.focus({ preventScroll: true });
+    }
+  }, [tab, scanning, scanResult, checkinScanning, checkInResult, showDenied, reentryMode, reentryVerifyResult]);
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white">
@@ -773,7 +793,7 @@ function TabletScanner({ onLock }: { onLock: () => void }) {
                   <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">Scan / Enter Re-Entry Code</p>
                   <p className="text-gray-500 text-xs mb-3">Scan the patron's re-entry QR (or paste the code). The bracelet number entered at issuance will be shown so you can match it to their wristband.</p>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <input value={reentryScanToken} onChange={(e) => setReentryScanToken(e.target.value)}
+                    <input ref={reentryInputRef} value={reentryScanToken} onChange={(e) => setReentryScanToken(e.target.value)}
                       placeholder="Scan QR or paste code..."
                       className="flex-1 px-3 py-2.5 bg-[#111] border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 font-mono"
                       onKeyDown={(e) => { if (e.key === "Enter" && reentryScanToken.trim()) { reentryVerify.mutate({ token: reentryScanToken.trim() }); } }} />

@@ -7,6 +7,9 @@
  */
 export function scrollMobileAuthFieldIntoView(element: HTMLElement) {
   const scroll = () => {
+    // Keyboard animations must not pull the page back to an old/detached field.
+    if (element.isConnected === false) return;
+    if (element.ownerDocument && element.ownerDocument.activeElement !== element) return;
     element.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
   };
 

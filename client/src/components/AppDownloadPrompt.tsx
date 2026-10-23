@@ -63,6 +63,7 @@ export default function AppDownloadPrompt({ token, dismissed, onDismissed }: App
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleSkip(); }}>
       <DialogContent
         className="w-[calc(100vw-1rem)] max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain mx-auto rounded-2xl border-2 border-yellow-500/60 bg-gray-900 p-4 text-white shadow-2xl sm:p-6"
+        showCloseButton={false}
         // Prevent closing by clicking outside — we want them to see this
         onInteractOutside={(e) => e.preventDefault()}
       >

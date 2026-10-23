@@ -146,7 +146,7 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
   return (
     <div
       className={cn(
-        "door-lane relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-4 transition-colors duration-200",
+        "door-lane relative flex h-full min-h-[20rem] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-2xl border-4 transition-colors duration-200",
         flash === "idle" && "border-slate-700 bg-slate-900",
         flash === "admit" && "border-emerald-400 bg-emerald-600",
         flash === "deny" && "border-red-400 bg-red-600"
@@ -174,21 +174,21 @@ export function ScanLane({ lane, label, zone, station = "banquet", captureKeyboa
       )}
 
       {/* Center status */}
-      <div className="flex max-w-full flex-col items-center px-4 text-center sm:px-6">
+      <div className="flex min-h-0 max-w-full flex-1 flex-col items-center justify-start [justify-content:safe_center] overflow-y-auto px-4 py-16 text-center sm:px-6 [&>*]:shrink-0">
         {flash === "idle" && (
           <>
-            <div className="text-3xl font-semibold text-slate-300">Ready to Scan</div>
-            <div className="mt-2 text-base text-slate-500">{label} · Bowler & guest QR passes</div>
+            <div className="break-words text-3xl font-semibold text-slate-300">Ready to Scan</div>
+            <div className="mt-2 break-words text-base text-slate-500">{label} · Bowler & guest QR passes</div>
           </>
         )}
         {flash !== "idle" && decision && (
           <>
-            <div className="break-words text-[clamp(2rem,8vw,3.75rem)] font-black uppercase leading-tight tracking-tight text-white drop-shadow">
+            <div className="max-w-full break-words text-[clamp(1.75rem,min(8vw,12vh),3.75rem)] font-black uppercase leading-tight tracking-tight text-white drop-shadow">
               {decision.headline}
             </div>
-            <div className="mt-3 max-w-[90%] break-words text-xl font-medium text-white/95 sm:text-2xl">{decision.detail}</div>
+            <div className="mt-3 max-w-[90%] break-words text-[clamp(1rem,min(4vw,5vh),1.5rem)] font-medium text-white/95">{decision.detail}</div>
             {!decision.admit && (
-              <div className="mt-4 rounded-lg bg-black/30 px-4 py-2 text-lg font-semibold text-white">
+              <div className="mt-4 max-w-full break-words rounded-lg bg-black/30 px-4 py-2 text-lg font-semibold text-white">
                 Ask guest to STEP ASIDE → resolve at laptop
               </div>
             )}

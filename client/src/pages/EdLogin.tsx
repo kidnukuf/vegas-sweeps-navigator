@@ -41,7 +41,7 @@ export default function EdLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-start justify-center p-4 pt-8">
       <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur">
         <div className="p-8">
           <div className="text-center mb-8">

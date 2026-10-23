@@ -397,17 +397,17 @@ export default function SeatingChart() {
     <div className="min-h-screen bg-black text-white p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-yellow-400" style={{ textShadow: "0 0 20px rgba(255,215,0,0.5)" }}>
+        <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="break-words text-2xl font-bold text-yellow-400 sm:text-3xl" style={{ textShadow: "0 0 20px rgba(255,215,0,0.5)" }}>
               🪑 Seating Chart
             </h1>
-            <p className="text-blue-300 text-sm mt-1">
+            <p className="mt-1 break-words text-sm text-blue-300">
               Funtime Team Challenge — Automated Banquet Seating Assignment
             </p>
           </div>
           {eventTitle && (
-            <Badge className="ml-auto bg-blue-900 text-blue-200 border-blue-600 text-base px-4 py-1">
+            <Badge className="max-w-full whitespace-normal break-words bg-blue-900 px-4 py-1 text-base text-blue-200 border-blue-600 sm:ml-auto">
               {eventTitle}
             </Badge>
           )}

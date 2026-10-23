@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const SPLASH_KEY = "bob_splash_seen_v1";
 const BOB_VIDEO_URL = "/manus-storage/bob-intro_40be5fd1.mp4";
@@ -10,7 +10,6 @@ const BOB_VIDEO_URL = "/manus-storage/bob-intro_40be5fd1.mp4";
  */
 export function VideoSplash() {
   const [visible, setVisible] = useState(false);
-  const [showSkip, setShowSkip] = useState(false);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -29,18 +28,25 @@ export function VideoSplash() {
 
     setVisible(true);
     sessionStorage.setItem(SPLASH_KEY, "1");
-
-    // Show skip button after 2 seconds
-    const t = setTimeout(() => setShowSkip(true), 2000);
-    return () => clearTimeout(t);
   }, []);
 
-  const dismiss = () => {
+  const dismiss = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.pause();
     }
     setVisible(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [dismiss, visible]);
 
   const toggleMute = () => {
     if (videoRef.current) {
@@ -52,18 +58,17 @@ export function VideoSplash() {
   if (!visible) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black"
-      style={{ touchAction: "none" }}
-    >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
       <video
         ref={videoRef}
         src={BOB_VIDEO_URL}
         autoPlay
-        muted
+        muted={muted}
         playsInline
         className="w-full h-full object-cover"
         onEnded={dismiss}
+        onError={dismiss}
+        onAbort={dismiss}
         onClick={toggleMute}
         style={{ cursor: "pointer" }}
       />
@@ -77,22 +82,19 @@ export function VideoSplash() {
         {muted ? "🔇" : "🔊"}
       </button>
 
-      {/* Skip button — appears after 2 seconds */}
-      {showSkip && (
-        <button
-          onClick={dismiss}
-          className="absolute bottom-8 right-6 px-5 py-2 rounded-full text-sm font-bold tracking-wide transition-all"
-          style={{
-            background: "rgba(255,215,0,0.15)",
-            border: "1.5px solid rgba(255,215,0,0.6)",
-            color: "#ffd700",
-            backdropFilter: "blur(8px)",
-            boxShadow: "0 0 16px rgba(255,215,0,0.3)",
-          }}
-        >
-          Skip →
-        </button>
-      )}
+      <button
+        onClick={dismiss}
+        className="absolute bottom-8 right-6 px-5 py-2 rounded-full text-sm font-bold tracking-wide transition-all"
+        style={{
+          background: "rgba(255,215,0,0.15)",
+          border: "1.5px solid rgba(255,215,0,0.6)",
+          color: "#ffd700",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 0 16px rgba(255,215,0,0.3)",
+        }}
+      >
+        Skip →
+      </button>
 
       {/* Tap to unmute hint */}
       {muted && (

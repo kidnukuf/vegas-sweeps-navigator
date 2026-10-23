@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { normalizeSquadTime } from "@/lib/squadTime";
 import OrleansHotelModal from "@/components/OrleansHotelModal";
 import { getEventScheduleState } from "@/lib/eventSchedule";
@@ -51,6 +51,7 @@ export function LaneToBanquetPlacard({
   const [open, setOpen] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [hotelModalOpen, setHotelModalOpen] = useState(false);
+  const detailsId = useId();
 
   function handleClick() {
     if (!open) {
@@ -84,13 +85,14 @@ export function LaneToBanquetPlacard({
   const personalCheckoutLabel = checkoutDate || null;
 
   return (
-    <div
-      className={`bowler-card cursor-pointer select-none transition-all duration-300 ${open ? "ring-2 ring-amber-400/60" : "hover:ring-1 hover:ring-amber-400/30"}`}
-      onClick={handleClick}
-      role="button"
-      aria-expanded={open}
-    >
-      <div className="flex items-center justify-between gap-3">
+    <div className={`bowler-card transition-all duration-300 ${open ? "ring-2 ring-amber-400/60" : "hover:ring-1 hover:ring-amber-400/30"}`}>
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 text-left"
+        onClick={handleClick}
+        aria-expanded={open}
+        aria-controls={detailsId}
+      >
         <div className="flex items-center gap-3">
           <span className="text-2xl">🗺️</span>
           <div>
@@ -99,12 +101,18 @@ export function LaneToBanquetPlacard({
           </div>
         </div>
         <span className={`text-amber-300 text-lg transition-transform duration-300 ${open ? "rotate-90" : "rotate-0"}`} aria-hidden="true">▶</span>
-      </div>
+      </button>
 
-      <div className={`overflow-hidden transition-all duration-500 ease-out ${open ? "max-h-[2000px] opacity-100 mt-4" : "max-h-0 opacity-0 mt-0"}`}>
-        {animating && <div className="h-0.5 w-full rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent mb-3 animate-pulse" />}
+      <div
+        id={detailsId}
+        inert={!open}
+        aria-hidden={!open}
+        className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out ${open ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0 mt-0"}`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {animating && <div className="h-0.5 w-full rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent mb-3 animate-pulse" />}
 
-        <div className="space-y-3 pt-1 border-t border-white/10">
+          <div className="space-y-3 pt-1 border-t border-white/10">
           {hasHotel && (
             <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20" aria-label="Personal hotel arrival information">
               <div className="flex items-start justify-between gap-3 mb-2">
@@ -168,7 +176,8 @@ export function LaneToBanquetPlacard({
               )}
               {showHotelCard && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setHotelModalOpen(true); }}
+                  type="button"
+                  onClick={() => setHotelModalOpen(true)}
                   className="mt-2 w-full rounded-lg border border-blue-400/40 bg-blue-500/15 px-3 py-2 text-xs font-semibold text-blue-200 transition-transform active:scale-95 hover:bg-blue-500/25"
                 >
                   🏨 View Orleans Hotel Info, Fees &amp; Policies
@@ -301,6 +310,7 @@ export function LaneToBanquetPlacard({
                 Side pots and brackets are available at the <span className="text-white font-semibold">front desk</span>. See the desk before your squad begins.
               </p>
             </div>
+          </div>
           </div>
         </div>
       </div>

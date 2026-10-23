@@ -38,6 +38,7 @@ import CoordinatorImport from "./pages/CoordinatorImport";
 import CoordinatorPortal from "./pages/CoordinatorPortal";
 import CoordinatorManagement from "./pages/CoordinatorManagement";
 import { VideoSplash } from "./components/VideoSplash";
+import ViewportMetrics from "./components/ViewportMetrics";
 import { useLocation } from "wouter";
 
 const ED_ICON_URL = "https://d2xsxph8kpxj0f.cloudfront.net/118351434/Y8eYwESKJRiDArjEnFPr6k/ed-icon-512-Vu5wULChGrkz9WqWNQ6rBh.png";
@@ -227,6 +228,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
+          <ViewportMetrics />
           <PwaIconInjector />
           <EdIconInjector />
           <EdDomainRedirector />

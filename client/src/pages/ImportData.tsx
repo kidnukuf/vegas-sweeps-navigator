@@ -461,14 +461,14 @@ export default function ImportData() {
   return (
     <div className="min-h-screen bg-[#0d0d0d]" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
       {/* Header */}
-      <div className="border-b border-yellow-500/20 bg-black/60 px-4 py-3 flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-yellow-500/20 bg-black/60 px-4 py-3">
         <button onClick={() => navigate("/admin")} className="text-gray-400 hover:text-yellow-400 text-sm transition-colors">← Admin</button>
-        <span className="text-gray-600">|</span>
-        <span className="text-2xl">📥</span>
-        <h1 className="text-xl font-black text-yellow-400 tracking-widest" style={{ textShadow: "0 0 12px rgba(255,215,0,0.5)" }}>
+        <span className="text-gray-600" aria-hidden="true">|</span>
+        <span className="text-2xl" aria-hidden="true">📥</span>
+        <h1 className="text-base font-black tracking-widest text-yellow-400 sm:text-xl" style={{ textShadow: "0 0 12px rgba(255,215,0,0.5)" }}>
           IMPORT BOWLER DATA
         </h1>
-        <span className="ml-auto text-xs text-gray-400">
+        <span className="basis-full text-xs text-gray-400 sm:ml-auto sm:basis-auto">
           Importing into:{" "}
           <span className="text-yellow-300 font-semibold">
             {selectedEvent ? (
@@ -714,12 +714,12 @@ export default function ImportData() {
                 </div>
                 <div className="space-y-2">
                   {mismatchedCenters.map(name => (
-                    <div key={name} className="flex items-center gap-2 bg-[#1a0d00] border border-orange-500/20 rounded-lg px-3 py-2">
-                      <span className="text-orange-300 font-mono text-sm flex-1 min-w-0 truncate" title={name}>❌ "{name}"</span>
+                    <div key={name} className="flex flex-col items-stretch gap-2 rounded-lg border border-orange-500/20 bg-[#1a0d00] px-3 py-2 sm:flex-row sm:items-center">
+                      <span className="min-w-0 flex-1 truncate font-mono text-sm text-orange-300" title={name}>❌ "{name}"</span>
                       {editingCenter === name ? (
                         <>
                           <input
-                            className="bg-[#111] border border-yellow-500/40 rounded px-2 py-1 text-yellow-300 text-xs w-48 focus:outline-none focus:border-yellow-400"
+                            className="w-full rounded border border-yellow-500/40 bg-[#111] px-2 py-1 text-xs text-yellow-300 focus:border-yellow-400 focus:outline-none sm:w-48"
                             value={editValue}
                             onChange={e => setEditValue(e.target.value)}
                             placeholder="Correct spelling..."
@@ -741,7 +741,7 @@ export default function ImportData() {
                             }}
                           />
                           <button
-                            className="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded transition-colors"
+                            className="w-full px-2 py-1 text-xs text-white transition-colors bg-green-700 rounded hover:bg-green-600 sm:w-auto"
                             onClick={() => {
                               if (!editValue.trim()) return;
                               const exists = centerNameSet.has(editValue.trim().toLowerCase());
@@ -755,7 +755,7 @@ export default function ImportData() {
                             }}
                           >✓ Apply</button>
                           <button
-                            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                            className="w-full px-2 py-1 text-xs text-white transition-colors bg-gray-700 rounded hover:bg-gray-600 sm:w-auto"
                             onClick={() => { setEditingCenter(null); setEditValue(""); }}
                           >Cancel</button>
                         </>

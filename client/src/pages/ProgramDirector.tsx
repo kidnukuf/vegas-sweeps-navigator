@@ -96,7 +96,7 @@ export default function ProgramDirector() {
 
   if (!loggedIn) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
+      <div className="flex min-h-[var(--app-viewport-height)] items-start justify-center bg-[#0d0d0d] px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] md:items-center [@media(max-height:42rem)]:!items-start">
         <div className="neon-card p-8 max-w-sm w-full neon-border-gold">
           <div className="text-center mb-6">
             <div className="text-5xl mb-3">📊</div>

@@ -268,15 +268,15 @@ export function UploadScanLogModal({ open, onClose }: Props) {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-1">
+                <div className="flex flex-col gap-3 pt-1 sm:flex-row">
                   <Button
                     onClick={handleSync}
                     disabled={syncMut.isPending}
-                    className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold"
+                    className="w-full bg-cyan-600 font-bold text-white hover:bg-cyan-500 sm:w-auto"
                   >
                     {syncMut.isPending ? "Syncing…" : `✅ Sync ${parsed.scans.length} Scans to Database`}
                   </Button>
-                  <Button variant="outline" onClick={reset} className="border-white/20 text-gray-300">
+                  <Button variant="outline" onClick={reset} className="w-full border-white/20 text-gray-300 sm:w-auto">
                     Clear
                   </Button>
                 </div>
@@ -317,11 +317,11 @@ export function UploadScanLogModal({ open, onClose }: Props) {
                 ))}
               </div>
             )}
-            <div className="flex gap-3">
-              <Button onClick={reset} variant="outline" className="border-white/20 text-gray-300">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button onClick={reset} variant="outline" className="w-full border-white/20 text-gray-300 sm:w-auto">
                 Upload Another Log
               </Button>
-              <Button onClick={handleClose} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold">
+              <Button onClick={handleClose} className="w-full bg-cyan-600 font-bold text-white hover:bg-cyan-500 sm:w-auto">
                 Done
               </Button>
             </div>

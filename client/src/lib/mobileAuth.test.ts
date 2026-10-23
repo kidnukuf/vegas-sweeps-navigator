@@ -23,6 +23,24 @@ describe("mobile authentication helpers", () => {
     globalThis.requestAnimationFrame = previousRaf;
   });
 
+  it("does not scroll a detached or no-longer-focused password field", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 1; });
+    const scrollIntoView = vi.fn();
+    const ownerDocument = { activeElement: null as unknown };
+    const element = { scrollIntoView, ownerDocument, isConnected: true };
+    ownerDocument.activeElement = element;
+    scrollMobileAuthFieldIntoView(element as unknown as HTMLElement);
+    ownerDocument.activeElement = {};
+    vi.runAllTimers();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    element.isConnected = false;
+    scrollMobileAuthFieldIntoView(element as unknown as HTMLElement);
+    vi.runAllTimers();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
   it("moves from the password field to the next enabled form control", () => {
     const focus = vi.fn();
     const password = { tabIndex: 0, getAttribute: () => "password", focus } as unknown as HTMLInputElement;

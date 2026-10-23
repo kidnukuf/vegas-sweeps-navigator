@@ -325,7 +325,7 @@ export default function CaptainDashboard() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full space-y-4">
+      <div className="flex-1 px-4 py-6 max-w-2xl mx-auto w-full space-y-4">
 
         {/* ── Captain + Team Header ── */}
         <div className="captain-card">

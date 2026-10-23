@@ -122,14 +122,15 @@ export default function LeagueSelector() {
             onClick={() => handleSelectEvent(event)}
           >
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <CardTitle
-                  className="text-2xl font-extrabold"
+                  className="min-w-0 flex-1 break-words text-2xl font-extrabold"
                   style={{ color: theme.color }}
                 >
                   {event.eventName}
                 </CardTitle>
                 <Badge
+                  className="shrink-0 whitespace-nowrap"
                   style={{
                     background: event.status === "active" ? "#22c55e" : `${theme.color}30`,
                     color: event.status === "active" ? "#fff" : theme.color,
@@ -159,7 +160,7 @@ export default function LeagueSelector() {
                 </div>
               </div>
               <Button
-                className="w-full mt-4 text-black font-bold text-lg"
+                className="mt-4 h-auto min-h-11 w-full whitespace-normal break-words px-4 py-2 text-center text-lg font-bold leading-snug text-black"
                 style={{ background: theme.color }}
               >
                 Select {event.eventName}

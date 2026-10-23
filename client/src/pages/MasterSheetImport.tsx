@@ -369,9 +369,9 @@ export default function MasterSheetImport() {
   // Step 1: Input
   if (step === "input") {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] text-white p-6">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-black text-cyan-400 mb-8">📥 Master Sheet Import</h1>
+      <div className="min-h-screen bg-[#0d0d0d] p-4 text-white sm:p-6">
+        <div className="mx-auto max-w-2xl">
+          <h1 className="mb-6 text-2xl font-black text-cyan-400 sm:mb-8 sm:text-3xl">📥 Master Sheet Import</h1>
 
           {/* Sheet target confirmation banner */}
           <SheetTargetBanner event={activeEvent} />

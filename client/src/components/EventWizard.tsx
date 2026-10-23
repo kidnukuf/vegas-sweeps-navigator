@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight, Check, Trash2, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /**
  * Create / Edit Event Wizard (Section 1).
@@ -232,7 +233,7 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
     <div className="space-y-3">
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className={labelCls}>Sheet Tab</label>
+          <label htmlFor="wizard-sheet-tab" className={labelCls}>Sheet Tab</label>
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
           {!loading && tabs.length > 0 && (
             <button
@@ -247,6 +248,7 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
 
         {tabs.length > 0 ? (
           <select
+            id="wizard-sheet-tab"
             className={inputCls + " cursor-pointer"}
             value={selectedTab}
             onChange={(e) => onTabChange(e.target.value)}
@@ -258,6 +260,7 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
           </select>
         ) : (
           <input
+            id="wizard-sheet-tab"
             className={inputCls}
             value={selectedTab}
             onChange={(e) => onTabChange(e.target.value)}
@@ -275,8 +278,9 @@ function SheetTabPicker({ spreadsheetId, selectedTab, nickname, onTabChange, onN
       </div>
 
       <div>
-        <label className={labelCls}>Tab Nickname <span className="text-gray-500 font-normal">(optional)</span></label>
+        <label htmlFor="wizard-sheet-tab-nickname" className={labelCls}>Tab Nickname <span className="text-gray-500 font-normal">(optional)</span></label>
         <input
+          id="wizard-sheet-tab-nickname"
           className={inputCls}
           value={nickname}
           onChange={(e) => onNicknameChange(e.target.value)}
@@ -423,19 +427,21 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
   }, [s]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/75 p-4 py-8 sm:items-center" onClick={onClose}>
-      <div
-        className="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-yellow-500/30 bg-[#161616]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header + progress */}
-        <div className="border-b border-white/10 px-6 pt-5 pb-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-yellow-400">
-              {mode === "create" ? "Create New Event" : "Edit Event Settings"}
-            </h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Close"><X className="h-5 w-5" /></button>
-          </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent showCloseButton={false} className="max-w-2xl gap-0 overflow-hidden rounded-2xl border-yellow-500/30 bg-[#161616] p-0 text-white">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{mode === "create" ? "Create New Event" : "Edit Event Settings"}</DialogTitle>
+          <DialogDescription>Use this multi-step wizard to configure and save event details.</DialogDescription>
+        </DialogHeader>
+        <div className="flex max-h-[calc(100dvh-2rem)] w-full flex-col">
+          {/* Header + progress */}
+          <div className="border-b border-white/10 px-4 pt-5 pb-4 sm:px-6">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xl font-bold text-yellow-400">
+                {mode === "create" ? "Create New Event" : "Edit Event Settings"}
+              </h3>
+              <button type="button" onClick={onClose} className="shrink-0 text-gray-400 hover:text-white" aria-label="Close event wizard"><X className="h-5 w-5" /></button>
+            </div>
           <div className="mt-3 flex items-center gap-1.5">
             {steps.map((st, i) => (
               <div
@@ -450,16 +456,16 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           {steps[step].key === "basics" && (
             <div className="space-y-4">
               <div>
-                <label className={labelCls}>Event Name</label>
-                <input className={inputCls} value={s.eventName} onChange={(e) => set("eventName", e.target.value)} placeholder="e.g. Funtime Team Challenge" />
+                <label htmlFor="wizard-event-name" className={labelCls}>Event Name</label>
+                <input id="wizard-event-name" className={inputCls} value={s.eventName} onChange={(e) => set("eventName", e.target.value)} placeholder="e.g. Funtime Team Challenge" />
               </div>
               <div>
-                <label className={labelCls}>Year</label>
-                <input type="number" className={inputCls} value={s.eventYear} onChange={(e) => set("eventYear", e.target.value)} />
+                <label htmlFor="wizard-event-year" className={labelCls}>Year</label>
+                <input id="wizard-event-year" type="number" className={inputCls} value={s.eventYear} onChange={(e) => set("eventYear", e.target.value)} />
               </div>
             </div>
           )}
@@ -474,12 +480,12 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
                 <div className="space-y-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
                   <p className="text-sm text-gray-300">Captains pick up their team's shirts. Tell them where and when.</p>
                   <div>
-                    <label className={labelCls}>Pickup Location</label>
-                    <input className={inputCls} value={s.tshirtPickupLocation} onChange={(e) => set("tshirtPickupLocation", e.target.value)} placeholder="e.g. Registration Desk, Mardi Gras Ballroom" />
+                    <label htmlFor="wizard-tshirt-location" className={labelCls}>Pickup Location</label>
+                    <input id="wizard-tshirt-location" className={inputCls} value={s.tshirtPickupLocation} onChange={(e) => set("tshirtPickupLocation", e.target.value)} placeholder="e.g. Registration Desk, Mardi Gras Ballroom" />
                   </div>
                   <div>
-                    <label className={labelCls}>Pickup Time</label>
-                    <input className={inputCls} value={s.tshirtPickupTime} onChange={(e) => set("tshirtPickupTime", e.target.value)} placeholder="e.g. Friday 9:00 AM – 12:00 PM" />
+                    <label htmlFor="wizard-tshirt-time" className={labelCls}>Pickup Time</label>
+                    <input id="wizard-tshirt-time" className={inputCls} value={s.tshirtPickupTime} onChange={(e) => set("tshirtPickupTime", e.target.value)} placeholder="e.g. Friday 9:00 AM – 12:00 PM" />
                   </div>
                 </div>
               )}
@@ -494,8 +500,8 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
               </label>
               {s.poolPartyEnabled && (
                 <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
-                  <label className={labelCls}>Pool Party Check-In Time</label>
-                  <input className={inputCls} value={s.poolPartyTime} onChange={(e) => set("poolPartyTime", e.target.value)} placeholder="e.g. 7:00 PM" />
+                  <label htmlFor="wizard-pool-party-time" className={labelCls}>Pool Party Check-In Time</label>
+                  <input id="wizard-pool-party-time" className={inputCls} value={s.poolPartyTime} onChange={(e) => set("poolPartyTime", e.target.value)} placeholder="e.g. 7:00 PM" />
                   <p className="mt-2 text-xs text-gray-400">If off, all pool party passports and steps are hidden for this event.</p>
                 </div>
               )}
@@ -505,19 +511,19 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
           {steps[step].key === "banquet" && (
             <div className="space-y-4">
               <p className="text-sm text-gray-400">Banquet details apply to every bowler in this event.</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls}>Day</label>
-                  <input className={inputCls} value={s.banquetDay} onChange={(e) => set("banquetDay", e.target.value)} placeholder="e.g. Saturday, Feb 14" />
+                  <label htmlFor="wizard-banquet-day" className={labelCls}>Day</label>
+                  <input id="wizard-banquet-day" className={inputCls} value={s.banquetDay} onChange={(e) => set("banquetDay", e.target.value)} placeholder="e.g. Saturday, Feb 14" />
                 </div>
                 <div>
-                  <label className={labelCls}>Time</label>
-                  <input className={inputCls} value={s.banquetTime} onChange={(e) => set("banquetTime", e.target.value)} placeholder="e.g. 6:00 PM" />
+                  <label htmlFor="wizard-banquet-time" className={labelCls}>Time</label>
+                  <input id="wizard-banquet-time" className={inputCls} value={s.banquetTime} onChange={(e) => set("banquetTime", e.target.value)} placeholder="e.g. 6:00 PM" />
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Location</label>
-                <input className={inputCls} value={s.banquetLocation} onChange={(e) => set("banquetLocation", e.target.value)} placeholder="e.g. Mardi Gras Ballroom" />
+                <label htmlFor="wizard-banquet-location" className={labelCls}>Location</label>
+                <input id="wizard-banquet-location" className={inputCls} value={s.banquetLocation} onChange={(e) => set("banquetLocation", e.target.value)} placeholder="e.g. Mardi Gras Ballroom" />
               </div>
             </div>
           )}
@@ -566,8 +572,9 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
               )}
 
               <div>
-                <label className={labelCls}>Shared Master Google Sheet</label>
+                <label htmlFor="wizard-shared-master-sheet" className={labelCls}>Shared Master Google Sheet</label>
                 <input
+                  id="wizard-shared-master-sheet"
                   className={`${inputCls} opacity-70 cursor-not-allowed`}
                   value={s.sheetSpreadsheetId}
                   readOnly={mode === "create"}
@@ -617,18 +624,18 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
         </div>
 
         {/* Footer nav */}
-        <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <button
             onClick={() => setStep((p) => Math.max(0, p - 1))}
             disabled={step === 0}
-            className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-40 sm:w-auto"
           >
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
           {step < last ? (
             <button
               onClick={() => setStep((p) => Math.min(last, p + 1))}
-              className="flex items-center gap-1 rounded-lg bg-yellow-500 px-5 py-2 text-sm font-bold text-black transition-transform hover:bg-yellow-400 active:scale-95"
+              className="flex w-full items-center justify-center gap-1 rounded-lg bg-yellow-500 px-5 py-2 text-sm font-bold text-black transition-transform hover:bg-yellow-400 active:scale-95 sm:w-auto"
             >
               Next <ChevronRight className="h-4 w-4" />
             </button>
@@ -636,14 +643,15 @@ export function EventWizard({ mode, eventId, companyId, onClose, onSaved }: Even
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 rounded-lg bg-green-500 px-5 py-2 text-sm font-bold text-black transition-transform hover:bg-green-400 active:scale-95 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-green-500 px-5 py-2 text-sm font-bold text-black transition-transform hover:bg-green-400 active:scale-95 disabled:opacity-50 sm:w-auto"
             >
               <Check className="h-4 w-4" /> {saving ? "Saving..." : mode === "create" ? "Create Event" : "Save Settings"}
             </button>
           )}
         </div>
-      </div>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

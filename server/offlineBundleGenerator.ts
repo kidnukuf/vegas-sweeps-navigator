@@ -92,14 +92,15 @@ export async function generateOfflineBundle(
     --cyan-bg: #164e63;
     --radius: 12px;
   }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
-  body { display: flex; flex-direction: column; }
+  html { height: 100%; min-height: 100%; background: var(--bg); }
+  body { min-height: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+  .scanner-app { display: flex; flex-direction: column; height: 100%; height: 100dvh; min-height: 0; }
 
   /* ── Header ── */
   .header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
+    flex-shrink: 0; gap: 8px; flex-wrap: wrap;
   }
   .header-title { font-size: 1rem; font-weight: 700; }
   .header-meta { font-size: 0.75rem; color: var(--muted); }
@@ -123,15 +124,15 @@ export async function generateOfflineBundle(
   .stat-val.amber { color: var(--amber); }
 
   /* ── Lanes ── */
-  .lanes { display: flex; flex: 1; gap: 8px; padding: 8px; overflow: hidden; }
+  .lanes { display: flex; flex: 1 1 auto; min-height: 0; gap: 8px; padding: 8px; overflow: hidden; }
   .lane {
-    flex: 1; display: flex; flex-direction: column; border-radius: var(--radius);
+    flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-radius: var(--radius);
     border: 3px solid var(--border); background: var(--card);
     transition: border-color .15s, background .15s; overflow: hidden; position: relative;
   }
   .lane.admit { border-color: var(--green); background: var(--green-bg); }
   .lane.under21 { border-color: var(--green); background: var(--green-bg); }
-  .lane.under21 .lane-body { position: relative; overflow: hidden; }
+  .lane.under21 .lane-body { position: relative; overflow-x: hidden; }
   .lane.under21 .lane-body::before,
   .lane.under21 .lane-body::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
   .lane.under21 .lane-body::after { background: linear-gradient(-45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
@@ -148,11 +149,12 @@ export async function generateOfflineBundle(
   .lane-count { font-size: 0.75rem; color: var(--muted); }
 
   .lane-body {
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; padding: 16px; text-align: center; gap: 12px;
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; justify-content: safe center; overflow-y: auto; overflow-wrap: anywhere; padding: 16px; text-align: center; gap: 12px;
   }
-  .lane-headline { font-size: 3.5rem; font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: -.02em; }
-  .lane-detail   { font-size: 1.3rem; font-weight: 500; color: rgba(255,255,255,.9); }
+  .lane-body > * { flex-shrink: 0; }
+  .lane-headline { max-width: 100%; font-size: clamp(1.8rem, min(5vw, 10vh), 3.5rem); font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: -.02em; }
+  .lane-detail   { max-width: 100%; font-size: clamp(1rem, min(2vw, 5vh), 1.3rem); font-weight: 500; color: rgba(255,255,255,.9); }
   .lane-team     { font-size: 0.9rem; color: rgba(255,255,255,.6); }
   .lane-age      { font-size: 1.15rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
   .lane-age.under21-age { color: #991b1b; }
@@ -231,24 +233,33 @@ export async function generateOfflineBundle(
   .flash-in { animation: flash-in .15s ease-out; }
 
   /* Full-screen outcome feedback: green = 21+, green + red X = accepted under 21, red = no entry. */
-  #screenFlash { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  #screenFlash { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:12px; pointer-events:none; }
   #screenFlash.show { display:flex; animation: screen-flash .8s ease-out; }
   #screenFlash.adult { background:rgba(34,197,94,.44); color:var(--green); }
   #screenFlash.under21 { background:rgba(144,238,144,.96); color:#b91c1c; overflow:hidden; }
   #screenFlash.under21::before, #screenFlash.under21::after { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
   #screenFlash.under21::after { background:linear-gradient(-45deg, transparent 47%, #dc2626 47%, #dc2626 53%, transparent 53%); }
   #screenFlash.denied { background:rgba(239,68,68,.52); color:var(--red); }
-  #screenFlash .flash-card { position:relative; z-index:1; border:4px solid currentColor; border-radius:24px; background:rgba(8,15,28,.94); padding:28px 42px; max-width:82vw; text-align:center; box-shadow:0 0 90px currentColor; }
+  #screenFlash .flash-card { position:relative; z-index:1; width:min(92vw, 58rem); max-height:calc(100dvh - 24px); overflow-y:auto; overflow-wrap:anywhere; border:4px solid currentColor; border-radius:24px; background:rgba(8,15,28,.94); padding:clamp(16px, 4vw, 42px); text-align:center; box-shadow:0 0 90px currentColor; }
   #screenFlash.under21 .flash-card { background:rgba(255,255,255,.78); border-color:#b91c1c; color:#991b1b; }
   #screenFlash.under21 .flash-label { color:#991b1b; }
-  #screenFlash .flash-label { font-size:clamp(2.5rem,8vw,6.5rem); font-weight:900; letter-spacing:.03em; line-height:1; }
-  #screenFlash .flash-name { margin-top:12px; font-size:clamp(1.1rem,3vw,2rem); font-weight:700; color:#fff; }
-  #screenFlash .flash-detail { margin-top:7px; font-size:1rem; color:#cbd5e1; }
+  #screenFlash .flash-label { font-size:clamp(1.75rem, min(8vw, 13vh), 6.5rem); font-weight:900; letter-spacing:.03em; line-height:1; overflow-wrap:anywhere; }
+  #screenFlash .flash-name { margin-top:12px; font-size:clamp(1rem, min(3vw, 6vh), 2rem); font-weight:700; color:#fff; overflow-wrap:anywhere; }
+  #screenFlash .flash-detail { margin-top:7px; font-size:clamp(.9rem, min(2vw, 4vh), 1rem); color:#cbd5e1; overflow-wrap:anywhere; }
   @keyframes screen-flash { 0% { opacity:0; } 12%, 65% { opacity:1; } 100% { opacity:0; } }
   @media (prefers-reduced-motion: reduce) { #screenFlash.show { animation:none; } }
+  @media (max-height: 700px) {
+    body { height: auto; min-height: 100dvh; overflow-y: auto; }
+    .scanner-app { height: auto; min-height: 100dvh; }
+    .lanes { flex: none; min-height: 21rem; overflow: visible; }
+    .lane-body { min-height: 13rem; }
+    #screenFlash { align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
+
+<div class="scanner-app">
 
 <!-- Header -->
 <div class="header">
@@ -313,6 +324,8 @@ export async function generateOfflineBundle(
   <button class="btn danger" onclick="confirmReset()">🗑 Reset Session</button>
   <div class="toolbar-spacer"></div>
   <div class="toolbar-info" id="toolbarInfo">Mode: ${escHtml(modeLabel)} · Event ID: ${eventId}</div>
+</div>
+
 </div>
 
 <!-- Search Modal -->

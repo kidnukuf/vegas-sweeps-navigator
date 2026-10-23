@@ -513,7 +513,7 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
+      <div className="flex-1 px-4 py-6 max-w-lg mx-auto w-full space-y-4">
 
         {/* ── 1. Profile Card ── */}
         <div className="bowler-card">

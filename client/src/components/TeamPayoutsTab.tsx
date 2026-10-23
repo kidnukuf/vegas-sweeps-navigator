@@ -652,9 +652,9 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
                   }`}
                 >
                   {/* Top row: team info + inputs */}
-                  <div className="grid grid-cols-[2fr_auto_auto_auto_auto_auto] gap-3 items-center px-4 py-3">
+                  <div className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,2fr)_auto_auto_auto_minmax(130px,auto)_auto] sm:items-center">
                     {/* Team info */}
-                    <div className="min-w-0">
+                    <div className="min-w-0 rounded-lg border border-white/10 bg-black/20 p-3 sm:border-0 sm:bg-transparent sm:p-0">
                       <p className="text-white font-semibold truncate text-sm">{team.teamName || "—"}</p>
                       <p className="text-gray-500 text-xs">
                         #{team.teamCode} · {team.centerName}
@@ -663,32 +663,32 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
                     </div>
 
                     {/* Place */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Place</label>
+                    <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-3 sm:items-center sm:border-0 sm:bg-transparent sm:p-0">
+                      <label className="text-gray-400 text-[10px] uppercase tracking-wide sm:text-gray-600">Place</label>
                       <input type="number" min="1" placeholder="—" value={draft.place}
                         onChange={(e) => setDraft(team.id, { place: e.target.value, payoutOverride: "" })}
                         onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
-                        className="w-16 px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center" />
+                        className="w-full px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center sm:w-16" />
                     </div>
 
                     {/* Score */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Score</label>
+                    <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-3 sm:items-center sm:border-0 sm:bg-transparent sm:p-0">
+                      <label className="text-gray-400 text-[10px] uppercase tracking-wide sm:text-gray-600">Score</label>
                       <input type="text" placeholder="—" value={draft.score}
                         onChange={(e) => setDraft(team.id, { score: e.target.value })}
                         onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
-                        className="w-20 px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center" />
+                        className="w-full px-2 py-1.5 bg-[#111] border border-white/20 rounded text-white text-xs font-mono focus:outline-none focus:border-yellow-500 text-center sm:w-20" />
                     </div>
 
                     {/* Payout */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Payout $</label>
+                    <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-3 sm:items-center sm:border-0 sm:bg-transparent sm:p-0">
+                      <label className="text-gray-400 text-[10px] uppercase tracking-wide sm:text-gray-600">Payout $</label>
                       <input type="number" min="0" step="0.01"
                         placeholder={calc != null ? calc.toFixed(2) : "—"}
                         value={draft.payoutOverride}
                         onChange={(e) => setDraft(team.id, { payoutOverride: e.target.value })}
                         onBlur={() => { if (draft.dirty) saveTeamResult(team.id); }}
-                        className={`w-24 px-2 py-1.5 bg-[#111] border rounded text-xs font-mono focus:outline-none text-right ${
+                        className={`w-full px-2 py-1.5 bg-[#111] border rounded text-xs font-mono focus:outline-none text-right sm:w-24 ${
                           isOverridden ? "border-amber-500 text-amber-300" : "border-white/20 text-green-400 focus:border-yellow-500"
                         }`} />
                       {calc != null && draft.payoutOverride === "" && (
@@ -697,8 +697,8 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
                     </div>
 
                     {/* Denomination summary (per-bowler inline) */}
-                    <div className="flex flex-col items-start gap-0.5 min-w-[130px]">
-                      <label className="text-gray-600 text-[10px] uppercase tracking-wide">Per-bowler bills</label>
+                    <div className="flex min-w-0 flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-3 sm:min-w-[130px] sm:items-start sm:border-0 sm:bg-transparent sm:p-0">
+                      <label className="text-gray-400 text-[10px] uppercase tracking-wide sm:text-gray-600">Per-bowler bills</label>
                       {denom ? (
                         <span className="text-green-300 text-[10px] font-mono leading-tight">
                           {formatBreakdown(denom.perBowler)}
@@ -714,7 +714,7 @@ export default function TeamPayoutsTab({ eventId }: { eventId: number }) {
                     </div>
 
                     {/* Save / status */}
-                    <div className="flex items-center justify-center w-12">
+                    <div className="flex min-h-11 items-center justify-center rounded-lg border border-white/10 bg-black/20 p-3 sm:w-12 sm:border-0 sm:bg-transparent sm:p-0">
                       {draft.saving ? (
                         <span className="text-gray-400 text-xs">…</span>
                       ) : draft.dirty ? (

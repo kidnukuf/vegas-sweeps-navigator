@@ -69,7 +69,6 @@ export default function DoormanCheckIn() {
         setPassportScanResult(null);
         setPassportBowlerName("");
         setPassportMessage("");
-        passportInputRef.current?.focus();
       }, data.result === "granted" ? 2500 : 4000);
     },
     onError: (err) => {
@@ -79,7 +78,6 @@ export default function DoormanCheckIn() {
       window.setTimeout(() => {
         setPassportScanResult(null);
         setPassportMessage("");
-        passportInputRef.current?.focus();
       }, 4000);
     },
   });
@@ -179,12 +177,20 @@ export default function DoormanCheckIn() {
     },
   });
 
-  // Auto-focus token input after login
+  // Keep the keyboard-wedge target on the active scanner tab. Do not steal focus
+  // while a camera or outcome screen is active, since those states own the scan flow.
   useEffect(() => {
-    if (loggedIn && tokenInputRef.current) {
-      tokenInputRef.current.focus();
+    if (!loggedIn) return;
+    if (doormanTab === "checkin") {
+      if (!passportScanning && !passportScanResult && !checkInResult && !showDenied) {
+        tokenInputRef.current?.focus({ preventScroll: true });
+      }
+      return;
     }
-  }, [loggedIn]);
+    if (!passportScanning && !passportScanResult) {
+      passportInputRef.current?.focus({ preventScroll: true });
+    }
+  }, [loggedIn, doormanTab, checkInResult, showDenied, passportScanning, passportScanResult]);
 
   // Initialize passport QR scanner
   useEffect(() => {

@@ -6,7 +6,7 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
-import { Turnstile } from "@marsidev/react-turnstile";
+import Turnstile from "@/components/ResponsiveTurnstile";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,7 +205,7 @@ export default function BowlerLogin() {
   );
 
   return (
-    <div className="bowler-portal-bg min-h-[100dvh] overflow-y-auto overscroll-contain flex flex-col">
+    <div className="bowler-portal-bg min-h-[100dvh] flex flex-col">
       {/* ── Header ── */}
       <header className="bowler-portal-header px-6 py-4 flex items-center justify-between">
         <button
@@ -222,7 +222,7 @@ export default function BowlerLogin() {
       </header>
 
       {/* ── Hero ── */}
-      <div className="flex-1 flex flex-col items-center justify-start sm:justify-center px-4 py-8 pb-24 touch-pan-y">
+      <div className="flex-1 flex flex-col items-center justify-start px-4 py-8 pb-24">
         {/* Decorative bowling graphic */}
         <div className="bowler-hero-icon mb-6">
           <div className="bowling-ball-large">
@@ -467,7 +467,7 @@ export default function BowlerLogin() {
 
       {/* ── ED Contact Dialog ── */}
       <Dialog open={showEdContact} onOpenChange={setShowEdContact}>
-        <DialogContent className="bg-[#1a1040] border border-amber-500/30 text-white max-w-sm w-full">
+        <DialogContent showCloseButton={false} className="bg-[#1a1040] border border-amber-500/30 text-white max-w-sm w-full">
           <DialogHeader>
             <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
               <span className="text-2xl">⚠️</span> Unable to Sign In

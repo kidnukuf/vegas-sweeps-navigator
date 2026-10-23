@@ -24,6 +24,14 @@ const steps = [
   },
 ];
 
+function displayDateValue(value: Date | string | null | undefined) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : value.toLocaleDateString();
+  }
+
+  return typeof value === "string" ? value.trim() : "";
+}
+
 export default function GetStarted() {
   const search = useSearch();
   const searchParams = new URLSearchParams(search);
@@ -36,8 +44,8 @@ export default function GetStarted() {
   );
   const eventName = introductionEvent.data?.eventName?.trim();
   const eventDateWindow = (() => {
-    const start = introductionEvent.data?.startDate?.trim();
-    const end = introductionEvent.data?.endDate?.trim();
+    const start = displayDateValue(introductionEvent.data?.startDate);
+    const end = displayDateValue(introductionEvent.data?.endDate);
     if (start && end) return start === end ? start : `${start} – ${end}`;
     return start || end || "";
   })();
