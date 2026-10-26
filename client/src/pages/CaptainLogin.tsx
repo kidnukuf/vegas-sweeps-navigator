@@ -18,15 +18,11 @@ import { toast } from "sonner";
 import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 import { focusNextMobileAuthField, scrollMobileAuthFieldIntoView } from "@/lib/mobileAuth";
+import { formatClaimCode, normalizeClaimCode } from "@shared/claimCode";
+import { backspaceClaimCodeInput, updateClaimCodeInput } from "@/lib/claimCodeInput";
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
-
-function formatClaimCode(value: string) {
-  const clean = value.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 7);
-  if (clean.length <= 3) return clean;
-  return `${clean.slice(0, 3)}-${clean.slice(3)}`;
-}
 
 export default function CaptainLogin() {
   const [, navigate] = useLocation();
@@ -45,7 +41,7 @@ export default function CaptainLogin() {
   // Sign-up state
   const [suFirst, setSuFirst] = useState("");
   const [suLast, setSuLast] = useState("");
-  const [suClaimCode, setSuClaimCode] = useState(() => new URLSearchParams(search).get("claimCode")?.trim().toUpperCase() ?? "");
+  const [suClaimCode, setSuClaimCode] = useState(() => formatClaimCode(new URLSearchParams(search).get("claimCode") ?? ""));
   const [suEmail, setSuEmail] = useState("");
   const [suPhone, setSuPhone] = useState("");
   const [suPass, setSuPass] = useState("");
@@ -144,7 +140,7 @@ export default function CaptainLogin() {
     if (suPass !== suConfirm) { toast.error("Passwords do not match."); return; }
     if (!TURNSTILE_CONFIGURED) { toast.error("The security check is temporarily unavailable. Please contact your Event Director."); return; }
     if (!suToken) { toast.error("Please complete the security check."); return; }
-    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken, turnstileAction: "captain_signup", claimCode: suClaimCode.trim() ? suClaimCode.trim().toUpperCase() : undefined });
+    signUp.mutate({ firstName: suFirst.trim(), lastName: suLast.trim(), eventId: Number(eventId), centerId: suCenterId, password: suPass, email: suEmail || undefined, phone: suPhone || undefined, turnstileToken: suToken, turnstileAction: "captain_signup", claimCode: suClaimCode.trim() ? normalizeClaimCode(suClaimCode) : undefined });
   }
 
   const filteredCenters = (centersQuery.data ?? []).filter((c) =>
@@ -303,11 +299,17 @@ export default function CaptainLogin() {
                   <Label className="captain-label">Claim Code {claimCodeRequired ? "(required)" : "(if provided)"}</Label>
                   <Input
                     value={suClaimCode}
-                    onChange={(e) => setSuClaimCode(formatClaimCode(e.target.value))}
+                    onChange={(e) => updateClaimCodeInput(e.currentTarget, setSuClaimCode)}
+                    onKeyDown={(e) => backspaceClaimCodeInput(e, setSuClaimCode)}
                     placeholder="BOB-XXXX"
                     autoCapitalize="characters"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label="Claim Code"
                     className="captain-input tracking-widest"
                   />
+                  <p className="text-white/50 text-xs mt-1">The dash is added automatically as you type.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>

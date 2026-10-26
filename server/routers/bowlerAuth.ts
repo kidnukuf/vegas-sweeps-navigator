@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { rawExec, rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, writeAuditLog } from "../db";
+import { rawExec, rawQuery, updateBowler, upsertHotelRecord, upsertPaymentRecord, withDbTransaction, writeAuditLog } from "../db";
 import { notifyED } from "../notifyED";
 import { writeQRCodesToSheet, writeContactInfoToSheet, writeScanUsedToSheet } from "../googleSheets";
 import { getEventSheetTarget } from "../db";
@@ -22,6 +22,7 @@ import { formatPassportScannerName } from "../passportDisplay";
 import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
 import { isPassportTypeAllowedAtDoor } from "@shared/doorPassportScan";
 import { isPoolPassSuppressed } from "@shared/eventPoolPolicy";
+import { normalizeClaimCode } from "@shared/claimCode";
 import { verifyTurnstileToken } from "../turnstile";
 import { buildBanquetQrUrl, DEFAULT_APP_ORIGIN } from "../banquetQr";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
@@ -301,7 +302,7 @@ export const bowlerAuthRouter = router({
       let redeemedCodeId: number | null = null;
 
       if (claimRequired) {
-        const claimCode = input.claimCode?.trim().toUpperCase() ?? "";
+        const claimCode = normalizeClaimCode(input.claimCode);
         const candidateRows = claimCode
           ? await rawQuery<{
               id: number;
@@ -337,7 +338,9 @@ export const bowlerAuthRouter = router({
           );
         }
         const emailMatches = Boolean(input.email?.trim() && candidate?.rosterEmail && input.email.trim().toLowerCase() === candidate.rosterEmail.trim().toLowerCase());
-        const phoneMatches = Boolean(input.phone?.trim() && candidate?.rosterPhone && normalizePhone(input.phone) === normalizePhone(candidate.rosterPhone));
+        const enteredPhone = normalizePhone(input.phone);
+        const rosterPhone = normalizePhone(candidate?.rosterPhone);
+        const phoneMatches = Boolean(enteredPhone && rosterPhone && enteredPhone === rosterPhone);
         if (!candidate) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -387,84 +390,94 @@ export const bowlerAuthRouter = router({
       const hash = await bcrypt.hash(input.password, 12);
       const poolPassSuppressed = isPoolPassSuppressed(input.eventId);
 
-      // Reuse passport tokens pre-generated at import time.
-      // Only generate new ones if somehow missing (safety fallback).
-      const bowlerRow = await rawQuery<{ poolPartyToken: string | null; banquetToken: string | null }>(
-        `SELECT poolPartyToken, banquetToken FROM bowlers WHERE id = ? LIMIT 1`,
-        [bowler.id]
-      );
-      const existingPoolToken   = bowlerRow[0]?.poolPartyToken ?? null;
-      const existingBanquetToken = bowlerRow[0]?.banquetToken ?? null;
-      const banquetToken    = existingBanquetToken ?? uuidv4().replace(/-/g, "");
-
-      // Update the bowler record with password + (possibly new) passport tokens + optional contact info.
-      // November is banquet-only: clear a legacy primary pool credential rather
-      // than allowing it to survive sign-up. Banquet data remains exactly as before.
-      const updates: string[] = ["passwordHash = ?", "banquetToken = ?"];
-      const params: unknown[] = [hash, banquetToken];
-      if (!poolPassSuppressed) {
-        const poolPartyToken = existingPoolToken ?? uuidv4().replace(/-/g, "");
-        updates.splice(1, 0, "poolPartyToken = ?");
-        params.splice(1, 0, poolPartyToken);
-      } else {
-        updates.splice(1, 0, "poolPartyToken = NULL");
-      }
-
-      if (input.email && !bowler.email) {
-        updates.push("email = ?");
-        params.push(input.email);
-      }
-      if (input.phone && !bowler.phone) {
-        updates.push("phone = ?");
-        params.push(input.phone);
-      }
-      // Advance status to signed_up if still pre_registered
-      if (bowler.registrationStatus === "pre_registered") {
-        updates.push("registrationStatus = 'signed_up'");
-      }
-      // The captain has authenticated their own roster identity through the
-      // claim/sign-up flow. Count them as the first verified team member.
-      if (bowler.isCapitain) {
-        updates.push("captainVerified = 1");
-      }
-      params.push(bowler.id);
-
-      await rawQuery(`UPDATE bowlers SET ${updates.join(", ")} WHERE id = ?`, params);
-
-      // Guest pool party tokens: reuse pre-generated ones from import (scantronId+A, +B, …).
-      // Only create them now if they were not generated at import (safety fallback).
-      if (!poolPassSuppressed) {
-        const existingGuests = await rawQuery<{ suffix: string; token: string }>(
-          `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
-          [bowler.id]
+      await withDbTransaction(async (connection) => {
+        // Reuse passport tokens pre-generated at import time. Only generate new
+        // ones if somehow missing (safety fallback), while keeping all signup
+        // writes in the same transaction as claim redemption.
+        const [tokenRows] = await connection.execute(
+          `SELECT poolPartyToken, banquetToken FROM bowlers WHERE id = ? LIMIT 1`,
+          [bowler.id],
         );
-        const SUFFIXES = ["A","B","C","D","E"];
-        const bowlerScantronId = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
-        const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
-        const guestCount = Math.floor(guestAmount / 15);
-        if (guestCount > 0 && existingGuests.length === 0) {
-          // Fallback: create tokens if import didn't generate them
-          for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
-            const guestToken = `${bowlerScantronId}${SUFFIXES[i]}`;
-            await rawQuery(
-              `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
-              [bowler.id, SUFFIXES[i], guestToken]
-            );
+        const bowlerRow = (tokenRows as Array<{ poolPartyToken: string | null; banquetToken: string | null }>)[0];
+        const existingPoolToken = bowlerRow?.poolPartyToken ?? null;
+        const existingBanquetToken = bowlerRow?.banquetToken ?? null;
+        const banquetToken = existingBanquetToken ?? uuidv4().replace(/-/g, "");
+
+        // Guard the account write so a concurrent signup cannot overwrite an
+        // account that was created between the roster lookup and this update.
+        // November remains banquet-only and clears only the legacy pool token.
+        const updates: string[] = ["passwordHash = ?", "banquetToken = ?"];
+        const params: unknown[] = [hash, banquetToken];
+        if (!poolPassSuppressed) {
+          const poolPartyToken = existingPoolToken ?? uuidv4().replace(/-/g, "");
+          updates.splice(1, 0, "poolPartyToken = ?");
+          params.splice(1, 0, poolPartyToken);
+        } else {
+          updates.splice(1, 0, "poolPartyToken = NULL");
+        }
+        if (input.email && !bowler.email) {
+          updates.push("email = ?");
+          params.push(input.email);
+        }
+        if (input.phone && !bowler.phone) {
+          updates.push("phone = ?");
+          params.push(input.phone);
+        }
+        if (bowler.registrationStatus === "pre_registered") {
+          updates.push("registrationStatus = 'signed_up'");
+        }
+        if (bowler.isCapitain) {
+          updates.push("captainVerified = 1");
+        }
+        params.push(bowler.id);
+        const [accountUpdate] = await connection.execute(
+          `UPDATE bowlers SET ${updates.join(", ")} WHERE id = ? AND (passwordHash IS NULL OR passwordHash = '')`,
+          params,
+        );
+        if ((accountUpdate as { affectedRows?: number }).affectedRows !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "An account already exists for this bowler. Please sign in instead.",
+          });
+        }
+
+        // Guest pool party tokens: reuse pre-generated ones from import.
+        // Fallback inserts share this transaction so a failed claim redemption
+        // cannot leave credentials or account state behind.
+        if (!poolPassSuppressed) {
+          const [guestRows] = await connection.execute(
+            `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+            [bowler.id],
+          );
+          const existingGuests = guestRows as Array<{ suffix: string; token: string }>;
+          const SUFFIXES = ["A", "B", "C", "D", "E"];
+          const bowlerScantronId = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
+          const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
+          const guestCount = Math.floor(guestAmount / 15);
+          if (guestCount > 0 && existingGuests.length === 0) {
+            for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
+              const guestToken = `${bowlerScantronId}${SUFFIXES[i]}`;
+              await connection.execute(
+                `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
+                [bowler.id, SUFFIXES[i], guestToken],
+              );
+            }
           }
         }
-      }
 
-      // Redeem the claim code (one-time). Guard on status='unused' so a race
-      // can never double-redeem; affectedRows>0 confirms we won the redemption.
-      if (redeemedCodeId !== null) {
-        const redemption = await rawExec(
-          `UPDATE bowler_claim_codes SET status = 'redeemed', redeemedByAppUserId = ?, redeemedAt = ? WHERE id = ? AND status = 'unused'`,
-          [(bowler as { appUserId?: number | null }).appUserId ?? null, Date.now(), redeemedCodeId]
-        );
-        if (redemption.affectedRows !== 1) {
-          throw new TRPCError({ code: "CONFLICT", message: "That claim code has already been used. Contact your Event Director for help." });
+        // A conditional update decides the one winning claimant. Any losing
+        // race (or failed update) aborts this transaction and rolls back the
+        // account and fallback guest-token writes above.
+        if (redeemedCodeId !== null) {
+          const [redemption] = await connection.execute(
+            `UPDATE bowler_claim_codes SET status = 'redeemed', redeemedByAppUserId = ?, redeemedAt = ? WHERE id = ? AND status = 'unused'`,
+            [(bowler as { appUserId?: number | null }).appUserId ?? null, Date.now(), redeemedCodeId],
+          );
+          if ((redemption as { affectedRows?: number }).affectedRows !== 1) {
+            throw new TRPCError({ code: "CONFLICT", message: "That claim code has already been used. Contact your Event Director for help." });
+          }
         }
-      }
+      });
 
       // Notify ED of successful sign-up (differentiate captain vs bowler)
       const isCapt = Boolean(bowler.isCapitain);

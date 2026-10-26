@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { detectGroupSlug } from "@/lib/eventGroup";
 import AppFooter from "@/components/AppFooter";
 import { focusNextMobileAuthField, scrollMobileAuthFieldIntoView } from "@/lib/mobileAuth";
+import { formatClaimCode, normalizeClaimCode } from "@shared/claimCode";
+import { backspaceClaimCodeInput, updateClaimCodeInput } from "@/lib/claimCodeInput";
 
 // ─── Local storage keys ───────────────────────────────────────────────────────
 export const BOWLER_TOKEN_KEY = "vsn_bowler_token";
@@ -34,12 +36,6 @@ export function clearBowlerSession() {
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 const TURNSTILE_CONFIGURED = typeof TURNSTILE_SITE_KEY === "string" && TURNSTILE_SITE_KEY.trim().length > 0;
-
-function formatClaimCode(value: string) {
-  const clean = value.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 7);
-  if (clean.length <= 3) return clean;
-  return `${clean.slice(0, 3)}-${clean.slice(3)}`;
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function BowlerLogin() {
@@ -91,7 +87,7 @@ export default function BowlerLogin() {
   const [suEmail, setSuEmail] = useState("");
   const [suPhone, setSuPhone] = useState("");
   const [suToken, setSuToken] = useState("");
-  const [suClaimCode, setSuClaimCode] = useState(() => new URLSearchParams(search).get("claimCode")?.trim().toUpperCase() ?? "");
+  const [suClaimCode, setSuClaimCode] = useState(() => formatClaimCode(new URLSearchParams(search).get("claimCode") ?? ""));
   const [suCenterId, setSuCenterId] = useState<number | null>(null);
   const [suCenterName, setSuCenterName] = useState<string>("");
   const [showCenterPicker, setShowCenterPicker] = useState(false);
@@ -196,7 +192,7 @@ export default function BowlerLogin() {
       centerId: suCenterId,
       turnstileToken: suToken,
       turnstileAction: "bowler_signup",
-      claimCode: suClaimCode.trim() ? suClaimCode.trim().toUpperCase() : undefined,
+      claimCode: suClaimCode.trim() ? normalizeClaimCode(suClaimCode) : undefined,
     });
   }
 
@@ -389,11 +385,16 @@ export default function BowlerLogin() {
                     className="bowler-input uppercase tracking-widest"
                     placeholder="e.g. BOB-7F3K"
                     value={suClaimCode}
-                    onChange={(e) => setSuClaimCode(formatClaimCode(e.target.value))}
+                    onChange={(e) => updateClaimCodeInput(e.currentTarget, setSuClaimCode)}
+                    onKeyDown={(e) => backspaceClaimCodeInput(e, setSuClaimCode)}
                     autoComplete="off"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label="Claim Code"
                   />
                   <p className="text-white/40 text-[11px] mt-1">
-                    Your program director hands these out on league night. {claimCodeRequired ? "This event requires it." : "Required if your league uses claim codes."}
+                    The dash is added automatically. Your program director hands these out on league night. {claimCodeRequired ? "This event requires it." : "Required if your league uses claim codes."}
                   </p>
                 </div>
                 <div>

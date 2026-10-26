@@ -5,6 +5,7 @@ import type { TrpcContext } from "./_core/context";
 const mocks = vi.hoisted(() => ({
   rawQuery: vi.fn(),
   rawExec: vi.fn(),
+  withDbTransaction: vi.fn(),
   writeQRCodesToSheet: vi.fn().mockResolvedValue(undefined),
   writeContactInfoToSheet: vi.fn().mockResolvedValue(undefined),
   writeScanUsedToSheet: vi.fn().mockResolvedValue(undefined),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./db", () => ({
   rawQuery: mocks.rawQuery,
   rawExec: mocks.rawExec,
+  withDbTransaction: mocks.withDbTransaction,
   updateBowler: vi.fn(),
   upsertHotelRecord: vi.fn(),
   upsertPaymentRecord: vi.fn(),
@@ -111,6 +113,12 @@ function tokenForBowler(bowlerId = 42) {
 describe("November event 3960003 pool-pass policy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.withDbTransaction.mockImplementation(async (work: (connection: { execute: (sql: string, params?: unknown[]) => Promise<[unknown, unknown]> }) => Promise<unknown>) => work({
+      execute: async (sql: string, params: unknown[] = []) => {
+        const rows = await mocks.rawQuery(sql, params);
+        return [sql.startsWith("UPDATE bowlers SET ") ? { affectedRows: 1 } : rows, undefined];
+      },
+    }));
     setQueryResponses();
   });
 
