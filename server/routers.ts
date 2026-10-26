@@ -46,6 +46,7 @@ import { buildSeatingArrangementSheetPlan, snapshotSeatingSheet } from "./seatin
 import { normalizeLeagueCode, normalizeLeagueName } from "./leagueName.logic";
 import { parseSecondSquadLane, SECOND_SQUAD_LANE_HEADER } from "../shared/secondSquadLane";
 import { extractImportMappedFields } from "./importMapping";
+import { isPoolPassSuppressed } from "../shared/eventPoolPolicy";
 
 const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
 
@@ -492,8 +493,8 @@ export const appRouter = router({
           tshirtsProvided: input.tshirtsProvided,
           tshirtPickupLocation: input.tshirtPickupLocation,
           tshirtPickupTime: input.tshirtPickupTime,
-          poolPartyEnabled: input.poolPartyEnabled,
-          poolPartyTime: input.poolPartyTime,
+          poolPartyEnabled: isPoolPassSuppressed(input.id) ? false : input.poolPartyEnabled,
+          poolPartyTime: isPoolPassSuppressed(input.id) ? null : input.poolPartyTime,
           banquetDay: input.banquetDay,
           banquetTime: input.banquetTime,
           banquetLocation: input.banquetLocation,
@@ -962,7 +963,7 @@ export const appRouter = router({
         if (!bowlerId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Insert failed" });
 
         // 7. Generate passport QR tokens (identical to import path)
-        const poolPartyToken = uuidv4().replace(/-/g, "");
+        const poolPartyToken = isPoolPassSuppressed(input.eventId) ? null : uuidv4().replace(/-/g, "");
         const banquetToken = uuidv4().replace(/-/g, "");
         await rawQuery(
           "UPDATE bowlers SET poolPartyToken = ?, banquetToken = ? WHERE id = ?",
@@ -996,7 +997,7 @@ export const appRouter = router({
           const guestId = `${scantronId}A`;
           await rawQuery(
             `INSERT INTO guest_pool_party_tokens (bowlerId, eventId, guestId, suffix, token, banquetToken) VALUES (?, ?, ?, ?, ?, ?)`,
-            [bowlerId, input.eventId, guestId, "A", guestId, `${guestId}-BQ`]
+            [bowlerId, input.eventId, guestId, "A", isPoolPassSuppressed(input.eventId) ? `${guestId}-BQ` : guestId, `${guestId}-BQ`]
           );
         }
 
@@ -2142,7 +2143,11 @@ export const appRouter = router({
                 "SELECT poolPartyToken, banquetToken FROM bowlers WHERE id = ? LIMIT 1",
                 [bowlerId]
               ) as Record<string, unknown>[];
-              const existingPoolToken = existingTokenRows[0]?.poolPartyToken as string | undefined;
+              if (isPoolPassSuppressed(input.eventId)) {
+                await rawQuery("UPDATE bowlers SET poolPartyToken = NULL WHERE id = ?", [bowlerId]);
+              }
+              const existingPoolToken = isPoolPassSuppressed(input.eventId)
+                ? undefined : existingTokenRows[0]?.poolPartyToken as string | undefined;
               const existingBanquetToken = existingTokenRows[0]?.banquetToken as string | undefined;
               // Add or refresh only the populated BJ/BK slots supplied by the master sheet.
               // Numeric/currency values are retained as incomplete guest amounts for ED review.
@@ -2154,7 +2159,7 @@ export const appRouter = router({
                 if (!importedGuestValue) continue;
                 const suffix = ["A", "B"][gi];
                 const guestId = `${existingScantronId}${suffix}`;
-                const poolTok = poolParty ? guestId : `${guestId}-BQ`;
+                const poolTok = poolParty && !isPoolPassSuppressed(input.eventId) ? guestId : `${guestId}-BQ`;
                 const banquetTok = `${guestId}-BQ`;
                 await rawQuery(`DELETE FROM guest_pool_party_tokens WHERE bowlerId = ? AND suffix = ?`, [bowlerId, suffix]);
                 await rawQuery(
@@ -2174,7 +2179,7 @@ export const appRouter = router({
                   poolPartyToken: existingPoolToken,
                   banquetToken: existingBanquetToken,
                   guestPoolTokens: existingGuestRows
-                    .filter((guest) => guest.token && !guest.token.endsWith("-BQ"))
+                    .filter((guest) => !isPoolPassSuppressed(input.eventId) && guest.token && !guest.token.endsWith("-BQ"))
                     .map((guest) => ({ suffix: guest.suffix, token: guest.token })),
                   guestBanquetTokens: existingGuestRows
                     .filter((guest) => guest.banquetToken)
@@ -2211,18 +2216,18 @@ export const appRouter = router({
 
                 // ── Generate ALL passport QR tokens at import time ────────────────────
                 // This secures the system: tokens exist even if sign-up fails later.
-                const importPoolToken  = uuidv4().replace(/-/g, "");
+                const importPoolToken = isPoolPassSuppressed(input.eventId) ? undefined : uuidv4().replace(/-/g, "");
                 const importBanquetToken = uuidv4().replace(/-/g, "");
                 await rawQuery(
                   `UPDATE bowlers SET poolPartyToken = ?, banquetToken = ? WHERE id = ?`,
-                  [importPoolToken, importBanquetToken, bowlerId]
+                  [importPoolToken ?? null, importBanquetToken, bowlerId]
                 );
 
                 // Guest IDs are linked to the bowler ID plus A/B. BJ and BK take
                 // precedence as named guests and always receive banquet access.
                 // Existing numeric/fee fields still create unnamed guest tickets.
                 const SUFFIXES = ["A", "B"];
-                const poolGuestCount = Math.floor(guestPoolPartyAmount / 15);
+                const poolGuestCount = isPoolPassSuppressed(input.eventId) ? 0 : Math.floor(guestPoolPartyAmount / 15);
                 const banquetGuestCount = extraBanquet >= 1 && extraBanquet < 80
                   ? Math.round(extraBanquet) // Y/N or small integer count
                   : Math.floor(extraBanquet / 80);
@@ -2246,7 +2251,8 @@ export const appRouter = router({
                     if (!importedGuestValue && gi >= poolGuestCount && gi >= banquetGuestCount) continue;
                     // Named BJ/BK guests always receive banquet access. Pool QR is
                     // added only when the bowler row is pool-party eligible.
-                    const poolTok = importedGuestValue ? (poolParty ? guestId : null) : (gi < poolGuestCount ? guestId : null);
+                    const poolTok = isPoolPassSuppressed(input.eventId) ? null
+                      : importedGuestValue ? (poolParty ? guestId : null) : (gi < poolGuestCount ? guestId : null);
                     const banquetTok = importedGuestValue ? `${guestId}-BQ` : (gi < banquetGuestCount ? `${guestId}-BQ` : null);
                     // `token` column is NOT NULL + unique; use pool token, else banquet token, else guestId
                     const primaryToken = poolTok ?? banquetTok ?? guestId;

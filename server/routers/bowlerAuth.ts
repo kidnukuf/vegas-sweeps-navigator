@@ -21,6 +21,7 @@ import type { TrpcContext } from "../_core/context";
 import { formatPassportScannerName } from "../passportDisplay";
 import { isIncompleteGuestName, normalizeGuestName } from "../guestInformation.logic";
 import { isPassportTypeAllowedAtDoor } from "@shared/doorPassportScan";
+import { isPoolPassSuppressed } from "@shared/eventPoolPolicy";
 import { verifyTurnstileToken } from "../turnstile";
 import { buildBanquetQrUrl, DEFAULT_APP_ORIGIN } from "../banquetQr";
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
@@ -187,11 +188,12 @@ async function getBowlerProfile(bowlerId: number) {
   );
   const row = rows[0] ?? null;
   if (!row) return null;
+  const poolPassSuppressed = isPoolPassSuppressed(row.eventId);
   // Generate QR data URLs for passport tokens
   const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
   let poolPartyQR: string | null = null;
   let banquetQR: string | null = null;
-  if (row.poolPartyEnabled && row.poolPartyToken && !row.poolPartyUsed) {
+  if (!poolPassSuppressed && row.poolPartyEnabled && row.poolPartyToken && !row.poolPartyUsed) {
     poolPartyQR = await QRCode.toDataURL(`${appOrigin}/scan/pool/${row.poolPartyToken}`, { width: 300, margin: 2 });
   }
   if (row.banquetToken && !row.banquetUsed) {
@@ -207,7 +209,7 @@ async function getBowlerProfile(bowlerId: number) {
   for (const gt of guestTokenRows) {
     if (gt.disabled) continue;
     // pool token = the primary `token` only when it is an actual pool pass (not a -BQ banquet-only placeholder)
-    if (row.poolPartyEnabled && gt.token && !gt.token.endsWith("-BQ")) {
+    if (!poolPassSuppressed && row.poolPartyEnabled && gt.token && !gt.token.endsWith("-BQ")) {
       const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
       guestPoolQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.used), disabled: false, under21: Boolean(gt.under21) });
     }
@@ -216,7 +218,9 @@ async function getBowlerProfile(bowlerId: number) {
       guestBanquetQRs.push({ suffix: gt.suffix, guestName: gt.guestName, qrDataUrl, used: Boolean(gt.banquetUsed), disabled: false, under21: Boolean(gt.under21) });
     }
   }
-  return { ...row, poolPartyQR, banquetQR, guestPoolQRs, guestBanquetQRs };
+  // Keep legacy stored data untouched, but never expose a usable pool credential
+  // for the November banquet-only event.
+  return { ...row, poolPartyToken: poolPassSuppressed ? null : row.poolPartyToken, poolPartyQR, banquetQR, guestPoolQRs, guestBanquetQRs };
 }
 
 // ─── SHARED: get team roster for captain dashboard ────────────────────────────
@@ -381,6 +385,7 @@ export const bowlerAuthRouter = router({
       }
 
       const hash = await bcrypt.hash(input.password, 12);
+      const poolPassSuppressed = isPoolPassSuppressed(input.eventId);
 
       // Reuse passport tokens pre-generated at import time.
       // Only generate new ones if somehow missing (safety fallback).
@@ -390,12 +395,20 @@ export const bowlerAuthRouter = router({
       );
       const existingPoolToken   = bowlerRow[0]?.poolPartyToken ?? null;
       const existingBanquetToken = bowlerRow[0]?.banquetToken ?? null;
-      const poolPartyToken  = existingPoolToken   ?? uuidv4().replace(/-/g, "");
       const banquetToken    = existingBanquetToken ?? uuidv4().replace(/-/g, "");
 
-      // Update the bowler record with password + (possibly new) passport tokens + optional contact info
-      const updates: string[] = ["passwordHash = ?", "poolPartyToken = ?", "banquetToken = ?"];
-      const params: unknown[] = [hash, poolPartyToken, banquetToken];
+      // Update the bowler record with password + (possibly new) passport tokens + optional contact info.
+      // November is banquet-only: clear a legacy primary pool credential rather
+      // than allowing it to survive sign-up. Banquet data remains exactly as before.
+      const updates: string[] = ["passwordHash = ?", "banquetToken = ?"];
+      const params: unknown[] = [hash, banquetToken];
+      if (!poolPassSuppressed) {
+        const poolPartyToken = existingPoolToken ?? uuidv4().replace(/-/g, "");
+        updates.splice(1, 0, "poolPartyToken = ?");
+        params.splice(1, 0, poolPartyToken);
+      } else {
+        updates.splice(1, 0, "poolPartyToken = NULL");
+      }
 
       if (input.email && !bowler.email) {
         updates.push("email = ?");
@@ -420,22 +433,24 @@ export const bowlerAuthRouter = router({
 
       // Guest pool party tokens: reuse pre-generated ones from import (scantronId+A, +B, …).
       // Only create them now if they were not generated at import (safety fallback).
-      const existingGuests = await rawQuery<{ suffix: string; token: string }>(
-        `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
-        [bowler.id]
-      );
-      const SUFFIXES = ["A","B","C","D","E"];
-      const bowlerScantronId = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
-      const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
-      const guestCount = Math.floor(guestAmount / 15);
-      if (guestCount > 0 && existingGuests.length === 0) {
-        // Fallback: create tokens if import didn't generate them
-        for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
-          const guestToken = `${bowlerScantronId}${SUFFIXES[i]}`;
-          await rawQuery(
-            `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
-            [bowler.id, SUFFIXES[i], guestToken]
-          );
+      if (!poolPassSuppressed) {
+        const existingGuests = await rawQuery<{ suffix: string; token: string }>(
+          `SELECT suffix, token FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
+          [bowler.id]
+        );
+        const SUFFIXES = ["A","B","C","D","E"];
+        const bowlerScantronId = String(bowler.scantronId ?? bowler.id).padStart(10, "0");
+        const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
+        const guestCount = Math.floor(guestAmount / 15);
+        if (guestCount > 0 && existingGuests.length === 0) {
+          // Fallback: create tokens if import didn't generate them
+          for (let i = 0; i < Math.min(guestCount, SUFFIXES.length); i++) {
+            const guestToken = `${bowlerScantronId}${SUFFIXES[i]}`;
+            await rawQuery(
+              `INSERT INTO guest_pool_party_tokens (bowlerId, suffix, token) VALUES (?, ?, ?)`,
+              [bowler.id, SUFFIXES[i], guestToken]
+            );
+          }
         }
       }
 
@@ -528,7 +543,7 @@ export const bowlerAuthRouter = router({
           // Safety fallback: create guest tokens if import didn't generate them
           const guestAmount = parseFloat(bowler.guestPoolPartyAmount ?? "0") || 0;
           const guestCount = Math.floor(guestAmount / 15);
-          if (guestCount > 0) {
+          if (!isPoolPassSuppressed(profile.eventId) && guestCount > 0) {
             const existing = await rawQuery<{ count: number }>(
               `SELECT COUNT(*) as count FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowler.id]
             );
@@ -648,12 +663,13 @@ export const bowlerAuthRouter = router({
       );
       const profile = rows[0];
       if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
+      const poolPassSuppressed = isPoolPassSuppressed(profile.eventId);
 
       // Generate QR code data URLs for client display
       const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
       let poolPartyQR: string | null = null;
       let banquetQR: string | null = null;
-      if (profile.poolPartyToken) {
+      if (!poolPassSuppressed && profile.poolPartyToken) {
         poolPartyQR = await QRCode.toDataURL(`${appOrigin}/scan/pool/${profile.poolPartyToken}`, { width: 300, margin: 2 });
       }
       if (profile.banquetToken) {
@@ -667,7 +683,7 @@ export const bowlerAuthRouter = router({
       );
       const guestAmountSCI = parseFloat(bowlerForGuest[0]?.guestPoolPartyAmount ?? "0") || 0;
       const guestCountSCI = Math.floor(guestAmountSCI / 15);
-      if (guestCountSCI > 0) {
+      if (!poolPassSuppressed && guestCountSCI > 0) {
         const existingGuest = await rawQuery<{ count: number }>(
           `SELECT COUNT(*) as count FROM guest_pool_party_tokens WHERE bowlerId = ?`, [bowlerId]
         );
@@ -691,7 +707,7 @@ export const bowlerAuthRouter = router({
       );
       const guestPoolQRs: Array<{ suffix: string; qrDataUrl: string; used: boolean; disabled: boolean }> = [];
       for (const gt of guestTokenRows) {
-        if (!gt.disabled) {
+        if (!poolPassSuppressed && !gt.disabled && !gt.token.endsWith("-BQ")) {
           const qrDataUrl = await QRCode.toDataURL(`${appOrigin}/scan/guest-pool/${gt.token}`, { width: 300, margin: 2 });
           guestPoolQRs.push({ suffix: gt.suffix, qrDataUrl, used: Boolean(gt.used), disabled: false });
         }
@@ -706,15 +722,15 @@ export const bowlerAuthRouter = router({
           lastName: profile.legalLastName,
           laneNumber: profile.laneNumber ?? null,
           banquetToken: profile.banquetToken ?? null,
-          poolPartyToken: profile.poolPartyToken ?? null,
-          guestPoolTokens: activeGuests.filter(g => g.token && !g.token.endsWith("-BQ")).map(g => ({ suffix: g.suffix, token: g.token })),
+          poolPartyToken: poolPassSuppressed ? null : profile.poolPartyToken ?? null,
+          guestPoolTokens: poolPassSuppressed ? [] : activeGuests.filter(g => g.token && !g.token.endsWith("-BQ")).map(g => ({ suffix: g.suffix, token: g.token })),
           guestBanquetTokens: activeGuests.filter(g => g.banquetToken).map(g => ({ suffix: g.suffix, banquetToken: g.banquetToken! })),
           appOrigin,
           target: sheetTarget,
         });
       })().catch((err) => console.error("[googleSheets] write-back failed:", err));
 
-      return { ...profile, poolPartyQR, banquetQR, guestPoolQRs };
+      return { ...profile, poolPartyToken: poolPassSuppressed ? null : profile.poolPartyToken, poolPartyQR, banquetQR, guestPoolQRs };
     }),
 
   // ── READ-ONLY token status check (NEVER marks as used) ────────────────────────
@@ -742,8 +758,8 @@ export const bowlerAuthRouter = router({
         return { result: "valid" as const, message: `Guest Banquet Pass ${g.suffix}`, bowlerName };
       }
       if (input.passportType === "guest-pool") {
-        const rows = await rawQuery<{ id: number; suffix: string; used: number; disabled: number; legalFirstName: string; legalLastName: string }>(
-          `SELECT g.id, g.suffix, g.used, g.disabled, b.legalFirstName, b.legalLastName
+        const rows = await rawQuery<{ id: number; suffix: string; token: string; used: number; disabled: number; legalFirstName: string; legalLastName: string; eventId: number | null }>(
+          `SELECT g.id, g.suffix, g.token, g.used, g.disabled, b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
            WHERE g.token = ? LIMIT 1`,
           [input.tokenValue]
@@ -751,20 +767,26 @@ export const bowlerAuthRouter = router({
         if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
         const g = rows[0];
         const bowlerName = `${g.legalFirstName} ${g.legalLastName}`;
+        if (g.token.endsWith("-BQ") || isPoolPassSuppressed(g.eventId)) {
+          return { result: "invalid" as const, message: "Pool passes are not available for this event.", bowlerName };
+        }
         if (g.disabled) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
         if (g.used) return { result: "used" as const, message: "Already Redeemed", bowlerName };
         return { result: "valid" as const, message: `Guest Pool Pass ${g.suffix}`, bowlerName };
       }
       // Main pool / banquet
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
-      const rows = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; under21: number; poolPartyToken: string | null; poolPartyUsed: number; banquetToken: string | null; banquetUsed: number }>(
-        `SELECT id, legalFirstName, legalLastName, under21, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed
+      const rows = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; under21: number; poolPartyToken: string | null; poolPartyUsed: number; banquetToken: string | null; banquetUsed: number; eventId: number | null }>(
+        `SELECT id, legalFirstName, legalLastName, under21, poolPartyToken, poolPartyUsed, banquetToken, banquetUsed, eventId
          FROM bowlers WHERE ${col} = ? LIMIT 1`,
         [input.tokenValue]
       );
       if (!rows[0]) return { result: "invalid" as const, message: "Invalid QR Code.", bowlerName: "" };
       const b = rows[0];
       const bowlerName = `${b.legalFirstName} ${b.legalLastName}${input.passportType === "banquet" && b.under21 ? " — UNDER 21" : ""}`;
+      if (input.passportType === "pool" && isPoolPassSuppressed(b.eventId)) {
+        return { result: "invalid" as const, message: "Pool passes are not available for this event.", bowlerName };
+      }
       const tokenValue = input.passportType === "pool" ? b.poolPartyToken : b.banquetToken;
       if (tokenValue === null) return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
       const isUsed = input.passportType === "pool" ? Boolean(b.poolPartyUsed) : Boolean(b.banquetUsed);
@@ -834,9 +856,9 @@ export const bowlerAuthRouter = router({
       if (input.passportType === "guest-pool") {
         const guestRows = await rawQuery<{
           id: number; bowlerId: number; suffix: string; used: number; disabled: number;
-          guestName: string | null; legalFirstName: string; legalLastName: string; eventId: number | null;
+          token: string; guestName: string | null; legalFirstName: string; legalLastName: string; eventId: number | null;
         }>(
-          `SELECT g.id, g.bowlerId, g.suffix, g.used, g.disabled,
+          `SELECT g.id, g.bowlerId, g.suffix, g.used, g.disabled, g.token,
                   g.guestName, b.legalFirstName, b.legalLastName, b.eventId
            FROM guest_pool_party_tokens g
            JOIN bowlers b ON b.id = g.bowlerId
@@ -848,6 +870,9 @@ export const bowlerAuthRouter = router({
         }
         const g = guestRows[0];
         const bowlerName = g.guestName?.trim() || `${g.legalFirstName} ${g.legalLastName} (Guest ${g.suffix})`;
+        if (g.token.endsWith("-BQ") || isPoolPassSuppressed(g.eventId)) {
+          return { result: "invalid" as const, message: "Pool passes are not available for this event.", bowlerName };
+        }
         if (g.disabled) {
           return { result: "disabled" as const, message: "Not Eligible — See Event Director", bowlerName };
         }
@@ -894,6 +919,9 @@ export const bowlerAuthRouter = router({
         Boolean(bowler.under21),
         input.passportType === "banquet"
       );
+      if (input.passportType === "pool" && isPoolPassSuppressed(bowler.eventId)) {
+        return { result: "invalid" as const, message: "Pool passes are not available for this event.", bowlerName };
+      }
       const isUsed = input.passportType === "pool" ? Boolean(bowler.poolPartyUsed) : Boolean(bowler.banquetUsed);
       const tokenValue = input.passportType === "pool" ? bowler.poolPartyToken : bowler.banquetToken;
       if (tokenValue === null) {
@@ -938,6 +966,13 @@ export const bowlerAuthRouter = router({
     .mutation(async ({ input, ctx }) => {
       await requireEventDirectorToolAccess(ctx, input.token);
       await assertBowlerAccess(ctx, input.bowlerId);
+      const [bowler] = await rawQuery<{ eventId: number | null }>(
+        `SELECT eventId FROM bowlers WHERE id = ? LIMIT 1`,
+        [input.bowlerId]
+      );
+      if (input.passportType === "pool" && isPoolPassSuppressed(bowler?.eventId)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pool passes are not available for this event." });
+      }
       const col = input.passportType === "pool" ? "poolPartyToken" : "banquetToken";
       const usedCol = input.passportType === "pool" ? "poolPartyUsed" : "banquetUsed";
       const newToken = uuidv4().replace(/-/g, "");
@@ -966,6 +1001,9 @@ export const bowlerAuthRouter = router({
         `SELECT scantronId, eventId FROM bowlers WHERE id = ? LIMIT 1`,
         [input.bowlerId]
       );
+      if (isPoolPassSuppressed(bowler?.eventId)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pool passes are not available for this event." });
+      }
       const guestId = bowler?.scantronId ? `${bowler.scantronId}${nextSuffix}` : null;
       await rawQuery(
         `INSERT INTO guest_pool_party_tokens (bowlerId, guestId, eventId, suffix, token, used, disabled) VALUES (?, ?, ?, ?, ?, 0, 0)`,
@@ -1115,6 +1153,9 @@ export const bowlerAuthRouter = router({
       if (!bowler?.scantronId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Bowler record or bowler ID was not found." });
       }
+      if (input.includePoolParty && isPoolPassSuppressed(bowler.eventId)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Pool passes are not available for this event. Create a banquet-only guest ticket instead." });
+      }
 
       const existing = await rawQuery<{ suffix: string }>(
         `SELECT suffix FROM guest_pool_party_tokens WHERE bowlerId = ? ORDER BY suffix`,
@@ -1146,13 +1187,14 @@ export const bowlerAuthRouter = router({
       );
       const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
       const sheetTarget = bowler.eventId ? await getEventSheetTarget(bowler.eventId) : undefined;
+      const poolPassSuppressed = isPoolPassSuppressed(bowler.eventId);
       await writeQRCodesToSheet({
         firstName: bowler.legalFirstName,
         lastName: bowler.legalLastName,
         laneNumber: bowler.laneNumber,
-        poolPartyToken: bowler.poolPartyToken,
+        poolPartyToken: poolPassSuppressed ? null : bowler.poolPartyToken,
         banquetToken: bowler.banquetToken,
-        guestPoolTokens: guestRows
+        guestPoolTokens: (poolPassSuppressed ? [] : guestRows)
           .filter((guest) => guest.token && !guest.token.endsWith("-BQ"))
           .map((guest) => ({ suffix: guest.suffix, token: guest.token })),
         guestBanquetTokens: guestRows
@@ -1218,6 +1260,7 @@ export const bowlerAuthRouter = router({
          ORDER BY b.legalLastName, b.legalFirstName`,
         [input.eventId]
       );
+      const poolPassSuppressed = isPoolPassSuppressed(input.eventId);
       // Fetch guest pool tokens for all bowlers in one query
       const bowlerIds = rows.map(r => r.id);
       const guestTokenMap: Record<number, Array<{ suffix: string; token: string; used: number; disabled: number }>> = {};
@@ -1235,9 +1278,10 @@ export const bowlerAuthRouter = router({
       const appOrigin = process.env.APP_ORIGIN ?? "https://vegasweeps-y8eywesk.manus.space";
       return rows.map(r => ({
         ...r,
-        poolPartyUrl: r.poolPartyToken ? `${appOrigin}/scan/pool/${r.poolPartyToken}` : null,
+        poolPartyToken: poolPassSuppressed ? null : r.poolPartyToken,
+        poolPartyUrl: !poolPassSuppressed && r.poolPartyToken ? `${appOrigin}/scan/pool/${r.poolPartyToken}` : null,
         banquetUrl: r.banquetToken ? `${appOrigin}/scan/banquet/${r.banquetToken}` : null,
-        guestPoolTokens: (guestTokenMap[r.id] ?? []).map(g => ({
+        guestPoolTokens: poolPassSuppressed ? [] : (guestTokenMap[r.id] ?? []).filter(g => !g.token.endsWith("-BQ")).map(g => ({
           suffix: g.suffix,
           url: `${appOrigin}/scan/guest-pool/${g.token}`,
           used: Boolean(g.used),
@@ -1374,6 +1418,7 @@ export const bowlerAuthRouter = router({
       };
       const cards: QrBusinessCard[] = [];
       const appOrigin = DEFAULT_APP_ORIGIN;
+      const poolPassSuppressed = isPoolPassSuppressed(input.eventId);
 
       for (const row of bowlers) {
         const attendeeName = `${row.legalFirstName} ${row.legalLastName}`.trim() || `Bowler ${row.id}`;
@@ -1393,7 +1438,7 @@ export const bowlerAuthRouter = router({
           sortName: `${row.legalLastName}\u0000${row.legalFirstName}`,
         });
         if (row.banquetToken && !row.banquetUsed) add("banquet", buildBanquetQrUrl(row.banquetToken, appOrigin));
-        if (Boolean(row.poolPartyEnabled) && row.poolPartyToken && !row.poolPartyUsed) {
+        if (!poolPassSuppressed && Boolean(row.poolPartyEnabled) && row.poolPartyToken && !row.poolPartyUsed) {
           add("pool", `${appOrigin}/scan/pool/${encodeURIComponent(row.poolPartyToken)}`);
         }
       }
@@ -1417,7 +1462,7 @@ export const bowlerAuthRouter = router({
           sortName: `${guest.legalLastName}\u0000${guest.legalFirstName}\u0000${guest.suffix}`,
         });
         if (guest.banquetToken && !guest.banquetUsed) add("banquet", `${appOrigin}/scan/guest-banquet/${encodeURIComponent(guest.banquetToken)}`);
-        if (Boolean(guest.poolPartyEnabled) && guest.token && !guest.used && !guest.token.endsWith("-BQ")) {
+        if (!poolPassSuppressed && Boolean(guest.poolPartyEnabled) && guest.token && !guest.used && !guest.token.endsWith("-BQ")) {
           add("pool", `${appOrigin}/scan/guest-pool/${encodeURIComponent(guest.token)}`);
         }
       }

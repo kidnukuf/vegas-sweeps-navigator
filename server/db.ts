@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql2 from "mysql2/promise";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { isPoolPassSuppressed } from "../shared/eventPoolPolicy";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -539,6 +540,7 @@ export type DoorGuestRow = {
  * Each row carries the current "used" status so the device can pre-mark them.
  */
 export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<DoorGuestRow[]> {
+  if (mode === "pool" && isPoolPassSuppressed(eventId)) return [];
   const out: DoorGuestRow[] = [];
 
   if (mode === "banquet") {
@@ -644,7 +646,7 @@ export async function loadDoorGuests(eventId: number, mode: DoorMode): Promise<D
        FROM guest_pool_party_tokens g
        JOIN bowlers b ON b.id = g.bowlerId
        LEFT JOIN teams t ON t.id = b.teamId
-       WHERE g.eventId = ? AND g.token IS NOT NULL AND g.token <> '' AND g.disabled = 0`,
+       WHERE g.eventId = ? AND g.token IS NOT NULL AND g.token <> '' AND g.disabled = 0 AND g.token NOT LIKE '%-BQ'`,
       [eventId]
     );
     for (const r of guestRows) {
@@ -679,6 +681,7 @@ export async function ensureReentryPool(
   makeToken: (eventId: number, mode: DoorMode, zone: ReentryZone, index: number) => string,
   perZone = 50
 ) {
+  if (mode === "pool" && isPoolPassSuppressed(eventId)) return [];
   const zones: ReentryZone[] = ["N", "E", "S", "W"];
   for (const zone of zones) {
     const existing = await rawQuery<{ c: number }>(
@@ -703,6 +706,7 @@ export async function ensureReentryPool(
 }
 
 export async function getReentryPool(eventId: number, mode: DoorMode) {
+  if (mode === "pool" && isPoolPassSuppressed(eventId)) return [];
   return rawQuery<{
     id: number; eventId: number; mode: string; zone: string; token: string;
     inUse: number; linkedWristband: string | null; issuedAtMs: number | null; releasedAtMs: number | null;
@@ -777,6 +781,7 @@ export async function markTokenUsedForSync(
       [token]
     );
     if (b[0]) {
+      if (isPoolPassSuppressed(b[0].eventId)) return null;
       await rawExec("UPDATE bowlers SET poolPartyUsed = 1 WHERE id = ?", [b[0].id]);
       return { firstName: b[0].legalFirstName, lastName: b[0].legalLastName, sheetType: "pool", eventId: b[0].eventId };
     }
@@ -784,10 +789,11 @@ export async function markTokenUsedForSync(
     const g = await rawQuery<{ id: number; legalFirstName: string; legalLastName: string; eventId: number | null }>(
       `SELECT g.id, b.legalFirstName, b.legalLastName, b.eventId
        FROM guest_pool_party_tokens g JOIN bowlers b ON b.id = g.bowlerId
-       WHERE g.token = ? LIMIT 1`,
+       WHERE g.token = ? AND g.disabled = 0 AND g.token NOT LIKE '%-BQ' LIMIT 1`,
       [token]
     );
     if (g[0]) {
+      if (isPoolPassSuppressed(g[0].eventId)) return null;
       await rawExec("UPDATE guest_pool_party_tokens SET used = 1 WHERE id = ?", [g[0].id]);
       return { firstName: g[0].legalFirstName, lastName: g[0].legalLastName, sheetType: "guest_pool", eventId: g[0].eventId };
     }
