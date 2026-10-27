@@ -26,6 +26,7 @@ import PaperTicketQueue from "@/components/PaperTicketQueue";
 import BanquetQrPacketPanel from "@/components/BanquetQrPacketPanel";
 import QrBusinessCardPacketPanel from "@/components/QrBusinessCardPacketPanel";
 import QrBusinessCardReprintPanel from "@/components/QrBusinessCardReprintPanel";
+import QrMasterPrintPanel from "@/components/QrMasterPrintPanel";
 
 // ─── Local storage key for ED session ────────────────────────────────────────
 const ED_TOKEN_KEY = "vsn_ed_token";
@@ -2056,6 +2057,10 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
         )}
         {activeTab === "passports" && (
           <>
+            <QrMasterPrintPanel
+              eventId={EVENT_ID}
+              eventName={String(activeEvent?.eventName ?? "BowlVegas Event")}
+            />
             <BanquetQrPacketPanel
               eventId={EVENT_ID}
               eventName={String(activeEvent?.eventName ?? "Bowl Vegas Event")}

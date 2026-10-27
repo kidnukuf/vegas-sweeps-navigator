@@ -1313,10 +1313,19 @@ export const bowlerAuthRouter = router({
       centerId: z.number().int().positive().optional(),
       teamId: z.number().int().positive().optional(),
       bowlerId: z.number().int().positive().optional(),
+      // Master print is deliberately unfiltered so an ED cannot accidentally
+      // export a partial event packet.
+      masterPrint: z.boolean().optional().default(false),
     }))
     .query(async ({ input, ctx }) => {
       await requireEventDirectorToolAccess(ctx, input.token);
       await assertEventAccess(ctx, input.eventId);
+      if (input.masterPrint && (input.centerId || input.teamId || input.bowlerId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Master print exports the entire event and cannot be combined with center, team, or bowler filters.",
+        });
+      }
       if (input.bowlerId) await assertBowlerAccess(ctx, input.bowlerId);
 
       const whereParts = ["b.eventId = ?"];
@@ -1363,6 +1372,11 @@ export const bowlerAuthRouter = router({
         centerName: string | null;
         teamId: number | null;
         teamName: string | null;
+        teamCode: string | null;
+        leagueId: number | null;
+        leagueName: string | null;
+        leagueCode: string | null;
+        isCapitain: number | boolean | null;
         under21: number | boolean | null;
         poolPartyEnabled: number | boolean | null;
         poolPartyToken: string | null;
@@ -1371,13 +1385,17 @@ export const bowlerAuthRouter = router({
         banquetUsed: number | boolean;
       }>(
         `SELECT b.id, b.legalFirstName, b.legalLastName, b.centerId,
-                bc.centerName, b.teamId, t.teamName, b.under21,
+                bc.centerName, b.teamId, t.teamName, t.teamCode,
+                COALESCE(b.leagueId, t.leagueId) AS leagueId,
+                l.leagueName, l.leagueCode, b.isCapitain, b.under21,
                 e.poolPartyEnabled, b.poolPartyToken, b.poolPartyUsed,
                 b.banquetToken, b.banquetUsed
            FROM bowlers b
            INNER JOIN events e ON e.id = b.eventId
            LEFT JOIN bowling_centers bc ON bc.id = b.centerId
-           LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId
+           LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId AND t.centerId = b.centerId
+           LEFT JOIN leagues l ON l.id = COALESCE(b.leagueId, t.leagueId)
+                            AND l.eventId = b.eventId AND l.centerId = b.centerId
           WHERE ${whereClause}
           ORDER BY b.legalLastName, b.legalFirstName, b.id`,
         whereParams,
@@ -1391,6 +1409,11 @@ export const bowlerAuthRouter = router({
         centerName: string | null;
         teamId: number | null;
         teamName: string | null;
+        teamCode: string | null;
+        leagueId: number | null;
+        leagueName: string | null;
+        leagueCode: string | null;
+        isCapitain: number | boolean | null;
         guestName: string | null;
         suffix: string;
         under21: number | boolean | null;
@@ -1399,16 +1422,21 @@ export const bowlerAuthRouter = router({
         used: number | boolean;
         banquetToken: string | null;
         banquetUsed: number | boolean;
+        disabled: number | boolean;
       }>(
         `SELECT g.id, g.bowlerId, b.legalFirstName, b.legalLastName,
-                b.centerId, bc.centerName, b.teamId, t.teamName,
+                b.centerId, bc.centerName, b.teamId, t.teamName, t.teamCode,
+                COALESCE(b.leagueId, t.leagueId) AS leagueId,
+                l.leagueName, l.leagueCode, b.isCapitain,
                 g.guestName, g.suffix, g.under21, e.poolPartyEnabled,
-                g.token, g.used, g.banquetToken, g.banquetUsed
+                g.token, g.used, g.banquetToken, g.banquetUsed, g.disabled
            FROM guest_pool_party_tokens g
            INNER JOIN bowlers b ON b.id = g.bowlerId
            INNER JOIN events e ON e.id = b.eventId
            LEFT JOIN bowling_centers bc ON bc.id = b.centerId
-           LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId
+           LEFT JOIN teams t ON t.id = b.teamId AND t.eventId = b.eventId AND t.centerId = b.centerId
+           LEFT JOIN leagues l ON l.id = COALESCE(b.leagueId, t.leagueId)
+                            AND l.eventId = b.eventId AND l.centerId = b.centerId
           WHERE ${whereClause} AND g.disabled = 0
           ORDER BY b.legalLastName, b.legalFirstName, g.suffix, g.id`,
         whereParams,
@@ -1427,15 +1455,23 @@ export const bowlerAuthRouter = router({
         centerName: string | null;
         teamId: number | null;
         teamName: string | null;
+        leagueId: number | null;
+        leagueName: string | null;
+        leagueCode: string | null;
+        teamCode: string | null;
+        isCaptain: boolean;
+        used: boolean;
+        guestSuffix: string | null;
         sortName: string;
       };
       const cards: QrBusinessCard[] = [];
       const appOrigin = DEFAULT_APP_ORIGIN;
       const poolPassSuppressed = isPoolPassSuppressed(input.eventId);
+      const includeUsed = input.masterPrint;
 
       for (const row of bowlers) {
         const attendeeName = `${row.legalFirstName} ${row.legalLastName}`.trim() || `Bowler ${row.id}`;
-        const add = (passType: "banquet" | "pool", qrUrl: string) => cards.push({
+        const add = (passType: "banquet" | "pool", qrUrl: string, used: boolean) => cards.push({
           cardId: `bowler-${row.id}-${passType}`,
           bowlerId: row.id,
           attendeeName,
@@ -1448,18 +1484,34 @@ export const bowlerAuthRouter = router({
           centerName: row.centerName,
           teamId: row.teamId,
           teamName: row.teamName,
+          leagueId: row.leagueId,
+          leagueName: row.leagueName,
+          leagueCode: row.leagueCode,
+          teamCode: row.teamCode,
+          isCaptain: Boolean(row.isCapitain),
+          used,
+          guestSuffix: null,
           sortName: `${row.legalLastName}\u0000${row.legalFirstName}`,
         });
-        if (row.banquetToken && !row.banquetUsed) add("banquet", buildBanquetQrUrl(row.banquetToken, appOrigin));
-        if (!poolPassSuppressed && Boolean(row.poolPartyEnabled) && row.poolPartyToken && !row.poolPartyUsed) {
-          add("pool", `${appOrigin}/scan/pool/${encodeURIComponent(row.poolPartyToken)}`);
+        if (row.banquetToken && (includeUsed || !row.banquetUsed)) {
+          add("banquet", buildBanquetQrUrl(row.banquetToken, appOrigin), Boolean(row.banquetUsed));
+        }
+        if (!poolPassSuppressed && Boolean(row.poolPartyEnabled) && row.poolPartyToken && (includeUsed || !row.poolPartyUsed)) {
+          add("pool", `${appOrigin}/scan/pool/${encodeURIComponent(row.poolPartyToken)}`, Boolean(row.poolPartyUsed));
         }
       }
 
       for (const guest of guests) {
+        // SQL already excludes disabled guests. Keep the defensive check so no
+        // disabled pass can be emitted if a future query changes its join.
+        if (Boolean(guest.disabled)) continue;
         const hostName = `${guest.legalFirstName} ${guest.legalLastName}`.trim() || `Bowler ${guest.bowlerId}`;
-        const attendeeName = guest.guestName?.trim() || `${hostName} — Guest ${guest.suffix}`;
-        const add = (passType: "banquet" | "pool", qrUrl: string) => cards.push({
+        const attendeeName = guest.guestName?.trim()
+          ? guest.guestName
+          : input.masterPrint
+            ? `Guest Pass ${guest.suffix}`
+            : `${hostName} — Guest ${guest.suffix}`;
+        const add = (passType: "banquet" | "pool", qrUrl: string, used: boolean) => cards.push({
           cardId: `guest-${guest.id}-${passType}`,
           bowlerId: guest.bowlerId,
           attendeeName,
@@ -1472,11 +1524,20 @@ export const bowlerAuthRouter = router({
           centerName: guest.centerName,
           teamId: guest.teamId,
           teamName: guest.teamName,
+          leagueId: guest.leagueId,
+          leagueName: guest.leagueName,
+          leagueCode: guest.leagueCode,
+          teamCode: guest.teamCode,
+          isCaptain: Boolean(guest.isCapitain),
+          used,
+          guestSuffix: guest.suffix,
           sortName: `${guest.legalLastName}\u0000${guest.legalFirstName}\u0000${guest.suffix}`,
         });
-        if (guest.banquetToken && !guest.banquetUsed) add("banquet", `${appOrigin}/scan/guest-banquet/${encodeURIComponent(guest.banquetToken)}`);
-        if (!poolPassSuppressed && Boolean(guest.poolPartyEnabled) && guest.token && !guest.used && !guest.token.endsWith("-BQ")) {
-          add("pool", `${appOrigin}/scan/guest-pool/${encodeURIComponent(guest.token)}`);
+        if (guest.banquetToken && (includeUsed || !guest.banquetUsed)) {
+          add("banquet", `${appOrigin}/scan/guest-banquet/${encodeURIComponent(guest.banquetToken)}`, Boolean(guest.banquetUsed));
+        }
+        if (!poolPassSuppressed && Boolean(guest.poolPartyEnabled) && guest.token && (includeUsed || !guest.used) && !guest.token.endsWith("-BQ")) {
+          add("pool", `${appOrigin}/scan/guest-pool/${encodeURIComponent(guest.token)}`, Boolean(guest.used));
         }
       }
 
