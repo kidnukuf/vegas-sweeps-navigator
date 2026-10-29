@@ -719,6 +719,10 @@ export const appRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
         }
 
+        const isLegacyClearedAccount = !bowler.passwordHash
+          && bowler.registrationStatus === "pre_registered"
+          && Boolean(bowler.hasRedeemedClaim);
+
         // A director may recover a legacy account whose password was cleared by
         // the former reset implementation only when the record is demonstrably
         // claimed. This never turns an unclaimed roster row into an account.
@@ -730,17 +734,23 @@ export const appRouter = router({
         }
 
         const passwordHash = await bcrypt.hash(input.password, 12);
-        // Deliberately update only the credential. Claim-code redemption,
-        // registration status, passports, QR usage, and captain state remain
-        // untouched so the bowler can immediately use the normal Sign In tab.
-        await updateBowler(input.id, { passwordHash });
+        // Normally reset only the credential. The narrowly identified legacy
+        // state is the exception: the former reset cleared both the password
+        // and registration state after a code had already been redeemed. Repair
+        // that state so the bowler is again represented as signed up.
+        await updateBowler(input.id, {
+          passwordHash,
+          ...(isLegacyClearedAccount ? { registrationStatus: "signed_up" } : {}),
+        });
         await writeAuditLog({
           eventId: bowler.eventId,
           actorRole: input.actorRole ?? "EventDirector",
           action: "reset_password",
           targetId: input.id,
           targetType: "bowler",
-          details: `Replacement password set; registration status preserved as ${bowler.registrationStatus}. Claim-code and passport state unchanged.`,
+          details: isLegacyClearedAccount
+            ? "Replacement password set; repaired a legacy cleared account to signed_up. Redeemed claim-code and passport state unchanged."
+            : `Replacement password set; registration status preserved as ${bowler.registrationStatus}. Claim-code and passport state unchanged.`,
         });
         return { success: true };
       }),

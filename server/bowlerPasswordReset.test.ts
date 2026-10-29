@@ -55,6 +55,8 @@ const directorReplacementPassword = "DirectorReplacement123";
 let eventId = 0;
 let bowlerId = 0;
 let claimCodeId = 0;
+let legacyBowlerId = 0;
+let legacyClaimCodeId = 0;
 let unclaimedBowlerId = 0;
 let directorId = 0;
 
@@ -88,6 +90,19 @@ describe("bowler password reset", () => {
     );
     claimCodeId = claim.insertId;
 
+    const legacyBowler = await rawExec(
+      `INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, registrationStatus)
+       VALUES (?, ?, ?, ?, 'pre_registered')`,
+      [eventId, center.id, "Legacy", `Reset${stamp}`],
+    );
+    legacyBowlerId = legacyBowler.insertId;
+    const legacyClaim = await rawExec(
+      `INSERT INTO bowler_claim_codes (eventId, bowlerId, code, status, redeemedAt, createdAt)
+       VALUES (?, ?, ?, 'redeemed', ?, ?)`,
+      [eventId, legacyBowlerId, `BOB-L${String(stamp).slice(-5)}`, stamp, stamp],
+    );
+    legacyClaimCodeId = legacyClaim.insertId;
+
     const unclaimed = await rawExec(
       `INSERT INTO bowlers (eventId, centerId, legalFirstName, legalLastName, registrationStatus)
        VALUES (?, ?, ?, ?, 'pre_registered')`,
@@ -97,9 +112,9 @@ describe("bowler password reset", () => {
   });
 
   afterAll(async () => {
-    await rawExec("DELETE FROM auditLog WHERE targetId IN (?, ?)", [bowlerId, unclaimedBowlerId]);
-    await rawExec("DELETE FROM bowler_claim_codes WHERE id = ?", [claimCodeId]);
-    await rawExec("DELETE FROM bowlers WHERE id IN (?, ?)", [bowlerId, unclaimedBowlerId]);
+    await rawExec("DELETE FROM auditLog WHERE targetId IN (?, ?, ?)", [bowlerId, legacyBowlerId, unclaimedBowlerId]);
+    await rawExec("DELETE FROM bowler_claim_codes WHERE id IN (?, ?)", [claimCodeId, legacyClaimCodeId]);
+    await rawExec("DELETE FROM bowlers WHERE id IN (?, ?, ?)", [bowlerId, legacyBowlerId, unclaimedBowlerId]);
     await rawExec("DELETE FROM events WHERE id = ?", [eventId]);
     await rawExec("DELETE FROM ed_staff WHERE id = ?", [directorId]);
   });
@@ -170,6 +185,40 @@ describe("bowler password reset", () => {
       turnstileToken: "test-turnstile",
       turnstileAction: "bowler_login",
     })).resolves.toMatchObject({ bowlerId, isCapitain: false, token: expect.any(String) });
+  }, 15000);
+
+  it("repairs only a redeemed legacy cleared account and then permits normal sign-in", async () => {
+    const owner = appRouter.createCaller(ownerContext());
+    await expect(owner.bowlers.resetPassword({
+      id: legacyBowlerId,
+      password: replacementPassword,
+      actorRole: "Owner",
+    })).resolves.toEqual({ success: true });
+
+    const [state] = await rawQuery<{
+      passwordHash: string | null;
+      registrationStatus: string;
+      claimStatus: string;
+      redeemedAt: number | null;
+    }>(
+      `SELECT b.passwordHash, b.registrationStatus, c.status AS claimStatus, c.redeemedAt
+       FROM bowlers b
+       JOIN bowler_claim_codes c ON c.bowlerId = b.id
+       WHERE b.id = ? AND c.id = ?`,
+      [legacyBowlerId, legacyClaimCodeId],
+    );
+    expect(state).toMatchObject({ registrationStatus: "signed_up", claimStatus: "redeemed", redeemedAt: stamp });
+    expect(await bcrypt.compare(replacementPassword, state!.passwordHash!)).toBe(true);
+
+    const bowler = appRouter.createCaller(anonymousContext());
+    await expect(bowler.bowlerAuth.signIn({
+      firstName: "Legacy",
+      lastName: `Reset${stamp}`,
+      eventId,
+      password: replacementPassword,
+      turnstileToken: "test-turnstile",
+      turnstileAction: "bowler_login",
+    })).resolves.toMatchObject({ bowlerId: legacyBowlerId, isCapitain: false, token: expect.any(String) });
   }, 15000);
 
   it("does not let an authorized reset create an account for an unclaimed roster row", async () => {
