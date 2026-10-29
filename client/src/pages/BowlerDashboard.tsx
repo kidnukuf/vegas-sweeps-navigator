@@ -295,6 +295,12 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
   );
   const profileQuery = isEDMode ? edProfileQuery : bowlerProfileQuery;
 
+  useEffect(() => {
+    if (!isEDMode && Boolean((profileQuery.data as any)?.mustChangePassword)) {
+      navigate("/change-password", { replace: true });
+    }
+  }, [isEDMode, navigate, profileQuery.data]);
+
   const bowlerEventId = (profileQuery.data as any)?.eventId as number | undefined;
   const eventSettingsQuery = trpc.event.getSettings.useQuery(
     { id: bowlerEventId ?? 0 },
@@ -385,6 +391,10 @@ export default function BowlerDashboard({ edBowlerId, ..._ }: { edBowlerId?: num
 
   const p = profileQuery.data;
   if (!p) return null;
+
+  if (!isEDMode && Boolean((p as any).mustChangePassword)) {
+    return null;
+  }
 
   const displayName = p.preferredName || `${p.legalFirstName} ${p.legalLastName}`;
   const eventSettings = (eventSettingsQuery.data ?? null) as EventTripSettings | null;

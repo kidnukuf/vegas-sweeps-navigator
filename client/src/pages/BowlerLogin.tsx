@@ -121,6 +121,11 @@ export default function BowlerLogin() {
       localStorage.setItem(BOWLER_TOKEN_KEY, data.token);
       localStorage.setItem(BOWLER_ID_KEY, String(data.bowlerId));
       localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, data.isCapitain ? "1" : "0");
+      if (data.mustChangePassword) {
+        toast.info("Set a new password to continue.");
+        navigate("/change-password");
+        return;
+      }
       toast.success("Welcome back!");
       if (data.isCapitain) {
         navigate("/captain");

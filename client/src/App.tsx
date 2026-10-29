@@ -37,6 +37,7 @@ import GetStarted from "./pages/GetStarted";
 import CoordinatorImport from "./pages/CoordinatorImport";
 import CoordinatorPortal from "./pages/CoordinatorPortal";
 import CoordinatorManagement from "./pages/CoordinatorManagement";
+import RequiredPasswordChange from "./pages/RequiredPasswordChange";
 import { VideoSplash } from "./components/VideoSplash";
 import ViewportMetrics from "./components/ViewportMetrics";
 import { useLocation } from "wouter";
@@ -126,6 +127,7 @@ function Router() {
       <Route path="/ed-login" component={EdLogin} />
       <Route path="/ed" component={AdminDashboard} />
       <Route path="/bowler-login" component={BowlerLogin} />
+      <Route path="/change-password" component={RequiredPasswordChange} />
       <Route path="/bowler" component={BowlerDashboard} />
       <Route path="/bowler-dashboard" component={BowlerDashboard} />
       <Route path="/bowler-confirmation" component={BowlerConfirmation} />

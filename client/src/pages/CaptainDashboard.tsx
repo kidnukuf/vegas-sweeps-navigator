@@ -201,6 +201,12 @@ export default function CaptainDashboard() {
     { enabled: !!token, retry: false }
   );
 
+  useEffect(() => {
+    if (Boolean((teamQuery.data?.profile as any)?.mustChangePassword)) {
+      navigate("/change-password", { replace: true });
+    }
+  }, [navigate, teamQuery.data]);
+
   const captainEventId = (teamQuery.data?.profile as any)?.eventId as number | undefined;
   const captainEventSettingsQuery = trpc.event.getSettings.useQuery(
     { id: captainEventId ?? 0 },
@@ -268,6 +274,9 @@ export default function CaptainDashboard() {
 
   const { profile: p, roster } = teamQuery.data ?? { profile: null, roster: [] };
   if (!p) return null;
+  if (Boolean((p as any).mustChangePassword)) {
+    return null;
+  }
   const captainEventSettings = (captainEventSettingsQuery.data ?? null) as EventTripSettings | null;
   const poolPartyVisible = isPoolPartyVisible(captainEventId, (p as any).eventName);
   const portalEventSettings = poolPartyVisible || !captainEventSettings

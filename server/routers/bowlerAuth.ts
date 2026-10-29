@@ -76,6 +76,7 @@ async function findBowlerByName(
     scantronId: string | null;
     registrationStatus: string;
     passwordHash: string | null;
+    mustChangePassword: number;
     isCapitain: number;
     teamId: number | null;
     centerId: number | null;
@@ -87,7 +88,7 @@ async function findBowlerByName(
   }>(
     `SELECT b.id, b.legalFirstName, b.legalLastName, b.preferredName,
             b.email, b.phone, b.scantronId, b.registrationStatus,
-            b.passwordHash, b.isCapitain, b.teamId, b.centerId,
+            b.passwordHash, b.mustChangePassword, b.isCapitain, b.teamId, b.centerId,
             t.teamName, bc.centerName,
             b.laneNumber, b.squadTime, b.guestPoolPartyAmount
      FROM bowlers b
@@ -115,6 +116,7 @@ async function getBowlerProfile(bowlerId: number) {
     phone: string | null;
     scantronId: string | null;
     registrationStatus: string;
+    mustChangePassword: number;
     isCapitain: number;
     captainVerified: number;
     teamId: number | null;
@@ -162,7 +164,7 @@ async function getBowlerProfile(bowlerId: number) {
   }>(
     `SELECT b.id, b.legalFirstName, b.legalLastName, b.preferredName,
             b.email, b.phone, b.scantronId, b.registrationStatus,
-            b.isCapitain, b.captainVerified, b.teamId, b.centerId,
+            b.mustChangePassword, b.isCapitain, b.captainVerified, b.teamId, b.centerId,
             t.teamName, t.teamCode, t.coordinatorName, bc.centerName,
             COALESCE(NULLIF(l.leagueName, ''), CONCAT('League ', SUBSTRING(b.scantronId, 3, 2))) AS leagueName,
             COALESCE(l.leagueCode, SUBSTRING(b.scantronId, 3, 2)) AS leagueCode,
@@ -489,7 +491,7 @@ export const bowlerAuthRouter = router({
       }).catch(() => {});
 
       const token = signToken({ bowlerId: bowler.id, role: "Bowler" });
-      return { token, bowlerId: bowler.id, isCapitain: Boolean(bowler.isCapitain) };
+      return { token, bowlerId: bowler.id, isCapitain: Boolean(bowler.isCapitain), mustChangePassword: false };
     }),
 
   // ── BOWLER SIGN-IN ──────────────────────────────────────────────────────────
@@ -593,7 +595,62 @@ export const bowlerAuthRouter = router({
         }
       })();
 
-      return { token, bowlerId: bowler.id, isCapitain: Boolean(bowler.isCapitain) };
+      return { token, bowlerId: bowler.id, isCapitain: Boolean(bowler.isCapitain), mustChangePassword: Boolean(bowler.mustChangePassword) };
+    }),
+
+  // ── REQUIRED TEMPORARY PASSWORD REPLACEMENT ───────────────────────────────
+  changePassword: publicProcedure
+    .input(z.object({
+      token: z.string().min(1),
+      currentPassword: z.string().min(1),
+      newPassword: z.string().min(8, "New password must be at least 8 characters.").max(72, "New password must be 72 characters or less."),
+    }))
+    .mutation(async ({ input }) => {
+      const payload = verifyToken(input.token);
+      if (!payload || typeof payload.bowlerId !== "number") {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Your session has expired. Please sign in again." });
+      }
+      const rows = await rawQuery<{
+        id: number;
+        eventId: number;
+        passwordHash: string | null;
+        mustChangePassword: number;
+        isCapitain: number;
+      }>(
+        `SELECT id, eventId, passwordHash, mustChangePassword, isCapitain
+         FROM bowlers WHERE id = ? LIMIT 1`,
+        [payload.bowlerId],
+      );
+      const bowler = rows[0];
+      if (!bowler?.passwordHash) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Your account is not ready for a password change. Please sign in again." });
+      }
+      if (!bowler.mustChangePassword) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "A password change is not currently required for this account." });
+      }
+      if (!(await bcrypt.compare(input.currentPassword, bowler.passwordHash))) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "The temporary password is incorrect." });
+      }
+      if (input.currentPassword === input.newPassword) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a new password that is different from the temporary password." });
+      }
+      const result = await rawExec(
+        `UPDATE bowlers SET passwordHash = ?, mustChangePassword = 0 WHERE id = ? AND mustChangePassword = 1`,
+        [await bcrypt.hash(input.newPassword, 12), bowler.id],
+      );
+      if (result.affectedRows === 0) {
+        throw new TRPCError({ code: "CONFLICT", message: "This password was already changed. Please sign in with your new password." });
+      }
+      await writeAuditLog({
+        eventId: bowler.eventId,
+        actorRole: "bowler",
+        actorId: bowler.id,
+        action: "temporary_password_replaced",
+        targetId: bowler.id,
+        targetType: "bowler",
+        details: "Bowler replaced a staff-issued temporary password. Claim-code and passport state unchanged.",
+      });
+      return { success: true, isCapitain: Boolean(bowler.isCapitain) };
     }),
 
   // ── BOWLER: GET MY PROFILE ──────────────────────────────────────────────────

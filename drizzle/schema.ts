@@ -489,6 +489,9 @@ export const bowlers = mysqlTable("bowlers", {
   photoUrl: text("photoUrl"),
   pinHash: varchar("pinHash", { length: 255 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
+  // Set only by an Owner/Event Director password reset. A bowler with this
+  // flag must replace their temporary password before opening a portal.
+  mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
   appUserId: int("appUserId"),
   isCapitain: boolean("isCapitain").default(false),
   contactLocked: boolean("contactLocked").default(false),

@@ -740,6 +740,7 @@ export const appRouter = router({
         // that state so the bowler is again represented as signed up.
         await updateBowler(input.id, {
           passwordHash,
+          mustChangePassword: true,
           ...(isLegacyClearedAccount ? { registrationStatus: "signed_up" } : {}),
         });
         await writeAuditLog({
@@ -749,8 +750,8 @@ export const appRouter = router({
           targetId: input.id,
           targetType: "bowler",
           details: isLegacyClearedAccount
-            ? "Replacement password set; repaired a legacy cleared account to signed_up. Redeemed claim-code and passport state unchanged."
-            : `Replacement password set; registration status preserved as ${bowler.registrationStatus}. Claim-code and passport state unchanged.`,
+            ? "Temporary password set; repaired a legacy cleared account to signed_up. Bowler must choose a new password at next sign-in. Redeemed claim-code and passport state unchanged."
+            : `Temporary password set; registration status preserved as ${bowler.registrationStatus}. Bowler must choose a new password at next sign-in. Claim-code and passport state unchanged.`,
         });
         return { success: true };
       }),

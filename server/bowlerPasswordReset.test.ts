@@ -146,14 +146,26 @@ describe("bowler password reset", () => {
     expect(await bcrypt.compare(originalPassword, state!.passwordHash!)).toBe(false);
 
     const bowler = appRouter.createCaller(anonymousContext());
-    await expect(bowler.bowlerAuth.signIn({
+    const ownerTemporarySignIn = await bowler.bowlerAuth.signIn({
       firstName: "Reset",
       lastName: `Bowler${stamp}`,
       eventId,
       password: replacementPassword,
       turnstileToken: "test-turnstile",
       turnstileAction: "bowler_login",
-    })).resolves.toMatchObject({ bowlerId, isCapitain: false, token: expect.any(String) });
+    });
+    expect(ownerTemporarySignIn).toMatchObject({ bowlerId, isCapitain: false, token: expect.any(String), mustChangePassword: true });
+    await expect(bowler.bowlerAuth.changePassword({
+      token: ownerTemporarySignIn.token,
+      currentPassword: replacementPassword,
+      newPassword: originalPassword,
+    })).resolves.toEqual({ success: true, isCapitain: false });
+    const [afterRequiredChange] = await rawQuery<{ mustChangePassword: number; passwordHash: string }>(
+      "SELECT mustChangePassword, passwordHash FROM bowlers WHERE id = ?",
+      [bowlerId],
+    );
+    expect(afterRequiredChange?.mustChangePassword).toBe(0);
+    expect(await bcrypt.compare(originalPassword, afterRequiredChange!.passwordHash)).toBe(true);
 
     const director = appRouter.createCaller(directorContext(directorId));
     await expect(director.bowlers.resetPassword({
@@ -184,7 +196,7 @@ describe("bowler password reset", () => {
       password: directorReplacementPassword,
       turnstileToken: "test-turnstile",
       turnstileAction: "bowler_login",
-    })).resolves.toMatchObject({ bowlerId, isCapitain: false, token: expect.any(String) });
+    })).resolves.toMatchObject({ bowlerId, isCapitain: false, token: expect.any(String), mustChangePassword: true });
   }, 15000);
 
   it("repairs only a redeemed legacy cleared account and then permits normal sign-in", async () => {

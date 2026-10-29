@@ -86,6 +86,11 @@ export default function CaptainLogin() {
       localStorage.setItem(BOWLER_TOKEN_KEY, data.token);
       localStorage.setItem(BOWLER_ID_KEY, String(data.bowlerId));
       localStorage.setItem(BOWLER_IS_CAPTAIN_KEY, "1");
+      if (data.mustChangePassword) {
+        toast.info("Set a new password to continue.");
+        navigate("/change-password");
+        return;
+      }
       toast.success("Welcome back, Captain!");
       navigate("/captain");
     },
