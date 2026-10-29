@@ -122,8 +122,17 @@ function CoordinatorContactPanel({ eventId, eventName }: { eventId: number; even
 
 function BowlerEditor({ bowler, onSaved, onDelete }: { bowler: Record<string, any>; onSaved: () => void; onDelete: () => void }) {
   const [draft, setDraft] = useState(bowler);
+  const [replacementPassword, setReplacementPassword] = useState("");
   useEffect(() => setDraft(bowler), [bowler]);
   const update = trpc.ownerDashboard.updateBowler.useMutation({ onSuccess: () => { toast.success("Bowler record saved"); onSaved(); }, onError: (error) => toast.error(error.message) });
+  const resetPassword = trpc.bowlers.resetPassword.useMutation({
+    onSuccess: () => {
+      toast.success("Replacement password saved — bowler can now sign in.");
+      setReplacementPassword("");
+      onSaved();
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const set = (key: string, value: unknown) => setDraft((current: Record<string, any>) => ({ ...current, [key]: value }));
   const save = () => update.mutate({
     id: Number(draft.id), legalFirstName: draft.legalFirstName ?? "", legalLastName: draft.legalLastName ?? "", preferredName: draft.preferredName,
@@ -153,6 +162,30 @@ function BowlerEditor({ bowler, onSaved, onDelete }: { bowler: Record<string, an
       <div className="md:col-span-2"><Field label="Notes"><Textarea className={`${inputClass} min-h-20`} value={draft.notes ?? ""} onChange={(e) => set("notes", e.target.value)} /></Field></div>
     </div>
     <div className="mt-5 flex justify-end"><Button disabled={update.isPending} onClick={save} className="bg-sky-300 text-slate-950 hover:bg-sky-200">{update.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}Save bowler record</Button></div>
+    <div className="mt-5 border-t border-amber-300/20 pt-5">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-200">Bowler sign-in recovery</p>
+      <p className="mt-1 text-sm leading-6 text-slate-400">Set a replacement password without changing the account, redeemed claim code, registration status, or QR passes. Tell the bowler to use <strong className="text-slate-200">Sign In</strong> afterward—not Create Account.</p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+        <Input
+          type="password"
+          minLength={8}
+          autoComplete="new-password"
+          className={inputClass}
+          placeholder="Replacement password (8+ characters)"
+          value={replacementPassword}
+          onChange={(event) => setReplacementPassword(event.target.value)}
+        />
+        <Button
+          type="button"
+          disabled={replacementPassword.length < 8 || resetPassword.isPending}
+          onClick={() => resetPassword.mutate({ id: Number(draft.id), password: replacementPassword, actorRole: "Owner" })}
+          variant="outline"
+          className="w-full shrink-0 border-amber-300/30 text-amber-100 hover:bg-amber-300/10 hover:text-amber-50 sm:w-auto"
+        >
+          {resetPassword.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}Set password
+        </Button>
+      </div>
+    </div>
   </section>;
 }
 

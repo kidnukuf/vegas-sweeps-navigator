@@ -691,17 +691,56 @@ export const appRouter = router({
     resetPassword: publicProcedure
       .input(z.object({
         id: z.number(),
+        password: z.string().min(8, "Replacement password must be at least 8 characters.").max(72, "Replacement password must be 72 characters or less."),
         actorRole: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         await assertBowlerAccess(ctx, input.id);
-        await updateBowler(input.id, { passwordHash: null, registrationStatus: "pre_registered" });
+        const rows = await rawQuery<{
+          eventId: number;
+          passwordHash: string | null;
+          registrationStatus: string;
+          hasRedeemedClaim: number;
+        }>(
+          `SELECT b.eventId, b.passwordHash, b.registrationStatus,
+                  EXISTS(
+                    SELECT 1 FROM bowler_claim_codes c
+                    WHERE c.bowlerId = b.id
+                      AND c.eventId = b.eventId
+                      AND c.status = 'redeemed'
+                  ) AS hasRedeemedClaim
+           FROM bowlers b
+           WHERE b.id = ?
+           LIMIT 1`,
+          [input.id],
+        );
+        const bowler = rows[0];
+        if (!bowler) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Bowler not found." });
+        }
+
+        // A director may recover a legacy account whose password was cleared by
+        // the former reset implementation only when the record is demonstrably
+        // claimed. This never turns an unclaimed roster row into an account.
+        if (!bowler.passwordHash && bowler.registrationStatus === "pre_registered" && !Boolean(bowler.hasRedeemedClaim)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This bowler has not created an account yet. Have them use Create Account with their claim code instead.",
+          });
+        }
+
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        // Deliberately update only the credential. Claim-code redemption,
+        // registration status, passports, QR usage, and captain state remain
+        // untouched so the bowler can immediately use the normal Sign In tab.
+        await updateBowler(input.id, { passwordHash });
         await writeAuditLog({
+          eventId: bowler.eventId,
           actorRole: input.actorRole ?? "EventDirector",
           action: "reset_password",
           targetId: input.id,
           targetType: "bowler",
-          details: "Password cleared by Event Director",
+          details: `Replacement password set; registration status preserved as ${bowler.registrationStatus}. Claim-code and passport state unchanged.`,
         });
         return { success: true };
       }),

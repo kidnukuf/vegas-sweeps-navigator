@@ -729,13 +729,16 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
 
   const resetBowlerPassword = trpc.bowlers.resetPassword.useMutation({
     onSuccess: () => {
-      toast.success("Password cleared — bowler can now re-register");
+      toast.success("Replacement password saved — bowler can now sign in.");
       setEditingBowler(null);
       setConfirmReset(false);
+      setResetBowlerPasswordValue("");
+      void refetch();
     },
     onError: (e) => toast.error(e.message),
   });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [resetBowlerPasswordValue, setResetBowlerPasswordValue] = useState("");
 
   // ─── Permanent bowler deletion ─────────────────────────────────────
   const [showDeletePanel, setShowDeletePanel] = useState(false);
@@ -772,6 +775,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
   // Reset destructive-action panels whenever the edited bowler changes.
   useEffect(() => {
     setConfirmReset(false);
+    setResetBowlerPasswordValue("");
     setShowDeletePanel(false);
     setDeleteConfirmText("");
     setNewGuestTicket({ name: "", poolParty: false, banquet: false, under21: false });
@@ -2139,6 +2143,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
           if (!open) {
             setEditingBowler(null);
             setConfirmReset(false);
+            setResetBowlerPasswordValue("");
           }
         }}
       >
@@ -2149,7 +2154,7 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 <DialogDescription className="sr-only">Edit the selected bowler's profile, registration details, and guest tickets.</DialogDescription>
                 <div className="flex items-start justify-between gap-3">
                   <DialogTitle className="text-xl font-bold text-yellow-400">Edit Bowler — {String(editingBowler.scantronId ?? "")}</DialogTitle>
-                  <button type="button" onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close bowler editor">Close</button>
+                  <button type="button" onClick={() => { setEditingBowler(null); setConfirmReset(false); setResetBowlerPasswordValue(""); }} className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close bowler editor">Close</button>
                 </div>
               </DialogHeader>
             <div className="space-y-3">
@@ -2325,32 +2330,46 @@ function AdminDashboardInner({ onSignOut }: { onSignOut: () => void }) {
                 className="flex-1 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition-colors">
                 {updateBowler.isPending ? "Saving..." : "Save Changes"}
               </button>
-              <button onClick={() => { setEditingBowler(null); setConfirmReset(false); }} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
+              <button onClick={() => { setEditingBowler(null); setConfirmReset(false); setResetBowlerPasswordValue(""); }} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
             </div>
 
             {/* Reset Password section */}
             <div className="mt-4 pt-4 border-t border-white/10">
               {!confirmReset ? (
                 <button
-                  onClick={() => setConfirmReset(true)}
-                  disabled={!editingBowler.passwordHash}
-                  className="w-full py-2 bg-red-900/40 hover:bg-red-800/60 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  onClick={() => { setConfirmReset(true); setResetBowlerPasswordValue(""); }}
+                  className="w-full py-2 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-400/30 text-amber-200 hover:text-amber-100 rounded-lg text-sm font-semibold transition-colors"
                 >
-                  {editingBowler.passwordHash ? "🔑 Reset Password (allow bowler to re-register)" : "No account — password not set"}
+                  🔑 Set Replacement Password
                 </button>
               ) : (
-                <div className="bg-red-900/20 border border-red-500/40 rounded-lg p-3 space-y-2">
-                  <p className="text-red-300 text-sm font-semibold">Clear this bowler's password?</p>
-                  <p className="text-gray-400 text-xs">Their account will be removed and they will need to sign up again on the Bowler Portal.</p>
-                  <div className="flex gap-2 mt-2">
+                <div className="bg-amber-500/10 border border-amber-400/35 rounded-lg p-3 space-y-3">
+                  <div>
+                    <p className="text-amber-100 text-sm font-semibold">Set a replacement password</p>
+                    <p className="mt-1 text-gray-300 text-xs leading-5">This keeps the account, redeemed claim code, registration status, and QR passes unchanged. Give the new password to the bowler and have them use <strong>Sign In</strong>, not Create Account.</p>
+                  </div>
+                  <div>
+                    <label htmlFor="reset-bowler-password" className="sr-only">Replacement password for this bowler</label>
+                    <input
+                      id="reset-bowler-password"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={8}
+                      value={resetBowlerPasswordValue}
+                      onChange={(e) => setResetBowlerPasswordValue(e.target.value)}
+                      placeholder="Replacement password (8+ characters)"
+                      className="w-full bg-black/40 border border-amber-400/30 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-300"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <button
-                      onClick={() => resetBowlerPassword.mutate({ id: editingBowler.id as number, actorRole: "EventDirector" })}
-                      disabled={resetBowlerPassword.isPending}
-                      className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-sm transition-colors"
+                      onClick={() => resetBowlerPassword.mutate({ id: editingBowler.id as number, password: resetBowlerPasswordValue, actorRole: "EventDirector" })}
+                      disabled={resetBowlerPasswordValue.length < 8 || resetBowlerPassword.isPending}
+                      className="flex-1 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded-lg text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {resetBowlerPassword.isPending ? "Resetting..." : "Yes, Reset Password"}
+                      {resetBowlerPassword.isPending ? "Saving..." : "Save Replacement Password"}
                     </button>
-                    <button onClick={() => setConfirmReset(false)} className="flex-1 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">Cancel</button>
+                    <button onClick={() => { setConfirmReset(false); setResetBowlerPasswordValue(""); }} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">Cancel</button>
                   </div>
                 </div>
               )}
